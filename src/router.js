@@ -1,5 +1,5 @@
 import React from "react"
-import { SafeAreaView, StyleSheet, View} from "react-native"
+import { SafeAreaView, StyleSheet, View,Text} from "react-native"
 import {NativeRouter, Route, Routes, Link, Outlet} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
@@ -8,13 +8,14 @@ import Talks from "./daily-talks"
 import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
-import { PlayButton } from "./components"
+import Plan from "./plan"
 
 export default ()=>(
     <NativeRouter>
         <SafeAreaView style={styles.container}>
-                <Routes>
-                    <Route path="/" element={React.createElement(({})=>(
+            <Routes>
+                <Route path="/"
+                    element={React.createElement(()=>(
                         <View style={{flex:1}}>
                             <View style={styles.content}>
                                 <Outlet/>
@@ -34,16 +35,35 @@ export default ()=>(
                             </View>
                         </View>
                     ))}>
-                        <Route path="talks" element={<Talks/>} />
-                        <Route path="account" element={<Account/>}/>
+                    <Route path="" element={<Talks/>} />
+                    <Route path="account" element={<Account/>}/>
+                    <Route path="plan" element={<Plan/>}/>
+                    <Route element={<WithBackButton/>}>
                         <Route path="account/policy" element={<Policy/>}/>
                     </Route>
-                    <Route path="/talk/:slug" element={<Talk/>} />
-                    <Route path="/talk/:slug/autoplay/:policy" element={<Talk autoplay={true}/>} />
-                </Routes>
+                </Route>
+
+                <Route path="/talk" element={<WithBackButton/>}>
+                    <Route path=":slug">
+                        <Route path="" element={<Talk/>} />
+                        <Route path="autoplay/:policy" element={<Talk autoplay={true}/>} />
+                    </Route>
+                </Route>
+            </Routes>
             <StatusBar style="light"/>
         </SafeAreaView>
     </NativeRouter>
+)
+
+const WithBackButton=()=>(
+    <View style={{flex:1}}>
+        <Outlet/>
+        <View style={{position:"absolute",left:10}}>
+            <Link to={-1}>
+                <MaterialIcons name="keyboard-arrow-left" color="white" size={32}/>
+            </Link>
+        </View>
+    </View>
 )
 
 export const styles = StyleSheet.create({
