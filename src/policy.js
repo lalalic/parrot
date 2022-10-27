@@ -14,7 +14,7 @@ export default connect(({policy})=>({policy}))(({policy,dispatch})=>{
                 policy={policy[target]} 
                 onPolicyChange={policy=>dispatch({type:"policy",target, payload:policy})}
                 /> 
-            <View style={{flex:1, padding:10,backgroundColor:"white"}}>
+            <View style={{flex:1, padding:10}}>
                 <View style={{flexDirection:"row",justifyContent:"space-between", 
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(

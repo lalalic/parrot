@@ -1,5 +1,5 @@
 import React, { useEffect } from "react"
-import { StyleSheet, Text, View, FlatList,Image, Pressable } from 'react-native';
+import { StyleSheet, Text, FlatList, View, Image, Pressable } from 'react-native';
 import {Link} from "react-router-native"
 import {XMLParser} from 'fast-xml-parser'
 
@@ -53,8 +53,7 @@ const styles = StyleSheet.create({
         flex:1,
 	},
 	talksTitle:{
-		color:'white',
-        fontSize:20,
+		fontSize:20,
 	},
 	talkThumb:{
 		margin:5,
@@ -73,11 +72,11 @@ const styles = StyleSheet.create({
 		position:"absolute",
 		bottom:60,
 		right:5,
-		color:"white",
+		color:"white"
 	},
 	talkThumbTitle:{
 		position:"absolute",
 		bottom:0,
-		color:"white",
+		color:"white"
 	}
 });

@@ -1,10 +1,11 @@
 import React from 'react';
-import {View, Text, Animated, Easing, ActivityIndicator, FlatList, Pressable} from "react-native"
+import {View, Text, Animated, Easing, ActivityIndicator, /*FlatList,*/ Pressable} from "react-native"
 import { Video, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 
 import { PressableIcon, SliderIcon } from './components';
+import {FlashList as FlatList} from "@shopify/flash-list"
 
 
 export default function Player({talk, style, onPolicyChange, onRecordDone, onCheckChunk, autoplay, ...props}){
@@ -226,7 +227,7 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                     }}/>
                     <View style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                         <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
-                            color={policy.record && recording ? "red" : "white"}
+                            color={policy.record && recording ? "red" : undefined}
                             onPress={e=>setPolicyChange("record",!policy.record)}
                             />
                         <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>setPolicyChange("visible",!policy.visible)}/>
@@ -274,7 +275,7 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                         <PressableIcon style={{marginRight:10}} name="zoom-out-map" onPress={e=>void 0}/>
                     </View>
                     <View style={{position:"absolute",bottom:0, width:"100%"}}>
-                        <Text textAlign style={{width:"100%",height:40, color:"white", textAlign:"center",position:"absolute",bottom:20}}>
+                        <Text textAlign style={{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20}}>
                             {policy.caption && (<DelayText delay={policy.captionDelay} i={status.i}>{chunks[status.i]?.text}</DelayText>)}
                         </Text>
                         <ProgressBar {...{
@@ -292,7 +293,7 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                     renderItem={({index,item:{text, time}})=>(
                         <View>
                             <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
-                                <Text style={{flexGrow:1,color: index==status.i ? "blue" : "white"}}>{text.replace("\n"," ")}</Text>
+                                <Text style={{flexGrow:1,color: index==status.i ? "blue" : undefined}}>{text.replace("\n"," ")}</Text>
                             </Pressable>
                             
                         </View>
@@ -335,13 +336,13 @@ const ProgressBar=({value=0, duration=0, asText,style, onValueChange, show, hide
     return (
         <Animated.View style={[{flexDirection:"row"},style, {opacity}]} {...props}>
             <View style={{justifyContent:"center",width:50}}>
-                <Text style={{textAlign:"right",color:"white"}}>{asText(value)}</Text>
+                <Text style={{textAlign:"right",}}>{asText(value)}</Text>
             </View>
             <View style={{justifyContent:"center",flexGrow:1}}>
                 <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,value, maximumValue:duration}}/>
             </View>
             <View style={{justifyContent:"center",width:50,}}>
-                <Text style={{color:"white"}}>{asText(duration-value)}</Text>
+                <Text style={{}}>{asText(duration-value)}</Text>
             </View>
         </Animated.View>
     )
@@ -351,7 +352,7 @@ const NavBar=({onReplaySlow, onReplay, onPrevSlow, onPrev, onPlay, onNext, onChe
     if(status.isLoading)
         return (
             <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
-                <ActivityIndicator color="white" size="large"/>
+                <ActivityIndicator  size="large"/>
             </View>
         )
     return (
@@ -364,7 +365,7 @@ const NavBar=({onReplaySlow, onReplay, onPrevSlow, onPrev, onPlay, onNext, onChe
                 onPress={status.whitespacing ? onReplay : onPrev}/>}
             <PressableIcon size={size} name={status.isPlaying||status.whitespacing ? "pause" : "play-arrow"} onPress={onPlay}/>
             {navable && <PressableIcon size={size} name="keyboard-arrow-right" onPress={onNext}/>}
-            {navable &&  <PressableIcon size={size} name="check" onPress={onCheck} color={isChallenge ? "blue" : "white"}/>}
+            {navable &&  <PressableIcon size={size} name="check" onPress={onCheck} color={isChallenge ? "blue" : undefined}/>}
         </View>
     )
 }

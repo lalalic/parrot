@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList } from "react-native";
+import { View, Text, Pressable, FlatList, useColorScheme } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import {useLocation, useNavigate} from "react-router-native"
 
 export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) => (
     <Pressable {...{ onPress, onLongPress, onPressOut }}>
-        <MaterialIcons color={"white"} size={24} {...props} />
+        <MaterialIcons   {...props} />
     </Pressable>
 );
 
@@ -33,7 +33,7 @@ export const PlayButton = (props) => {
                     color={"red"}/>}
             <PressableIcon size={32} style={{}}
                 name="play-arrow" 
-                color={slug ? "white" : "transparent"}
+                color={slug ? undefined : "transparent"}
                 onPress={() => navigate(`${location}?autoplay=true`,{replace:true})}
                 onLongPress={() => setShowPolicy(!showPolicy)} 
                 />
@@ -46,8 +46,8 @@ export const PlayButton = (props) => {
                             setShowPolicy(false)
                             navigate(`/talk/${slug}/autoplay/${item}`)
                         }}>
-                        <MaterialIcons name={PolicyIcons[item]} color="white" size={32}/>
-                        <Text style={{color:"white",marginLeft:10,lineHeight:32}}>{item}</Text>
+                        <MaterialIcons name={PolicyIcons[item]}  size={32}/>
+                        <Text style={{marginLeft:10,lineHeight:32}}>{item}</Text>
                     </Pressable>
                     )}
                 />}
@@ -83,7 +83,7 @@ export const SliderIcon=(uuid=>{
     const Slider = ({
         style: { width = 20, height = 150, left = 0, top = 40, ...style } = {}, 
         minimumTrackTintColor = "blue", maximumTrackTintColor = "gray", 
-        textColor = "white", minimumValue = 0, maximumValue = 100, step = 1, 
+        minimumValue = 0, maximumValue = 100, step = 1, 
         text = t => t, onValueChange, 
         ...props
     }) => {
@@ -102,7 +102,7 @@ export const SliderIcon=(uuid=>{
                     </View>
                 </View>
                 <View style={{justifyContent:"center"}}>
-                    <Text style={{ color: textColor, backgroundColor:"black"}}>
+                    <Text style={{backgroundColor:"black"}}>
                         {text(Number(value.toFixed(String(step).split(".")[1]?.length || 0)))}
                     </Text>
                 </View>

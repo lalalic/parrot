@@ -29,6 +29,13 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins":[
+      [
+        "@react-native-voice/voice",{
+          "microphonePermission":"Allow input for speech-to-text",
+          "speechRecognitionPermission":"Allow speech-to-text"
+        }]
+    ],
     "extra": {
       "eas": {
         "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004"

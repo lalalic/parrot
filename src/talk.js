@@ -34,12 +34,12 @@ export default function Talk({autoplay}){
                 
 
                 {!!!autoplay && <View style={{flex:1, padding:5,}}>
-                    <Text style={{fontSize:20, color:"white"}}>{talk.title}</Text>
+                    <Text style={{fontSize:20, }}>{talk.title}</Text>
                     <View style={{flexDirection:"row",justifyContent:"space-evenly", paddingTop:20,paddingBottom:20}}>
                         <PressableIcon name={talkSetting?.favorited ? "favorite": "favorite-outline"} 
                             onPress={e=>toggleTalk("favorited")}/>
                         <PressableIcon name={talkSetting?.downloaded ? "cloud-done": "cloud-download"} 
-                            color={downloading ? "gray" : "white"}
+                            color={downloading ? "gray" : undefined}
                             onPress={async e=>{
                                 if(downloading)
                                     return
@@ -63,11 +63,11 @@ export default function Talk({autoplay}){
                                 html:html(talk.paragraphs.map(a=>a.cues.map(b=>b.text).join("")).join("\n"))
                             })
                         }}/>
-                        <PressableIcon name={PolicyIcons.shadowing} color={talkSetting?.shadowing ? "blue" : "white"} 
+                        <PressableIcon name={PolicyIcons.shadowing} color={talkSetting?.shadowing ? "blue" : undefined} 
                             onPress={e=>toggleTalk("shadowing")}/>
-                        <PressableIcon name={PolicyIcons.dictating} color={talkSetting?.dictating ? "blue" : "white"}
+                        <PressableIcon name={PolicyIcons.dictating} color={talkSetting?.dictating ? "blue" : undefined}
                             onPress={e=>toggleTalk("dictating")}/>
-                        <PressableIcon name={PolicyIcons.retelling} color={talkSetting?.retelling ? "blue" : "white"}
+                        <PressableIcon name={PolicyIcons.retelling} color={talkSetting?.retelling ? "blue" : undefined}
                             onPress={e=>toggleTalk("retelling")}/>
                     </View>
                 </View>}

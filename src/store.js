@@ -89,15 +89,21 @@ const Ted = createApi({
 				},
 			}),
 			transformResponse: async (data) => {
-				const {
-                    translation: { paragraphs },
-                    video: { playerData, ...metadata },
-                }=data
+				if(!data.translation)
+					return data
+				const {translation, video: { playerData, ...metadata },}=data
 				const talk={
 					...JSON.parse(playerData),
 					...metadata
 				}
+				
 				talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
+				
+				if(!translation)
+					return talk
+
+				const {paragraphs}=translation
+
 				talk.languages.en.transcript=paragraphs
 				
 				const resHlsMeta=await fetch(talk.resources.hls.metadata)
@@ -132,65 +138,67 @@ const Ted = createApi({
 
 const store = configureStore({
 	/** reducer can't directly change any object in state, instead shallow copy and change */
-	reducer: persistReducer({key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
-		combineReducers({
-			[Ted.reducerPath]: Ted.reducer,
-			policy(state = Policy, action) {
-				switch (action.type) {
-					case "policy":
-						return {
-							...state,
-							[action.target]: {
-								...state[action.target],
-								...action.payload,
-							},
-						};
-				}
-				return state;
-			},
-			talks: (state={version:3},action)=>{
-				switch(action.type){
-					case "persist/REHYDRATE":
-						switch(action.payload.talks.version){
-							case 1:
-							break
-							case 2:
-							break
-						}
-						return {...state,version:3}
-					break
-				}
-				
-				if(!action.type.startsWith("talk/"))
-					return state
-
-				const {id,talk:{slug, title, thumbnail,duration,link}}=action
-				const talk=state[id]||{slug, title, thumbnail,duration,link}
-				switch(action.type){
-					case "talk/toggle":{
-						const {key,value}=action
-						return {...state, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
+	reducer: 
+		persistReducer(
+			{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
+			combineReducers({
+				[Ted.reducerPath]: Ted.reducer,
+				policy(state = Policy, action) {
+					switch (action.type) {
+						case "policy":
+							return {
+								...state,
+								[action.target]: {
+									...state[action.target],
+									...action.payload,
+								},
+							};
 					}
-					case "talk/challenge":{
-						const {chunk:[time,n], policy="general"}=action
-						let {challenges={}}=talk[policy]||{}
-						challenges={...challenges}
-						if(challenges[time]){
-							delete challenges[time]
-						}else{
-							challenges[time]=n
-						}
-						
-						return {...state, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
+					return state;
+				},
+				talks: (state={version:3},action)=>{
+					switch(action.type){
+						case "persist/REHYDRATE":
+							switch(action.payload.talks.version){
+								case 1:
+								break
+								case 2:
+								break
+							}
+							return {...state,version:3}
+						break
 					}
-					case "talk/recording":
-						const { record, policy="general"}=action
-						return {...state, [id]: {...talk, [policy]:{...talk[policy],record}}}
-					default:
+					
+					if(!action.type.startsWith("talk/"))
 						return state
+
+					const {id,talk:{slug, title, thumbnail,duration,link}}=action
+					const talk=state[id]||{slug, title, thumbnail,duration,link}
+					switch(action.type){
+						case "talk/toggle":{
+							const {key,value}=action
+							return {...state, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
+						}
+						case "talk/challenge":{
+							const {chunk:[time,n], policy="general"}=action
+							let {challenges={}}=talk[policy]||{}
+							challenges={...challenges}
+							if(challenges[time]){
+								delete challenges[time]
+							}else{
+								challenges[time]=n
+							}
+							
+							return {...state, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
+						}
+						case "talk/recording":
+							const { record, policy="general"}=action
+							return {...state, [id]: {...talk, [policy]:{...talk[policy],record}}}
+						default:
+							return state
+					}
 				}
-			}
-	})),
+		})),
 
 	middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
 			serializableCheck:{
