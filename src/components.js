@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList, useColorScheme } from "react-native";
+import { View, Text, Pressable, FlatList } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import {useLocation, useNavigate} from "react-router-native"
 
@@ -9,7 +9,7 @@ export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) =>
     </Pressable>
 );
 
-export const PlayButton = (props) => {
+export const PlayButton = ({size=24, style, policyColor="red", onPress, name, ...props}) => {
     const location = useLocation();
     const navigate= useNavigate()
     const [slug, setSlug] = React.useState();
@@ -24,19 +24,20 @@ export const PlayButton = (props) => {
             }
         }
     }, [location]);
-
+    const squareSize=size+16
     return (
         <View {...props}>
-            {!showPolicy && !!policy && policy!="general" && 
-                <MaterialIcons size={40} name={PolicyIcons[policy]} 
-                    style={{opacity:0.3,position:"absolute",top:8,borderRadius:20,borderWidth:3,borderColor:"white"}} 
-                    color={"red"}/>}
-            <PressableIcon size={32} style={{}}
-                name="play-arrow" 
-                color={slug ? undefined : "transparent"}
-                onPress={() => navigate(`${location}?autoplay=true`,{replace:true})}
-                onLongPress={() => setShowPolicy(!showPolicy)} 
-                />
+            <View style={{width:squareSize,height:squareSize,borderRadius:squareSize/2,borderWidth:2,borderColor:"white",justifyContent:"center",alignItems:"center"}}>
+                {!!policy && policy!="general" && (
+                    <View style={{position:"absolute",width:"100%", height:"100%",justifyContent:"center",alignItems:"center"}}>
+                        <MaterialIcons size={size} name={PolicyIcons[policy]} color={policyColor}/>
+                    </View>
+                )}
+                <PressableIcon size={size} name={name} style={{opacity: !!policy && policy!="general" ? 0.5 : 1}}
+                    onPress={onPress}
+                    onLongPress={() => setShowPolicy(!showPolicy)} 
+                    />
+            </View>
 
             {showPolicy && <FlatList style={{position:"absolute",bottom:40,left:0}}
                 data={["general","shadowing","dictating","retelling"]}
@@ -44,7 +45,7 @@ export const PlayButton = (props) => {
                     <Pressable style={{flexDirection:"row", height:40}} 
                         onPress={e=>{
                             setShowPolicy(false)
-                            navigate(`/talk/${slug}/autoplay/${item}`)
+                            navigate(`/talk/${slug}/autoplay/${item}`,{replace:true})
                         }}>
                         <MaterialIcons name={PolicyIcons[item]}  size={32}/>
                         <Text style={{marginLeft:10,lineHeight:32}}>{item}</Text>

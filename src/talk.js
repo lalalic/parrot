@@ -72,10 +72,6 @@ export default function Talk({autoplay}){
                     </View>
                 </View>}
             </View>
-
-            <View style={{flexDirection: "row",justifyContent: "space-around"}}>
-                <PlayButton/>
-            </View>
         </View>
     )
 }

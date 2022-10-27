@@ -1,6 +1,6 @@
 import React from "react"
 import { SafeAreaView, StyleSheet, View} from "react-native"
-import {NativeRouter, Route, Routes, Link, Outlet} from "react-router-native"
+import {NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
 
@@ -17,30 +17,33 @@ export default ()=>(
         <SafeAreaView style={[styles.container,{backgroundColor:"black"}]}>
             <Routes>
                 <Route path="/"
-                    element={React.createElement(()=>(
-                        <View style={{flex:1}}>
-                            <View style={styles.content}>
-                                <Outlet/>
-                            </View>
-                            <View style={styles.nav}>
-                                <Link to="/" style={styles.navItem}>
-                                    <MaterialIcons name="home"/>
-                                </Link>
-                                
-                                <Link to="/plan" style={styles.navItem}>
-                                    <MaterialIcons name="date-range"/>
-                                </Link>
-                
-                                <Link to="/account" style={styles.navItem}>
-                                    <MaterialIcons name="account-circle"/>
-                                </Link>
+                    element={React.createElement(()=>{
+                        
+                        return (
+                            <View style={{flex:1}}>
+                                <View style={styles.content}>
+                                    <Outlet/>
+                                </View>
+                                <View style={styles.nav}>
+                                    <Link to="/" style={styles.navItem}>
+                                        <MaterialIcons name="home"/>
+                                    </Link>
+                                    
+                                    <Link to="/plan" style={styles.navItem}>
+                                        <MaterialIcons name="date-range"/>
+                                    </Link>
+                    
+                                    <Link to="/account" style={styles.navItem}>
+                                        <MaterialIcons name="account-circle"/>
+                                    </Link>
 
-                                <Link to="/test" style={styles.navItem}>
-                                    <MaterialIcons name="bug-report"/>
-                                </Link>
+                                    <Link to="/test" style={styles.navItem}>
+                                        <MaterialIcons name="bug-report"/>
+                                    </Link>
+                                </View>
                             </View>
-                        </View>
-                    ))}>
+                        )
+                    })}>
                     <Route path="" element={<Talks/>} />
                     <Route path="account" element={<Account/>}/>
                     <Route path="plan" element={<Plan/>}/>

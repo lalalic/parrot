@@ -4,7 +4,7 @@ import { Video, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 
-import { PressableIcon, SliderIcon } from './components';
+import { PressableIcon, SliderIcon, PlayButton } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 
 
@@ -31,7 +31,6 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
     const [navVisible, setNavVisible]=React.useState({})
     
     const recorder=React.useRef()
-    const [recording, setRecording]=React.useState(false)
     React.useEffect(()=>{
         if(!policy.record){
             recorder.current?.stopAndUnloadAsync()
@@ -49,7 +48,6 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
             });
             recorder.current = new Audio.Recording();
             recorder.current.cues=[]
-            recorder.current.setOnRecordingStatusUpdate(status=>setRecording(status.isRecording))
             await recorder.current.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY)
         }
 
@@ -211,8 +209,15 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                             }
                         },
                         onPlay:e=>{
-                            terminateWhitespace()
-                            video.current.setStatusAsync({shouldPlay:status.isLoaded && !status.isPlaying})
+                            if(!status.isLoaded)
+                                return 
+                            if(typeof(status.whitespacing)=="number"){
+                                clearTimeout(status.whitespacing)
+                                recorder.current?.pauseAsync()
+                            }
+                            
+                            const shouldPlay=!status.isPlaying
+                            video.current.setStatusAsync({shouldPlay})
                         },
                         onNext:e=>{
                             terminateWhitespace() 
@@ -227,7 +232,7 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                     }}/>
                     <View style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                         <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
-                            color={policy.record && recording ? "red" : undefined}
+                            color={policy.record && status.whitespacing ? "red" : undefined}
                             onPress={e=>setPolicyChange("record",!policy.record)}
                             />
                         <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>setPolicyChange("visible",!policy.visible)}/>
@@ -288,15 +293,15 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                     </View>
                 </SliderIcon.Container>
             </View>
-            {autoplay && <View style={{flex:1,backgroundColor:"red",padding:10}}>
+            {autoplay && <View style={{flex:1,padding:10}}>
                 <FlatList data={chunks} extraData={status.i} ref={subtitleRef}
                     renderItem={({index,item:{text, time}})=>(
-                        <View>
+                        <>
                             <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
                                 <Text style={{flexGrow:1,color: index==status.i ? "blue" : undefined}}>{text.replace("\n"," ")}</Text>
                             </Pressable>
                             
-                        </View>
+                        </>
                     )}
                     />
             </View>}
@@ -363,7 +368,7 @@ const NavBar=({onReplaySlow, onReplay, onPrevSlow, onPrev, onPlay, onNext, onChe
             {navable && <PressableIcon size={size} 
                 name={status.whitespacing ? "replay" : "keyboard-arrow-left"} 
                 onPress={status.whitespacing ? onReplay : onPrev}/>}
-            <PressableIcon size={size} name={status.isPlaying||status.whitespacing ? "pause" : "play-arrow"} onPress={onPlay}/>
+            <PlayButton size={size} name={status.isPlaying||status.whitespacing ? "pause" : "play-arrow"} onPress={onPlay}/>
             {navable && <PressableIcon size={size} name="keyboard-arrow-right" onPress={onNext}/>}
             {navable &&  <PressableIcon size={size} name="check" onPress={onCheck} color={isChallenge ? "blue" : undefined}/>}
         </View>
