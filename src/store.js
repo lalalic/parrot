@@ -7,7 +7,7 @@ import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
 
 import { Provider } from "react-redux"
 import { PersistGate } from 'redux-persist/integration/react'
-import { persistStore } from 'redux-persist'
+import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 
 
 const Policy={
@@ -130,10 +130,9 @@ const Ted = createApi({
 	}),
 });
 
-const clearableReducer=rootReducer=>(state,action)=>rootReducer(action.type=="persist/REHYDRATE" ? {...state,ted:{},talks:{}} : state,action)
 const store = configureStore({
 	/** reducer can't directly change any object in state, instead shallow copy and change */
-	reducer: clearableReducer(persistReducer({key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
+	reducer: persistReducer({key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 		combineReducers({
 			[Ted.reducerPath]: Ted.reducer,
 			policy(state = Policy, action) {
@@ -149,7 +148,19 @@ const store = configureStore({
 				}
 				return state;
 			},
-			talks: (state={},action)=>{
+			talks: (state={version:3},action)=>{
+				switch(action.type){
+					case "persist/REHYDRATE":
+						switch(action.payload.talks.version){
+							case 1:
+							break
+							case 2:
+							break
+						}
+						return {...state,version:3}
+					break
+				}
+				
 				if(!action.type.startsWith("talk/"))
 					return state
 
@@ -179,10 +190,13 @@ const store = configureStore({
 						return state
 				}
 			}
-	}))),
+	})),
 
-	middleware: (getDefaultMiddleware) =>
-		getDefaultMiddleware().concat(Ted.middleware),
+	middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
+			serializableCheck:{
+				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+			}
+		}).concat(Ted.middleware),
 });
 const persistor=persistStore(store)
 setupListeners(store.dispatch)

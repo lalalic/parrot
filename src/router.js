@@ -1,5 +1,5 @@
 import React from "react"
-import { SafeAreaView, StyleSheet, View,Text} from "react-native"
+import { SafeAreaView, StyleSheet, View,useColorScheme} from "react-native"
 import {NativeRouter, Route, Routes, Link, Outlet} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
@@ -9,51 +9,63 @@ import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
 import Plan from "./plan"
+import setDefaultStyle from "./default-style"
 
-export default ()=>(
-    <NativeRouter>
-        <SafeAreaView style={styles.container}>
-            <Routes>
-                <Route path="/"
-                    element={React.createElement(()=>(
-                        <View style={{flex:1}}>
-                            <View style={styles.content}>
-                                <Outlet/>
-                            </View>
-                            <View style={styles.nav}>
-                                <Link to="/" style={styles.navItem}>
-                                    <MaterialIcons name="home" size={24} color="white"/>
-                                </Link>
-                                
-                                <Link to="/plan" style={styles.navItem}>
-                                    <MaterialIcons name="date-range" size={24} color="white"/>
-                                </Link>
-                
-                                <Link to="/account" style={styles.navItem}>
-                                    <MaterialIcons name="account-circle" size={24}  color="white"/>
-                                </Link>
-                            </View>
-                        </View>
-                    ))}>
-                    <Route path="" element={<Talks/>} />
-                    <Route path="account" element={<Account/>}/>
-                    <Route path="plan" element={<Plan/>}/>
-                    <Route element={<WithBackButton/>}>
-                        <Route path="account/policy" element={<Policy/>}/>
-                    </Route>
-                </Route>
 
-                <Route path="/talk" element={<WithBackButton/>}>
-                    <Route path=":slug">
-                        <Route path="" element={<Talk/>} />
-                        <Route path="autoplay/:policy" element={<Talk autoplay={true}/>} />
+
+    
+
+export default ()=>{
+    const scheme=useColorScheme()
+    React.useEffect(()=>{
+        setDefaultStyle({color: scheme=="light" ? "black" : "white"})
+    },[scheme])
+
+    return (
+        <NativeRouter>
+            <SafeAreaView style={[styles.container,{backgroundColor:"black"}]}>
+                <Routes>
+                    <Route path="/"
+                        element={React.createElement(()=>(
+                            <View style={{flex:1}}>
+                                <View style={styles.content}>
+                                    <Outlet/>
+                                </View>
+                                <View style={styles.nav}>
+                                    <Link to="/" style={styles.navItem}>
+                                        <MaterialIcons name="home" size={24} color="white"/>
+                                    </Link>
+                                    
+                                    <Link to="/plan" style={styles.navItem}>
+                                        <MaterialIcons name="date-range" size={24} color="white"/>
+                                    </Link>
+                    
+                                    <Link to="/account" style={styles.navItem}>
+                                        <MaterialIcons name="account-circle" size={24}  color="white"/>
+                                    </Link>
+                                </View>
+                            </View>
+                        ))}>
+                        <Route path="" element={<Talks/>} />
+                        <Route path="account" element={<Account/>}/>
+                        <Route path="plan" element={<Plan/>}/>
+                        <Route element={<WithBackButton/>}>
+                            <Route path="account/policy" element={<Policy/>}/>
+                        </Route>
                     </Route>
-                </Route>
-            </Routes>
-            <StatusBar style="light"/>
-        </SafeAreaView>
-    </NativeRouter>
+
+                    <Route path="/talk" element={<WithBackButton/>}>
+                        <Route path=":slug">
+                            <Route path="" element={<Talk/>} />
+                            <Route path="autoplay/:policy" element={<Talk autoplay={true}/>} />
+                        </Route>
+                    </Route>
+                </Routes>
+                <StatusBar style="light"/>
+            </SafeAreaView>
+        </NativeRouter>
 )
+}
 
 const WithBackButton=()=>(
     <View style={{flex:1}}>
@@ -68,8 +80,7 @@ const WithBackButton=()=>(
 
 export const styles = StyleSheet.create({
     container: {
-        flex: 1,
-        backgroundColor: '#000',
+        flex: 1
     },
     content: {
         flexGrow: 1,
@@ -93,8 +104,5 @@ export const styles = StyleSheet.create({
     topic: {
       textAlign: "center",
       fontSize: 15
-    },
-    text: {
-      color: "white",
     }
   });
