@@ -18,7 +18,8 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lalalic.parrot"
     },
     "android": {
       "adaptiveIcon": {
@@ -29,12 +30,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins":[
+    "plugins": [
       [
-        "@react-native-voice/voice",{
-          "microphonePermission":"Allow input for speech-to-text",
-          "speechRecognitionPermission":"Allow speech-to-text"
-        }]
+        "@react-native-voice/voice",
+        {
+          "microphonePermission": "Allow input for speech-to-text",
+          "speechRecognitionPermission": "Allow speech-to-text"
+        }
+      ]
     ],
     "extra": {
       "eas": {

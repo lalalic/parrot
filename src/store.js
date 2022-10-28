@@ -159,7 +159,7 @@ const store = configureStore({
 				talks: (state={version:3},action)=>{
 					switch(action.type){
 						case "persist/REHYDRATE":
-							switch(action.payload.talks.version){
+							switch(action.payload?.talks.version){
 								case 1:
 								break
 								case 2:
