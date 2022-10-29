@@ -4,7 +4,15 @@ import Voice from "@react-native-voice/voice"
 
 export default ()=>{
     const [results, setResults]=React.useState([])
+    const [audio, setAudio]=React.useState(null)
+    const [sound, setSound]=React.useState(null)
 
+    const play=async ()=>{
+        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        const { sound } = await Audio.Sound.createAsync({uri:audio})
+        setSound(sound)
+        await sound.playAsync();
+    }
     React.useEffect(()=>{
         Voice.onSpeechResults=({value})=>{
             console.log("onSpeechResults")
@@ -12,6 +20,7 @@ export default ()=>{
         }
         Voice.onSpeechStart=e=>{
             console.log("onSpeechStart")
+            setAudio(e?.audioUri)
             console.log(e)
         }
         
@@ -27,7 +36,10 @@ export default ()=>{
             console.log("onSpeechRecognized")
             console.log(e)
         }
-        return ()=>Voice.destroy()
+        return ()=>{
+            Voice.destroy();
+            sound?.unloadAsync()
+        }
     },[])
 
     const [started, setStarted]=React.useState(false)
@@ -43,6 +55,7 @@ export default ()=>{
                         }
                     }/>
             <Text>results:{results.join("")}</Text>
+            <Butt title="play" onPress={play}/>
         </View>
     )
 }

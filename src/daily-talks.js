@@ -1,11 +1,11 @@
 import React, { useEffect } from "react"
-import { StyleSheet, Text, FlatList, View, Image, Pressable } from 'react-native';
+import {NativeModules, StyleSheet, Text, FlatList, View, Image, Pressable } from 'react-native';
 import {Link} from "react-router-native"
 import {XMLParser} from 'fast-xml-parser'
 
 export default ()=>{
     const [talks, setTalks] = React.useState({})
-
+	console.log(NativeModules)
     useEffect(()=>{
         async function fetchTalsk(){
             const rss="http://feeds.feedburner.com/TEDTalks_audio"
