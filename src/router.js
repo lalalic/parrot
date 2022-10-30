@@ -9,8 +9,7 @@ import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
 import Plan from "./plan"
-//import Test from "./test"
-const Test=()=><View/>
+import Test from "./test"
 
 export default ()=>(
     <NativeRouter>
@@ -45,13 +44,13 @@ export default ()=>(
                         )
                     })}>
                         
-                    <Route path="" element={<Talks/>} />
+                    <Route path="talks" element={<Talks/>} />
                     <Route path="account" element={<Account/>}/>
                     <Route path="plan" element={<Plan/>}/>
                     <Route element={<WithBackButton/>}>
                         <Route path="account/policy" element={<Policy/>}/>
                     </Route>
-                    <Route path="test" element={<Test/>}/>
+                    <Route path="" element={<Test/>}/>
                 </Route>
 
                 <Route path="/talk" element={<WithBackButton/>}>
