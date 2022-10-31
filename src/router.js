@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar"
 import Talks from "./daily-talks"
 import Account from "./account"
 import Talk from "./talk"
+import ShadowTalk from "./talk-shadowing"
 import Policy from "./policy"
 import Plan from "./plan"
 import Test from "./test"
@@ -44,19 +45,19 @@ export default ()=>(
                         )
                     })}>
                         
-                    <Route path="talks" element={<Talks/>} />
+                    <Route path="" element={<Talks/>} />
                     <Route path="account" element={<Account/>}/>
                     <Route path="plan" element={<Plan/>}/>
                     <Route element={<WithBackButton/>}>
                         <Route path="account/policy" element={<Policy/>}/>
                     </Route>
-                    <Route path="" element={<Test/>}/>
+                    <Route path="test" element={<Test/>}/>
                 </Route>
 
                 <Route path="/talk" element={<WithBackButton/>}>
                     <Route path=":slug">
                         <Route path="" element={<Talk/>} />
-                        <Route path="autoplay/:policy" element={<Talk autoplay={true}/>} />
+                        <Route path="shadowing" element={<ShadowTalk/>} />
                     </Route>
                 </Route>
             </Routes>

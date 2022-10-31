@@ -1,11 +1,14 @@
 import React from 'react';
-import {View, Text} from "react-native"
-import { useParams } from 'react-router-native'
-import Player from "./player"
+import {View, Text, StyleSheet} from "react-native"
+import { useParams, Link } from 'react-router-native'
+import Player, {NavBar} from "./player"
 import { PressableIcon, PolicyIcons, PlayButton } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch} from 'react-redux';
 import * as FileSystem from 'expo-file-system';
+
+import { MaterialIcons } from '@expo/vector-icons';
+
 import {Ted} from "./store"
 
 export default function Talk({autoplay}){
@@ -31,9 +34,7 @@ export default function Talk({autoplay}){
                     onRecordDone={record=>dispatch({type:"talk/recording",talk,id:talk.id, policy, record})}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy, chunk})}
                     />
-                
-
-                {!!!autoplay && <View style={{flex:1, padding:5,}}>
+                <View style={{flex:1, padding:5,}}>
                     <Text style={{fontSize:20, }}>{talk.title}</Text>
                     <View style={{flexDirection:"row",justifyContent:"space-evenly", paddingTop:20,paddingBottom:20}}>
                         <PressableIcon name={talkSetting?.favorited ? "favorite": "favorite-outline"} 
@@ -70,13 +71,56 @@ export default function Talk({autoplay}){
                         <PressableIcon name={PolicyIcons.retelling} color={talkSetting?.retelling ? "blue" : undefined}
                             onPress={e=>toggleTalk("retelling")}/>
                     </View>
-                </View>}
+                    <View>
+                        <Text>{talk.description}</Text>
+                    </View>
+                </View>
+            </View>
+            <View style={styles.nav}>
+                <Link to="shadowing"  style={styles.navItem}>
+                    <MaterialIcons name={PolicyIcons.shadowing}/>
+                </Link>
+
+                <Link to="dictating"  style={styles.navItem}>
+                    <MaterialIcons name={PolicyIcons.dictating}/>
+                </Link>
+
+                <Link to="retelling"  style={styles.navItem}>
+                    <MaterialIcons name={PolicyIcons.retelling}/>
+                </Link>
             </View>
         </View>
     )
 }
 
-
+const styles = StyleSheet.create({
+    container: {
+        flex: 1
+    },
+    content: {
+        flexGrow: 1,
+        flex:1
+    },
+    header: {
+      fontSize: 20
+    },
+    nav: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+    },
+    navItem: {
+      flex: 1,
+      alignItems: "center",
+      padding: 10
+    },
+    subNavItem: {
+      padding: 5
+    },
+    topic: {
+      textAlign: "center",
+      fontSize: 15
+    }
+  });
 
 const html=(transcript)=>`
     <html>

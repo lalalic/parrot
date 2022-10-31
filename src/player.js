@@ -3,12 +3,17 @@ import {View, Text, Animated, Easing, ActivityIndicator, /*FlatList,*/ Pressable
 import { Video, Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
+import Voice from "@react-native-voice/voice"
 
-import { PressableIcon, SliderIcon, PlayButton } from './components';
+import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 
+export default function Player({talk, style, children, 
+    onPolicyChange, onRecordDone, onCheckChunk, autoplay, 
+    controls:{nav=true, subtitle=true, progress=true}={},
+    videoStyle,
 
-export default function Player({talk, style, onPolicyChange, onRecordDone, onCheckChunk, autoplay, ...props}){
+    ...props}){
     const [policy, setPolicy]=React.useState({})
     const setPolicyChange=(key,value)=>setPolicy({...policy,[key]:value})
 
@@ -28,32 +33,10 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
     },[props.challenges])
 
     const [status, setStatus] = React.useState({isLoading:true});
-    const [navVisible, setNavVisible]=React.useState({})
+    const [showAutoHide, setShowAutoHide]=React.useState(true)
     
-    const recorder=React.useRef()
     React.useEffect(()=>{
-        if(!policy.record){
-            recorder.current?.stopAndUnloadAsync()
-                .then(a=>{
-                    FileSystem.deleteAsync(recorder.current.getURI())
-                    recorder.current=null
-                })
-            return 
-        }
-        async function prepareRecording(){
-            await Audio.requestPermissionsAsync();
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-            });
-            recorder.current = new Audio.Recording();
-            recorder.current.cues=[]
-            await recorder.current.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY)
-        }
-
-        prepareRecording()
-
-        return ()=>recorder.current?.stopAndUnloadAsync()
+ 
     },[policy.record])
     
     const [chunks, setChunks]=React.useState([])
@@ -105,35 +88,28 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
     const terminateWhitespace=async ()=>{
         if(typeof(status.whitespacing)=="number")
             clearTimeout(status.whitespacing)
-        await recorder.current?.pauseAsync()
         await video.current?.setStatusAsync({shouldPlay:true})
     }
 
     const challengePlay=React.useRef()
 
-    const subtitleRef=React.useRef()
-
-    React.useEffect(()=>{
-        if(status.i>=0 && subtitleRef.current){
-            subtitleRef.current.scrollToIndex({index:status.i,viewPosition:0.5})
-        }
-    },[status.i])
-
     return (
-        <View style={{width:"100%",flex:1,...style}} {...props}>
-            <View style={{flex:1}}>
+        <View style={{width:"100%",...style}} {...props}>
+            <View style={[{flex:1},videoStyle]}>
                 <Video 
                     ref={video}
-                    style={{width:"100%",height:"100%",flex:1}} 
+                    style={[{width:"100%",height:"100%",flex:1}]} 
                     posterSource={{uri:talk.thumb}}
                     source={{uri:talk.resources?.hls.stream}}
                     useNativeControls={false}
                     shouldPlay={autoplay}
                     shouldCorrectPitch={true}
                     progressUpdateIntervalMillis={100}
-                    onPlaybackStatusUpdate={({isLoaded,isLoading=!isLoaded,positionMillis,isPlaying,rate,volume,durationMillis}) => setStatus(last => {
+                    onPlaybackStatusUpdate={(current) => setStatus(last => {
+                        const {isLoaded,isLoading=!isLoaded,positionMillis,isPlaying,rate,volume,durationMillis}=current
                         const status={isLoaded,isLoading,positionMillis,isPlaying,rate,volume,durationMillis}
                         const i=status.i=chunks.findIndex(a=>a.end>=status.positionMillis)
+                            
                         if(policy.whitespace && i-last.i==1 && last.i!=-1){
                             if(!last.whitespacing){
                                 if(last.byNext)
@@ -141,10 +117,6 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                                 ;(async ()=>{
                                     try{
                                         await video.current.setStatusAsync({shouldPlay:false})
-                                        if(recorder.current){
-                                            const recorderStatus=await recorder.current.startAsync()
-                                            recorder.current.cues.push([chunks[last.i].time, recorderStatus.durationMillis])
-                                        }
                                         const timeoutId=setTimeout(()=>{
                                             terminateWhitespace()
                                             setStatus(status)
@@ -163,14 +135,6 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                             challengePlay.current=null
                             video.current.setStatusAsync({rate:status.rate+0.25})
                         }
-
-                        if(status.didJustFinish){
-                            recorder.current?.stopAndUnloadAsync()
-                                .then(()=>{
-                                    recorder.current=null
-                                    onRecordDone({uri: recorder.current.getURI(), cues: recorder.current.cues})
-                                })
-                        }
                         return status
                     })}
                     rate={policy.rate}
@@ -178,59 +142,12 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                     />
                 <SliderIcon.Container
                     style={{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"}}
-                    onStartShouldSetResponder={e=>{
-                        setNavVisible({...navVisible,when:e.timestamp})
-                    }}>
-                    <NavBar {...{
-                        status, style:{flexGrow:1,opacity:0.5}, size:60,
-                        loading: !talk.id || !status.isLoaded,
-                        navable:chunks.length>=2, 
-                        isChallenge: challenges?.[chunks?.[status.i]?.time]>=0,
-                        onReplaySlow:e=>{
-                            terminateWhitespace()
-                            video.current.setStatusAsync({positionMillis:chunks[status.i].time,rate:Math.max(0.25,status.rate-0.25)})
-                                .then(a=>challengePlay.current=status.i-1)
-                        },
-                        onReplay:e=>{
-                            terminateWhitespace()
-                            video.current.setStatusAsync({positionMillis:chunks[status.i].time})
-                        },
-                        onPrevSlow:e=>{
-                            terminateWhitespace()
-                            if(status.i>1){
-                                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time,rate:Math.max(0.25,status.rate-0.25)})
-                                    .then(a=>challengePlay.current=status.i-1)
-                            }
-                        },
-                        onPrev:e=>{
-                            terminateWhitespace()
-                            if(status.i>1){
-                                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time})
-                            }
-                        },
-                        onPlay:e=>{
-                            if(!status.isLoaded)
-                                return 
-                            if(typeof(status.whitespacing)=="number"){
-                                clearTimeout(status.whitespacing)
-                                recorder.current?.pauseAsync()
-                            }
-                            
-                            const shouldPlay=!status.isPlaying
-                            video.current.setStatusAsync({shouldPlay})
-                        },
-                        onNext:e=>{
-                            terminateWhitespace() 
-                            if(status.i<chunks.length-1){
-                                setStatus(last=>({...last, byNext:true}))
-                                video.current.setStatusAsync({positionMillis:chunks[status.i+1].time})
-                            }
-                        },
-                        onCheck:e=>{
-                            status.i!=-1 && onCheckChunk?.([chunks[status.i].time,policy.chunk])
-                        },
-                    }}/>
-                    <View style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                    onSliding={e=>setShowAutoHide(Date.now())}
+                    onStartShouldSetResponder={e=>setShowAutoHide(Date.now())}>
+                    {nav && <NavBar {...{chunks,video,terminateWhitespace,status,challengePlay,challenges,onCheckChunk,setStatus,policy, 
+                            size:60, style:{flexGrow:1,opacity:0.5}, }}/>}
+                    
+                    <AutoHide show={showAutoHide} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                         <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
                             color={policy.record && status.whitespacing ? "red" : undefined}
                             onPress={e=>setPolicyChange("record",!policy.record)}
@@ -278,99 +195,202 @@ export default function Player({talk, style, onPolicyChange, onRecordDone, onChe
                                 }}}/>
 
                         <PressableIcon style={{marginRight:10}} name="zoom-out-map" onPress={e=>void 0}/>
-                    </View>
-                    <View style={{position:"absolute",bottom:0, width:"100%"}}>
-                        <Text textAlign style={{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20}}>
-                            {policy.caption && (<DelayText delay={policy.captionDelay} i={status.i}>{chunks[status.i]?.text}</DelayText>)}
-                        </Text>
-                        <ProgressBar {...{
-                            show:navVisible, hide:()=>setNavVisible(false),
-                            value: status.positionMillis,
-                            duration:status.durationMillis,
-                            asText: (m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`,
-                            onValueChange:value=>video.current.setStatusAsync({positionMillis:value})
-                        }}/>    
-                    </View>
+                    </AutoHide>
+                    
+                    {(subtitle || progress) &&<View style={{position:"absolute",bottom:0, width:"100%"}}>
+                        {subtitle && <Subtitle style={{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20}}
+                            i={status.i} title={chunks[status.i]?.text}
+                            delay={policy.captionDelay} show={policy.caption}>
+                            {status.whitespacing && <Recorder key={status.i} uri={`${FileSystem.documentDirectory}${talk.id}/recording/${status.i}.wav`}/>}
+                        </Subtitle>}
+                        {progress && <AutoHide show={showAutoHide}>
+                            <ProgressBar {...{
+                                value: status.positionMillis,
+                                duration:status.durationMillis,
+                                asText: (m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`,
+                                onValueChange:value=>video.current.setStatusAsync({positionMillis:value})
+                            }}/> 
+                        </AutoHide>}   
+                    </View>}
                 </SliderIcon.Container>
+
             </View>
-            {autoplay && <View style={{flex:1,padding:10}}>
-                <FlatList data={chunks} extraData={status.i} ref={subtitleRef}
-                    renderItem={({index,item:{text, time}})=>(
-                        <>
-                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
-                                <Text style={{flexGrow:1,color: index==status.i ? "blue" : undefined}}>{text.replace("\n"," ")}</Text>
-                            </Pressable>
-                            
-                        </>
-                    )}
-                    />
-            </View>}
+            {children}
         </View>
     )
 }
 
-const DelayText=({children:text,delay, i})=>{
-    const [show, setShow]=React.useState("")
-    React.useEffect(()=>{
-        if(delay){
-            setTimeout(()=>setShow(text),delay*1000)
-        }else{
-            setShow(text)
-        }
-    },[i])
-    return show
-}
-
-const ProgressBar=({value=0, duration=0, asText,style, onValueChange, show, hide, ...props})=>{
-    const opacity = new Animated.Value(1);
+export const Subtitle=({show,i,delay,title, children,talk, ...props})=>{
+    const [text, setText]=React.useState(title)
     React.useEffect(()=>{
         if(!show){
-            opacity.setValue(1)
-            Animated.timing(opacity, {
-                toValue: 0,
-                duration: 1200,
-                easing: Easing.linear,
-                useNativeDriver:true,
-            }).start();
+            setText("")
         }else{
-            show.last && clearTimeout(show.last)
-            const id=show.last=setTimeout(hide,2000)
-            return ()=>clearTimeout(id)
+            if(delay){
+                setTimeout(()=>setText(title),delay*1000)
+            }else{
+                setText(title)
+            }
         }
-    },[show])
+    },[i, show])
     return (
-        <Animated.View style={[{flexDirection:"row"},style, {opacity}]} {...props}>
-            <View style={{justifyContent:"center",width:50}}>
-                <Text style={{textAlign:"right",}}>{asText(value)}</Text>
-            </View>
-            <View style={{justifyContent:"center",flexGrow:1}}>
-                <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,value, maximumValue:duration}}/>
-            </View>
-            <View style={{justifyContent:"center",width:50,}}>
-                <Text style={{}}>{asText(duration-value)}</Text>
-            </View>
-        </Animated.View>
+        <>
+            <Text {...props}>
+                {text}
+                {children}
+            </Text> 
+        </>
     )
 }
 
-const NavBar=({onReplaySlow, onReplay, onPrevSlow, onPrev, onPlay, onNext, onCheck, status, loading,navable, style, size=48, isChallenge, isWhitespace,...props})=>{
-    if(status.isLoading)
+export const ProgressBar=({value=0, duration=0, asText,style, onValueChange, ...props})=>(
+    <View style={[{flexDirection:"row"},style]} {...props}>
+        <View style={{justifyContent:"center",width:50}}>
+            <Text style={{textAlign:"right",}}>{asText(value)}</Text>
+        </View>
+        <View style={{justifyContent:"center",flexGrow:1}}>
+            <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,value, maximumValue:duration}}/>
+        </View>
+        <View style={{justifyContent:"center",width:50,}}>
+            <Text style={{}}>{asText(duration-value)}</Text>
+        </View>
+    </View>
+)
+
+export const NavBar=({status={}, video, chunks=[], terminateWhitespace,challengePlay, onCheckChunk,challenges=[], setStatus, policy,
+    onReplaySlow=e=>{
+        terminateWhitespace()
+        video.current.setStatusAsync({positionMillis:chunks[status.i].time,rate:Math.max(0.25,status.rate-0.25)})
+            .then(a=>challengePlay.current=status.i-1)
+    },
+    onReplay=e=>{
+        terminateWhitespace()
+        video.current.setStatusAsync({positionMillis:chunks[status.i].time})
+    },
+    onPrevSlow=e=>{
+        terminateWhitespace()
+        if(status.i>1){
+            video.current.setStatusAsync({positionMillis:chunks[status.i-1].time,rate:Math.max(0.25,status.rate-0.25)})
+                .then(a=>challengePlay.current=status.i-1)
+        }
+    },
+    onPrev=e=>{
+        terminateWhitespace()
+        if(status.i>1){
+            video.current.setStatusAsync({positionMillis:chunks[status.i-1].time})
+        }
+    },
+    onPlay=e=>{
+        if(!status.isLoaded)
+            return 
+        if(typeof(status.whitespacing)=="number"){
+            clearTimeout(status.whitespacing)
+        }
+        
+        const shouldPlay=!status.isPlaying
+        video.current.setStatusAsync({shouldPlay})
+    },
+    onNext=e=>{
+        terminateWhitespace() 
+        if(status.i<chunks.length-1){
+            setStatus(last=>({...last, byNext:true}))
+            video.current.setStatusAsync({positionMillis:chunks[status.i+1].time})
+        }
+    },
+    onCheck=e=>{
+        status.i!=-1 && onCheckChunk?.([chunks[status.i].time,policy.chunk])
+    },
+    isChallenge=challenges?.[chunks?.[status?.i]?.time]>=0,                    
+    navable=chunks?.length>=2, 
+    style, size=48,...props})=>{
+    if(status?.isLoading){
         return (
             <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
                 <ActivityIndicator  size="large"/>
             </View>
         )
+    }
     return (
         <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
-            {navable && <PressableIcon size={size} 
+            <PressableIcon size={size} 
+                disabled={!navable}
                 name={status.whitespacing ? "replay-5":"subdirectory-arrow-left"} 
-                onPress={status.whitespacing ? onReplaySlow : onPrevSlow}/>}
-            {navable && <PressableIcon size={size} 
+                onPress={status.whitespacing ? onReplaySlow : onPrevSlow}/>
+            <PressableIcon size={size} 
+                disabled={!navable}
                 name={status.whitespacing ? "replay" : "keyboard-arrow-left"} 
-                onPress={status.whitespacing ? onReplay : onPrev}/>}
+                onPress={status.whitespacing ? onReplay : onPrev}/>
             <PlayButton size={size} name={status.isPlaying||status.whitespacing ? "pause" : "play-arrow"} onPress={onPlay}/>
-            {navable && <PressableIcon size={size} name="keyboard-arrow-right" onPress={onNext}/>}
-            {navable &&  <PressableIcon size={size} name="check" onPress={onCheck} color={isChallenge ? "blue" : undefined}/>}
+            <PressableIcon size={size} 
+                disabled={!navable}
+                name="keyboard-arrow-right" onPress={onNext}/>
+            <PressableIcon size={size} 
+                disabled={!navable}
+                name="check" onPress={onCheck} color={isChallenge ? "blue" : undefined}/>
         </View>
     )
 }
+
+export const Recorder=({uri, locale="en_US"})=>{
+    const [audioUri, setAudioUri]=React.useState()
+    const [recognizedText, setRecognizedText]=React.useState("")
+    React.useEffect(()=>{
+        Voice.onSpeechStart=e=>{
+            setAudioUri(e?.audioUri)
+        }
+
+        Voice.onSpeechResults=e=>{
+            console.log(e?.value)
+            setRecognizedText(e?.value)
+        }
+
+        Voice.onSpeechEnd=async e=>{
+            if(!!!audioUri)
+                return 
+            
+            const info=await FileSystem.getInfoAsync()
+            if(info.exists && info.size>0){
+                await FileSystem.moveAsync(audioUri, uri)
+            }
+        }
+
+        Voice.onSpeechError=e=>{
+            console.error(e)
+        }
+        Voice.onSpeechVolumeChanged=e=>{}
+
+        Voice.start("en_US")
+
+        return ()=>Voice.destroy()
+    },[])
+
+    return (
+        <>
+            {recognizedText}
+        </>
+    )
+}
+
+export const Subtitles=({video, chunks, i})=>{
+    const subtitleRef=React.useRef()
+    React.useEffect(()=>{
+        if(i>=0 && subtitleRef.current){
+            subtitleRef.current.scrollToIndex({index:i,viewPosition:0.5})
+        }
+    },[i])
+    return (
+        <View style={{flex:1,padding:10}}>
+            <FlatList data={chunks} extraData={i} ref={subtitleRef}
+                renderItem={({index,item:{text, time}})=>(
+                    <>
+                        <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
+                            <Text style={{flexGrow:1,color: index==i ? "blue" : "white"}}>{text.replace("\n"," ")}</Text>
+                        </Pressable>
+                    </>
+                )}
+                />
+        </View>
+    ) 
+}
+
+

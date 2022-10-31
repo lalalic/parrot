@@ -15,6 +15,7 @@ Features
     > volume: on, off, number
     > pause: number to pause times of trunk duration
     > record: on, off, rate
+        > recognition
     > select: flag current trunk
 > Game
     > Shadowing

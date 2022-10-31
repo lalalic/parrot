@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList } from "react-native";
+import { View, Text, Pressable, FlatList , Animated, Easing, } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import {useLocation, useNavigate} from "react-router-native"
 
@@ -111,7 +111,7 @@ export const SliderIcon=(uuid=>{
         );
     }
 
-    SliderIcon.Container = ({ children, ...props }) => {
+    SliderIcon.Container = ({ children,onSliding, ...props }) => {
         const [sliding, setSliding] = React.useState(null);
         const onSlideRef = React.useRef(null);
 
@@ -137,6 +137,7 @@ export const SliderIcon=(uuid=>{
                         sliding.x0 = e.nativeEvent.pageX;
                         sliding.y0 = e.nativeEvent.pageY;
                         sliding.started = true;
+                        onSliding?.(e)
                         return true;
                     }
                 }}
@@ -146,6 +147,7 @@ export const SliderIcon=(uuid=>{
                         const value = sliding.get(e.nativeEvent.pageY - sliding.y0);
                         onSlideRef.current?.(value);
                         sliding.onSlide?.(value);
+                        onSliding?.(e)
                     }
                 }}
 
@@ -166,3 +168,34 @@ export const SliderIcon=(uuid=>{
     }
     return SliderIcon
 })(Date.now());
+
+
+export function AutoHide({show, style, children, timeout=2000, duration=1200, ...props}){
+    const opacity = React.useRef(new Animated.Value(1)).current;
+    const opacityTimeout=React.useRef()
+    React.useEffect(()=>{
+        if(!show)
+            return 
+        if(opacityTimeout.current){
+            clearTimeout(opacityTimeout.current)
+            opacityTimeout.current=null
+        }
+        opacity.setValue(1)
+        opacityTimeout.current=setTimeout(()=>{
+            opacityTimeout.current=null
+            opacity.setValue(1)
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration,
+                easing: Easing.linear,
+                useNativeDriver:true,
+            }).start();
+        }, timeout)
+    },[show])
+
+    return (
+        <Animated.View style={[style,{opacity}]} {...props}>
+            {children}
+        </Animated.View>
+    )
+}
