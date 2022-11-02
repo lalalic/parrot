@@ -2,8 +2,13 @@ import React from "react"
 import {View, Text, Button} from "react-native"
 import Voice from "@react-native-voice/voice"
 import {Audio} from "expo-av"
+import Explorer from "./file-explorer"
 
-export default function Test(){
+export default ()=>(<Explorer/>)
+
+
+
+function TestVoice(){
     const [results, setResults]=React.useState([])
     const [audio, setAudio]=React.useState(null)
     const [sound, setSound]=React.useState(null)

@@ -193,7 +193,7 @@ const store = configureStore({
 						}
 						case "talk/recording":
 							const { record, policy="general"}=action
-							return {...state, [id]: {...talk, [policy]:{...talk[policy],record}}}
+							return {...state, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
 						default:
 							return state
 					}

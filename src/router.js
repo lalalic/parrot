@@ -1,13 +1,12 @@
 import React from "react"
 import { SafeAreaView, StyleSheet, View} from "react-native"
-import {NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-router-native"
+import {NativeRouter, Route, Routes, Link, Outlet, useParams} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
 
 import Talks from "./daily-talks"
 import Account from "./account"
 import Talk from "./talk"
-import ShadowTalk from "./talk-shadowing"
 import Policy from "./policy"
 import Plan from "./plan"
 import Test from "./test"
@@ -57,7 +56,10 @@ export default ()=>(
                 <Route path="/talk" element={<WithBackButton/>}>
                     <Route path=":slug">
                         <Route path="" element={<Talk/>} />
-                        <Route path="shadowing" element={<ShadowTalk/>} />
+                        <Route path=":policy" element={React.createElement(()=>{
+                            const {policy}=useParams()
+                            return <Talk {...{autoplay:true, policy}}/>
+                        }) }/>
                     </Route>
                 </Route>
             </Routes>
