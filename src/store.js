@@ -157,6 +157,7 @@ const store = configureStore({
 					return state;
 				},
 				talks: (state={version:3},action)=>{
+					/*
 					switch(action.type){
 						case "persist/REHYDRATE":
 							switch(action.payload?.talks.version){
@@ -168,6 +169,7 @@ const store = configureStore({
 							return {...state,version:3}
 						break
 					}
+					*/
 					
 					if(!action.type.startsWith("talk/"))
 						return state
