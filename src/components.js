@@ -72,15 +72,12 @@ export const SliderIcon=(uuid=>{
 
     function SliderIcon({ onToggle, onSlide, onSlideFinish, slider, icon, ...props }){
         const [id] = React.useState(uuid++);
-        const { setSliding, getSliding } = React.useContext(Context);
+        const { setSliding, sliding} = React.useContext(Context);
 
         return (
             <PressableIcon onPress={onToggle} name={icon}
                 onLongPress={e => setSliding({ id, onSlide, onSlideFinish, props: slider })}
-                onPressOut={e => {
-                    const sliding = getSliding();
-                    sliding?.id == id && !sliding.started && setSliding();
-                }}
+                onPressOut={e => sliding?.id == id && !sliding.started && setSliding()}
                 {...props} />
         );
     }
@@ -115,7 +112,7 @@ export const SliderIcon=(uuid=>{
         );
     }
 
-    SliderIcon.Container = ({ children,onSliding, ...props }) => {
+    SliderIcon.Container = ({ children, ...props }) => {
         const [sliding, setSliding] = React.useState(null);
         const onSlideRef = React.useRef(null);
 
@@ -141,7 +138,6 @@ export const SliderIcon=(uuid=>{
                         sliding.x0 = e.nativeEvent.pageX;
                         sliding.y0 = e.nativeEvent.pageY;
                         sliding.started = true;
-                        onSliding?.(e)
                         return true;
                     }
                 }}
@@ -151,7 +147,6 @@ export const SliderIcon=(uuid=>{
                         const value = sliding.get(e.nativeEvent.pageY - sliding.y0);
                         onSlideRef.current?.(value);
                         sliding.onSlide?.(value);
-                        onSliding?.(e)
                     }
                 }}
 
@@ -163,18 +158,21 @@ export const SliderIcon=(uuid=>{
                 }}
                 {...props}
             >
-                <Context.Provider value={{ getSliding: () => sliding, setSliding }}>
+                <Context.Provider value={{sliding, setSliding}}>
                     {children}
                 </Context.Provider>
                 {sliding && <Slider {...sliding.props} onValueChange={onSlideRef} />}
             </View>
         );
     }
+
+    SliderIcon.Context=Context
     return SliderIcon
 })(Date.now());
 
 
 export function AutoHide({show, style, children, timeout=2000, duration=1200, ...props}){
+    const {sliding}=React.useContext(SliderIcon.Context)
     const opacity = React.useRef(new Animated.Value(1)).current;
     const opacityTimeout=React.useRef()
     React.useEffect(()=>{
@@ -185,6 +183,8 @@ export function AutoHide({show, style, children, timeout=2000, duration=1200, ..
             opacityTimeout.current=null
         }
         opacity.setValue(1)
+        if(sliding)
+            return
         opacityTimeout.current=setTimeout(()=>{
             opacityTimeout.current=null
             opacity.setValue(1)
@@ -194,8 +194,8 @@ export function AutoHide({show, style, children, timeout=2000, duration=1200, ..
                 easing: Easing.linear,
                 useNativeDriver:true,
             }).start();
-        }, timeout)
-    },[show])
+        }, show-Date.now()+2000)
+    },[show,!!sliding])
 
     return (
         <Animated.View style={[style,{opacity}]} {...props}>

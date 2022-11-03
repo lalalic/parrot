@@ -19,13 +19,15 @@ export default function Player({talk, style, children, policy, challenging,
     controls:{nav=true, subtitle=true, progress=true}={},
     videoStyle={flex:1}, layoverStyle, navStyle, subtitleStyle, progressStyle,
     ...props}){
-
-    const setPolicyChange=(key,value)=>onPolicyChange({...policy,[key]:value})
-
+    const changePolicy=(key,value)=>onPolicyChange({[key]:value})
+    const video=React.useRef()
+    const refProgress=React.useRef()
     const {policy:policyName}=useParams()
-    const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
-
     const [chunks, setChunks]=React.useState([])
+    const [showAutoHide, setShowAutoHide]=React.useState(Date.now())
+    
+    const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
+    
     React.useEffect(()=>{
         if(challenging){
             setChunks(challenges||[])
@@ -71,50 +73,96 @@ export default function Player({talk, style, children, policy, challenging,
         }
     },[talk, policy.chunk, challenging, challenges])
 
-    const [status, setStatus] = React.useState({isLoaded:false, i:-1});
-    const [showAutoHide, setShowAutoHide]=React.useState(true)
+    const [status, dispatch] = React.useReducer((state,action)=>{
+        const {isPlaying, i, whitespacing, rate, volume}=state
+        const terminateWhitespace=async (next)=>{
+            clearTimeout(whitespacing)
+            return await video.current?.setStatusAsync({shouldPlay:true,...next})
+        }
+        switch(action.type){
+            case "nav/replaySlow":
+                terminateWhitespace({positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)})
+            break
+            case "nav/replay":
+                terminateWhitespace({positionMillis:chunks[i].time})
+            break
+            case "nav/prevSlow":
+                terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined)
+            break
+            case "nav/prev":
+                terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time} : undefined)
+            break
+            case "nav/play":
+                setTimeout(()=>dispatch({type:"ping"}),1000)
+                terminateWhitespace({shouldPlay:!isPlaying})
+            break
+            case "nav/next":
+                terminateWhitespace(i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined)
+            break
+            case "nav/challenge":
+                i!=-1 && onCheckChunk?.(chunks[i])
+            break
+            case "whitespace/end":
+                terminateWhitespace(challenging ? {positionMillis:chunks[i+1].start} : undefined)
+                return {...state,whitespace:undefined, whitespacing:undefined,i:i+1}
+            break
+            case "volume/toggle":
+                video.current.setStatusAsync({volume:volume==0 ? .50 : 0})
+                    .then(a=>changePolicy("volume",a.volume))
+            break
+            case "volume/tune":
+                video.current.setStatusAsync({volume})
+                    .then(a=>changePolicy("volume",a.volume))
+            break
+            case "speed/toggle":
+                video.current.setStatusAsync({rate:rate==0.75 ? 1 : 0.75})
+                    .then(a=>changePolicy("speed",a.rate))
+            break
+            case "speed/tune":
+                video.current.setStatusAsync({rate:action.rate})
+                    .then(a=>changePolicy("speed",a.rate))
+            break
+            case "record":
+                policy.record && onRecordChunk?.({chunk:chunks[i],...action})
+            break
+            case "video/time":
+                video.current.setStatusAsync({positionMillis:action.time})
+            break
+            case "video/status":{
+                if(whitespacing)//don't update until whitespacing is over
+                    return state
+                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}}=action
+                
+                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:chunks.findIndex(a=>a.end>=positionMillis)}
+                if(shallowEqual(state, current)){
+                    return current
+                }
 
-    const video=React.useRef()
+                if(policy.whitespace && current.i-i==1 && i!=-1){//when 
+                    const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
+                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
+                    video.current.setStatusAsync({shouldPlay:false, positionMillis})
+                    return {...state, whitespace, whitespacing}
+                }
 
-    const terminateWhitespace=async (next)=>{
-        if(typeof(status.whitespacing)=="number")
-            clearTimeout(status.whitespacing)
-        return await video.current?.setStatusAsync({shouldPlay:true,...next})
-    }
+                if(didJustFinish){
+                    onFinish?.()
+                }
 
-    const refProgress=React.useRef()
-    const navEvents={
-        onReplaySlow:e=>{
-            terminateWhitespace({positionMillis:chunks[status.i].time,rate:Math.max(0.25,status.rate-0.25)})
-        },
-        onReplay:e=>{
-            terminateWhitespace({positionMillis:chunks[status.i].time})
-        },
-        onPrevSlow:e=>{
-            terminateWhitespace(status.i>1 ? {positionMillis:chunks[status.i-1].time,rate:Math.max(0.25,status.rate-0.25)} : undefined)
-        },
-        onPrev:e=>{
-            terminateWhitespace(status.i>1 ? {positionMillis:chunks[status.i-1].time} : undefined)
-        },
-        onPlay:e=>{
-            terminateWhitespace({shouldPlay:!status.isPlaying})
-        },
-        onNext:e=>{
-            terminateWhitespace(status.i<chunks.length-1 ? {positionMillis:chunks[status.i+1].time} : undefined)
-        },
-        onCheck:e=>{
-            status.i!=-1 && onCheckChunk?.(chunks[status.i])
-        },
-    }
+                current.ic=challenging ? i : challenges?.findIndex(a=>a.time==chunks[current.i]?.time)
+                return current
+            }
+        }
+        return state
+    },{isLoaded:false, i:-1});
+
     return (
         <>
         <SliderIcon.Container 
             style={{width:"100%",...style}} 
-            onSliding={e=>setShowAutoHide(Date.now())}
-            onStartShouldSetResponder={e=>setShowAutoHide(Date.now())}    
+            onStartShouldSetResponder={e=>setShowAutoHide(Date.now())}
             {...props}>
-            <Video 
-                ref={video}
+            <Video ref={video}
                 style={videoStyle} 
                 posterSource={{uri:talk.thumb}}
                 source={{uri:talk.resources?.hls.stream}}
@@ -122,97 +170,56 @@ export default function Player({talk, style, children, policy, challenging,
                 shouldPlay={autoplay}
                 shouldCorrectPitch={true}
                 progressUpdateIntervalMillis={100}
-                onPlaybackStatusUpdate={(current) =>{
-                    refProgress.current?.(current.positionMillis)
-                    setStatus(last => {
-                        const status=(()=>{
-                            const {
-                                isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,
-                                i=chunks.findIndex(a=>a.end>=positionMillis),
-                            }=current
-                            const ic=challenging ? i : challenges?.findIndex(a=>a.time==chunks[i]?.time)
-                            const status={isLoaded,isPlaying,rate,volume,durationMillis,i,ic}
-                                
-                            if(policy.whitespace && i-last.i==1 && last.i!=-1){
-                                if(!last.whitespacing){
-                                    const whitespace=policy.whitespace*(chunks[last.i].end-chunks[last.i].time)
-                                    const whitespacing=setTimeout(()=>{
-                                            setStatus(status)
-                                            terminateWhitespace(challenging ? {positionMillis:chunks[status.i].start} : undefined)
-                                    },whitespace)
-                                    video.current.setStatusAsync({shouldPlay:false, positionMillis:positionMillis})
-                                    return {...last, whitespace, whitespacing, isPlaying:false}
-                                }
-                                return last
-                            }
-
-                            if(current.didJustFinish){
-                                onFinish?.()
-                            }
-
-                            return status
-                        })();
-                        return shallowEqual(status, last) ? last : status
-                    })
+                onPlaybackStatusUpdate={status =>{
+                    refProgress.current?.(status.positionMillis)//always keep progress bar synced up to video position
+                    dispatch({type:"video/status", status})
                 }}
                 rate={policy.rate}
                 volume={policy.volume}
                 />
             <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
                 {nav && <NavBar {...{
-                        ...navEvents,
+                        dispatch,status,
                         navable:chunks?.length>=2,
-                        status,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
                 <AutoHide show={showAutoHide} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? "red" : undefined}
-                        onPress={e=>setPolicyChange("record",!policy.record)}
+                        onPress={e=>changePolicy("record",!policy.record)}
                         />
-                    <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>setPolicyChange("visible",!policy.visible)}/>
+                    <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>changePolicy("visible",!policy.visible)}/>
 
                     <SliderIcon style={{marginRight:10}} 
                         icon={`closed-caption${!policy.caption ? "-disabled":""}`}
-                        onToggle={()=>setPolicyChange("caption",!policy.caption)}
-                        onSlideFinish={delay=>setPolicyChange("captionDelay",delay)}
+                        onToggle={()=>changePolicy("caption",!policy.caption)}
+                        onSlideFinish={delay=>changePolicy("captionDelay",delay)}
                         slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>
                     
                     <SliderIcon style={{marginRight:10}}
                         icon={status.volume>0 ? "volume-up" : "volume-off"}
-                        onToggle={()=>video.current.setStatusAsync({volume:status.volume==0 ? .50 : 0}).then(status=>setPolicyChange("volume",status.volume))}
-                        onSlide={volume=>video.current.setStatusAsync({volume}).then(status=>setPolicyChange("volume",status.volume))}
+                        onToggle={()=>dispatch({type:"volume/toggle"})}
+                        onSlide={volume=>dispatch({type:"volume/tune",volume})}
                         slider={{minimumValue:0,maximumValue:1.0,step:0.01,value:status.volume,text:t=>`${Math.round(t*100)}`}}/>
                     
                     <SliderIcon style={{marginRight:10}} icon="speed" 
-                        onToggle={()=>video.current.setStatusAsync({rate:status.rate==0.75 ? 1 : 0.75}).then(status=>setPolicyChange("spped",status.rate))}
-                        onSlideFinish={rate=>video.current.setStatusAsync({rate}).then(status=>setPolicyChange("speed",status.rate))}
+                        onToggle={()=>dispatch({type:"speed/toggle"})}
+                        onSlideFinish={rate=>dispatch({type:"speed/tune",rate})}
                         slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:status.rate,text:t=>`${t}x`}}/>
 
                     <SliderIcon style={{marginRight:10}} 
                         icon={policy.whitespace>0 ? "notifications" : "notifications-off"}
-                        onToggle={()=>setPolicyChange("whitespace",policy.whitespace>0 ? 0 : 1)}
-                        onSlideFinish={value=>setPolicyChange("whitespace",value)}
+                        onToggle={()=>changePolicy("whitespace",policy.whitespace>0 ? 0 : 1)}
+                        onSlideFinish={value=>changePolicy("whitespace",value)}
                         slider={{minimumValue:0.5,maximumValue:4,step:0.5,value:policy.whitespace,text:t=>`${t}x`}}/>
 
                     <SliderIcon style={{marginRight:10}}
                         icon={`flash-${policy.chunk>0 ? "on" : "off"}`}
-                        onToggle={()=>setPolicyChange("chunk",policy.chunk>0 ? 0 : 1)}
-                        onSlideFinish={get=>(dx,dy)=>setPolicyChange("chunk",get(dy))}
-                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,
-                            text:t=>{
-                                console.warn(t)
-                                switch(t){
-                                    case 9:
-                                        return "paragraph"
-                                    case 10:
-                                        return "whole"
-                                    default:
-                                        return `${t}s`
-                                }
-                            }}}/>
+                        onToggle={()=>changePolicy("chunk",policy.chunk>0 ? 0 : 1)}
+                        onSlideFinish={get=>(dx,dy)=>changePolicy("chunk",get(dy))}
+                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>
 
-                    <PressableIcon style={{marginRight:10}} name="zoom-out-map" onPress={e=>void 0}/>
+                    <PressableIcon style={{marginRight:10}} name="zoom-out-map" onPress={e=>dispatch({type:'video/fullscreen'})}/>
                 </AutoHide>
 
                 {subtitle && status.i>=0 && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
@@ -220,7 +227,7 @@ export default function Player({talk, style, children, policy, challenging,
                     delay={policy.captionDelay} show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 
                         style={{width:"100%",height:20, textAlign:"center",position:"absolute",bottom:0}}
-                        onRecord={props=>policy.record && onRecordChunk?.({chunk:chunks[status.i],i:status.i,...props})} 
+                        onRecord={props=>dispatch({type:"record",...props})} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
                 </Subtitle>}
@@ -231,15 +238,14 @@ export default function Player({talk, style, children, policy, challenging,
                         value: status.positionMillis,
                         duration:status.durationMillis,
                         asText: (m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`,
-                        onValueChange:value=>{
-                            video.current.setStatusAsync({positionMillis:value})
-                            setShowAutoHide(Date.now())
-                        }
+                        onValueChange:time=>dispatch({type:"video", time}),
+                        onSlidingStart:e=>setShowAutoHide(Date.now()+2*60*1000),
+                        onSlidingComplete:e=>setShowAutoHide(Date.now())
                     }}/> 
                 </AutoHide>}
             </View>
         </SliderIcon.Container>
-        <Context.Provider value={{video, talk, status, chunks}}>
+        <Context.Provider value={{talk, status, chunks, dispatch}}>
             {children}
         </Context.Provider>
         </>
@@ -302,7 +308,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     )
 }
 
-export function ProgressBar({value:initValue=0, duration=0, asText,style, onValueChange, callback, ...props}){
+export function ProgressBar({value:initValue=0, duration=0, asText,style, onValueChange, callback,onSlidingComplete,onSlidingStart, ...props}){
     const [value, setValue]=React.useState(initValue)
     React.useEffect(()=>{
         callback.current=setValue
@@ -313,7 +319,7 @@ export function ProgressBar({value:initValue=0, duration=0, asText,style, onValu
                 <Text style={{textAlign:"right",}}>{asText(value)}</Text>
             </View>
             <View style={{justifyContent:"center",flexGrow:1}}>
-                <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,value, maximumValue:duration}}/>
+                <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,onSlidingComplete,onSlidingStart,value, maximumValue:duration}}/>
             </View>
             <View style={{justifyContent:"center",width:50,}}>
                 <Text style={{}}>{asText(duration-value)}</Text>
@@ -322,7 +328,7 @@ export function ProgressBar({value:initValue=0, duration=0, asText,style, onValu
     )
 }
 
-export function NavBar({onPrevSlow,onReplaySlow, onPrev, onReplay, onPlay, onNext, onCheck,id, status={}, navable,style, size=24,...props}){
+export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
     if(!status?.isLoaded){
         return (
             <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
@@ -335,32 +341,34 @@ export function NavBar({onPrevSlow,onReplaySlow, onPrev, onReplay, onPlay, onNex
             <PressableIcon size={size}
                 disabled={!navable}
                 name={status.whitespacing ? "replay-5":"subdirectory-arrow-left"} 
-                onPress={status.whitespacing ? onReplaySlow : onPrevSlow}/>
+                onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}Slow`})}/>
             <PressableIcon size={size} 
                 disabled={!navable}
                 name={status.whitespacing ? "replay" : "keyboard-arrow-left"} 
-                onPress={status.whitespacing ? onReplay : onPrev}/>
+                onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}`})}/>
 
             <PlayButton size={size}  
                 whitespacing={status.whitespace} 
                 disabled={status.whitespacing}
                 color={status.whitespacing ? "red" : "white"}
                 name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
-                onPress={onPlay}/>
+                onPress={e=>dispatch({type:"nav/play"})}/>
             
             <PressableIcon size={size} 
                 disabled={!navable}
-                name="keyboard-arrow-right" onPress={onNext}/>
+                name="keyboard-arrow-right" onPress={e=>dispatch({type:"nav/next"})}/>
             
             <PressableIcon size={size} 
                 disabled={!navable}
-                name="add-alarm" onPress={onCheck} color={status.ic>-1 ? "blue" : undefined}/>
+                name={status.ic>-1 ? "alarm-on" : "alarm-add"}
+                onPress={e=>dispatch({type:"nav/challenge"})} 
+                color={status.ic>-1 ? "yellow" : undefined}/>
         </View>
     )
 }
 
 export function Subtitles(){
-    const {video, chunks, status, i=status.i}=React.useContext(Context)
+    const {chunks, status, i=status.i, dispatch}=React.useContext(Context)
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
         if(i>=0 && subtitleRef.current){
@@ -372,7 +380,7 @@ export function Subtitles(){
             <FlatList data={chunks} extraData={i} ref={subtitleRef} estimatedItemSize={32}
                 renderItem={({index,item:{text, time}})=>(
                     <>
-                        <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
+                        <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"video/time",time})}>
                             <Text style={{flexGrow:1,color: index==i ? "blue" : "white"}}>{text.replace("\n"," ")}</Text>
                         </Pressable>
                     </>
@@ -382,9 +390,9 @@ export function Subtitles(){
     ) 
 }
 
-export function Challenges({style, ...props}){
-    const { policy="general"}=useParams()
-    const {video, talk, status, i=status.i}=React.useContext(Context)
+export function Challenges({style,...props}){
+    const {policy="general"}=useParams()
+    const {talk, status, i=status.i,dispatch}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[talk.id]?.[policy]?.challenges, 
         records:state.talks[talk.id]?.[policy]?.records,
@@ -394,12 +402,9 @@ export function Challenges({style, ...props}){
             <FlatList data={challenges||[]} extraData={status.ic} estimatedItemSize={50}
                 renderItem={({index,item:{text, time,end}})=>{
                     const recognized=records[`${time}-${end}`]
-                    console.log(`${index}, ${index==status.ic}`)
                     return (
                         <View style={{backgroundColor:index==status.ic ? "gray" : undefined, borderColor:"gray", borderTopWidth:1,marginTop:10,paddingTop:10}}>
-                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>{
-                                video.current.setStatusAsync({positionMillis:time})
-                            }}>
+                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"video/position",time})}>
                                 <Text style={{width:20, textAlign:"center"}}>{index+1}</Text>
                                 <Text style={{flexGrow:1,paddingLeft:10}}>{text.replace("\n"," ")}</Text>
                             </Pressable>
@@ -414,9 +419,7 @@ export function Challenges({style, ...props}){
                                     }
                                 )
                             }}>
-                                <MaterialIcons size={20} 
-                                    color={playing ? "red" : undefined}
-                                    name={recognized ? "replay" : undefined}/>
+                                <MaterialIcons size={20} name={recognized ? "replay" : undefined}/>
                                 <Text style={{color:"yellow",lineHeight:20,paddingLeft:10}}>{recognized}</Text>
                             </Pressable>
                         </View>
