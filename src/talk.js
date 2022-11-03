@@ -1,13 +1,11 @@
 import React from 'react';
 import {View, Text, StyleSheet} from "react-native"
 import { useParams, Link } from 'react-router-native'
-import Player, {NavBar} from "./player"
+import Player, {NavBar, Subtitles, Challenges} from "./player"
 import { PressableIcon, PolicyIcons, PlayButton } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch} from 'react-redux';
 import * as FileSystem from 'expo-file-system';
-
-import { MaterialIcons } from '@expo/vector-icons';
 
 import {Ted} from "./store"
 
@@ -21,6 +19,14 @@ export default function Talk({autoplay, policy="general", children}){
     
     const dispatch=useDispatch()
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
+    switch(policy){
+        case "general":
+            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, talkSetting, toggleTalk}}/>
+            break
+        default:
+            children=<Challenges {...{style:{flex:1, padding:5}}}/>
+            break
+    }
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
@@ -29,23 +35,22 @@ export default function Talk({autoplay, policy="general", children}){
                     challenges={talkPolicySetting?.challenges} 
                     record={talkPolicySetting?.record}
                     policy={{...Policy.general,...Policy[policy],...talkSetting?.[policy]}}
-                    onPolicyChange={changed=>talkSetting && toggleTalk(policy,changed)}
+                    onPolicyChange={changed=>toggleTalk(policy,changed)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy, chunk})}
-                    onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policy}/${time}-${end}`}
+                    onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policy}/audios/${time}-${end}`}
                     onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy, record:{[`${time}-${end}`]:recognized}})}
+                    onFinish={e=>{}}
                     >
-                    {children || <TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, talkSetting, toggleTalk}}/>}
+                    {children}
                 </Player>
             </View>
             <View style={styles.nav}>
                 <PlayButton name="arrow-drop-up" showPolicy={true}/>
-                <PressableIcon name="clear"/>
-                
-                {/*"shadowing,dictating,retelling".split(",").map(type=>(
-                    <Link key={type} to={`/talk/${slug}/${type}`}  style={styles.navItem}>
-                        <MaterialIcons name={PolicyIcons[type]} color={policy==type ? "blue" : undefined}/>
-                    </Link>
-                ))*/}
+                <PressableIcon disabled={!talkPolicySetting}
+                    name={talkPolicySetting ? (talkPolicySetting.records ? "delete" : "delete-forever") : "delete-outline"}
+                    onPress={e=>dispatch({type:"talk/clear/policy/record",id:talk.id, talk, policy})}
+                    onLongPress={e=>dispatch({type:"talk/clear/policy",id:talk.id, talk, policy})}
+                    />
             </View>
         </View>
     )
@@ -121,12 +126,19 @@ function TalkInfo({talk, talkSetting, toggleTalk, style}) {
                         html: html(talk.paragraphs.map(a => a.cues.map(b => b.text).join("")).join("\n"))
                     });
                 } } />
+
+                {talkSetting && <PressableIcon name="delete"
+                    onPress={e=>dispatch({type:"talk/clear",id:talk.id, talk, policy})}
+                    />}
+    
+                {/*
                 <PressableIcon name={PolicyIcons.shadowing} color={talkSetting?.shadowing ? "blue" : undefined}
                     onPress={e => toggleTalk("shadowing")} />
                 <PressableIcon name={PolicyIcons.dictating} color={talkSetting?.dictating ? "blue" : undefined}
                     onPress={e => toggleTalk("dictating")} />
                 <PressableIcon name={PolicyIcons.retelling} color={talkSetting?.retelling ? "blue" : undefined}
                     onPress={e => toggleTalk("retelling")} />
+            */}
             </View>
             <View>
                 <Text>{talk.description}</Text>

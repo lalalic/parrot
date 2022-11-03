@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import {useLocation, useNavigate, useParams} from "react-router-native"
 
 export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) => (
-    <Pressable {...{ onPress, onLongPress, onPressOut }}>
+    <Pressable {...{onPress,onLongPress, onPressOut }}>
         <MaterialIcons   {...props} />
     </Pressable>
 );
@@ -29,8 +29,16 @@ export const PlayButton = ({size=24, style, color, showPolicy=false, policyColor
                 )}
                 <PressableIcon size={size} name={name} color={color}
                     style={{opacity: !!policy && policy!="general" ? 0.4 : 1}}
-                    onPress={e=> showPolicyList ? setShowPolicyList(false) : onPress(e)}
-                    onLongPress={() => setShowPolicyList(!showPolicyList)} 
+                    onPress={e=>{
+                        if(showPolicyList) {
+                            setShowPolicyList(false)
+                        } else if(onPress){
+                            onPress(e)
+                        }else{
+                            setShowPolicyList(!showPolicyList)
+                        }
+                    }}
+                    onLongPress={e =>setShowPolicyList(!showPolicyList)} 
                     />
                 
             </View>

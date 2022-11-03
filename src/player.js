@@ -1,6 +1,6 @@
 import React, {} from 'react';
 import {View, Text, ActivityIndicator, Pressable} from "react-native"
-import {shallowEqual} from "react-redux"
+import {shallowEqual, useSelector} from "react-redux"
 import { Video } from 'expo-av';
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
@@ -9,6 +9,7 @@ import Voice from "@react-native-voice/voice"
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
+import { useParams } from 'react-router-native';
 
 const Context=React.createContext({})
 
@@ -82,7 +83,6 @@ export default function Player({talk, style, children,
         }
     },[talk, policy.chunk])
 
-
     const video=React.useRef()
 
     const terminateWhitespace=async ()=>{
@@ -93,6 +93,49 @@ export default function Player({talk, style, children,
 
     const challengePlay=React.useRef()
     const refProgress=React.useRef()
+    const navEvents={
+        onReplaySlow:e=>{
+            terminateWhitespace()
+            video.current.setStatusAsync({positionMillis:chunks[status.i].time,rate:Math.max(0.25,status.rate-0.25)})
+                .then(a=>challengePlay.current=status.i-1)
+        },
+        onReplay:e=>{
+            terminateWhitespace()
+            video.current.setStatusAsync({positionMillis:chunks[status.i].time})
+        },
+        onPrevSlow:e=>{
+            terminateWhitespace()
+            if(status.i>1){
+                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time,rate:Math.max(0.25,status.rate-0.25)})
+                    .then(a=>challengePlay.current=status.i-1)
+            }
+        },
+        onPrev:e=>{
+            terminateWhitespace()
+            if(status.i>1){
+                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time})
+            }
+        },
+        onPlay:e=>{
+            if(!status.isLoaded)
+                return 
+            if(typeof(status.whitespacing)=="number"){
+                clearTimeout(status.whitespacing)
+            }
+            const shouldPlay=!status.isPlaying
+            video.current.setStatusAsync({shouldPlay})
+        },
+        onNext:e=>{
+            terminateWhitespace() 
+            if(status.i<chunks.length-1){
+                setStatus(last=>({...last, byNext:true}))
+                video.current.setStatusAsync({positionMillis:chunks[status.i+1].time})
+            }
+        },
+        onCheck:e=>{
+            status.i!=-1 && onCheckChunk?.(chunks[status.i])
+        },
+    }
     return (
         <>
         <SliderIcon.Container 
@@ -110,7 +153,7 @@ export default function Player({talk, style, children,
                 shouldCorrectPitch={true}
                 progressUpdateIntervalMillis={100}
                 onPlaybackStatusUpdate={(current) =>{
-                    refProgress.current(current.positionMillis)
+                    refProgress.current?.(current.positionMillis)
                     setStatus(last => {
                         const status=(()=>{
                             const {
@@ -149,48 +192,7 @@ export default function Player({talk, style, children,
                 />
             <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
                 {nav && <NavBar {...{
-                        onReplaySlow:e=>{
-                            terminateWhitespace()
-                            video.current.setStatusAsync({positionMillis:chunks[status.i].time,rate:Math.max(0.25,status.rate-0.25)})
-                                .then(a=>challengePlay.current=status.i-1)
-                        },
-                        onReplay:e=>{
-                            terminateWhitespace()
-                            video.current.setStatusAsync({positionMillis:chunks[status.i].time})
-                        },
-                        onPrevSlow:e=>{
-                            terminateWhitespace()
-                            if(status.i>1){
-                                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time,rate:Math.max(0.25,status.rate-0.25)})
-                                    .then(a=>challengePlay.current=status.i-1)
-                            }
-                        },
-                        onPrev:e=>{
-                            terminateWhitespace()
-                            if(status.i>1){
-                                video.current.setStatusAsync({positionMillis:chunks[status.i-1].time})
-                            }
-                        },
-                        onPlay:e=>{
-                            if(!status.isLoaded)
-                                return 
-                            if(typeof(status.whitespacing)=="number"){
-                                clearTimeout(status.whitespacing)
-                            }
-                            const shouldPlay=!status.isPlaying
-                            video.current.setStatusAsync({shouldPlay})
-                        },
-                        onNext:e=>{
-                            terminateWhitespace() 
-                            if(status.i<chunks.length-1){
-                                setStatus(last=>({...last, byNext:true}))
-                                video.current.setStatusAsync({positionMillis:chunks[status.i+1].time})
-                            }
-                        },
-                        onCheck:e=>{
-                            status.i!=-1 && onCheckChunk?.([chunks[status.i].time,policy.chunk])
-                        },
-                        isChallenge:challenges?.[chunks?.[status?.i]?.time]>=0,                    
+                        ...navEvents,
                         navable:chunks?.length>=2,
                         status,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
@@ -269,7 +271,7 @@ export default function Player({talk, style, children,
                 </AutoHide>}
             </View>
         </SliderIcon.Container>
-        <Context.Provider value={{video, status, chunks}}>
+        <Context.Provider value={{video, talk, status, chunks}}>
             {children}
         </Context.Provider>
         </>
@@ -299,13 +301,13 @@ export const Subtitle=({show,i,delay,title, children,talk, ...props})=>{
     )
 }
 
-
 export const Recognizer=({uri, onRecord, locale="en_US", style, ...props})=>{
     const [recognized, setRecognizedText]=React.useState("")
     React.useEffect(()=>{
+        let recognized4Cleanup
         Voice.onSpeechResults=e=>{
             console.log(`voice result: ${e?.value.join("")}`)
-            setRecognizedText(e?.value.join(""))
+            setRecognizedText(recognized4Cleanup=e?.value.join(""))
         }
         Voice.onSpeechEnd=e=>{
             console.log('onSpeedEnd')
@@ -321,8 +323,10 @@ export const Recognizer=({uri, onRecord, locale="en_US", style, ...props})=>{
         })();
         return ()=>{
             Voice.destroy()
-            if(recognized){
-                onRecord?.({recognized,audioUri})
+            if(recognized4Cleanup){
+                onRecord?.({recognized:recognized4Cleanup,audioUri})
+            }else{
+                FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
             }
         }
     },[])
@@ -354,7 +358,7 @@ export const ProgressBar=({value:initValue=0, duration=0, asText,style, onValueC
     )
 }
 
-export const NavBar=({onPrevSlow,onReplaySlow, onPrev, onReplay, onPlay, onNext, onCheck, status={},isChallenge, navable,style, size=24,...props})=>{
+export const NavBar=({onPrevSlow,onReplaySlow, onPrev, onReplay, onPlay, onNext, onCheck,id, status={},navable,style, size=24,...props})=>{
     if(!status?.isLoaded){
         return (
             <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
@@ -383,9 +387,10 @@ export const NavBar=({onPrevSlow,onReplaySlow, onPrev, onReplay, onPlay, onNext,
             <PressableIcon size={size} 
                 disabled={!navable}
                 name="keyboard-arrow-right" onPress={onNext}/>
+            
             <PressableIcon size={size} 
                 disabled={!navable}
-                name="add-alarm" onPress={onCheck} color={isChallenge ? "blue" : undefined}/>
+                name="add-alarm" onPress={onCheck} color={false ? "blue" : undefined}/>
         </View>
     )
 }
@@ -413,8 +418,25 @@ export const Subtitles=()=>{
     ) 
 }
 
-export const Challenges=({})=>{
-
+export function Challenges({...props}){
+    const { policy="general"}=useParams()
+    const {video, talk, status, i=status.i}=React.useContext(Context)
+    const challenges=useSelector(state=>{
+        return state.talks[talk.id]?.[policy]?.challenges
+    })
+    
+    return (
+        <View {...props}>
+            <FlatList data={challenges||[]} extraData={i} estimatedItemSize={32}
+                renderItem={({index,item:{text, time}})=>(
+                    <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>video.current.setStatusAsync({positionMillis:time})}>
+                        <Text style={{flexGrow:1,color: index==i ? "blue" : "white"}}>{text.replace("\n"," ")}</Text>
+                    </Pressable>
+                )}
+                />
+        </View>
+    )
 }
+
 
 

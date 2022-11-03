@@ -1,7 +1,6 @@
 import React from "react"
 import {FlatList, Pressable, Text, View} from "react-native"
 import * as FileSystem from "expo-file-system"
-import { PressableIcon } from "./components"
 
 const Context=React.createContext({})
 export default ({dir=FileSystem.documentDirectory})=>{
@@ -13,7 +12,7 @@ export default ({dir=FileSystem.documentDirectory})=>{
     )
 }
 
-const Folder=({info, ...props})=>{
+const Folder=({info, onDelete, ...props})=>{
     const [open, setOpen]=React.useState(props.open)
     const {current,setCurrent}=React.useContext(Context)
     const [data, setData]=React.useState([])
@@ -33,18 +32,24 @@ const Folder=({info, ...props})=>{
                 <Pressable onPress={e=>setOpen(!open)}>
                     <Text style={{width:20}}>{open ? "-" : "+"}</Text>
                 </Pressable>
-                <Pressable onPress={e=>setCurrent(info)}>
+                <Pressable onPress={e=>setCurrent(info)} onLongPress={onDelete}>
                     <Text style={{color:current==info? "blue" : "white"}}>
                         {info.name}
                     </Text>
                 </Pressable>
             </View>}
             {open && <FlatList data={data} renderItem={({index, item})=>{
+                    const remove=e=>FileSystem.deleteAsync(item.uri,{idempotent:true}).then(a=>{
+                        const newData=[...data]
+                        newData.splice(index,1)
+                        setData(newData)
+                    })
+                    
                     if(item.isDirectory){
-                        return (<Folder info={item}/>)
+                        return (<Folder info={item} onDelete={remove}/>)
                     }
                     return (
-                        <Pressable onPress={e=>setCurrent(item)}>
+                        <Pressable onPress={e=>setCurrent(item)} onLongPress={remove}>
                             <Text style={{marginLeft:30, paddingTop:10,color:current==item? "blue" : "white" }}>
                                 {item.name}
                             </Text>

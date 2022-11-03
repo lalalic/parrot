@@ -8,7 +8,7 @@ import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
 import { Provider } from "react-redux"
 import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
-
+import * as FileSystem from "expo-file-system"
 
 const Policy={
 	general: {
@@ -172,7 +172,7 @@ const store = configureStore({
 					if(!action.type.startsWith("talk/"))
 						return state
 
-					const {id,talk:{slug, title, thumbnail,duration,link}}=action
+					const {id,talk:{slug, title, thumbnail,duration,link}={}}=action
 					const talk=state[id]||{slug, title, thumbnail,duration,link}
 					switch(action.type){
 						case "talk/toggle":{
@@ -180,20 +180,49 @@ const store = configureStore({
 							return {...state, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
 						}
 						case "talk/challenge":{
-							const {chunk:[time,n], policy="general"}=action
-							let {challenges={}}=talk[policy]||{}
-							challenges={...challenges}
-							if(challenges[time]){
-								delete challenges[time]
+							const {chunk, policy="general"}=action
+							let {challenges=[]}=talk[policy]||{}
+							const i=challenges.findIndex(a=>a.time>=chunk.time)
+							if(i==-1){
+								challenges=[...challenges,chunk]
+							}else if(challenges[i].time==chunk.time){
+								(challenges=[...challenges]).splice(i,1,chunk)
 							}else{
-								challenges[time]=n
+								(challenges=[...challenges]).splice(i,0,chunk)
 							}
 							
 							return {...state, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
 						}
-						case "talk/recording":
-							const { record, policy="general"}=action
+						case "talk/recording":{
+							const { record,policy="general"}=action
 							return {...state, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
+						}
+						case "talk/clear/policy/record":{
+							if(state.id){
+								const {policy="general"}=action
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}/audios`,{idempotent:true})
+								const newPolicy={...talk[policy]}
+								delete newPolicy.records
+								return {...state, [id]: {...talk, [policy]:newPolicy}}
+							}
+						}
+						case "talk/clear/policy":{
+							if(state.id){
+								const {policy="general"}=action
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
+								const newTalk={...talk}
+								delete newTalk[policy]
+								return {...state, [id]: newTalk}
+							}
+						}
+						case "talk/clear":{
+							if(state.id){
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
+								const newState={...state}
+								delete newState[id]
+								return newState
+							}
+						}
 						default:
 							return state
 					}
