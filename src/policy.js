@@ -29,7 +29,18 @@ export default ()=>{
                 <View style={{flexGrow:1,padding:20}}>
                     <Text style={{height:20}}>{policy[target].desc}</Text>
                     {JSON.stringify((({desc,...props})=>props)(policy[target]), null, "\t").replace(/[\{\}\",]/g,"").split("\n")
-                        .map(a=>!!a && <Text key={a.split(":")[0].trim()} style={{paddingBottom:10}}>{a}</Text>)}
+                        .filter(a=>!!a)
+                        .map(a=>{
+                            const [k,v, key=k.trim(), value=policy[target][key]]=a.split(":")
+                            if(typeof(value)=="boolean"){
+                                return (
+                                    <Pressable onPress={e=>dispatch({type:"policy", target, payload:{[key]:!value}})} key={key}>
+                                        <Text style={{paddingBottom:10,color:"yellow"}}>{a}</Text>     
+                                    </Pressable>
+                                )
+                            }
+                            return <Text key={k} style={{paddingBottom:10}}>{a}</Text>
+                        })}
                 </View>
             </View>
         </View>

@@ -18,7 +18,7 @@ registerRootComponent(()=>{
             },
             ActivityIndicator:{
                 color,
-            }
+            },
         })
     },[scheme])
 

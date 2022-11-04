@@ -24,9 +24,14 @@ export default function Player({talk, style, children, policy, challenging,
     const refProgress=React.useRef()
     const {policy:policyName}=useParams()
     const [chunks, setChunks]=React.useState([])
-    const [autoHide, setAutoHide]=React.useReducer((state,time)=>policy.autoHide ? time : false,policy.autoHide ? Date.now() : false)
-    
+    const [autoHide, setAutoHide]=React.useReducer((state,time)=>{
+        return {actions:policy.autoHide ? time : false, progress:time}
+    },{actions:policy.autoHide ? Date.now() : false, progress:Date.now()})
     const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
+
+    React.useEffect(()=>{
+        setAutoHide(Date.now())
+    },[policy.autoHide])
     
     React.useEffect(()=>{
         if(challenging){
@@ -195,7 +200,7 @@ export default function Player({talk, style, children, policy, challenging,
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
-                <AutoHide hide={autoHide} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                <AutoHide hide={autoHide.actions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? "red" : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
@@ -244,7 +249,7 @@ export default function Player({talk, style, children, policy, challenging,
                         />}
                 </Subtitle>}
 
-                {progress && <AutoHide hide={autoHide} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                {progress && <AutoHide hide={autoHide.progress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         callback:refProgress,
                         value: status.positionMillis,

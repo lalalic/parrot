@@ -10,9 +10,11 @@ import * as FileSystem from 'expo-file-system';
 import {Ted} from "./store"
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
-export default function Talk({autoplay, slug, policy: policyName="general"}){
+
+export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
+    const {slug,policy: policyName="general"}=useParams()
     const Policy=useSelector(state=>state.policy)
     const {data:talk={}}=Ted.useTalkQuery(slug)
 
@@ -39,7 +41,7 @@ export default function Talk({autoplay, slug, policy: policyName="general"}){
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{autoplay, policy, challenging, talk, style:{flex:1},}}
+                <Player {...{autoplay, policy, challenging, talk, style:{flex:1},key:policyName}}
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
                     onFinish={e=>!challenging && toggleTalk("challenging",true)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}

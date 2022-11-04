@@ -1,6 +1,6 @@
 import React from "react"
 import { SafeAreaView, StyleSheet, View} from "react-native"
-import {NativeRouter, Route, Routes, Link, Outlet, useParams} from "react-router-native"
+import {NativeRouter, Route, Routes, Link, Outlet, NavLink} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
 
@@ -63,10 +63,7 @@ export default ()=>(
                 <Route path="/talk" element={<WithBackButton/>}>
                     <Route path=":slug">
                         <Route path="" element={<Talk/>} />
-                        <Route path=":policy" element={React.createElement(()=>{
-                            const {policy, slug}=useParams()
-                            return <Talk {...{autoplay:true, policy, slug, key:policy}}/>
-                        }) }/>
+                        <Route path=":policy" element={<Talk {...{autoplay:true}}/>}/>
                     </Route>
                 </Route>
             </Routes>
