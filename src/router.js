@@ -1,8 +1,9 @@
 import React from "react"
-import { SafeAreaView, StyleSheet, View} from "react-native"
-import {NativeRouter, Route, Routes, Link, Outlet, NavLink} from "react-router-native"
+import { SafeAreaView, View} from "react-native"
+import {NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
+import * as FileSystem from "expo-file-system"
 
 import Talks from "./daily-talks"
 import Account from "./account"
@@ -11,49 +12,39 @@ import Policy from "./policy"
 import Plan from "./plan"
 import Test from "./test"
 import Explorer from "./file-explorer"
+import { ColorScheme } from "./default-style";
 
 
-export default ()=>(
-    <NativeRouter>
-        <SafeAreaView style={[styles.container,{backgroundColor:"black"}]}>
+export default ({scheme=React.useContext(ColorScheme)})=>(
+    <NativeRouter initialEntries={["/talks"]}>
+        <SafeAreaView style={{flex:1, backgroundColor:scheme.backgroundColor}}>
             <Routes>
-                <Route path="/"
-                    element={React.createElement(()=>{
-                        
+                <Route path="/" element={React.createElement(()=>{
+                        const {pathname}=useLocation()
                         return (
                             <View style={{flex:1}}>
-                                <View style={styles.content}>
+                                <View style={{flexGrow: 1,flex:1}}>
                                     <Outlet/>
                                 </View>
-                                <View style={styles.nav}>
-                                    <Link to="/" style={styles.navItem}>
-                                        <MaterialIcons name="home"/>
-                                    </Link>
-                                    
-                                    <Link to="/plan" style={styles.navItem}>
-                                        <MaterialIcons name="date-range"/>
-                                    </Link>
-                    
-                                    <Link to="/account" style={styles.navItem}>
-                                        <MaterialIcons name="account-circle"/>
-                                    </Link>
-
-                                    {/*
-                                    <Link to="/test" style={styles.navItem}>
-                                        <MaterialIcons name="bug-report"/>
-                                    </Link>
-                                    */}
+                                <View style={{flexDirection: "row", justifyContent: "space-around",}}>
+                                    {[["/talks","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
+                                        return (
+                                            <Link key={name} to={to} style={{flex: 1,alignItems: "center", padding: 10}}>
+                                                <MaterialIcons name={name} color={pathname.startsWith(to) ? scheme.active : undefined}/>
+                                            </Link>
+                                        )
+                                    })}
                                 </View>
                             </View>
                         )
                     })}>
                         
-                    <Route path="" element={<Talks/>} />
+                    <Route path="talks" element={<Talks/>} />
                     <Route path="account">
                         <Route path="" element={<Account/>}/>
                         <Route element={<WithBackButton/>}>
                             <Route path="policy" element={<Policy/>}/>
-                            <Route path="files" element={<Explorer excludes={["appData"]} title="File Explorer"/>}/>
+                            <Route path="files" element={<Explorer dir={FileSystem.cacheDirectory} exclude={["appData"]} title="File Explorer"/>}/>
                         </Route>
                     </Route>
                     <Route path="plan" element={<Plan/>}/>
@@ -66,6 +57,7 @@ export default ()=>(
                         <Route path=":policy" element={<Talk {...{autoplay:true}}/>}/>
                     </Route>
                 </Route>
+                <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
             </Routes>
             <StatusBar style="light"/>
         </SafeAreaView>
@@ -82,32 +74,3 @@ const WithBackButton=()=>(
         </View>
     </View>
 )
-
-export const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    content: {
-        flexGrow: 1,
-        flex:1
-    },
-    header: {
-      fontSize: 20
-    },
-    nav: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-    },
-    navItem: {
-      flex: 1,
-      alignItems: "center",
-      padding: 10
-    },
-    subNavItem: {
-      padding: 5
-    },
-    topic: {
-      textAlign: "center",
-      fontSize: 15
-    }
-  });

@@ -8,12 +8,14 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import {Ted} from "./store"
+import { ColorScheme } from './default-style';
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
+    const color=React.useContext(ColorScheme)
     const {slug,policy: policyName="general"}=useParams()
     const Policy=useSelector(state=>state.policy)
     const {data:talk={}}=Ted.useTalkQuery(slug)
@@ -54,7 +56,7 @@ export default function Talk({autoplay}){
             <View style={styles.nav}>
                 {"shadowing,dictating,retelling".split(",").map(k=>(
                     <PressableIcon key={k} name={PolicyIcons[k]} 
-                        color={policyName==k ? "red" : undefined}
+                        color={policyName==k ? color.active : color.unactive}
                         onPress={e=>navigate(policyName==k ? `/talk/${slug}` : `/talk/${slug}/${k}`,{replace:true})}
                         />
                 ))}

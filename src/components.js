@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigate, useParams} from "react-router-native"
+import { ColorScheme } from './default-style';
 
 export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) => (
     <Pressable {...{onPress,onLongPress, onPressOut }}>
@@ -9,8 +10,9 @@ export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) =>
     </Pressable>
 );
 
-export const PlayButton = ({size=24, style, color, showPolicy=false, policyColor="red", onPress, name, ...props}) => {
+export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, name, ...props}) => {
     const navigate= useNavigate()
+    const scheme=React.useContext(ColorScheme)
     const {slug, policy="general"}=useParams()
     const [showPolicyList, setShowPolicyList] = React.useState(false);
     
@@ -20,11 +22,11 @@ export const PlayButton = ({size=24, style, color, showPolicy=false, policyColor
         <View {...props}>
             <View style={{
                 width:squareSize,height:squareSize,borderRadius:squareSize/2,borderWidth:1,
-                borderColor:color||"white",justifyContent:"center",alignItems:"center"
+                borderColor:scheme.unactive,justifyContent:"center",alignItems:"center"
                 }}>
                 {showPolicy && !!policy && policy!="general" && (
                     <View style={{position:"absolute",width:"100%", height:"100%",justifyContent:"center",alignItems:"center"}}>
-                        <MaterialIcons size={size/1.5} name={PolicyIcons[policy]} color={policyColor}/>
+                        <MaterialIcons size={size/1.5} name={PolicyIcons[policy]}/>
                     </View>
                 )}
                 <PressableIcon size={size} name={name} color={color}
@@ -43,15 +45,15 @@ export const PlayButton = ({size=24, style, color, showPolicy=false, policyColor
                 
             </View>
 
-            {showPolicyList && <FlatList style={{position:"absolute",bottom:40,left:-20, width:200, padding:10, backgroundColor:"black"}}
+            {showPolicyList && <FlatList style={{position:"absolute",bottom:40,left:-20, width:200, padding:10,backgroundColor:scheme.backgroundColor}}
                 data={["general","retelling","dictating", "shadowing"]}
                 renderItem={({index,item})=>(
-                    <Pressable style={{flexDirection:"row", height:60}} 
+                    <Pressable style={{flexDirection:"row", height:40}} 
                         onPress={e=>{
                             setShowPolicyList(false)
                             navigate(`/talk/${slug}/${item}`,{replace:true})
                         }}>
-                        <MaterialIcons name={PolicyIcons[item]}  size={32} color={policy==item ? "red" : undefined}/>
+                        <MaterialIcons name={PolicyIcons[item]}  size={32} color={policy==item ? scheme.primary : undefined}/>
                         <Text style={{marginLeft:10,lineHeight:32}}>{(index==0 ? "Test" : item).toUpperCase()}</Text>
                     </Pressable>
                     )}

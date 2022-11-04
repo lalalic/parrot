@@ -2,6 +2,7 @@ import React, { useEffect } from "react"
 import {StyleSheet, Text, FlatList, View, Image, Pressable } from 'react-native';
 import {Link} from "react-router-native"
 import {XMLParser} from 'fast-xml-parser'
+import { ColorScheme } from "./default-style";
 
 export default ()=>{
     const [talks, setTalks] = React.useState({})
@@ -22,8 +23,8 @@ export default ()=>{
     },[])
 	
     return (
-        <View style={styles.talks}>
-            <Text style={styles.talksTitle}>{talks.rss?.channel.title}</Text>
+        <View style={{flex:1}}>
+            <Text style={{fontSize:20}}>{talks.rss?.channel.title}</Text>
             <FlatList
                 data={talks.rss?.channel.item}
                 renderItem={talkThumb}
@@ -36,7 +37,7 @@ export default ()=>{
 
 function talkThumb({item:{thumbnail,duration,title,link}}){
     const slug=(i=link.lastIndexOf("/"),j=link.indexOf("?"))=>link.substring(i+1,j)
-    return (
+	return (
 		<Pressable style={styles.talkThumb}>
             <Link to={`/talk/${slug()}`}>
 			    <Image style={styles.talkThumbImage} source={{uri:thumbnail.url}}/>
@@ -48,12 +49,6 @@ function talkThumb({item:{thumbnail,duration,title,link}}){
 }
 
 const styles = StyleSheet.create({
-	talks:{
-        flex:1,
-	},
-	talksTitle:{
-		fontSize:20,
-	},
 	talkThumb:{
 		margin:5,
 		height: 220,

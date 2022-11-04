@@ -11,6 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 import { useParams } from 'react-router-native';
+import { ColorScheme } from './default-style';
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
@@ -20,6 +21,7 @@ export default function Player({talk, style, children, policy, challenging,
     videoStyle={flex:1}, layoverStyle, navStyle, subtitleStyle, progressStyle,
     ...props}){
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
+    const color=React.useContext(ColorScheme)
     const video=React.useRef()
     const refProgress=React.useRef()
     const {policy:policyName}=useParams()
@@ -202,7 +204,7 @@ export default function Player({talk, style, children, policy, challenging,
                 
                 <AutoHide hide={autoHide.actions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
-                        color={policy.record && status.whitespacing ? "red" : undefined}
+                        color={policy.record && status.whitespacing ? color.warn : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
                         />
                     <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>changePolicy("visible",!policy.visible)}/>
@@ -294,6 +296,7 @@ export function Subtitle({show,i,delay,title, children,talk, ...props}){
 
 export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     const [recognized, setRecognizedText]=React.useState("")
+    const scheme=React.useContext(ColorScheme)
     React.useEffect(()=>{
         let recognized4Cleanup
         Voice.onSpeechResults=e=>{
@@ -319,7 +322,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     },[])
 
     return (
-        <Text style={{color:"yellow", ...style}} {...props}>
+        <Text style={{color:scheme.primary, ...style}} {...props}>
             {recognized}
         </Text>
     )
@@ -346,6 +349,7 @@ export function ProgressBar({value:initValue=0, duration=0, asText,style, onValu
 }
 
 export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
+    const color=React.useContext(ColorScheme)
     const containerStyle={width:"100%",flexDirection:"row",alignItems:"center",alignSelf:"center",justifyContent: "space-around", margin:"auto"}
     return (
         <View style={[containerStyle,style]} {...props}>
@@ -362,7 +366,7 @@ export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
             <PlayButton size={size}  
                 whitespacing={status.whitespace} 
                 disabled={status.whitespacing}
-                color={status.whitespacing ? "red" : "white"}
+                color={status.whitespacing ? color.warn : undefined}
                 name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
                 onPress={e=>dispatch({type:"nav/play"})}/>
             
@@ -383,6 +387,7 @@ export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
 
 export function Subtitles(){
     const {chunks, status, i=status.i, dispatch}=React.useContext(Context)
+    const scheme=React.useContext(ColorScheme)
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
         if(i>=0 && subtitleRef.current){
@@ -395,7 +400,7 @@ export function Subtitles(){
                 renderItem={({index,item:{text, time}})=>(
                     <>
                         <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"video/time",time})}>
-                            <Text style={{flexGrow:1,color: index==i ? "blue" : "white"}}>{text.replace("\n"," ")}</Text>
+                            <Text style={{flexGrow:1,color: index==i ? scheme.active : scheme.unactive}}>{text.replace("\n"," ")}</Text>
                         </Pressable>
                     </>
                 )}
@@ -406,6 +411,7 @@ export function Subtitles(){
 
 export function Challenges({style,...props}){
     const {policy="general"}=useParams()
+    const color=React.useContext(ColorScheme)
     const {talk, status, i=status.i,dispatch}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[talk.id]?.[policy]?.challenges, 
@@ -434,7 +440,7 @@ export function Challenges({style,...props}){
                                 )
                             }}>
                                 <MaterialIcons size={20} name={recognized ? "replay" : undefined}/>
-                                <Text style={{color:"yellow",lineHeight:20,paddingLeft:10}}>{recognized}</Text>
+                                <Text style={{color:color.primary,lineHeight:20,paddingLeft:10}}>{recognized}</Text>
                             </Pressable>
                         </View>
                     )

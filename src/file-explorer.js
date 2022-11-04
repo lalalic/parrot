@@ -1,6 +1,7 @@
 import React from "react"
 import {FlatList, Pressable, Text, View} from "react-native"
 import * as FileSystem from "expo-file-system"
+import { ColorScheme } from "./default-style"
 
 const Context=React.createContext({})
 export default ({dir=FileSystem.documentDirectory, title, ...props})=>{
@@ -26,15 +27,16 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
             setData(infos)
         })();
     },[])
+    const color=React.useContext(ColorScheme)
 
     return (
         <View style={[{paddingLeft:10},style]}>
             {info.name && <View style={{flexDirection:"row", paddingTop:10}}>
                 <Pressable onPress={e=>setOpen(!open)}>
-                    <Text style={{width:20}}>{open ? "-" : "+"}</Text>
+                    <Text style={{width:20, color:color.unactive}}>{open ? "-" : "+"}</Text>
                 </Pressable>
                 <Pressable onPress={e=>setCurrent(info)} onLongPress={onDelete}>
-                    <Text style={{color:current==info? "blue" : "white"}}>
+                    <Text style={{color:current==info? color.active : color.unactive}}>
                         {info.name}
                     </Text>
                 </Pressable>
@@ -51,7 +53,7 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
                     }
                     return (
                         <Pressable onPress={e=>setCurrent(item)} onLongPress={remove}>
-                            <Text style={{marginLeft:30, paddingTop:10,color:current==item? "blue" : "white" }}>
+                            <Text style={{marginLeft:30, paddingTop:10,color:current==item? color.active : color.unactive }}>
                                 {item.name}
                             </Text>
                         </Pressable>

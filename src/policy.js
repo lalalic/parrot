@@ -3,10 +3,12 @@ import {View, Text, Pressable} from "react-native"
 import {useDispatch, useSelector } from 'react-redux'
 import {Ted} from "./store"
 import Player from "./player"
+import { ColorScheme } from "./default-style"
 
 const slug="noah_raford_how_gaming_can_be_a_force_for_good"
 export default ()=>{
     const dispatch=useDispatch()
+    const color=React.useContext(ColorScheme)
     const policy=useSelector(state=>state.policy)
     const {data:talk={}}=Ted.useTalkQuery(slug)
     const [target, setTarget]=React.useState("general")
@@ -21,7 +23,7 @@ export default ()=>{
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(
                         <Pressable key={a} onPress={e=>setTarget(a)}>
-                            <Text style={{color:a==target ? "blue" : "white"}}>{a.toUpperCase()}</Text>
+                            <Text style={{color:a==target ? color.active : color.unactive}}>{a.toUpperCase()}</Text>
                         </Pressable>
                     ))}
                 </View>
@@ -35,7 +37,7 @@ export default ()=>{
                             if(typeof(value)=="boolean"){
                                 return (
                                     <Pressable onPress={e=>dispatch({type:"policy", target, payload:{[key]:!value}})} key={key}>
-                                        <Text style={{paddingBottom:10,color:"yellow"}}>{a}</Text>     
+                                        <Text style={{paddingBottom:10,color:color.primary}}>{a}</Text>     
                                     </Pressable>
                                 )
                             }

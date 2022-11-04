@@ -1,3 +1,4 @@
+import React from "react"
 import * as Components from "react-native"
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -19,3 +20,5 @@ export default ({MaterialIcons:_MaterialIcons, ...styles}={}) => {
         })(Component.render);
     })
 }
+
+export const ColorScheme=React.createContext({})

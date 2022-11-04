@@ -20,7 +20,6 @@ export default ()=>{
                 )} 
                 data={[
                     {name:"Policy", icon:"policy"},
-                    {name:"Likes", icon:"favorite-outline"},
                     {name:"Files", icon:"file-present"},
                 ]} />     
             
