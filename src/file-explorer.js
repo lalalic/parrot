@@ -3,23 +3,24 @@ import {FlatList, Pressable, Text, View} from "react-native"
 import * as FileSystem from "expo-file-system"
 
 const Context=React.createContext({})
-export default ({dir=FileSystem.documentDirectory})=>{
+export default ({dir=FileSystem.documentDirectory, title, ...props})=>{
     const [current, setCurrent]=React.useState()
     return (
         <Context.Provider value={{current,setCurrent}}>
-            <Folder info={{isDirectory:true, uri: dir}} open={true}/>
+            {title && <Text style={{fontSize:12, textAlign:"center",fontWeight:"bold",marginTop:20, marginBottom:20}}>{title}</Text>}
+            <Folder info={{isDirectory:true, uri: dir}} open={true} {...props}/>
         </Context.Provider>
     )
 }
 
-const Folder=({info, onDelete, ...props})=>{
+const Folder=({info, style, onDelete, excludes=[], ...props})=>{
     const [open, setOpen]=React.useState(props.open)
     const {current,setCurrent}=React.useContext(Context)
     const [data, setData]=React.useState([])
 
     React.useEffect(()=>{
         ;(async()=>{
-            const files=await FileSystem.readDirectoryAsync(info.uri)
+            const files=(await FileSystem.readDirectoryAsync(info.uri)).filter(a=>excludes.indexOf(a)==-1)
             const infos=await Promise.all(files.map(name=>FileSystem.getInfoAsync(`${info.uri}${name}`)))
             infos.forEach((a,i)=>a.name=files[i])
             setData(infos)
@@ -27,7 +28,7 @@ const Folder=({info, onDelete, ...props})=>{
     },[])
 
     return (
-        <View style={{paddingLeft:10}}>
+        <View style={[{paddingLeft:10},style]}>
             {info.name && <View style={{flexDirection:"row", paddingTop:10}}>
                 <Pressable onPress={e=>setOpen(!open)}>
                     <Text style={{width:20}}>{open ? "-" : "+"}</Text>

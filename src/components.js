@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, } from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
-import {useLocation, useNavigate, useParams} from "react-router-native"
+import { useNavigate, useParams} from "react-router-native"
 
 export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) => (
     <Pressable {...{onPress,onLongPress, onPressOut }}>
@@ -171,20 +171,19 @@ export const SliderIcon=(uuid=>{
 })(Date.now());
 
 
-export function AutoHide({show, style, children, timeout=2000, duration=1200, ...props}){
+export function AutoHide({hide, style, children, timeout=2000, duration=1200, ...props}){
     const {sliding}=React.useContext(SliderIcon.Context)
     const opacity = React.useRef(new Animated.Value(1)).current;
     const opacityTimeout=React.useRef()
     React.useEffect(()=>{
-        if(!show)
-            return 
         if(opacityTimeout.current){
             clearTimeout(opacityTimeout.current)
             opacityTimeout.current=null
         }
         opacity.setValue(1)
-        if(sliding)
+        if(sliding || hide===false){
             return
+        }
         opacityTimeout.current=setTimeout(()=>{
             opacityTimeout.current=null
             opacity.setValue(1)
@@ -194,8 +193,8 @@ export function AutoHide({show, style, children, timeout=2000, duration=1200, ..
                 easing: Easing.linear,
                 useNativeDriver:true,
             }).start();
-        }, show-Date.now()+2000)
-    },[show,!!sliding])
+        }, hide-Date.now()+2000)
+    },[hide,!!sliding])
 
     return (
         <Animated.View style={[style,{opacity}]} {...props}>

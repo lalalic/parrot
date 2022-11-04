@@ -21,8 +21,7 @@ export default ()=>{
                 data={[
                     {name:"Policy", icon:"policy"},
                     {name:"Likes", icon:"favorite-outline"},
-                    {name:"History", icon:"history"},
-                    {name:"Downloads", icon:"file-download"}
+                    {name:"Files", icon:"file-present"},
                 ]} />     
             
             <Pressable 

@@ -21,6 +21,7 @@ const Policy={
 		whitespace: 0, //whitespace time to start next
 		record: false,
 		chunk: 0, //0:chunck by chunck, n: chunks totally n seconds, 7: paragraph, 10: whole
+		autoHide: true,
 	},
 	shadowing: {
 		desc: "options when you learn language by shadowing chunck by chunck",
@@ -145,6 +146,14 @@ const store = configureStore({
 				[Ted.reducerPath]: Ted.reducer,
 				policy(state = Policy, action) {
 					switch (action.type) {
+						case "persist/REHYDRATE":{
+							const policy=action.payload?.policy
+							policy.general.autoHide=true
+							return Object.keys(state).reduce((merged,k)=>{
+								merged[k]={...state[k],...merged[k]}
+								return merged
+							},{...policy})
+						}
 						case "policy":
 							return {
 								...state,
@@ -157,19 +166,10 @@ const store = configureStore({
 					return state;
 				},
 				talks: (state={version:3},action)=>{
-					/*
 					switch(action.type){
 						case "persist/REHYDRATE":
-							switch(action.payload?.talks.version){
-								case 1:
-								break
-								case 2:
-								break
-							}
-							return {...state,version:3}
-						break
+							return {...action.payload.talks,version:3}
 					}
-					*/
 					
 					if(!action.type.startsWith("talk/"))
 						return state

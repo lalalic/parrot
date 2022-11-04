@@ -10,6 +10,8 @@ import Talk from "./talk"
 import Policy from "./policy"
 import Plan from "./plan"
 import Test from "./test"
+import Explorer from "./file-explorer"
+
 
 export default ()=>(
     <NativeRouter>
@@ -36,20 +38,25 @@ export default ()=>(
                                         <MaterialIcons name="account-circle"/>
                                     </Link>
 
+                                    {/*
                                     <Link to="/test" style={styles.navItem}>
                                         <MaterialIcons name="bug-report"/>
                                     </Link>
+                                    */}
                                 </View>
                             </View>
                         )
                     })}>
                         
                     <Route path="" element={<Talks/>} />
-                    <Route path="account" element={<Account/>}/>
-                    <Route path="plan" element={<Plan/>}/>
-                    <Route element={<WithBackButton/>}>
-                        <Route path="account/policy" element={<Policy/>}/>
+                    <Route path="account">
+                        <Route path="" element={<Account/>}/>
+                        <Route element={<WithBackButton/>}>
+                            <Route path="policy" element={<Policy/>}/>
+                            <Route path="files" element={<Explorer excludes={["appData"]} title="File Explorer"/>}/>
+                        </Route>
                     </Route>
+                    <Route path="plan" element={<Plan/>}/>
                     <Route path="test" element={<Test/>}/>
                 </Route>
 
@@ -57,8 +64,8 @@ export default ()=>(
                     <Route path=":slug">
                         <Route path="" element={<Talk/>} />
                         <Route path=":policy" element={React.createElement(()=>{
-                            const {policy}=useParams()
-                            return <Talk {...{autoplay:true, policy}}/>
+                            const {policy, slug}=useParams()
+                            return <Talk {...{autoplay:true, policy, slug, key:policy}}/>
                         }) }/>
                     </Route>
                 </Route>

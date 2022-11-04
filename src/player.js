@@ -13,7 +13,7 @@ import {FlashList as FlatList} from "@shopify/flash-list"
 import { useParams } from 'react-router-native';
 
 const Context=React.createContext({})
-
+const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
 export default function Player({talk, style, children, policy, challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, autoplay, 
     controls:{nav=true, subtitle=true, progress=true}={},
@@ -24,7 +24,7 @@ export default function Player({talk, style, children, policy, challenging,
     const refProgress=React.useRef()
     const {policy:policyName}=useParams()
     const [chunks, setChunks]=React.useState([])
-    const [showAutoHide, setShowAutoHide]=React.useState(Date.now())
+    const [autoHide, setAutoHide]=React.useReducer((state,time)=>policy.autoHide ? time : false,policy.autoHide ? Date.now() : false)
     
     const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
     
@@ -74,38 +74,36 @@ export default function Player({talk, style, children, policy, challenging,
     },[talk, policy.chunk, challenging, challenges])
 
     const [status, dispatch] = React.useReducer((state,action)=>{
-        const {isPlaying, i, whitespacing, rate, volume}=state
-        const terminateWhitespace=async (next)=>{
-            clearTimeout(whitespacing)
-            return await video.current?.setStatusAsync({shouldPlay:true,...next})
+        const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
+        const rate=lastRate||currentRate
+
+        function terminateWhitespace(next, newState, needClearTimeout=true){
+            if(whitespacing && needClearTimeout){
+                clearTimeout(whitespacing)
+            }
+
+            video.current?.setStatusAsync({shouldPlay:true, rate, ...next})
+            return undefinedy({...state, whitespace:undefined, whitespacing:undefined, lastRate:undefined,...newState})
         }
+
         switch(action.type){
             case "nav/replaySlow":
-                terminateWhitespace({positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)})
-            break
+                return terminateWhitespace({positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)},{lastRate:rate})
             case "nav/replay":
-                terminateWhitespace({positionMillis:chunks[i].time})
-            break
+                return terminateWhitespace({positionMillis:chunks[i].time})
             case "nav/prevSlow":
-                terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined)
-            break
+                return terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined,{lastRate:rate})
             case "nav/prev":
-                terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time} : undefined)
-            break
+                return terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time} : undefined)
             case "nav/play":
-                setTimeout(()=>dispatch({type:"ping"}),1000)
-                terminateWhitespace({shouldPlay:!isPlaying})
-            break
+                return terminateWhitespace({shouldPlay:!isPlaying})
             case "nav/next":
-                terminateWhitespace(i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined)
-            break
+                return terminateWhitespace(i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, {byNext:true})
             case "nav/challenge":
                 i!=-1 && onCheckChunk?.(chunks[i])
             break
             case "whitespace/end":
-                terminateWhitespace(challenging ? {positionMillis:chunks[i+1].start} : undefined)
-                return {...state,whitespace:undefined, whitespacing:undefined,i:i+1}
-            break
+                return terminateWhitespace(challenging ? {positionMillis:chunks[i+1].start} : undefined,{i:i+1},false)
             case "volume/toggle":
                 video.current.setStatusAsync({volume:volume==0 ? .50 : 0})
                     .then(a=>changePolicy("volume",a.volume))
@@ -131,18 +129,32 @@ export default function Player({talk, style, children, policy, challenging,
             case "video/status":{
                 if(whitespacing)//don't update until whitespacing is over
                     return state
-                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}}=action
                 
-                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:chunks.findIndex(a=>a.end>=positionMillis)}
-                if(shallowEqual(state, current)){
-                    return current
-                }
+                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}}=action
+                if(!isLoaded)
+                    return state
 
-                if(policy.whitespace && current.i-i==1 && i!=-1){//when 
-                    const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
-                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
-                    video.current.setStatusAsync({shouldPlay:false, positionMillis})
-                    return {...state, whitespace, whitespacing}
+                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:chunks.findIndex(a=>a.end>=positionMillis), }
+
+                //copy temp keys from state
+                ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))
+
+                if(shallowEqual(state, current)){
+                    return state
+                }
+                
+                if(positionMillis>=chunks[i]?.end){//current is over
+                    if(policy.whitespace && !state.byNext){
+                        const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
+                        const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
+                        video.current.setStatusAsync({shouldPlay:false, positionMillis})
+                        return {...state, whitespace, whitespacing}
+                    }
+
+                    if(state.byNext){
+                        delete current.byNext
+                        delete state.byNext
+                    }
                 }
 
                 if(didJustFinish){
@@ -160,7 +172,7 @@ export default function Player({talk, style, children, policy, challenging,
         <>
         <SliderIcon.Container 
             style={{width:"100%",...style}} 
-            onStartShouldSetResponder={e=>setShowAutoHide(Date.now())}
+            onStartShouldSetResponder={e=>setAutoHide(Date.now())}
             {...props}>
             <Video ref={video}
                 style={videoStyle} 
@@ -183,7 +195,7 @@ export default function Player({talk, style, children, policy, challenging,
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
-                <AutoHide show={showAutoHide} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                <AutoHide hide={autoHide} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? "red" : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
@@ -232,15 +244,15 @@ export default function Player({talk, style, children, policy, challenging,
                         />}
                 </Subtitle>}
 
-                {progress && <AutoHide show={showAutoHide} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                {progress && <AutoHide hide={autoHide} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         callback:refProgress,
                         value: status.positionMillis,
                         duration:status.durationMillis,
                         asText: (m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`,
                         onValueChange:time=>dispatch({type:"video", time}),
-                        onSlidingStart:e=>setShowAutoHide(Date.now()+2*60*1000),
-                        onSlidingComplete:e=>setShowAutoHide(Date.now())
+                        onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
+                        onSlidingComplete:e=>setAutoHide(Date.now())
                     }}/> 
                 </AutoHide>}
             </View>
@@ -329,15 +341,10 @@ export function ProgressBar({value:initValue=0, duration=0, asText,style, onValu
 }
 
 export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
-    if(!status?.isLoaded){
-        return (
-            <View style={[{flexDirection:"row",alignItems:"center",alignSelf:"center", margin:"auto"},style]} {...props}>
-                <ActivityIndicator  size="large"/>
-            </View>
-        )
-    }
+    const containerStyle={width:"100%",flexDirection:"row",alignItems:"center",alignSelf:"center",justifyContent: "space-around", margin:"auto"}
     return (
-        <View style={[{width:"100%",flexDirection:"row",alignItems:"center",alignSelf:"center",justifyContent: "space-around", margin:"auto"},style]} {...props}>
+        <View style={[containerStyle,style]} {...props}>
+            {status.isLoaded && (<>
             <PressableIcon size={size}
                 disabled={!navable}
                 name={status.whitespacing ? "replay-5":"subdirectory-arrow-left"} 
@@ -363,6 +370,8 @@ export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
                 name={status.ic>-1 ? "alarm-on" : "alarm-add"}
                 onPress={e=>dispatch({type:"nav/challenge"})} 
                 color={status.ic>-1 ? "yellow" : undefined}/>
+            </>)}
+            {!status?.isLoaded && <ActivityIndicator  size="large"/>}
         </View>
     )
 }

@@ -1,35 +1,35 @@
 import React from 'react';
-import {View, Text, StyleSheet} from "react-native"
-import { useParams, Link } from 'react-router-native'
+import {View, Text, StyleSheet, Pressable} from "react-native"
+import { useParams, useNavigate } from 'react-router-native'
 import Player, {NavBar, Subtitles, Challenges} from "./player"
 import { PressableIcon, PolicyIcons, PlayButton } from './components';
 import * as Print from "expo-print"
-import {useSelector, useDispatch} from 'react-redux';
+import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import {Ted} from "./store"
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
-export default function Talk({autoplay, policy: policyName="general"}){
+export default function Talk({autoplay, slug, policy: policyName="general"}){
+    const navigate= useNavigate()
+    const dispatch=useDispatch()
     const Policy=useSelector(state=>state.policy)
-    
-    const {slug} = useParams();
     const {data:talk={}}=Ted.useTalkQuery(slug)
+
     const {policy, challenging}=useSelector(state=>{
         const {desc,...policy}={
             ...Policy.general,
             ...Policy[policyName],
             ...extract(state.talks[talk.id]?.[policyName],Policy.general)}
-        const {[policyName]:{challenging}={}}=!!state.talks[talk.id]||{}
-        return {policy, challenging}
+        return {policy, challenging:!!state.talks[talk.id]?.[policyName]?.challenging}
     })
+
     
-    const dispatch=useDispatch()
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
     
     switch(policyName){
         case "general":
-            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, policy:policyName, toggleTalk}}/>
+            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, policy:policyName, toggleTalk,dispatch}}/>
             break
         default:
             children=<Challenges {...{style:{flex:1, padding:5}}}/>
@@ -50,7 +50,12 @@ export default function Talk({autoplay, policy: policyName="general"}){
                 </Player>
             </View>
             <View style={styles.nav}>
-                <PlayButton name="arrow-drop-up" showPolicy={true}/>
+                {"shadowing,dictating,retelling".split(",").map(k=>(
+                    <PressableIcon key={k} name={PolicyIcons[k]} 
+                        color={policyName==k ? "red" : undefined}
+                        onPress={e=>navigate(policyName==k ? `/talk/${slug}` : `/talk/${slug}/${k}`,{replace:true})}
+                        />
+                ))}
                 <DeleteButton {...{dispatch,talk,policy:policyName}}/>
             </View>
         </View>
@@ -107,13 +112,12 @@ const html=(transcript)=>`
     </html>
 
 `
-function TalkInfo({talk, policy, toggleTalk, style}) {
-    const [downloading, setDownloading]=React.useState(false)
-    const {favorited,downloaded,hasHistory}=useSelector(state=>{
-        const {[policy]:{favorited,downloaded}={}}=state[talk.id]||{}
-        return {favorited,downloaded,hasHistory:!!state[talk.id]}
-    })
-    const dispatch=useDispatch()
+function TalkInfo({talk, policy, dispatch, toggleTalk, style}) {
+    const {favorited,hasHistory}=useSelector(state=>({
+            favorited:state.talks[talk.id]?.favorited ,
+            hasHistory:!!state.talks[talk.id]
+        }
+    ))
     return (
         <View style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
@@ -121,24 +125,20 @@ function TalkInfo({talk, policy, toggleTalk, style}) {
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async(e)=>{
                         try{
-                            const localUri = `${FileSystem.documentDirectory}${talk.id}/.mp4'`
-                            
+                            const localUri = `${FileSystem.documentDirectory}${talk.id}/video.mp4`
+                            toggleTalk("favorited")
                             if(favorited){
                                 await FileSystem.deleteAsync(localUri, { idempotent: true });
                                 return;
                             }else{
-                                setDownloading(true);
                                 const info = await FileSystem.getInfoAsync(localUri);
                                 if (!info.exists) {
                                     await FileSystem.downloadAsync(talk.nativeDownloads.medium, localUri);
+                                    toggleTalk("favorited",localUri)
                                 }
-                                setDownloading(false)
                             }
                         }catch(e){
                             console.error(e)
-                        }finally{
-                            setDownloading(false)
-                            toggleTalk("favorited")
                         }
                     }} />
                 <PressableIcon name="print" onPress={async (e) => {

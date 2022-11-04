@@ -1,17 +1,19 @@
 import React from "react"
-import {View, Text, StyleSheet, Pressable} from "react-native"
-import { connect } from 'react-redux'
+import {View, Text, Pressable} from "react-native"
+import {useDispatch, useSelector } from 'react-redux'
 import {Ted} from "./store"
 import Player from "./player"
 
-export default connect(({policy})=>({policy}))(({policy,dispatch})=>{
+const slug="noah_raford_how_gaming_can_be_a_force_for_good"
+export default ()=>{
+    const dispatch=useDispatch()
+    const policy=useSelector(state=>state.policy)
     const {data:talk={}}=Ted.useTalkQuery(slug)
     const [target, setTarget]=React.useState("general")
 
     return (
         <View style={{flex:1}}>
-            <Player style={{flex:1}} talk={talk} 
-                policy={policy[target]} 
+            <Player style={{flex:1}} talk={talk} policy={policy[target]} autoHide={false}
                 onPolicyChange={policy=>dispatch({type:"policy",target, payload:policy})}
                 /> 
             <View style={{flex:1, padding:10}}>
@@ -19,7 +21,7 @@ export default connect(({policy})=>({policy}))(({policy,dispatch})=>{
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(
                         <Pressable key={a} onPress={e=>setTarget(a)}>
-                            <Text style={[styles.tab, a==target && styles.active]}>{a.toUpperCase()}</Text>
+                            <Text style={{color:a==target ? "blue" : "white"}}>{a.toUpperCase()}</Text>
                         </Pressable>
                     ))}
                 </View>
@@ -32,17 +34,4 @@ export default connect(({policy})=>({policy}))(({policy,dispatch})=>{
             </View>
         </View>
     )
-})
-
-const slug="noah_raford_how_gaming_can_be_a_force_for_good"
-const styles=StyleSheet.create({
-    tab:{
-    
-    },
-    active:{
-        color:"blue"
-    }
-})
-    
-
-
+}
