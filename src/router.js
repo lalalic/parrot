@@ -9,14 +9,14 @@ import Talks from "./daily-talks"
 import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
-import Plan from "./plan"
+import Scheduler from "./plan"
 import Test from "./test"
 import Explorer from "./file-explorer"
 import { ColorScheme } from "./default-style";
 
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/talks"]}>
+    <NativeRouter initialEntries={["/plan"]}>
         <SafeAreaView style={{flex:1, backgroundColor:scheme.backgroundColor}}>
             <Routes>
                 <Route path="/" element={React.createElement(()=>{
@@ -47,7 +47,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                             <Route path="files" element={<Explorer dir={FileSystem.cacheDirectory} exclude={["appData"]} title="File Explorer"/>}/>
                         </Route>
                     </Route>
-                    <Route path="plan" element={<Plan/>}/>
+                    <Route path="plan" element={<Scheduler/>}/>
                     <Route path="test" element={<Test/>}/>
                 </Route>
 

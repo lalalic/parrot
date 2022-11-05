@@ -2,7 +2,7 @@ import React, { useEffect } from "react"
 import {StyleSheet, Text, FlatList, View, Image, Pressable } from 'react-native';
 import {Link} from "react-router-native"
 import {XMLParser} from 'fast-xml-parser'
-import { ColorScheme } from "./default-style";
+import { ColorScheme, TalkStyle } from "./default-style";
 
 export default ()=>{
     const [talks, setTalks] = React.useState({})
@@ -27,7 +27,7 @@ export default ()=>{
             <Text style={{fontSize:20}}>{talks.rss?.channel.title}</Text>
             <FlatList
                 data={talks.rss?.channel.item}
-                renderItem={talkThumb}
+                renderItem={props=><TalkThumb {...props}/>}
                 keyExtractor={item=>item.talkId}
                 horizontal={true}
                 />
@@ -35,42 +35,16 @@ export default ()=>{
     )
 }
 
-function talkThumb({item:{thumbnail,duration,title,link}}){
+function TalkThumb({item:{thumbnail,duration,title,link}}){
+	const color=React.useContext(ColorScheme)
     const slug=(i=link.lastIndexOf("/"),j=link.indexOf("?"))=>link.substring(i+1,j)
 	return (
-		<Pressable style={styles.talkThumb}>
+		<Pressable style={[TalkStyle.thumb,{backgroundColor:color.backgroundColor,borderColor:color.unactive}]}>
             <Link to={`/talk/${slug()}`}>
-			    <Image style={styles.talkThumbImage} source={{uri:thumbnail.url}}/>
+			    <Image style={TalkStyle.image} source={{uri:thumbnail.url}}/>
             </Link>
-			<Text  style={styles.talkThumbDuration}>{duration.replace(/00\:0?/,"")}</Text>
-			<Text  style={styles.talkThumbTitle}>{title}</Text>
+			<Text  style={TalkStyle.duration}>{duration.replace(/00\:0?/,"")}</Text>
+			<Text  style={TalkStyle.title}>{title}</Text>
 		</Pressable>
 	)
 }
-
-const styles = StyleSheet.create({
-	talkThumb:{
-		margin:5,
-		height: 220,
-		width:240,
-		borderWidth:4,
-		borderColor:'transparent',
-		borderRadius:10,
-		backgroundColor:'black',
-	},
-	talkThumbImage:{
-		width:"100%",
-		height:180,
-	},
-	talkThumbDuration:{
-		position:"absolute",
-		bottom:60,
-		right:5,
-		color:"white"
-	},
-	talkThumbTitle:{
-		position:"absolute",
-		bottom:0,
-		color:"white"
-	}
-});

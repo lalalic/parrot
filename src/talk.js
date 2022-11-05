@@ -137,6 +137,7 @@ function TalkInfo({talk, policy, dispatch, toggleTalk, style}) {
                             }else{
                                 const info = await FileSystem.getInfoAsync(localUri);
                                 if (!info.exists) {
+                                    await FileSystem.makeDirectoryAsync(localUri, {intermediates:true})
                                     await FileSystem.downloadAsync(talk.nativeDownloads.medium, localUri);
                                     toggleTalk("favorited",localUri)
                                 }

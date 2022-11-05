@@ -165,7 +165,7 @@ const store = configureStore({
 					}
 					return state;
 				},
-				talks: (state={version:3},action)=>{
+				talks(state={version:3},action){
 					switch(action.type){
 						case "persist/REHYDRATE":
 							return {...action.payload.talks,version:3}
@@ -174,8 +174,8 @@ const store = configureStore({
 					if(!action.type.startsWith("talk/"))
 						return state
 
-					const {id,talk:{slug, title, thumbnail,duration,link}={}}=action
-					const talk=state[id]||{slug, title, thumbnail,duration,link}
+					const {id,talk:{slug, title, thumb,duration,link}={}}=action
+					const talk=state[id]||{slug, title, thumb,duration,link,id}
 					switch(action.type){
 						case "talk/toggle":{
 							const {key,value}=action
@@ -200,7 +200,7 @@ const store = configureStore({
 							return {...state, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
 						}
 						case "talk/clear/policy/record":{
-							if(state.id){
+							if(state[id]){
 								const {policy="general"}=action
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}/audios`,{idempotent:true})
 								const newPolicy={...talk[policy]}
@@ -209,7 +209,7 @@ const store = configureStore({
 							}
 						}
 						case "talk/clear/policy":{
-							if(state.id){
+							if(state[id]){
 								const {policy="general"}=action
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
 								const newTalk={...talk}
@@ -218,7 +218,7 @@ const store = configureStore({
 							}
 						}
 						case "talk/clear":{
-							if(state.id){
+							if(state[id]){
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
 								const newState={...state}
 								delete newState[id]
@@ -228,6 +228,15 @@ const store = configureStore({
 						default:
 							return state
 					}
+				},
+				plan(state={},{type,...payload}){
+					switch(type){
+						case "plan":{
+							const {plan:{start}}=payload
+							return immutableSet(state, payload.plan,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
+						}
+					}
+					return state
 				}
 		})),
 
@@ -247,6 +256,13 @@ const StoreProvider=({children})=>(
         </PersistGate>
     </Provider>
 )
+
+function immutableSet(o, value, keys){
+	if(keys.length==1)
+		return {...o, [keys[0]]:value}
+	const first=keys.shift()
+	return {...o, [first]: immutableSet({...o[first]},value, keys)}
+}
 
 export {
 	Ted, 

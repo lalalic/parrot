@@ -1,5 +1,4 @@
 import React from "react"
-import { useColorScheme } from "react-native"
 import { registerRootComponent } from 'expo';
 
 import Router from "./router"

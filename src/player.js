@@ -15,6 +15,8 @@ import { ColorScheme } from './default-style';
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
+const asText=(m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`     
+
 export default function Player({talk, style, children, policy, challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, autoplay, 
     controls:{nav=true, subtitle=true, progress=true}={},
@@ -256,7 +258,6 @@ export default function Player({talk, style, children, policy, challenging,
                         callback:refProgress,
                         value: status.positionMillis,
                         duration:status.durationMillis,
-                        asText: (m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`,
                         onValueChange:time=>dispatch({type:"video", time}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())
@@ -328,7 +329,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     )
 }
 
-export function ProgressBar({value:initValue=0, duration=0, asText,style, onValueChange, callback,onSlidingComplete,onSlidingStart, ...props}){
+export function ProgressBar({value:initValue=0, duration=0,style, onValueChange, callback,onSlidingComplete,onSlidingStart, ...props}){
     const [value, setValue]=React.useState(initValue)
     React.useEffect(()=>{
         callback.current=setValue
