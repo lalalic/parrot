@@ -166,22 +166,21 @@ const store = configureStore({
 					return state;
 				},
 				talks(state={version:3},action){
+					const selectTalk=()=>{
+						const {id,talk:{slug, title, thumb,duration,link}={}}=action
+						return [state[id]||{slug, title, thumb,duration,link,id}, id]
+					}
+
 					switch(action.type){
 						case "persist/REHYDRATE":
 							return {...action.payload.talks,version:3}
-					}
-					
-					if(!action.type.startsWith("talk/"))
-						return state
-
-					const {id,talk:{slug, title, thumb,duration,link}={}}=action
-					const talk=state[id]||{slug, title, thumb,duration,link,id}
-					switch(action.type){
 						case "talk/toggle":{
 							const {key,value}=action
+							const [talk,id]=selectTalk()
 							return {...state, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
 						}
 						case "talk/challenge":{
+							const [talk, id]=selectTalk()
 							const {chunk, policy="general"}=action
 							let {challenges=[]}=talk[policy]||{}
 							const i=challenges.findIndex(a=>a.time>=chunk.time)
@@ -196,10 +195,12 @@ const store = configureStore({
 							return {...state, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
 						}
 						case "talk/recording":{
+							const [talk, id]=selectTalk()
 							const { record,policy="general"}=action
 							return {...state, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
 						}
 						case "talk/clear/policy/record":{
+							const [id, talk]=selectTalk()
 							if(state[id]){
 								const {policy="general"}=action
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}/audios`,{idempotent:true})
@@ -209,6 +210,7 @@ const store = configureStore({
 							}
 						}
 						case "talk/clear/policy":{
+							const [id, talk]=selectTalk()
 							if(state[id]){
 								const {policy="general"}=action
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
@@ -218,6 +220,7 @@ const store = configureStore({
 							}
 						}
 						case "talk/clear":{
+							const [id, talk]=selectTalk()
 							if(state[id]){
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
 								const newState={...state}
@@ -231,6 +234,16 @@ const store = configureStore({
 				},
 				plan(state={},{type,...payload}){
 					switch(type){
+						case "persist/REHYDRATE":{
+							return (function deep(a){
+								if('start' in a){
+									a.start=new Date(a.start)
+								}else{
+									Object.values(a).forEach(deep)
+								}
+								return a
+							})(payload.payload.plan);
+						}
 						case "plan":{
 							const {plan:{start}}=payload
 							return immutableSet(state, payload.plan,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])

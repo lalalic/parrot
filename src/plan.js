@@ -11,7 +11,7 @@ export default function Scheduler({}) {
     const remoteDispatch=useDispatch()
 	const [{items,active,day}, dispatch] = React.useReducer((state,{type, ...payload})=>{
         switch(type){
-            case "plan/time":{
+            case "plan/slot":{
                 const data=Object.values(state.items)[0]
                 try{
                     return {...state, active:payload.time}
@@ -83,11 +83,11 @@ class Slot extends React.PureComponent{
             <View style={{flex: 1, marginLeft: 40,height, marginRight:0,overflow:"visible",borderWidth:1, borderColor:"lightslategray"}}>
                 <Text style={{position:"absolute",lineHeight:20,top:-10,left:-20}}>{i?i:""}</Text>
                 <Pressable style={{flex:1,borderBottomWidth:1,borderBottomColor:"gray"}} 
-                    onPress={e=>dispatch({type:"plan/time", time:day.setHalfHour(i*2)})}>
+                    onPress={e=>dispatch({type:"plan/slot", time:day.setHalfHour(i*2)})}>
                     <SlotPlan slot={i*2} day={day} height={height}/>
                 </Pressable>
                 <Pressable  style={{flex:1}}
-                    onPress={e=>dispatch({type:"plan/time", time:day.setHalfHour(i*2+1)})}>
+                    onPress={e=>dispatch({type:"plan/slot", time:day.setHalfHour(i*2+1)})}>
                     <SlotPlan slot={i*2+1} day={day} height={height}/>
                 </Pressable>
                 {active && (<SlotScheduler dispatch={dispatch} time={active} height={height} style={{
@@ -111,8 +111,8 @@ const SlotPlan=({slot, day, height=75})=>{
         return null
     return (
         <>
-            <TalkThumb item={{...talk, policy}} text={false} style={{height:65, borderWidth:0}} opacity={0.4}/>
-            <SlotPlanIndicator style={{height:height*coures/2}} slot={slot}/>
+            <TalkThumb item={{...talk, policy}} text={false} style={{height:65,width:80, borderWidth:0}} opacity={0.8}/>
+            <SlotPlanIndicator style={{height:height*coures/2, opacity:0.4}} slot={slot}/>
         </>
     )
 }
@@ -131,41 +131,53 @@ const SlotScheduler=({time, children, height, style, ...props})=>{
         }).filter(a=>!!a)
     }))
 
+    const prev=useSelector(state=>state.plan?.[time.getFullYear()]?.[time.getWeek()]?.[time.getDay()]?.[time.getHalfHour()])
+            
     /*plan:{id, policy, coures, start}*/
     const [plan, dispatch]=React.useReducer((state,{type, ...payload})=>{
-        switch(type){
-            case "time/inc":
-                return {...state, coures:Math.min(24-time.getHalfHour(),state.coures+1)}
-            case "time/dec":
-                return {...state, coures:Math.max(1,state.coures-1)}
-            case "plan":{
-                let i=talks.findIndex(a=>a.id==state.id)
-                if(i!=-1){
-                    talks[i]={...talks[i]}
-                    delete talks[i].policy
+            switch(type){
+                case "time/inc":
+                    return {...state, coures:Math.min(24-time.getHalfHour(),state.coures+1)}
+                case "time/dec":
+                    return {...state, coures:Math.max(1,state.coures-1)}
+                case "plan":{
+                    let i=talks.findIndex(a=>a.id==state.id)
+                    if(i!=-1){
+                        talks[i]={...talks[i]}
+                        delete talks[i].policy
+                    }
+                    i=talks.findIndex(a=>a.id==payload.id)
+                    const talk=talks[i]={...talks[i],policy:payload.policy}
+                    setTalks([...talks])
+                    const whitespace=talk[payload.policy]?.whitespace||policys[payload.policy].whitespace||policys.general.whitespace
+                    const coures=Math.round(talk.duration*(whitespace+1)/60/30)
+                    return {...state, ...payload, coures}
                 }
-                i=talks.findIndex(a=>a.id==payload.id)
-                const talk=talks[i]={...talks[i],policy:payload.policy}
-                setTalks([...talks])
-                const whitespace=talk[payload.policy]?.whitespace||policys[payload.policy].whitespace||policys.general.whitespace
-                const coures=Math.round(talk.duration*(whitespace+1)/60/30)
-
-                return {...state, ...payload, coures}
+                case "save":
+                    props.dispatch?.({type:"plan/save",plan:state})
+                break
             }
-            case "save":
-                props.dispatch?.({type:"plan/save",plan:state})
-            break
-        }
-        return state
-    },useSelector(state=>state.plans?.[time.getFullYear()]?.[time.getWeek()]?.[time.getDay()]?.[time.getHalfHour()])||{start:time, coures:1})
+            return state
+        },{start:time, coures:1}, init=>{
+            if(prev){
+                const i=talks.findIndex(a=>a.id==prev.id)
+                talks[i]={...talks[i], policy:prev.policy}
+                setTalks([...talks])
+            }
+            return prev||init
+        })
 
     const slot=plan.start.getHalfHour()
+    const initialScrollIndex=talks.findIndex(a=>a.policy)
+    const thumbStyle={height:110,width:140}
     return (
         <View style={[style,{height}]} {...props}>
             <FlatList 
                 data={talks}
-                renderItem={props=><TalkThumb {...props} dispatch={dispatch}/>}
-                keyExtractor={item=>item?.slug}
+                initialScrollIndex={initialScrollIndex}
+                getItemLayout={(data,index)=>({length:thumbStyle.width, offset: thumbStyle.width*index, index})}
+                renderItem={props=><TalkThumb {...props} dispatch={dispatch} style={thumbStyle}/>}
+                keyExtractor={item=>item?.id}
                 horizontal={true}
                 />
             <View style={{width:"100%",height:30, flexDirection:"row", justifyContent:"space-around", alignItems:"center"}}>
@@ -182,7 +194,7 @@ function TalkThumb({item:{thumb,duration,title,id, policy}, style, dispatch, tex
     const color=React.useContext(ColorScheme)
     const plan=policy=>dispatch?.({type:"plan",id, policy})
     return (
-		<View style={[TalkStyle.thumb,{height:110,width:140}, style]}>
+		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
                 <Image style={[TalkStyle.image,{height:90}]} source={{uri:thumb}}/>
                 {text && <Text  style={[TalkStyle.duration,{top:0}]}>{asText(duration)}</Text>}
