@@ -1545,6 +1545,10 @@
   dependencies:
     "@types/react-test-renderer" "^18.0.0"
 
+"@react-native-picker/picker@2.4.2":
+  version "2.4.2"
+  resolved "https://registry.npmmirror.com/@react-native-picker/picker/-/picker-2.4.2.tgz#2925eb8e76ff6b584c80529adc251df963be9141"
+
 "@react-native-voice/voice@https://github.com/lalalic/speech-to-text#v3.2.40":
   version "3.2.4"
   resolved "https://github.com/lalalic/speech-to-text#a6bfa547be1f160d32d4de414f5955e440693171"

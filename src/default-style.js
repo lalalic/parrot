@@ -64,4 +64,22 @@ if(!Date.prototype.getWeek){
     Date.prototype.setHalfHour=function(i){
         return new Date(this.getFullYear(), this.getMonth(), this.getDate(), Math.floor(i/2), (i%2)*30)
     }
+
+    const pad=i=>String(i).padStart(2,"0")
+    Date.prototype.asDateTimeString=function(){
+        return `${this.asDateString()} ${this.asTimeString()}`
+    }
+
+    Date.prototype.asDateString=function(){
+        return `${this.getFullYear()}-${pad(this.getMonth()+1)}-${pad(this.getDate())}`
+    }
+
+    Date.prototype.asTimeString=function(){
+        return `${pad(this.getHours())}:${pad(this.getMinutes())}:${pad(this.getSeconds())}`
+    }
+
+    Date.from=function(time){
+        const [y,m,...data]=time.split(/[-\s\:]/).map(a=>parseInt(a))
+        return new Date(y, m-1, ...data)
+    }
 }

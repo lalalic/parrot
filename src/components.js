@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList , Animated, Easing, } from "react-native";
+import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigate, useParams} from "react-router-native"
-import { ColorScheme } from './default-style';
+import { ColorScheme, TalkStyle } from './default-style';
 
 export const PressableIcon = ({ onPress, onLongPress, onPressOut, ...props }) => (
     <Pressable {...{onPress,onLongPress, onPressOut }}>
@@ -67,6 +67,24 @@ export const PolicyIcons={
     shadowing:"connect-without-contact",
     dictating:"contact-phone",
     retelling:"contact-mail",
+}
+
+export const PolicyChoice=({value:defaultValue, onValueChange, style})=>{
+    const color=React.useContext(ColorScheme)
+    const [value, setValue]=React.useState("shadowing")
+    React.useEffect(()=>{
+        setValue(defaultValue)
+    },[defaultValue])
+    return (
+        <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
+            {"shadowing,dictating,retelling".split(",").map(k=>(
+                <PressableIcon key={k} 
+                    color={value==k ? color.primary : undefined}
+                    name={PolicyIcons[k]} 
+                    onPress={e=>(setValue(k),onValueChange?.(k))}/>
+            ))}
+        </View>
+    )
 }
 
 export const SliderIcon=(uuid=>{
@@ -204,3 +222,19 @@ export function AutoHide({hide, style, children, timeout=2000, duration=1200, ..
         </Animated.View>
     )
 }
+
+export function TalkThumb({item, children, style, text=true, opacity=0.6}){
+    const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
+    const {thumb,duration,title}=item
+    return (
+		<View style={[TalkStyle.thumb, style]}>
+            <View style={{flex:1, opacity}}>
+                <Image style={[TalkStyle.image,{height:90}]} source={{uri:thumb}}/>
+                {text && <Text  style={[TalkStyle.duration,{top:0}]}>{asText(duration)}</Text>}
+                {text && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20}]}>{title}</Text>}
+            </View>
+            {children && React.cloneElement(children,{talk:item})}
+		</View>
+	)
+}
+
