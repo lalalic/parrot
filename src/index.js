@@ -13,19 +13,19 @@ registerRootComponent(()=>{
         const backgroundColor=scheme=="light" ? "white" : "black"
         const active=scheme=="light" ? "black" : "white"
         const primary=scheme=="light" ? "blue" : "yellow"
-        const unactive="gray"
+        const inactive="gray"
         
         setDefaultStyle({
             Text:{color},
             MaterialIcons:{
-                color:unactive,
+                color:inactive,
                 size:24
             },
             ActivityIndicator:{
                 color,
             }
         })
-        setStyle({text:color,backgroundColor,active, unactive, primary, warn:"red"})
+        setStyle({text:color,backgroundColor,active, inactive, primary, warn:"red"})
     },[scheme])
 
     return  (

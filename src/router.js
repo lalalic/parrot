@@ -10,7 +10,7 @@ import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
 import Scheduler from "./plan"
-import Test from "./test"
+import Test from "./playground"
 import Explorer from "./file-explorer"
 import { ColorScheme } from "./default-style";
 

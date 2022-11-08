@@ -50,11 +50,9 @@ export const TalkStyle={
 
 if(!Date.prototype.getWeek){
     Date.prototype.getWeek=function(){
-        if('_week' in this)
-            return this._week
         const startDate = new Date(this.getFullYear(), 0, 1);
         const days = Math.floor((this - startDate) /(24 * 60 * 60 * 1000));
-        return this._week=Math.ceil(days / 7)
+        return Math.ceil(days / 7)
     }
 
     Date.prototype.getHalfHour=function(){
@@ -74,11 +72,32 @@ if(!Date.prototype.getWeek){
         return `${this.getFullYear()}-${pad(this.getMonth()+1)}-${pad(this.getDate())}`
     }
 
+    Date.prototype.isSameWeek=function(that){
+        return this.getWeek()==that?.getWeek() && this.getFullYear()==that?.getFullYear()
+    }
+
+    Date.prototype.switchWeek=function(that){
+        const thisWeekDay=this.getDay()
+        const thatWeekDay=that.getDay()
+        this.switchDay(that)
+        this.setTime(this.getTime()-(thatWeekDay-thisWeekDay)*24*60*60*1000)
+        return this
+    }
+
+    Date.prototype.switchDay=function(that){
+        this.setFullYear(that.getFullYear())
+        this.setMonth(that.getMonth())
+        this.setDate(that.getDate())
+        return this
+    }
+
     Date.prototype.asTimeString=function(){
         return `${pad(this.getHours())}:${pad(this.getMinutes())}:${pad(this.getSeconds())}`
     }
 
     Date.from=function(time){
+        if(!time)
+            return 
         const [y,m,...data]=time.split(/[-\s\:]/).map(a=>parseInt(a))
         return new Date(y, m-1, ...data)
     }

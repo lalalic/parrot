@@ -2,7 +2,7 @@ import {combineReducers} from "redux"
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import {persistReducer} from "redux-persist"
+import { persistReducer} from "redux-persist"
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
 
 import { Provider } from "react-redux"
@@ -147,12 +147,14 @@ const store = configureStore({
 				policy(state = Policy, action) {
 					switch (action.type) {
 						case "persist/REHYDRATE":{
-							const policy=action.payload?.policy
-							policy.general.autoHide=true
-							return Object.keys(state).reduce((merged,k)=>{
-								merged[k]={...state[k],...merged[k]}
-								return merged
-							},{...policy})
+							if(action.payload?.policy){
+								const policy=action.payload.policy
+								return Object.keys(state).reduce((merged,k)=>{
+									merged[k]={...state[k],...merged[k]}
+									return merged
+								},{...policy})
+							}
+							break
 						}
 						case "policy":
 							return {
@@ -173,7 +175,7 @@ const store = configureStore({
 
 					switch(action.type){
 						case "persist/REHYDRATE":
-							return {...action.payload.talks,version:3}
+							return {...action.payload?.talks,version:3}
 						case "talk/toggle":{
 							const {key,value}=action
 							const [talk,id]=selectTalk()
@@ -232,22 +234,63 @@ const store = configureStore({
 							return state
 					}
 				},
-				plan(state={},{type,...payload}){
-					switch(type){
+				plan(state={},action){
+					switch(action.type){
 						case "persist/REHYDRATE":{
-							return (function deep(a){
-								if('start' in a){
-									a.start=new Date(a.start)
-								}else{
-									Object.values(a).forEach(deep)
-								}
-								return a
-							})(payload.payload.plan);
+							if(action.payload?.plan){
+								return (function deep(a){
+									if('start' in a){
+										a.start=new Date(a.start)
+									}else{
+										Object.values(a).forEach(deep)
+									}
+									return a
+								})(action.payload.plan);
+							}
+							break
 						}
 						case "plan":{
-							const {plan:{start}}=payload
-							return immutableSet(state, payload.plan,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
+							const {plan:{start}}=action
+							return immutableSet(state, action.plan,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
 						}
+						case "plan/remove":{
+							const {time:start}=action
+							const removed=immutableSet(state, null,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
+							return removed||{}
+						}
+						case "plan/day/template":
+							return immutableSet(state,state.day==action.day ? null : action.day, ['day'])
+						case "plan/week/template":
+							return immutableSet(state,Date.from(action.day).isSameWeek(state.week) ? null : action.day, ['week'])
+						case "plan/copy/1":{
+							const {replacements, day, templateDay}=action
+							const template=state[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
+							const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
+								switch(key){
+									case "start":
+										return new Date(value).switchDay(day)
+									case "id":
+										return replacements[value]||value
+								}
+								return value
+							})
+							return immutableSet(state,plan,[day.getFullYear(),day.getWeek(),day.getDay()])
+						}
+						case "plan/copy/7":{
+							const {replacements, day, templateDay}=action
+							const template=state[templateDay.getFullYear()][templateDay.getWeek()]
+							const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
+								switch(key){
+									case "start":
+										return new Date(value).switchWeek(day)
+									case "id":
+										return replacements[value]||value
+								}
+								return value
+							})
+							return immutableSet(state,plan,[day.getFullYear(),day.getWeek()])
+						}
+						
 					}
 					return state
 				}
@@ -270,14 +313,38 @@ const StoreProvider=({children})=>(
     </Provider>
 )
 
-function immutableSet(o, value, keys){
-	if(keys.length==1)
-		return {...o, [keys[0]]:value}
+function nullClear(o, key, returnEmpty){
+	o={...o}
+	delete o[key]
+	if(returnEmpty)
+		return o
+	return Object.keys(o).length==0 ? null : o
+}
+
+function immutableSet(o, value, keys, returnEmpty=true){
+	if(keys.length==1){
+		return value===null ? nullClear(o,keys[0], returnEmpty) : {...o, [keys[0]]:value}
+	}
 	const first=keys.shift()
-	return {...o, [first]: immutableSet({...o[first]},value, keys)}
+	const firstValue=immutableSet({...o[first]},value, keys, false)
+	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
 
 export {
 	Ted, 
 	StoreProvider as Provider,
+}
+
+export function selectPlansByDay(state,day){
+	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];
+	if (!events)
+		return [];
+	return Object.values(events).filter(a=>!!a).map(plan => {
+		return {
+			start: plan.start.asDateTimeString(),
+			end: new Date(plan.start.getTime() + plan.coures * 30 * 60 * 1000).asDateTimeString(),
+			plan,
+			talk:state.talks[plan.id]
+		};
+	}).sort((a,b)=>a.plan.start.getTime()-b.plan.start.getTime());
 }
