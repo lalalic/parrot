@@ -167,19 +167,17 @@ const store = configureStore({
 					}
 					return state;
 				},
-				talks(state={version:3},action){
+				talks(talks={},action){
 					const selectTalk=()=>{
 						const {id,talk:{slug, title, thumb,duration,link}={}}=action
-						return [state[id]||{slug, title, thumb,duration,link,id}, id]
+						return [talks[id]||{slug, title, thumb,duration,link,id}, id]
 					}
 
 					switch(action.type){
-						case "persist/REHYDRATE":
-							return {...action.payload?.talks,version:3}
 						case "talk/toggle":{
 							const {key,value}=action
 							const [talk,id]=selectTalk()
-							return {...state, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
+							return {...talks, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
 						}
 						case "talk/challenge":{
 							const [talk, id]=selectTalk()
@@ -194,44 +192,32 @@ const store = configureStore({
 								(challenges=[...challenges]).splice(i,0,chunk)
 							}
 							
-							return {...state, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
+							return {...talks, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
 						}
 						case "talk/recording":{
 							const [talk, id]=selectTalk()
 							const { record,policy="general"}=action
-							return {...state, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
+							return {...talks, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
 						}
-						case "talk/clear/policy/record":{
-							const [id, talk]=selectTalk()
-							if(state[id]){
-								const {policy="general"}=action
-								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}/audios`,{idempotent:true})
-								const newPolicy={...talk[policy]}
-								delete newPolicy.records
-								return {...state, [id]: {...talk, [policy]:newPolicy}}
-							}
-						}
-						case "talk/clear/policy":{
-							const [id, talk]=selectTalk()
-							if(state[id]){
-								const {policy="general"}=action
-								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
-								const newTalk={...talk}
-								delete newTalk[policy]
-								return {...state, [id]: newTalk}
+						case "talk/clear/history":{
+							let [id, talk]=selectTalk()
+							if(talks[id]){
+								Object.keys(Policy).forEach(policy=>{
+									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
+									talk=immutableSet(talk, null, [policy])
+								})
+								return {...talks, [id]: talk}
 							}
 						}
 						case "talk/clear":{
-							const [id, talk]=selectTalk()
-							if(state[id]){
+							const [id]=selectTalk()
+							if(talks[id]){
 								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
-								const newState={...state}
-								delete newState[id]
-								return newState
+								return immutableSet(talks, null, [id])
 							}
 						}
 						default:
-							return state
+							return talks
 					}
 				},
 				plan(state={},action){

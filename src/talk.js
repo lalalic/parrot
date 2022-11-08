@@ -60,7 +60,6 @@ export default function Talk({autoplay}){
                         onPress={e=>navigate(policyName==k ? `/talk/${slug}` : `/talk/${slug}/${k}`,{replace:true})}
                         />
                 ))}
-                <DeleteButton {...{dispatch,talk,policy:policyName}}/>
             </View>
         </View>
     )
@@ -108,10 +107,22 @@ const styles = StyleSheet.create({
     }
   });
 
-const html=(transcript)=>`
+const html=(talk, lineHeight=120)=>`
     <html>
+        <style>
+            p{line-height:${lineHeight}%;margin:0;}
+            body{padding:5mm}
+            @page{
+                margin-top:2cm;
+                margin-bottom:1cm;
+            }
+        </style>
         <body>
-            ${transcript}
+            <h2>
+                <span>${talk.title}</span>
+                <span style="font-size:12pt;float:right;padding-right:10mm">${new Date().asDateString()}</span>
+            </h2>
+            ${talk.languages?.en?.transcript?.map(a => a.cues.map(b => b.text).join("")).map(a=>`<p>${a}</p>`).join("\n")}
         </body>
     </html>
 
@@ -143,16 +154,30 @@ function TalkInfo({talk, policy, dispatch, toggleTalk, style}) {
                                 }
                             }
                         }catch(e){
-                            console.error(e)
+                            
                         }
                     }} />
-                <PressableIcon name="print" onPress={async (e) => {
-                    await Print.printAsync({
-                        html: html(talk.paragraphs.map(a => a.cues.map(b => b.text).join("")).join("\n"))
-                    });
-                } } />
+                <PressableIcon name="print" 
+                    onLongPress={async e=>{
+                        try{
+                            await Print.printAsync({html: html(talk, 200)})
+                        }catch(e){
 
-                {hasHistory && <PressableIcon name="delete" onPress={e=>dispatch({type:"talk/clear",id:talk.id, talk, policy})}/>}
+                        }
+                    }}
+                    onPress={async e=>{
+                        try{
+                            await Print.printAsync({html: html(talk, 120)})
+                        }catch(e){
+
+                        }
+                    }}/>
+
+                <PressableIcon name={hasHistory ? "delete" : ""} 
+                    disabled={!hasHistory}
+                    onLongPress={e=>dispatch({type:"talk/clear",id:talk.id, talk})}
+                    onPress={e=>dispatch({type:"talk/clear/history",id:talk.id, talk})}
+                    />
             </View>
             <View>
                 <Text>{talk.description}</Text>
