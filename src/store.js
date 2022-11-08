@@ -1,5 +1,5 @@
 import {combineReducers} from "redux"
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, isPlain } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { persistReducer} from "redux-persist"
@@ -284,7 +284,10 @@ const store = configureStore({
 
 	middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
 			serializableCheck:{
-				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER]
+				ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+				isSerializable(value){
+					return isPlain(value)||value?.constructor===Date
+				}
 			}
 		}).concat(Ted.middleware),
 });
