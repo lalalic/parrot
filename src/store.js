@@ -362,6 +362,13 @@ const store = configureStore({
 						
 					}
 					return state
+				},
+				history(state={},{type, ...history}){
+					switch(type){
+						case "history":
+							return {...state, ...history}
+					}
+					return state
 				}
 		})),
 

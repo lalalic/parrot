@@ -16,7 +16,7 @@ import { ColorScheme } from "./default-style";
 
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/account"]}>
+    <NativeRouter initialEntries={["/talks"]}>
         <SafeAreaView style={{flex:1, backgroundColor:scheme.backgroundColor}}>
             <Routes>
                 <Route path="/" element={React.createElement(()=>{

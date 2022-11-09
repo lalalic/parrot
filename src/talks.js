@@ -4,6 +4,7 @@ import { ColorScheme } from "./default-style";
 import { PressableIcon, TalkThumb } from "./components";
 import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
+import { useDispatch, useSelector } from "react-redux";
 
 export default function Talks(){
     const color=React.useContext(ColorScheme)
@@ -18,7 +19,8 @@ export default function Talks(){
             talkPageCache.current=[]
         }
         return next
-    },{q:"",page:1, people:false})
+    },useSelector(state=>state.history?.search)||{q:"",page:1, people:false})
+    
 
     const {data:{talks=[],page=1,pages=1}={}}=(()=>{
         if(search.q){
@@ -33,6 +35,13 @@ export default function Talks(){
     if(page===search.page){
         talkPageCache.current[search.page-1]=talks
     }
+
+    const dispatch=useDispatch()
+    React.useEffect(()=>{
+        dispatch({type:"history", search})
+    },[search])
+    
+
     const searchTextStyle={fontSize:16,height:28,color:color.text, paddingLeft:10, position:"absolute",top:2, width:"100%", marginLeft:45 ,paddingRight:45,}
     return (
         <View style={{flex:1}}>
@@ -58,7 +67,7 @@ export default function Talks(){
                 onEndReachedThreshold={0.5}
                 onEndReached={e=>search.page<pages && setSearch({...search, page:search.page+1})}
                 />
-                {!search.people && <TextInput placeholder="TED Talks Daily" 
+                {!search.people && <TextInput placeholder="TED Talks" defaultValue={search.q} 
                         clearButtonMode="while-editing"
                         keyboardType="web-search"
                         onEndEditing={({nativeEvent:{text:q}})=>{
