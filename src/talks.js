@@ -6,7 +6,7 @@ import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
 import { useDispatch, useSelector } from "react-redux";
 
-export default function Talks(){
+export default function Talks(props){
     const color=React.useContext(ColorScheme)
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
     const imageStyle={height:180}
@@ -44,7 +44,7 @@ export default function Talks(){
 
     const searchTextStyle={fontSize:16,height:28,color:color.text, paddingLeft:10, position:"absolute",top:2, width:"100%", marginLeft:45 ,paddingRight:45,}
     return (
-        <View style={{flex:1}}>
+        <View {...props}>
             <View style={{flexDirection:"row",height:32,paddingLeft:10,
                 backgroundColor:color.inactive, borderRadius:5,
                 borderWidth:1,marginLeft:4,marginRight:2}}>

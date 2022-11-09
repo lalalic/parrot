@@ -15,8 +15,19 @@ export default ()=>{
 
     return (
         <View style={{flex:1}}>
-            <Player style={{flex:1}} talk={talk} policy={policy[target]} autoHide={false}
+            <Player style={{flex:1}} talk={talk} 
+                media={<Video 
+                    posterSource={{uri:talk.thumb}} 
+                    source={{uri:talk.resources?.hls.stream}} 
+                    useNativeControls={false}
+                    shouldCorrectPitch={true}
+                    style={{flex:1}}
+                    />}
+                policy={policy[target]} 
+                autoHide={false}
+                transcript={talk.languages.en.transcript}
                 onPolicyChange={policy=>dispatch({type:"policy",target, payload:policy})}
+                onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/general/audios/example.wav`}
                 /> 
             <View style={{flex:1, padding:10}}>
                 <View style={{flexDirection:"row",justifyContent:"space-between", 

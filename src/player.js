@@ -10,28 +10,38 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
-import { useParams } from 'react-router-native';
 import { ColorScheme } from './default-style';
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
 const asText=(m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`     
 
-export default function Player({talk, style, children, policy, challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, autoplay, 
+/**
+ * 
+ properties:
+ */
+export default function Player({
+    media,
+    style, 
+    children, //customizable controls
+    policy, 
+    policyName, //used to get history of a policy
+    challenging,
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
     controls:{nav=true, subtitle=true, progress=true}={},
-    videoStyle={flex:1}, layoverStyle, navStyle, subtitleStyle, progressStyle,
+    layoverStyle, navStyle, subtitleStyle, progressStyle,
+    id, //talk id 
+    transcript, //paragraphs transcript, []
     ...props}){
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
     const refProgress=React.useRef()
-    const {policy:policyName}=useParams()
     const [chunks, setChunks]=React.useState([])
     const [autoHide, setAutoHide]=React.useReducer((state,time)=>{
         return {actions:policy.autoHide ? time : false, progress:time}
     },{actions:policy.autoHide ? Date.now() : false, progress:Date.now()})
-    const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
+    const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
     React.useEffect(()=>{
         //@Hack: to play sound to speaker, otherwise always to earpod
         Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
@@ -45,8 +55,8 @@ export default function Player({talk, style, children, policy, challenging,
         if(challenging){
             setChunks(challenges||[])
             return 
-        }else if(talk.languages && typeof(policy.chunk)=="number"){
-            const paragraphs=talk.languages.en.transcript
+        }else if(transcript && typeof(policy.chunk)=="number"){
+            const paragraphs=transcript
             switch(policy.chunk){        
                 case 0:
                 case 1:
@@ -84,7 +94,7 @@ export default function Player({talk, style, children, policy, challenging,
                     )
             }
         }
-    },[talk, policy.chunk, challenging, challenges])
+    },[id, policy.chunk, challenging, challenges])
 
     const [status, dispatch] = React.useReducer((state,action)=>{
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
@@ -187,21 +197,15 @@ export default function Player({talk, style, children, policy, challenging,
             style={{width:"100%",...style}} 
             onStartShouldSetResponder={e=>setAutoHide(Date.now())}
             {...props}>
-            <Video ref={video}
-                style={videoStyle} 
-                posterSource={{uri:talk.thumb}}
-                source={{uri:talk.resources?.hls.stream}}
-                useNativeControls={false}
-                shouldPlay={autoplay}
-                shouldCorrectPitch={true}
-                progressUpdateIntervalMillis={100}
-                onPlaybackStatusUpdate={status =>{
+            {React.cloneElement(media, {
+                ref:video,
+                onPlaybackStatusUpdate:status =>{
                     refProgress.current?.(status.positionMillis)//always keep progress bar synced up to video position
                     dispatch({type:"video/status", status})
-                }}
-                rate={policy.rate}
-                volume={policy.volume}
-                />
+                },
+                rate:policy.rate,
+                volume:policy.volume,
+            })}
             <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
                 {nav && <NavBar {...{
                         dispatch,status,
@@ -269,14 +273,14 @@ export default function Player({talk, style, children, policy, challenging,
                 </AutoHide>}
             </View>
         </SliderIcon.Container>
-        <Context.Provider value={{talk, status, chunks, dispatch}}>
+        <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName}}>
             {children}
         </Context.Provider>
         </>
     )
 }
 
-export function Subtitle({show,i,delay,title, children,talk, ...props}){
+export function Subtitle({show,i,delay,title, children, ...props}){
     const [text, setText]=React.useState(title)
     React.useEffect(()=>{
         if(!show){
@@ -311,7 +315,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
         Voice.onSpeechError=e=>{
             console.error(JSON.stringify(e))
         }
-        const audioUri=uri.replace("file://","")+".wav"
+        const audioUri=uri.replace("file://","")
         ;(async()=>{
             await FileSystem.makeDirectoryAsync(uri.substring(0,uri.lastIndexOf("/")+1),{intermediates:true})
             Voice.start(locale,{audioUri})  
@@ -414,18 +418,19 @@ export function Subtitles(){
     ) 
 }
 
-export function Challenges({style,...props}){
-    const {policy="general"}=useParams()
+export function Challenges({style, ...props}){
     const color=React.useContext(ColorScheme)
-    const {talk, status, i=status.i,dispatch}=React.useContext(Context)
+    const {id, status, i=status.i,dispatch, onRecordChunkUri, policy="general"}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
-        challenges:state.talks[talk.id]?.[policy]?.challenges, 
-        records:state.talks[talk.id]?.[policy]?.records,
+        challenges:state.talks[id]?.[policy]?.challenges, 
+        records:state.talks[id]?.[policy]?.records,
     }))
     return (
         <View {...props} style={[{padding:4},style]}>
             <FlatList data={challenges||[]} extraData={status.ic} estimatedItemSize={50}
-                renderItem={({index,item:{text, time,end}})=>{
+                renderItem={({index,item})=>{
+                    const {text, time,end}=item
+                    const uri=onRecordChunkUri?.(item)
                     const recognized=records[`${time}-${end}`]
                     return (
                         <View style={{backgroundColor:index==status.ic ? "gray" : undefined, borderColor:"gray", borderTopWidth:1,marginTop:10,paddingTop:10}}>
@@ -434,8 +439,10 @@ export function Challenges({style,...props}){
                                 <Text style={{flexGrow:1,paddingLeft:10}}>{text.replace("\n"," ")}</Text>
                             </Pressable>
                             <Pressable style={{marginTop:3, flexDirection:"row"}} onPress={e=>{
+                                if(!uri)
+                                    return 
                                 Audio.Sound.createAsync(
-                                    {uri:`${FileSystem.documentDirectory}${talk.id}/${policy}/audios/${time}-${end}.wav`},
+                                    {uri},
                                     {shouldPlay:true},
                                     status=>{
                                         if(status.error || status.didJustFinish){
@@ -444,7 +451,7 @@ export function Challenges({style,...props}){
                                     }
                                 )
                             }}>
-                                <MaterialIcons size={20} name={recognized ? "replay" : undefined}/>
+                                <MaterialIcons size={20} name={recognized && uri ? "replay" : undefined}/>
                                 <Text style={{color:color.primary,lineHeight:20,paddingLeft:10}}>{recognized}</Text>
                             </Pressable>
                         </View>

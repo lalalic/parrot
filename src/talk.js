@@ -9,6 +9,7 @@ import * as FileSystem from 'expo-file-system';
 
 import {Ted} from "./store"
 import { ColorScheme } from './default-style';
+import { Video } from 'expo-av';
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 
@@ -43,11 +44,21 @@ export default function Talk({autoplay}){
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{autoplay, policy, challenging, talk, style:{flex:1},key:policyName}}
+                <Player {...{autoplay, policy, challenging, style:{flex:1},key:policyName, policyName}}
+                    media={<Video 
+                        posterSource={{uri:talk.thumb}} 
+                        source={{uri:talk.resources?.hls.stream}} 
+                        shouldPlay={autoplay}
+                        useNativeControls={false}
+                        shouldCorrectPitch={true}
+                        progressUpdateIntervalMillis={100}
+                        style={{flex:1}}
+                        />}
+                    transcript={talk.languages?.en?.transcript} 
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
                     onFinish={e=>!challenging && toggleTalk("challenging",true)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
-                    onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}`}
+                    onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
                     onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
                     >
                     {children}

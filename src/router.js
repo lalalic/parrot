@@ -12,7 +12,8 @@ import Policy from "./policy"
 import Scheduler from "./plan"
 import Test from "./playground"
 import Explorer from "./file-explorer"
-import { ColorScheme } from "./default-style";
+import { ColorScheme } from "./default-style"
+import Home from "./home"
 
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
@@ -27,7 +28,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                                     <Outlet/>
                                 </View>
                                 <View style={{flexDirection: "row", justifyContent: "space-around",}}>
-                                    {[["/talks","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
+                                    {[["/home","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
                                         return (
                                             <Link key={name} to={to} style={{flex: 1,alignItems: "center", padding: 10}}>
                                                 <MaterialIcons name={name} color={pathname.startsWith(to) ? scheme.active : undefined}/>
@@ -40,6 +41,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     })}>
                         
                     <Route path="talks" element={<Talks/>} />
+                    <Route path="home" element={<Home/>} />
                     <Route path="account">
                         <Route path="" element={<Account/>}/>
                         <Route element={<WithBackButton/>}>

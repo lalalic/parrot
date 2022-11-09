@@ -258,3 +258,47 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 	)
 }
 
+export class Media extends React.PureComponent{
+    constructor(){
+        super(...arguments)
+        this.state={
+            isLoaded:false,
+            isPlaying,
+            rate:1,
+            volume:1,
+            didJustFinish:false,
+            durationMillis:0,
+            positionMillis:0,
+        }
+    }
+
+    setStatusAsync(){
+        this.setState(...arguments)
+    }
+
+    render(){
+        const {isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}=this.state
+        const {posterSource, source}=this.props
+
+        return (
+            <View {...props}>
+                {!!posterSource && (<Image source={posterSource} 
+                    style={{position:"absolute",width:"100%",height:"100%"}}/>)}
+                
+            </View>
+        )
+    }
+
+    playAt(positionMillis){
+
+    }
+
+    speak(){
+
+    }
+}
+
+export const Widget=(props)=>{
+    return <View {...props}/>
+}
+
