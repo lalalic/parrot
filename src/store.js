@@ -428,3 +428,13 @@ export function selectPlansByDay(state,day){
 		};
 	}).sort((a,b)=>a.plan.start.getTime()-b.plan.start.getTime());
 }
+
+const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
+export function selectPolicy(state,policyName,id){
+	const Policy=state.policy
+	const {desc,...policy}={
+		...Policy.general,
+		...Policy[policyName],
+		...extract(state.talks[id]?.[policyName],Policy.general)}
+	return policy
+}

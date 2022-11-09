@@ -7,34 +7,24 @@ import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
-import {Ted} from "./store"
+import {Ted, selectPolicy} from "./store"
 import { ColorScheme } from './default-style';
 import { Video } from 'expo-av';
-
-const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
     const color=React.useContext(ColorScheme)
     const {slug,policy: policyName="general"}=useParams()
-    const Policy=useSelector(state=>state.policy)
     const {data:talk={}}=Ted.useTalkQuery({slug})
 
-    const {policy, challenging}=useSelector(state=>{
-        const {desc,...policy}={
-            ...Policy.general,
-            ...Policy[policyName],
-            ...extract(state.talks[talk.id]?.[policyName],Policy.general)}
-        return {policy, challenging:!!state.talks[talk.id]?.[policyName]?.challenging}
-    })
+    const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
-    
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
     
     switch(policyName){
         case "general":
-            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, policy:policyName, toggleTalk,dispatch}}/>
+            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>
             break
         default:
             children=<Challenges {...{style:{flex:1, padding:5}}}/>
@@ -44,7 +34,7 @@ export default function Talk({autoplay}){
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{autoplay, policy, challenging, style:{flex:1},key:policyName, policyName}}
+                <Player {...{autoplay, challenging, style:{flex:1},key:policyName, policyName}}
                     media={<Video 
                         posterSource={{uri:talk.thumb}} 
                         source={{uri:talk.resources?.hls.stream}} 
@@ -75,20 +65,8 @@ export default function Talk({autoplay}){
         </View>
     )
 }
-function DeleteButton({talk, policy, dispatch}){
-    const hasPolicyHistory=useSelector(state=>{
-        if(!!state.talks[talk.id]?.[policy]){
-            return {hasRecords:!!state.talks[talk.id][policy].records}
-        }
-    })
-    return (
-        <PressableIcon
-            name={hasPolicyHistory ? (hasPolicyHistory.hasRecords ? "delete" : "delete-forever") : "delete-outline"}
-            onPress={e=>dispatch({type:"talk/clear/policy/record",id:talk.id, talk, policy})}
-            onLongPress={e=>dispatch({type:"talk/clear/policy",id:talk.id, talk, policy})}
-            />
-    )
-}
+
+
 const styles = StyleSheet.create({
     container: {
         flex: 1
@@ -138,7 +116,7 @@ const html=(talk, lineHeight=120)=>`
     </html>
 
 `
-function TalkInfo({talk, policy, dispatch, toggleTalk, style}) {
+function TalkInfo({talk, dispatch, toggleTalk, style}) {
     const {favorited,hasHistory}=useSelector(state=>({
             favorited:state.talks[talk.id]?.favorited ,
             hasHistory:!!state.talks[talk.id]

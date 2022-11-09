@@ -1,16 +1,16 @@
 import React, {} from 'react';
 import {View, Text, ActivityIndicator, Pressable} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
-import { Video, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import Voice from "@react-native-voice/voice"
 import { MaterialIcons } from '@expo/vector-icons';
 
-
 import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 import { ColorScheme } from './default-style';
+import { selectPolicy } from './store';
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
@@ -21,16 +21,16 @@ const asText=(m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/6
  properties:
  */
 export default function Player({
+    id, //talk id 
     media,
     style, 
     children, //customizable controls
-    policy, 
-    policyName, //used to get history of a policy
+    policyName="general", //used to get history of a policy
+    policy=useSelector(state=>selectPolicy(state,policyName,id)), 
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
     controls:{nav=true, subtitle=true, progress=true}={},
     layoverStyle, navStyle, subtitleStyle, progressStyle,
-    id, //talk id 
     transcript, //paragraphs transcript, []
     ...props}){
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
