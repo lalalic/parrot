@@ -2,12 +2,12 @@ import React from 'react';
 import {View, Text, StyleSheet, Pressable} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
 import Player, {NavBar, Subtitles, Challenges} from "./player"
-import { PressableIcon, PolicyIcons, PlayButton } from './components';
+import { PressableIcon, PolicyIcons, PlayButton, Widget } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
-import {Ted, selectPolicy} from "./store"
+import {Ted} from "./store"
 import { ColorScheme } from './default-style';
 import { Video } from 'expo-av';
 
@@ -31,19 +31,31 @@ export default function Talk({autoplay}){
             break
     }
 
+    const media=React.useMemo(()=>{
+        if(talk.isWidget){
+            return (
+                <Widget {...talk}/>
+            )
+        }else{
+            return (
+                <Video 
+                    posterSource={{uri:talk.thumb}} 
+                    source={{uri:talk.resources?.hls.stream}} 
+                    shouldPlay={autoplay}
+                    useNativeControls={false}
+                    shouldCorrectPitch={true}
+                    progressUpdateIntervalMillis={100}
+                    style={{flex:1}}
+                    />
+            )
+        }
+    },[talk])
+
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
                 <Player {...{autoplay, challenging, style:{flex:1},key:policyName, policyName}}
-                    media={<Video 
-                        posterSource={{uri:talk.thumb}} 
-                        source={{uri:talk.resources?.hls.stream}} 
-                        shouldPlay={autoplay}
-                        useNativeControls={false}
-                        shouldCorrectPitch={true}
-                        progressUpdateIntervalMillis={100}
-                        style={{flex:1}}
-                        />}
+                    media={media}
                     transcript={talk.languages?.en?.transcript} 
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
                     onFinish={e=>!challenging && toggleTalk("challenging",true)}
@@ -57,7 +69,7 @@ export default function Talk({autoplay}){
             <View style={styles.nav}>
                 {"shadowing,dictating,retelling".split(",").map(k=>(
                     <PressableIcon key={k} name={PolicyIcons[k]} 
-                        color={policyName==k ? color.active : color.unactive}
+                        color={policyName==k ? color.active : color.inactive}
                         onPress={e=>navigate(policyName==k ? `/talk/${slug}` : `/talk/${slug}/${k}`,{replace:true})}
                         />
                 ))}

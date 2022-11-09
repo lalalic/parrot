@@ -49,7 +49,10 @@ const Policy={
 
 const Ted=createApi({
 	reducerPath:"ted",
-	baseQuery:(({baseUrl:base})=>async({baseUrl=base, context,headers, ...params})=>{
+	baseQuery:(({baseUrl:base})=>async({baseUrl=base, context,headers,slug, ...params})=>{
+		if(slug && globalThis.Widgets[slug])
+			return {data:{data:globalThis.Widgets[slug].defaultProps}}
+			
 		if(!context){
 			return {data:""}
 		}
@@ -69,6 +72,7 @@ const Ted=createApi({
 	endpoints:builder=>({
 		talk:builder.query({
 			query:({slug,lang="en"})=>({
+				slug,
 				context:"/graphql",
 				headers:{
 					'Content-Type': 'application/json',
@@ -215,8 +219,7 @@ const Ted=createApi({
 				})
 				return {talks}
 			}
-		})
-
+		}),
 	})
 })
 

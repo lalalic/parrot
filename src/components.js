@@ -248,7 +248,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
                 <Link to={`/talk/${slug}`}>
-                    <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={{uri:thumb}}/>
+                    <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
                 </Link>
                 {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
                 {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
@@ -259,11 +259,15 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 }
 
 export class Media extends React.PureComponent{
+    static defaultProps={
+        isWidget:true,
+    }
+    
     constructor(){
         super(...arguments)
         this.state={
-            isLoaded:false,
-            isPlaying,
+            isLoaded:true,
+            isPlaying:false,
             rate:1,
             volume:1,
             didJustFinish:false,
@@ -272,13 +276,17 @@ export class Media extends React.PureComponent{
         }
     }
 
+    componentDidMount(){
+        this.props.onPlaybackStatusUpdate?.(this.state)
+    }
+
     setStatusAsync(){
         this.setState(...arguments)
     }
 
     render(){
         const {isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}=this.state
-        const {posterSource, source}=this.props
+        const {posterSource, source, ...props}=this.props
 
         return (
             <View {...props}>
@@ -298,7 +306,8 @@ export class Media extends React.PureComponent{
     }
 }
 
-export const Widget=(props)=>{
-    return <View {...props}/>
-}
+export const Widget=React.forwardRef(({slug, ...props},ref)=>{
+    const ThisWidget=globalThis.Widgets[slug]
+    return <ThisWidget ref={ref} {...props}/>
+})
 

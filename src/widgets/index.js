@@ -1,46 +1,36 @@
 import React from "react"
-import { View } from "react-native"
-import AudioBook from "./audiobook"
-import WordBook from "./wordbook"
-import { Media, Widget } from "../components"
-import Player from "../player"
+import { FlatList, View, Text } from "react-native"
+import { Media, TalkThumb } from "../components"
+import { ColorScheme } from "../default-style"
 
 export default (props)=>{
-    const itemLayout={
-        width: "50%",
-        height: 200,
-        flex: 1,
-        padding:5,
-    }
-    const itemStyle={
-        backgroundColor: "rgba(249, 180, 45, 0.25)",
-        borderWidth: 1.5,
-        borderColor: "#fff",
-        borderRadius:5
-    }
-    const widgets=[
-        <AudioBook/>,
-        <WordBook/>,
-        <NumberPractice/>,
-        <SpellNamePractice/>,
-    ]
+    const color=React.useContext(ColorScheme)
     return (
-        <View {...props} style={{
-            flexDirection:"row", flexWrap:"wrap", flex:1,
-            alignContent: 'flex-start',alignItems: 'flex-start',
-            }}>
-                {widgets.map((widget,i)=>(
-                    <Widget key={i} style={{itemLayout}}>
-                        <View style={{itemStyle}}>
-                            <Player media={widget}/>
-                        </View>
-                    </Widget>
-                ))}
+        <View {...props} style={{marginTop:20}}>
+                <Text style={{fontSize:20,backgroundColor:color.inactive, paddingLeft:5}}>
+                    <Text>Widgets </Text> 
+                    <Text style={{fontSize:12}}>help practice particular things</Text>
+                </Text>
+                <FlatList
+                    data={Object.values(Widgets)}
+                    renderItem={({item,index})=><TalkThumb item={item.defaultProps}/>}
+                    keyExtractor={item=>item.defaultProps.slug}
+                    horizontal={true}
+                    />
         </View>
     )
 }
 
 class NumberPractice extends Media{
+    static defaultProps={
+        ...Media.defaultProps,
+        id:"number",
+        slug:"number",
+        title:"Practice Number Sensitivity",
+        thumb:require("../../assets/favicon.png"),
+        
+    }
+
     static createTranscript(){
         return []
     }
@@ -65,5 +55,19 @@ class NumberPractice extends Media{
 }
 
 class SpellNamePractice extends Media{
-
+    static defaultProps={
+        ...Media.defaultProps,
+        id:"spellName",
+        slug:"spellName",
+        title:"Practice Spelling Name",
+        thumb:require("../../assets/favicon.png"),
+    }
 }
+
+const Widgets=globalThis.Widgets=[
+    NumberPractice, 
+    SpellNamePractice,
+].reduce(((widgets,A)=>{
+    widgets[A.defaultProps.id]=A
+    return widgets
+}),{})
