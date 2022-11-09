@@ -3,6 +3,7 @@ import {View, Text, Pressable, FlatList} from "react-native"
 import { Link } from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch } from "react-redux";
+import {Ted} from "./store"
 
 export default ()=>{
     const dispatch=useDispatch()
@@ -24,7 +25,9 @@ export default ()=>{
                 ]} />     
             
             <Pressable 
-                onPress={e=>dispatch({type:"clear"})}
+                onPress={e=>{
+                    dispatch(Ted.util.resetApiState())
+                }}
                 style={{flexDirection:"row",width:"100%",height:50, paddingTop:5,paddingBottom:5, borderBottomWidth:1,borderColor:"gray",borderTopWidth:1}}>
                 <MaterialIcons style={{paddingTop:5}} name={"cleaning-services"} size={30} />
                 <Text style={{flexGrow:1,marginLeft:4,paddingTop:12}}>Clear Cache</Text>

@@ -10,7 +10,7 @@ export default ()=>{
     const dispatch=useDispatch()
     const color=React.useContext(ColorScheme)
     const policy=useSelector(state=>state.policy)
-    const {data:talk={}}=Ted.useTalkQuery(slug)
+    const {data:talk={}}=Ted.useTalkQuery({slug})
     const [target, setTarget]=React.useState("general")
 
     return (

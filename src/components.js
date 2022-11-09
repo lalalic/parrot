@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigate, useParams} from "react-router-native"
+import { Link, useNavigate, useParams} from "react-router-native"
 import { ColorScheme, TalkStyle } from './default-style';
 
 const AutoHideDuration=4000
@@ -243,13 +243,15 @@ export function AutoHide({hide, style, children, timeout=2000, duration=AutoHide
 
 export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
-    const {thumb,duration,title}=item
+    const {thumb,duration,title, slug}=item
     return (
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
-                <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={{uri:thumb}}/>
-                {text && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
-                {text && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
+                <Link to={`/talk/${slug}`}>
+                    <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={{uri:thumb}}/>
+                </Link>
+                {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
+                {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
             </View>
             {children && React.cloneElement(children,{talk:item})}
 		</View>

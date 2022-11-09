@@ -4,11 +4,13 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { persistReducer} from "redux-persist"
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
+import {XMLParser} from 'fast-xml-parser'
 
 import { Provider } from "react-redux"
 import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 import * as FileSystem from "expo-file-system"
+import cheerio from "cheerio"
 
 const Policy={
 	general: {
@@ -45,27 +47,34 @@ const Policy={
 	},
 }
 
-const graphqlBaseQuery =({ baseUrl }) =>async ({ body }) => {
-    const response = await fetch(baseUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-        },
-        body: JSON.stringify(body)
-    });
-    return response.json()
-}
+const Ted=createApi({
+	reducerPath:"ted",
+	baseQuery:(({baseUrl:base})=>async({baseUrl=base, context,headers, ...params})=>{
+		if(!context){
+			return {data:""}
+		}
 
-const Ted = createApi({
-	reducerPath: "ted",
-	baseQuery: graphqlBaseQuery({
-		baseUrl: "https://www.ted.com/graphql",
-	}),
-	endpoints: (builder) => ({
-		talk: builder.query({
-			query: (slug, lang="en") => ({
-				body: {
+		const res=await fetch(`${baseUrl}${context}`,{
+			headers:{
+				"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+				...headers,
+			},
+			...params
+		})
+		if(headers?.Accept==="application/json"){
+			return {data:await res.json()}
+		}
+		return {data:await res.text()}
+	})({baseUrl:"https://www.ted.com"}),
+	endpoints:builder=>({
+		talk:builder.query({
+			query:({slug,lang="en"})=>({
+				context:"/graphql",
+				headers:{
+					'Content-Type': 'application/json',
+					'Accept': 'application/json',
+				},
+				body:JSON.stringify({
 					query: `query {
                         translation(
                           videoId: "${slug}"
@@ -87,9 +96,10 @@ const Ted = createApi({
                             }
                         }
                     }`,
-				},
+				}),
+				method:"POST"
 			}),
-			transformResponse: async (data) => {
+			transformResponse: async ({data}) => {
 				if(!data.translation)
 					return data
 				const {translation, video: { playerData, ...metadata },}=data
@@ -134,8 +144,81 @@ const Ted = createApi({
 				return talk
 			},
 		}),
-	}),
-});
+		talks:builder.query({
+			query:({q, page})=>({context:!q ? null : `/search?cat=videos${q ? `&q=${encodeURI(q)}` :""}${page>1 ? `&page=${page}`:""}`}),
+			transformResponse(data, meta, {page}){
+				const $=cheerio.load(data)
+				const talks=$(".search-results .search__result").map((i,el)=>{
+					const $el=$(el)
+					const link=$el.find("h3>a.ga-link").first()
+					return {
+						title:link.text(),
+						slug:link.attr("href").split("/").pop(),
+						thumb:$el.find('img').attr('src'),
+						desc:$el.find('.search__result__description').text(),
+					}
+				}).toArray()
+				const pages=parseInt($(".search__pagination .pagination__item").last().text())||1
+				return {talks,page,pages}
+			}
+		}),
+		people:builder.query({
+			query:({q})=>({context:!q ? null : `/search?cat=people&q=${encodeURI(q)}`}),
+			transformResponse(data){
+				const $=cheerio.load(data)
+				const talks=$(".search-results .search__result").map((i,el)=>{
+					const $el=$(el)
+					const link=$el.find("h3>a.ga-link").first()
+					return {
+						name:link.text().split("|")[0].trim(),
+						slug:link.attr("href").split("/").pop(),
+						thumb:$el.find('img').attr('src'),
+						desc:$el.find('.search__result__description').text(),
+					}
+				}).toArray()
+				return talks
+			}
+		}),
+		speakerTalks:builder.query({
+			query:({q})=>({context:!q ? null : `/speakers/${q}`}),
+			transformResponse(data){
+				const $=cheerio.load(data)
+				const talks=$("#talks .media").map((i,el)=>{
+					const $el=$(el)
+					const link=$el.find("a.ga-link").last()
+					return {
+						title:link.text(),
+						slug:link.attr("href").split("/").pop(),
+						thumb:$el.find('img').attr('src'),
+						duration:(([m,s])=>parseInt(m)*60+parseInt(s))($el.find('.thumb__duration').text().split(":"))
+					}
+				}).toArray()
+				return {talks}
+			}
+		}),
+		today:builder.query({
+			query:(day)=>({baseUrl:"http://feeds.feedburner.com",context:"/TEDTalks_audio"}),
+			transformResponse(data){
+				const {rss}=new XMLParser({
+						ignoreAttributes:false,
+						attributeNamePrefix:"",
+						removeNSPrefix:true,
+						textNodeName:"value",
+					}).parse(data);
+				const slug=(link, i=link.lastIndexOf("/"),j=link.indexOf("?"))=>link.substring(i+1,j)
+				const toSec=dur=>{
+					const [h,m,s]=dur.split(":").map(a=>parseInt(a))
+					return (h*60+m)*60+s
+				}
+				const talks=rss?.channel.item.map(({title,talkId:id, duration,thumbnail, link})=>{
+					return {id, title, duration:toSec(duration), thumb:thumbnail.url,slug:slug(link)}
+				})
+				return {talks}
+			}
+		})
+
+	})
+})
 
 const store = configureStore({
 	/** reducer can't directly change any object in state, instead shallow copy and change */
@@ -289,8 +372,9 @@ const store = configureStore({
 					return isPlain(value)||value?.constructor===Date
 				}
 			}
-		}).concat(Ted.middleware),
+		}).concat(Ted.middleware,Ted.middleware),
 });
+
 const persistor=persistStore(store)
 setupListeners(store.dispatch)
 

@@ -231,7 +231,7 @@ const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
 const TimeSelector=({style, start=-1, max=24, ...props})=>{
     const color=React.useContext(ColorScheme)
     return (
-        <Picker style={[{}, style]} mode="dropdown" itemStyle={{color:color.text}} {...props}>
+        <Picker style={style} mode="dropdown" itemStyle={{color:color.text}} {...props}>
             {new Array(48).fill(0).map((a,index)=>{
                 if(index>start && index<=max){
                     const label=`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`

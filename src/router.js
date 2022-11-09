@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
 import * as FileSystem from "expo-file-system"
 
-import Talks from "./daily-talks"
+import Talks from "./talks"
 import Account from "./account"
 import Talk from "./talk"
 import Policy from "./policy"
@@ -16,7 +16,7 @@ import { ColorScheme } from "./default-style";
 
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/plan"]}>
+    <NativeRouter initialEntries={["/account"]}>
         <SafeAreaView style={{flex:1, backgroundColor:scheme.backgroundColor}}>
             <Routes>
                 <Route path="/" element={React.createElement(()=>{

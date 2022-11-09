@@ -18,7 +18,7 @@ export default function Talk({autoplay}){
     const color=React.useContext(ColorScheme)
     const {slug,policy: policyName="general"}=useParams()
     const Policy=useSelector(state=>state.policy)
-    const {data:talk={}}=Ted.useTalkQuery(slug)
+    const {data:talk={}}=Ted.useTalkQuery({slug})
 
     const {policy, challenging}=useSelector(state=>{
         const {desc,...policy}={

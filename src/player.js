@@ -32,6 +32,10 @@ export default function Player({talk, style, children, policy, challenging,
         return {actions:policy.autoHide ? time : false, progress:time}
     },{actions:policy.autoHide ? Date.now() : false, progress:Date.now()})
     const challenges=useSelector(state=>state.talks[talk.id]?.[policyName]?.challenges)
+    React.useEffect(()=>{
+        //@Hack: to play sound to speaker, otherwise always to earpod
+        Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+    },[])
 
     React.useEffect(()=>{
         setAutoHide(Date.now())
