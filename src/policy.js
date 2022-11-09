@@ -1,6 +1,8 @@
 import React from "react"
 import {View, Text, Pressable} from "react-native"
 import {useDispatch, useSelector } from 'react-redux'
+import { Video } from "expo-av"
+import * as FileSystem from "expo-file-system"
 import {Ted} from "./store"
 import Player from "./player"
 import { ColorScheme } from "./default-style"
@@ -15,7 +17,9 @@ export default ()=>{
 
     return (
         <View style={{flex:1}}>
-            <Player style={{flex:1}} talk={talk} 
+            <Player key={target}
+                style={{flex:1}} 
+                id={"example"}
                 media={<Video 
                     posterSource={{uri:talk.thumb}} 
                     source={{uri:talk.resources?.hls.stream}} 
@@ -24,23 +28,24 @@ export default ()=>{
                     style={{flex:1}}
                     />}
                 policy={policy[target]} 
+                policyName={target}
                 autoHide={false}
-                transcript={talk.languages.en.transcript}
+                transcript={talk.languages?.en?.transcript}
                 onPolicyChange={policy=>dispatch({type:"policy",target, payload:policy})}
-                onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/general/audios/example.wav`}
+                onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 
             <View style={{flex:1, padding:10}}>
                 <View style={{flexDirection:"row",justifyContent:"space-between", 
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(
                         <Pressable key={a} onPress={e=>setTarget(a)}>
-                            <Text style={{color:a==target ? color.active : color.unactive}}>{a.toUpperCase()}</Text>
+                            <Text style={{color:a==target ? color.active : color.inactive}}>{a.toUpperCase()}</Text>
                         </Pressable>
                     ))}
                 </View>
 
                 <View style={{flexGrow:1,padding:20}}>
-                    <Text style={{height:20}}>{policy[target].desc}</Text>
+                    <Text style={{paddingBottom:20}}>{policy[target].desc}</Text>
                     {JSON.stringify((({desc,...props})=>props)(policy[target]), null, "\t").replace(/[\{\}\",]/g,"").split("\n")
                         .filter(a=>!!a)
                         .map(a=>{
