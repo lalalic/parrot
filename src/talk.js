@@ -2,7 +2,7 @@ import React from 'react';
 import {View, Text, StyleSheet, Pressable} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
 import Player, {NavBar, Subtitles, Challenges} from "./player"
-import { PressableIcon, PolicyIcons, PlayButton, Widget } from './components';
+import { PressableIcon, PolicyIcons, PlayButton, Widget, PolicyChoice } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
@@ -34,7 +34,7 @@ export default function Talk({autoplay}){
     const media=React.useMemo(()=>{
         if(talk.isWidget){
             return (
-                <Widget {...talk}/>
+                <Widget {...talk} shouldPlay={autoplay}/>
             )
         }else{
             return (
@@ -49,12 +49,12 @@ export default function Talk({autoplay}){
                     />
             )
         }
-    },[talk])
+    },[talk,autoplay])
 
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{autoplay, challenging, style:{flex:1},key:policyName, policyName}}
+                <Player {...{challenging, style:{flex:1},key:policyName, policyName}}
                     media={media}
                     transcript={talk.languages?.en?.transcript} 
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
@@ -66,74 +66,18 @@ export default function Talk({autoplay}){
                     {children}
                 </Player>
             </View>
-            <View style={styles.nav}>
-                {"shadowing,dictating,retelling".split(",").map(k=>(
-                    <PressableIcon key={k} name={PolicyIcons[k]} 
-                        color={policyName==k ? color.active : color.inactive}
-                        onPress={e=>navigate(policyName==k ? `/talk/${slug}` : `/talk/${slug}/${k}`,{replace:true})}
-                        />
-                ))}
-            </View>
+            <PolicyChoice label={true} labelFade={true} onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
         </View>
     )
 }
 
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1
-    },
-    content: {
-        flexGrow: 1,
-        flex:1
-    },
-    header: {
-      fontSize: 20
-    },
-    nav: {
-        flexDirection: "row",
-        justifyContent: "space-around",
-    },
-    navItem: {
-      flex: 1,
-      alignItems: "center",
-      padding: 10
-    },
-    subNavItem: {
-      padding: 5
-    },
-    topic: {
-      textAlign: "center",
-      fontSize: 15
-    }
-  });
-
-const html=(talk, lineHeight=120)=>`
-    <html>
-        <style>
-            p{line-height:${lineHeight}%;margin:0;}
-            body{padding:5mm}
-            @page{
-                margin-top:2cm;
-                margin-bottom:1cm;
-            }
-        </style>
-        <body>
-            <h2>
-                <span>${talk.title}</span>
-                <span style="font-size:12pt;float:right;padding-right:10mm">${new Date().asDateString()}</span>
-            </h2>
-            ${talk.languages?.en?.transcript?.map(a => a.cues.map(b => b.text).join("")).map(a=>`<p>${a}</p>`).join("\n")}
-        </body>
-    </html>
-
-`
 function TalkInfo({talk, dispatch, toggleTalk, style}) {
     const {favorited,hasHistory}=useSelector(state=>({
             favorited:state.talks[talk.id]?.favorited ,
             hasHistory:!!state.talks[talk.id]
         }
     ))
+    const hasTranscript=!!talk.languages?.en?.transcript
     return (
         <View style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
@@ -158,7 +102,8 @@ function TalkInfo({talk, dispatch, toggleTalk, style}) {
                             
                         }
                     }} />
-                <PressableIcon name="print" 
+                <PressableIcon name={hasTranscript ? "print" :""}
+                    disabled={!hasTranscript}
                     onLongPress={async e=>{
                         try{
                             await Print.printAsync({html: html(talk, 200)})
@@ -186,4 +131,25 @@ function TalkInfo({talk, dispatch, toggleTalk, style}) {
         </View>
     )
 }
+
+const html=(talk, lineHeight=120)=>`
+    <html>
+        <style>
+            p{line-height:${lineHeight}%;margin:0;}
+            body{padding:5mm}
+            @page{
+                margin-top:2cm;
+                margin-bottom:1cm;
+            }
+        </style>
+        <body>
+            <h2>
+                <span>${talk.title}</span>
+                <span style="font-size:12pt;float:right;padding-right:10mm">${new Date().asDateString()}</span>
+            </h2>
+            ${talk.languages?.en?.transcript?.map(a => a.cues.map(b => b.text).join("")).map(a=>`<p>${a}</p>`).join("\n")}
+        </body>
+    </html>
+
+`
 

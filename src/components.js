@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Link, useNavigate, useParams} from "react-router-native"
 import { ColorScheme, TalkStyle } from './default-style';
 
-const AutoHideDuration=4000
+const AutoHideDuration=6000
 export const PressableIcon = ({onPress, onLongPress, onPressOut, children, label, labelFade, labelStyle,...props }) => {
     if(labelFade===true)
         labelFade=AutoHideDuration
@@ -20,8 +20,8 @@ export const PressableIcon = ({onPress, onLongPress, onPressOut, children, label
         }
     },[labelFade])
     return (
-        <Pressable {...{onPress,onLongPress, onPressOut}}>
-            <MaterialIcons {...props} />
+        <Pressable {...{onPress,onLongPress, onPressOut,style:{justifyContent:"center", alignItems:"center"}}}>
+            <MaterialIcons {...props}/>
             {children || (label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
         </Pressable>
     )
@@ -86,7 +86,7 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade})=>{
     const color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
@@ -98,7 +98,8 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style})=>{
             {"shadowing,dictating,retelling".split(",").map(k=>(
                 <PressableIcon key={k} 
                     color={value==k ? color.primary : undefined}
-                    name={PolicyIcons[k]} 
+                    name={PolicyIcons[k]} labelFade={labelFade}
+                    label={!!label && k.toUpperCase()}
                     onPress={e=>change(value==k ? null : k)}/>
             ))}
         </View>
@@ -258,35 +259,122 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 	)
 }
 
-export class Media extends React.PureComponent{
+export class Media extends React.Component{
     static defaultProps={
         isWidget:true,
+        progressUpdateIntervalMillis:500,
+        positionMillis:0,
     }
     
-    constructor(){
+    constructor({rate=1,volume,positionMillis=0}){
         super(...arguments)
-        this.state={
+        this.status={
             isLoaded:true,
-            isPlaying:false,
-            rate:1,
-            volume:1,
             didJustFinish:false,
             durationMillis:0,
-            positionMillis:0,
+            positionMillis,
+            rate,
+            volume,
+            isLoading:false,
+            shouldPlay:false,
+            isPlaying:false,
         }
+        this.state={}
+    }
+
+    shouldComponentUpdate(nextProps, state){
+        if(this.state!==state){
+            return true
+        }
+        return false 
+    }
+
+    onPlaybackStatusUpdate(particular){
+        this.props.onPlaybackStatusUpdate?.({
+            ...this.status,
+            ...particular,
+            positionMillis:this.progress.current, 
+        })
     }
 
     componentDidMount(){
-        this.props.onPlaybackStatusUpdate?.(this.state)
+        this.status.durationMillis=this.durationMillis
+        const {progressUpdateIntervalMillis, positionMillis=0, shouldPlay}=this.props
+        this.progress=new Animated.Value(positionMillis)
+        this.progress.current=0
+        this.progress.last=0
+
+        const eventHandler=({value})=>{
+            if(value==0)
+                return 
+            value=Math.floor(value)
+            this.progress.current=value
+            if(this.progress.current-this.progress.last>=progressUpdateIntervalMillis){
+                this.progress.last=value
+                this.onPlaybackStatusUpdate()
+            }
+        }
+
+        this.progress.addListener(eventHandler)
+
+        this.setStatusAsync({shouldPlay,positionMillis})
+
+        this.onPlaybackStatusUpdate()
+    }
+
+    componentWillUnmount(){
+        clearInterval(this.onPlaybackStatusUpdateInterval)
+    }
+
+    setStatusSync({shouldPlay, positionMillis}){
+        if(positionMillis!=undefined){
+            this.progress.last=Math.max(0,positionMillis-(this.progress.current-this.progress.last))
+            this.progress.current=positionMillis
+        }
+
+        if(shouldPlay!=undefined){
+            if(shouldPlay!=this.status.shouldPlay){
+                if(shouldPlay){
+                    this.status.shouldPlay=true
+                    this.status.isPlaying=true
+                    this.progress.setValue(this.progress.current)
+                    this.progressing=Animated.timing(this.progress, {
+                        toValue: this.status.durationMillis,
+                        duration:this.status.durationMillis-this.progress.current,
+                        easing: Easing.linear,
+                        useNativeDriver:true,
+                    })
+                    this.progressing.start(finished=>{
+                        if(finished){
+                            this.setState({didJustFinish:true})
+                            this.onPlaybackStatusUpdate({isPlaying:false})
+                            this.progress.setValue(0)
+                            this.progress.current=0
+                            this.progress.last=0
+                            this.status.isPlaying=false
+                        }
+                    })
+                }else{
+                    this.progressing?.stop()
+                    this.status.isPlaying=false
+                    this.status.shouldPlay=false
+                    this.onPlaybackStatusUpdate()
+                }
+            }
+        }else if(this.status.shouldPlay && positionMillis!=undefined){
+            this.progressing.stop()
+            this.status.shouldPlay=false
+            this.setStatusSync({shouldPlay:true})
+        } 
     }
 
     setStatusAsync(){
-        this.setState(...arguments)
+        setTimeout(()=>this.setStatusSync(...arguments),0)
     }
 
     render(){
-        const {isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}=this.state
-        const {posterSource, source, ...props}=this.props
+        const {isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}=this.status
+        const {thumb, posterSource=thumb, source, ...props}=this.props
 
         return (
             <View {...props}>
@@ -302,6 +390,10 @@ export class Media extends React.PureComponent{
     }
 
     speak(){
+
+    }
+
+    image(){
 
     }
 }

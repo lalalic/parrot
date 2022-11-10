@@ -3,10 +3,10 @@ import { Media } from "../components";
 export default class SpellNamePractice extends Media {
     static defaultProps = {
         ...Media.defaultProps,
-        id: "wordbook",
-        slug: "wordbook",
-        title: "extend your vocabulary",
+        id: "spellName",
+        slug: "spellName",
+        title: "Practice Spelling Name",
         thumb: require("../../assets/favicon.png"),
-        description: "This widget can help to remember word"
+        description: "This widget will give your name, and you have to spell it"
     };
 }

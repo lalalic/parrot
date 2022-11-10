@@ -1,15 +1,12 @@
-import React from "react"
-import {View, Text} from "react-native"
+import { Media } from "../components";
 
-/**
-user stories:
-    I want to record a word
-    I want to tag a record
-    I want to play all records one by one
-    I want to play a tag records one by one
- */
-export default (props)=>(
-    <View {...props}>
-        <Text>Audio Book</Text>
-    </View>
-)
+export default class SpellNamePractice extends Media {
+    static defaultProps = {
+        ...Media.defaultProps,
+        id: "audiobook",
+        slug: "audiobook",
+        title: "record audio as your language material",
+        thumb: require("../../assets/favicon.png"),
+        description: "This widget will help you to manage your audio book"
+    };
+}

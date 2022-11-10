@@ -14,25 +14,22 @@ import { selectPolicy } from './store';
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
-const asText=(m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`     
 
-/**
- * 
- properties:
- */
 export default function Player({
     id, //talk id 
     media,
     style, 
     children, //customizable controls
     policyName="general", //used to get history of a policy
-    policy=useSelector(state=>selectPolicy(state,policyName,id)), 
+    policy,
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
-    controls:{nav=true, subtitle=true, progress=true}={},
+    controls=media.props.controls||{},
     layoverStyle, navStyle, subtitleStyle, progressStyle,
     transcript, //paragraphs transcript, []
     ...props}){
+    const $policy=useSelector(state=>selectPolicy(state,policyName,id));
+    ([policy=media.props.policy||$policy]=[policy]);
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
@@ -207,51 +204,58 @@ export default function Player({
                 volume:policy.volume,
             })}
             <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
-                {nav && <NavBar {...{
+                {false!=controls.nav && <NavBar {...{
+                        controls:controls.nav,
                         dispatch,status,
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
                 <AutoHide hide={autoHide.actions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
-                    <PressableIcon style={{marginRight:10}}name={`mic${!policy.record?"-off":""}`} 
+                    {false!=controls.record && <PressableIcon style={{marginRight:10}}
+                        name={`${ControlIcons.record}${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? color.warn : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
-                        />
-                    <PressableIcon style={{marginRight:10}}name={`visibility${!policy.visible?"-off":""}`} onPress={e=>changePolicy("visible",!policy.visible)}/>
+                        />}
 
-                    <SliderIcon style={{marginRight:10}} 
-                        icon={`closed-caption${!policy.caption ? "-disabled":""}`}
+                    {false!=controls.video && <PressableIcon style={{marginRight:10}}
+                        name={`${ControlIcons.visible}${!policy.visible?"-off":""}`} 
+                        onPress={e=>changePolicy("visible",!policy.visible)}/>}
+
+                    {false!=controls.caption && <SliderIcon style={{marginRight:10}} 
+                        icon={`${ControlIcons.caption}${!policy.caption ? "-disabled":""}`}
                         onToggle={()=>changePolicy("caption",!policy.caption)}
                         onSlideFinish={delay=>changePolicy("captionDelay",delay)}
-                        slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>
+                        slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>}
                     
-                    <SliderIcon style={{marginRight:10}}
-                        icon={status.volume>0 ? "volume-up" : "volume-off"}
+                    {false!=controls.volume && <SliderIcon style={{marginRight:10}}
+                        icon={status.volume>0 ? ControlIcons.volume : "volume-off"}
                         onToggle={()=>dispatch({type:"volume/toggle"})}
                         onSlide={volume=>dispatch({type:"volume/tune",volume})}
-                        slider={{minimumValue:0,maximumValue:1.0,step:0.01,value:status.volume,text:t=>`${Math.round(t*100)}`}}/>
+                        slider={{minimumValue:0,maximumValue:1.0,step:0.01,value:status.volume,text:t=>`${Math.round(t*100)}`}}/>}
                     
-                    <SliderIcon style={{marginRight:10}} icon="speed" 
+                    {false!=controls.speed && <SliderIcon style={{marginRight:10}} 
+                        icon={ControlIcons.speed} 
                         onToggle={()=>dispatch({type:"speed/toggle"})}
                         onSlideFinish={rate=>dispatch({type:"speed/tune",rate})}
-                        slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:status.rate,text:t=>`${t}x`}}/>
+                        slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:status.rate,text:t=>`${t}x`}}/>}
 
-                    <SliderIcon style={{marginRight:10}} 
-                        icon={policy.whitespace>0 ? "notifications" : "notifications-off"}
+                    {false!=controls.whitespace && <SliderIcon style={{marginRight:10}} 
+                        icon={policy.whitespace>0 ? ControlIcons.whitespace : "notifications-off"}
                         onToggle={()=>changePolicy("whitespace",policy.whitespace>0 ? 0 : 1)}
                         onSlideFinish={value=>changePolicy("whitespace",value)}
-                        slider={{minimumValue:0.5,maximumValue:4,step:0.5,value:policy.whitespace,text:t=>`${t}x`}}/>
+                        slider={{minimumValue:0.5,maximumValue:4,step:0.5,value:policy.whitespace,text:t=>`${t}x`}}/>}
 
-                    <SliderIcon style={{marginRight:10}}
-                        icon={`flash-${policy.chunk>0 ? "on" : "off"}`}
+                    {false!=controls.chunk && <SliderIcon style={{marginRight:10}}
+                        icon={policy.chunk>0 ? ControlIcons.chunk : "flash-off"}
                         onToggle={()=>changePolicy("chunk",policy.chunk>0 ? 0 : 1)}
                         onSlideFinish={get=>(dx,dy)=>changePolicy("chunk",get(dy))}
-                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>
+                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>}
 
-                    <PressableIcon style={{marginRight:10}} name="zoom-out-map" onPress={e=>dispatch({type:'video/fullscreen'})}/>
+                    {false!=controls.maximize && <PressableIcon style={{marginRight:10}} name="zoom-out-map" 
+                        onPress={e=>dispatch({type:'video/fullscreen'})}/>}
                 </AutoHide>
 
-                {subtitle && status.i>=0 && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
+                {false!=controls.subtitle && status.i>=0 && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
                     i={status.i} title={chunks[status.i]?.text}
                     delay={policy.captionDelay} show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 
@@ -261,12 +265,12 @@ export default function Player({
                         />}
                 </Subtitle>}
 
-                {progress && <AutoHide hide={autoHide.progress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                {false!=controls.progress && <AutoHide hide={autoHide.progress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         callback:refProgress,
                         value: status.positionMillis,
                         duration:status.durationMillis,
-                        onValueChange:time=>dispatch({type:"video", time}),
+                        onValueChange:time=>dispatch({type:"video/time", time:Math.floor(time)}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())
                     }}/> 
@@ -345,31 +349,43 @@ export function ProgressBar({value:initValue=0, duration=0,style, onValueChange,
     return (
         <View style={[{flex:1,flexDirection:"row"},style]} {...props}>
             <View style={{justifyContent:"center",width:50}}>
-                <Text style={{textAlign:"right",}}>{asText(value)}</Text>
+                <TimeText style={{textAlign:"right",}} time={value}/>
             </View>
             <View style={{justifyContent:"center",flexGrow:1}}>
                 <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,onSlidingComplete,onSlidingStart,value, maximumValue:duration}}/>
             </View>
             <View style={{justifyContent:"center",width:50,}}>
-                <Text style={{}}>{asText(duration-value)}</Text>
+                <TimeText style={{}} time={(duration-value)}/>
             </View>
         </View>
     )
 }
 
-export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
+const TimeText=({time,...props})=>{
+    const text=((m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`)(time);
+    const [m,s]=text.split(":")
+    const textStyle={width:20}
+    return (
+        <Text {...props}>
+            <Text style={textStyle}>{m}</Text><Text>:</Text>
+            <Text style={textStyle}>{s}</Text>
+        </Text>
+    )
+}
+
+export function NavBar({dispatch,status={},controls={}, navable,style, size=24,...props}){
     const color=React.useContext(ColorScheme)
     const containerStyle={width:"100%",flexDirection:"row",alignItems:"center",alignSelf:"center",justifyContent: "space-around", margin:"auto"}
     return (
         <View style={[containerStyle,style]} {...props}>
             {status.isLoaded && (<>
             <PressableIcon size={size}
-                disabled={!navable}
-                name={status.whitespacing ? "replay-5":"subdirectory-arrow-left"} 
+                disabled={!navable||controls.slow==false}
+                name={controls.slow==false ? "" : (status.whitespacing ? "replay-5":"subdirectory-arrow-left")} 
                 onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}Slow`})}/>
             <PressableIcon size={size} 
-                disabled={!navable}
-                name={status.whitespacing ? "replay" : "keyboard-arrow-left"} 
+                disabled={!navable||controls.prev==false}
+                name={controls.prev==false ? "" : (status.whitespacing ? "replay" : "keyboard-arrow-left")} 
                 onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}`})}/>
 
             <PlayButton size={size}  
@@ -380,12 +396,13 @@ export function NavBar({dispatch,status={}, navable,style, size=24,...props}){
                 onPress={e=>dispatch({type:"nav/play"})}/>
             
             <PressableIcon size={size} 
-                disabled={!navable}
-                name="keyboard-arrow-right" onPress={e=>dispatch({type:"nav/next"})}/>
+                disabled={!navable||controls.next==false}
+                name={controls.next==false ? "" : "keyboard-arrow-right"}
+                onPress={e=>dispatch({type:"nav/next"})}/>
             
             <PressableIcon size={size} 
-                disabled={!navable}
-                name={status.ic>-1 ? "alarm-on" : "alarm-add"}
+                disabled={!navable||controls.select==false}
+                name={controls.select==false ? "" : (status.ic>-1 ? "alarm-on" : "alarm-add")}
                 onPress={e=>dispatch({type:"nav/challenge"})} 
                 color={status.ic>-1 ? "yellow" : undefined}/>
             </>)}
@@ -460,6 +477,17 @@ export function Challenges({style, ...props}){
                 />
         </View>
     )
+}
+
+export const ControlIcons={
+    record:"mic",
+    visible:"visibility",
+    caption:"closed-caption",
+    captionDelay:"closed-caption",
+    volume:"volume-up",
+    speed:"speed", 
+    whitespace:"notifications", 
+    chunk:"flash-on", 
 }
 
 

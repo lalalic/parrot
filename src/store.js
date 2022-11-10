@@ -69,41 +69,49 @@ const Ted=createApi({
 		}
 		return {data:await res.text()}
 	})({baseUrl:"https://www.ted.com"}),
+	tagTypes:["talk","widget"],
 	endpoints:builder=>({
 		talk:builder.query({
-			query:({slug,lang="en"})=>({
-				slug,
-				context:"/graphql",
-				headers:{
-					'Content-Type': 'application/json',
-					'Accept': 'application/json',
-				},
-				body:JSON.stringify({
-					query: `query {
-                        translation(
-                          videoId: "${slug}"
-                          language: "${lang}"
-                        ) {
-                          paragraphs {
-                            cues {
-                              text
-                              time
-                            }
-                          }
-                        }
-                        
-                      video(slug:"${slug}"){
-                            description
-                            playerData
-                            nativeDownloads{
-                              medium
-                            }
-                        }
-                    }`,
-				}),
-				method:"POST"
-			}),
-			transformResponse: async ({data}) => {
+			query({slug,lang="en"}){
+				return {
+					slug,
+					context:"/graphql",
+					headers:{
+						'Content-Type': 'application/json',
+						'Accept': 'application/json',
+					},
+					body:JSON.stringify({
+						query: `query {
+							translation(
+							videoId: "${slug}"
+							language: "${lang}"
+							) {
+							paragraphs {
+								cues {
+								text
+								time
+								}
+							}
+							}
+							
+						video(slug:"${slug}"){
+								description
+								playerData
+								nativeDownloads{
+								medium
+								}
+							}
+						}`,
+					}),
+					method:"POST"
+				}
+			},
+			providesTags(result, error, {slug}){
+				if(slug && globalThis.Widgets[slug])
+					return ['widget']
+				return ['talk']
+			},
+			async transformResponse({data}){
 				if(!data.translation)
 					return data
 				const {translation, video: { playerData, ...metadata },}=data
@@ -146,7 +154,7 @@ const Ted=createApi({
 					cue.end=end
 				}))
 				return talk
-			},
+			}
 		}),
 		talks:builder.query({
 			query:({q, page})=>({context:!q ? null : `/search?cat=videos${q ? `&q=${encodeURI(q)}` :""}${page>1 ? `&page=${page}`:""}`}),

@@ -1,7 +1,11 @@
 import React from "react"
 import { FlatList, View, Text } from "react-native"
-import { Media, TalkThumb } from "../components"
+import { TalkThumb } from "../components"
 import { ColorScheme } from "../default-style"
+import NumberPractice, {PhoneNumber} from "./number"
+import SpellNamePractice from "./spell-name"
+import AudioBook from "./audiobook"
+import WordBook from "./wordbook"
 
 export default (props)=>{
     const color=React.useContext(ColorScheme)
@@ -21,52 +25,11 @@ export default (props)=>{
     )
 }
 
-class NumberPractice extends Media{
-    static defaultProps={
-        ...Media.defaultProps,
-        id:"number",
-        slug:"number",
-        title:"Practice Number Sensitivity",
-        thumb:require("../../assets/favicon.png"),
-        
-    }
-
-    static createTranscript(){
-        return []
-    }
-
-    componentDidUpdate(lastProps){
-        if(lastProps.source!=this.props.source){
-            const [min=0,max=10000000,amount=20]=source.split(",")
-            this.setState({min, max, amount})
-        }
-    }
-
-    getDurationMillis(){
-        const {amount, max}=this.state
-        return String(max).length*500*amount
-    }
-
-    playAt(positionMillis){
-        const i=Math.floor(positionMillis/500)
-        const n=this.getNumber(i)
-        this.speak(n)
-    }
-}
-
-class SpellNamePractice extends Media{
-    static defaultProps={
-        ...Media.defaultProps,
-        id:"spellName",
-        slug:"spellName",
-        title:"Practice Spelling Name",
-        thumb:require("../../assets/favicon.png"),
-    }
-}
-
 const Widgets=globalThis.Widgets=[
-    NumberPractice, 
+    NumberPractice, PhoneNumber, 
     SpellNamePractice,
+    AudioBook,
+    WordBook,
 ].reduce(((widgets,A)=>{
     widgets[A.defaultProps.id]=A
     return widgets
