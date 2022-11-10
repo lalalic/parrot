@@ -1,4 +1,4 @@
-import { Media } from "../components";
+import { Media } from "./media";
 
 export default class NumberPractice extends Media {
     static defaultProps = {
@@ -14,29 +14,35 @@ export default class NumberPractice extends Media {
     
     };
 
-    static createTranscript() {
-        return [];
+    static createTranscript(props) {
+        return new this(props).createTranscript()
     }
 
     constructor({source}){
         super(...arguments)
         const [min = 0, max = 10000000, amount = 20] = source.split(",");
-        this.params={ min, max, amount }
+        this.params={ min, max, amount, step:String(max).length * 500, }
+        this.durationMillis=this.params.step*amount
     }
 
-    get durationMillis() {
-        const { amount, max } = this.params;
-        return String(max).length * 500 * amount;
-    }
-
-    getNumber(i){
-        return 84734848
+    createTranscript(){
+        const {min, max, amount, step}=this.params
+        this.cues=new Array(amount).fill(0).map((z,i)=>{
+            return {
+                text:Math.floor(min+Math.random()*(max-min))+"",
+                time:i*step,
+                end: (i+1)*step-1,
+            }
+        })
+        return this.transcript=[{cues:this.cues}]
     }
 
     playAt(positionMillis) {
-        const i = Math.floor(positionMillis / 500);
-        const n = this.getNumber(i);
-        this.speak(n);
+        const i = Math.floor(positionMillis / this.params.step)
+        if(i!=this.params.current){
+            this.params.current=i
+            this.speak(this.cues[i].text)
+        }
     }
 }
 

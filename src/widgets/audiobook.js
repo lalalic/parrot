@@ -1,4 +1,4 @@
-import { Media } from "../components";
+import { Media } from "./media";
 
 export default class SpellNamePractice extends Media {
     static defaultProps = {

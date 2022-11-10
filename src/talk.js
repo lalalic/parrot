@@ -2,7 +2,7 @@ import React from 'react';
 import {View, Text, StyleSheet, Pressable} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
 import Player, {NavBar, Subtitles, Challenges} from "./player"
-import { PressableIcon, PolicyIcons, PlayButton, Widget, PolicyChoice } from './components';
+import { PressableIcon, PolicyIcons, PlayButton, PolicyChoice, Widget } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
@@ -31,14 +31,19 @@ export default function Talk({autoplay}){
             break
     }
 
-    const media=React.useMemo(()=>{
+    const props=React.useMemo(()=>{
         if(talk.isWidget){
-            return (
-                <Widget {...talk} shouldPlay={autoplay}/>
-            )
+            const Widget=globalThis.Widgets[talk.slug]
+            const media=<Widget {...talk} shouldPlay={autoplay}/>
+            const {policy, controls}=media.props
+            return {
+                media,
+                transcript:Widget.createTranscript(media.props),
+                policy, controls
+            }
         }else{
-            return (
-                <Video 
+            return {
+                media:<Video 
                     posterSource={{uri:talk.thumb}} 
                     source={{uri:talk.resources?.hls.stream}} 
                     shouldPlay={autoplay}
@@ -46,17 +51,16 @@ export default function Talk({autoplay}){
                     shouldCorrectPitch={true}
                     progressUpdateIntervalMillis={100}
                     style={{flex:1}}
-                    />
-            )
+                    />,
+                transcript:talk.languages?.en?.transcript
+            }
         }
     },[talk,autoplay])
 
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{challenging, style:{flex:1},key:policyName, policyName}}
-                    media={media}
-                    transcript={talk.languages?.en?.transcript} 
+                <Player {...{challenging, style:{flex:1},key:policyName, policyName,...props}}
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
                     onFinish={e=>!challenging && toggleTalk("challenging",true)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}

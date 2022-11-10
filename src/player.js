@@ -21,15 +21,13 @@ export default function Player({
     style, 
     children, //customizable controls
     policyName="general", //used to get history of a policy
-    policy,
+    policy=useSelector(state=>selectPolicy(state,policyName,id)),
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
-    controls=media.props.controls||{},
+    controls,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
     transcript, //paragraphs transcript, []
     ...props}){
-    const $policy=useSelector(state=>selectPolicy(state,policyName,id));
-    ([policy=media.props.policy||$policy]=[policy]);
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
