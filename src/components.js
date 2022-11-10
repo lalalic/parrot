@@ -210,10 +210,21 @@ export const SliderIcon=(uuid=>{
 })(Date.now());
 
 
-export function AutoHide({hide, style, children, timeout=2000, duration=AutoHideDuration, ...props}){
+export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=2000, duration=AutoHideDuration, ...props}){
     const {sliding}=React.useContext(SliderIcon.Context)
     const opacity = React.useRef(new Animated.Value(1)).current;
     const opacityTimeout=React.useRef()
+
+    const [hide, setHide]=React.useState(false)
+    
+    React.useEffect(()=>{
+        if(typeof(indicatorOrCallbackRef)=="object"){
+            indicatorOrCallbackRef.current=setHide
+        }else{
+            setHide(indicatorOrCallbackRef)
+        }
+    },[indicatorOrCallbackRef])
+
     React.useEffect(()=>{
         if(opacityTimeout.current){
             clearTimeout(opacityTimeout.current)

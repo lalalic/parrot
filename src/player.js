@@ -32,15 +32,19 @@ export default function Player({
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
     const refProgress=React.useRef()
-    const [autoHide, setAutoHide]=React.useReducer((state,time)=>{
-        return {actions:policy.autoHide ? time : false, progress:time}
-    },{actions:policy.autoHide ? Date.now() : false, progress:Date.now()})
+
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
     React.useEffect(()=>{
         //@Hack: to play sound to speaker, otherwise always to earpod
         Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
     },[])
 
+    const autoHideActions=React.useRef()
+    const autoHideProgress=React.useRef()
+    const setAutoHide=React.useCallback((time)=>{
+        autoHideProgress.current?.(time)
+        autoHideActions.current?.(policy.autoHide ? time : false)
+    },[policy.autoHide])
     React.useEffect(()=>{
         setAutoHide(Date.now())
     },[policy.autoHide])
@@ -210,7 +214,7 @@ export default function Player({
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
-                <AutoHide hide={autoHide.actions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                <AutoHide hide={autoHideActions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}}
                         name={`${ControlIcons.record}${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? color.warn : undefined}
@@ -259,7 +263,7 @@ export default function Player({
                         />}
                 </Subtitle>}
 
-                {false!=controls.progress && <AutoHide hide={autoHide.progress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                {false!=controls.progress && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         callback:refProgress,
                         value: status.positionMillis,
