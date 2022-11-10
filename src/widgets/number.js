@@ -9,39 +9,42 @@ export default class NumberPractice extends Media {
         thumb: require("../../assets/favicon.png"),
         description: "This widget will speak numbers ramdomly, and you have to repeat it and recognized",
         source:"1,999999,20",
-        policy:{whitespace:2,autoHide:true},
-        controls:{nav:{slow:false},record:false,video:false,caption:false,volume:false,speed:true, whitespace:true, chunk:true, maximize:false},
+        policy:{whitespace:2,autoHide:true,chunk:1, caption:true},
+        controls:{slow:false,record:false,video:false,caption:false,volume:false,speed:true, whitespace:true, chunk:true, maximize:false,subtitle:true},
     
     };
 
-    static createTranscript(props) {
-        return new this(props).createTranscript()
+    static createTranscript(media) {
+        return new this(media.props).createTranscript()
     }
 
-    constructor({source}){
-        super(...arguments)
-        const [min = 0, max = 10000000, amount = 20] = source.split(",");
-        this.params={ min, max, amount, step:String(max).length * 500, }
-        this.durationMillis=this.params.step*amount
+    componentDidMount(){
+        this.createTranscript()
+        super.componentDidMount(...arguments)
     }
 
     createTranscript(){
-        const {min, max, amount, step}=this.params
-        this.cues=new Array(amount).fill(0).map((z,i)=>{
-            return {
+        const [min = 0, max = 10000000, amount = 20, step=String(max).length * 500] = this.props.source?.split(",").map(a=>parseInt(a))
+        this.params={ min, max, amount, step}
+        this.durationMillis=step*amount
+
+        this.cues=[]
+        for(let i=0;i<amount;i++){
+            this.cues[i]={
                 text:Math.floor(min+Math.random()*(max-min))+"",
                 time:i*step,
                 end: (i+1)*step-1,
             }
-        })
+        }
+
         return this.transcript=[{cues:this.cues}]
     }
 
     playAt(positionMillis) {
         const i = Math.floor(positionMillis / this.params.step)
-        if(i!=this.params.current){
+        if(i!=this.params.current && i<this.cues.length){
             this.params.current=i
-            this.speak(this.cues[i].text)
+            this.speak(this.cues[i]?.text)
         }
     }
 }

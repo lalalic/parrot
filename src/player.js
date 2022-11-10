@@ -10,7 +10,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 import { ColorScheme } from './default-style';
-import { selectPolicy } from './store';
+import { selectPolicy } from './store'
 
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
@@ -24,7 +24,7 @@ export default function Player({
     policy=useSelector(state=>selectPolicy(state,policyName,id)),
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
-    controls,
+    controls:_controls,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
     transcript, //paragraphs transcript, []
     ...props}){
@@ -32,7 +32,6 @@ export default function Player({
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
     const refProgress=React.useRef()
-    const [chunks, setChunks]=React.useState([])
     const [autoHide, setAutoHide]=React.useReducer((state,time)=>{
         return {actions:policy.autoHide ? time : false, progress:time}
     },{actions:policy.autoHide ? Date.now() : false, progress:Date.now()})
@@ -46,34 +45,30 @@ export default function Player({
         setAutoHide(Date.now())
     },[policy.autoHide])
     
-    React.useEffect(()=>{
+    const chunks=React.useMemo(()=>{
         if(challenging){
-            setChunks(challenges||[])
-            return 
+            return challenges||[]
         }else if(transcript && typeof(policy.chunk)=="number"){
             const paragraphs=transcript
             switch(policy.chunk){        
                 case 0:
                 case 1:
-                    setChunks(paragraphs.map(p=>p.cues).flat())
-                break
+                    return paragraphs.map(p=>p.cues).flat()
                 case 9:
-                    setChunks(paragraphs.map(p=>{
+                    return (paragraphs.map(p=>{
                         const text=p.cues.map(a=>a.text).join("")
                         const time=p.cues[0].time
                         const end=p.cues[p.cues.length-1].end
                         return {text,time,end}
                     }))
-                break
                 case 10:
-                    setChunks([{
+                    return ([{
                         text:paragraphs.map(a=>a.cues.map(b=>b.text).join("")).join("\n"),
                         time:paragraphs[0].cues[0].time,
                         end:status.durationMillis
                     }])
-                break
                 default:
-                    setChunks(
+                    return (
                         paragraphs.map(p=>p.cues).flat()
                             .reduce((chunks,a,i)=>{
                                 if(i%policy.chunk==0)
@@ -89,7 +84,8 @@ export default function Player({
                     )
             }
         }
-    },[id, policy.chunk, challenging, challenges])
+        return []
+    },[id, policy.chunk, challenging, challenges, transcript])
 
     const [status, dispatch] = React.useReducer((state,action)=>{
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
@@ -186,6 +182,12 @@ export default function Player({
         return state
     },{isLoaded:false, i:-1});
 
+    const controls=React.useMemo(()=>{
+        return {
+            ..._controls,
+            ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,slow:false,prev:false,next:false,select:false}),
+        }
+    },[_controls,chunks])
     return (
         <>
         <SliderIcon.Container 
@@ -203,7 +205,7 @@ export default function Player({
             })}
             <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
                 {false!=controls.nav && <NavBar {...{
-                        controls:controls.nav,
+                        controls,
                         dispatch,status,
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
@@ -224,12 +226,6 @@ export default function Player({
                         onToggle={()=>changePolicy("caption",!policy.caption)}
                         onSlideFinish={delay=>changePolicy("captionDelay",delay)}
                         slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>}
-                    
-                    {false!=controls.volume && <SliderIcon style={{marginRight:10}}
-                        icon={status.volume>0 ? ControlIcons.volume : "volume-off"}
-                        onToggle={()=>dispatch({type:"volume/toggle"})}
-                        onSlide={volume=>dispatch({type:"volume/tune",volume})}
-                        slider={{minimumValue:0,maximumValue:1.0,step:0.01,value:status.volume,text:t=>`${Math.round(t*100)}`}}/>}
                     
                     {false!=controls.speed && <SliderIcon style={{marginRight:10}} 
                         icon={ControlIcons.speed} 
@@ -253,7 +249,7 @@ export default function Player({
                         onPress={e=>dispatch({type:'video/fullscreen'})}/>}
                 </AutoHide>
 
-                {false!=controls.subtitle && status.i>=0 && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
+                {false!=controls.subtitle && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
                     i={status.i} title={chunks[status.i]?.text}
                     delay={policy.captionDelay} show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 

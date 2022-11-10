@@ -6,7 +6,7 @@ import * as Speech from "expo-speech"
 export class Media extends React.Component {
     static defaultProps = {
         isWidget: true,
-        progressUpdateIntervalMillis: 500,
+        progressUpdateIntervalMillis: 100,
         positionMillis: 0,
     };
 
@@ -136,8 +136,5 @@ export class Media extends React.Component {
 
     speak(text) {
         Speech.speak(text)
-    }
-
-    image() {
     }
 }

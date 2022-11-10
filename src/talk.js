@@ -22,23 +22,24 @@ export default function Talk({autoplay}){
 
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
     
-    switch(policyName){
-        case "general":
-            children=<TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>
-            break
-        default:
-            children=<Challenges {...{style:{flex:1, padding:5}}}/>
-            break
-    }
+    
+    const children=React.useMemo(()=>{
+        switch(policyName){
+            case "general":
+                return <TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>
+            default:
+                return <Challenges {...{style:{flex:1, padding:5}}}/>
+        }
+    },[talk, policyName])
 
     const props=React.useMemo(()=>{
         if(talk.isWidget){
             const Widget=globalThis.Widgets[talk.slug]
-            const media=<Widget {...talk} shouldPlay={autoplay}/>
+            const media=<Widget shouldPlay={autoplay}/>
             const {policy, controls}=media.props
             return {
                 media,
-                transcript:Widget.createTranscript(media.props),
+                transcript:Widget.createTranscript(media),
                 policy, controls
             }
         }else{

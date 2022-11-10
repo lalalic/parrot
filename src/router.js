@@ -47,7 +47,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="" element={<Account/>}/>
                         <Route element={<WithBackButton/>}>
                             <Route path="policy" element={<Policy/>}/>
-                            <Route path="files" element={<Explorer dir={FileSystem.cacheDirectory} exclude={["appData"]} title="File Explorer"/>}/>
+                            <Route path="files" element={<Explorer dir={FileSystem.documentDirectory} exclude={["appData"]} title="File Explorer"/>}/>
                         </Route>
                     </Route>
                     <Route path="plan" element={<Scheduler/>}/>
