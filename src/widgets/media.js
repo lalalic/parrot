@@ -10,7 +10,9 @@ export class Media extends React.Component {
     };
 
     constructor({ rate = 1, volume, positionMillis = 0 }) {
-        super(...arguments);
+        super(...arguments)
+        let shouldPlay=false
+        const self=this
         this.status = {
             isLoaded: true,
             didJustFinish: false,
@@ -19,8 +21,16 @@ export class Media extends React.Component {
             rate,
             volume,
             isLoading: false,
-            shouldPlay: false,
-            isPlaying: false,
+            set shouldPlay(v){
+                shouldPlay=v
+            },
+            get shouldPlay(){
+                return shouldPlay
+            },
+
+            get isPlaying(){
+                return shouldPlay
+            }
         }
         this.params={}
         
@@ -29,10 +39,15 @@ export class Media extends React.Component {
         this.progress.last = 0
 
         this.state = {
+            isPlaying:shouldPlay,
             _status:this.status,
             _params:this.params,
             _progress:this.progress
         }
+    }
+
+    get offsetTolerance(){
+        return this.prosp.progressUpdateIntervalMillis*1.5
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -93,7 +108,6 @@ export class Media extends React.Component {
             if (shouldPlay != this.status.shouldPlay) {
                 if (shouldPlay) {
                     this.status.shouldPlay = true;
-                    this.status.isPlaying = true;
                     this.progress.setValue(this.progress.current);
                     this.progressing = Animated.timing(this.progress, {
                         toValue: this.status.durationMillis,
@@ -103,19 +117,22 @@ export class Media extends React.Component {
                         isInteraction:false,
                     })
                     this.progressing.start(({finished})=>{
+                        this.setState({isPlaying:false})
                         if(!finished)
                             return
                         this.status.didJustFinish=true
-                        this.status.isPlaying = false
+                        this.status.shouldPlay = false
                         this.onPlaybackStatusUpdate()
                         this.progress.setValue(0)
                         this.progress.current = 0
                         this.progress.last = 0
                     })
+                    this.setState({isPlaying:true})
+                    //this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
-                    this.status.isPlaying = false
                     this.status.shouldPlay = false
+                    //this.onPlaybackStatusUpdate()
                 }
             }
         }
@@ -129,10 +146,10 @@ export class Media extends React.Component {
     }
 
     render() {
-        const { thumb, posterSource = thumb, source, ...props } = this.props;
+        const { thumb, posterSource = thumb, source, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",}}>
-                {false && !!posterSource && (<Image source={posterSource}
+                {!!posterSource && (<Image source={posterSource}
                     style={{ position: "absolute", width: "100%", height: "100%" }} />)}
                 {this.renderAt()}
             </View>
@@ -152,6 +169,9 @@ export class ListMedia extends Media{
             return super.setStatusSync(...arguments)
         }
         const i=this.cues.findIndex(a=>a.end>=positionMillis)
+        if(i==-1){
+            debugger
+        }
         return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
     }
 }

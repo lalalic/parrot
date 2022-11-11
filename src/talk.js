@@ -19,7 +19,7 @@ export default function Talk({autoplay}){
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
-    const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
+    const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk, policy:policyName})
     
     const children=React.useMemo(()=>{
         switch(policyName){
@@ -57,7 +57,7 @@ export default function Talk({autoplay}){
             <View style={{flex:1, flexGrow:1}}>
                 <Player 
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
-                    onFinish={e=>!challenging && toggleTalk("challenging",true)}
+                    onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
                     onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
                     onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
@@ -121,8 +121,8 @@ function TalkInfo({talk, dispatch, toggleTalk, style}) {
 
                 <PressableIcon name={hasHistory ? "delete" : ""} 
                     disabled={!hasHistory}
-                    onLongPress={e=>dispatch({type:"talk/clear",id:talk.id, talk})}
-                    onPress={e=>dispatch({type:"talk/clear/history",id:talk.id, talk})}
+                    onLongPress={e=>dispatch({type:"talk/clear",id:talk.id})}
+                    onPress={e=>dispatch({type:"talk/clear/history",id:talk.id})}
                     />
             </View>
             <View>

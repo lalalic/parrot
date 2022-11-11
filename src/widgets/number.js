@@ -14,7 +14,9 @@ export default class NumberPractice extends Media {
         source:"100,999999,5",
         policy:{whitespace:1,autoHide:false,chunk:1},
         controls:{whitespace:true,slow:false,record:false,video:false,caption:false,volume:false,speed:false,  chunk:false, maximize:false,subtitle:true},
-    };
+    }
+
+    static Durations={}
 
     componentDidMount(){
         (async()=>{
@@ -28,7 +30,7 @@ export default class NumberPractice extends Media {
     }
 
     onPositionMillis(positionMillis){
-        const i =this.cues?.findIndex(a=>a.end>=(positionMillis-150))
+        const i =this.cues?.findIndex(a=>a.end>=(positionMillis-this.offsetTorlorance))
         if(this.state.i!=i){
             this.progress.manual=0
             this.setState({i})
@@ -38,14 +40,19 @@ export default class NumberPractice extends Media {
     }
 
     measureTime(text){
+        const Cache=this.constructor.Durations
+        const cache=Cache[text] || Cache[text.length+""]
+        if(cache){
+            return cache
+        }
         return new Promise((resolve)=>{
             const start=Date.now()
-            const timer=setTimeout(e=>resolve(Date.now()-start),text.length*500)
+            const timer=setTimeout(e=>resolve(Cache[text.length+""]=Date.now()-start),text.length*500)
             Speech.speak(text,{
                 volume:0,
                 onDone:()=>{
                     clearTimeout(timer)
-                    resolve(Date.now()-start+100)
+                    resolve(Cache[text]=Date.now()-start+100)
                 }
             })
         })
@@ -53,17 +60,16 @@ export default class NumberPractice extends Media {
 
     async createTranscript(){
         const [min = 0, max = 10000000, amount = 20] = this.props.source?.split(",").map(a=>parseInt(a))
-        const step=await this.measureTime(max+"")
-        this.params=Object.assign(this.params,{ min, max, amount, step})
+        this.params=Object.assign(this.params,{ min, max, amount})
         
         let time=500
         this.cues=[]
         for(let i=0;i<amount;i++){
             const text=`${Math.floor(min+Math.random()*(max-min))}`
-            const dur=step//await this.measureTime(text)
+            const dur=await this.measureTime(text)
             const end=time+dur
             this.cues[i]={text,time,end}
-            time=end+100
+            time=end+200
         }
         this.status.durationMillis=time
         this.onPlaybackStatusUpdate({transcript:[{cues:this.cues}], durationMillis:time})

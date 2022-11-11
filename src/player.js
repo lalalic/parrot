@@ -196,7 +196,7 @@ export default function Player({
      */
     const onProgress=React.useRef()
     const onMediaStatus=React.useCallback((state, action)=>{
-        onProgress.current?.(action.status.positionMillis)
+        setTimeout(()=>onProgress.current?.(action.status.positionMillis),0)
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const nextState=(()=>{
             if(action.status.transcript){
@@ -250,7 +250,13 @@ export default function Player({
             {...props}>
             {React.cloneElement(media, {
                 ref:video,
-                onPlaybackStatusUpdate:mediaStatus =>onMediaStatus(status, {type:"media/status", status: mediaStatus}),
+                onPlaybackStatusUpdate:mediaStatus =>{
+                    try{
+                        onMediaStatus(status, {type:"media/status", status: mediaStatus})
+                    }catch(e){
+                        console.error(e)
+                    }
+                },
                 rate:policy.rate,
                 volume:policy.volume,
             })}

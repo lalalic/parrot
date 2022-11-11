@@ -48,6 +48,10 @@ describe("play features",()=>{
 
         })
 
+        it("should play prev chunk when prev is pressed",()=>{
+
+        })
+
         describe("number media",()=>{
             it("should be allowed to control whitespace",()=>{
 
@@ -57,5 +61,15 @@ describe("play features",()=>{
                 
             })
         })
+    })
+})
+
+describe("talk",()=>{
+    it("should clear all policy history when pressing clear",()=>{
+
+    })
+
+    it("should clear talk's history when long pressing clear",()=>{
+        
     })
 })

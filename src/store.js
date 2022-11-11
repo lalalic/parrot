@@ -272,15 +272,29 @@ const store = configureStore({
 						case "@@INIT":{
 							return Object.values(globalThis.Widgets)
 								.reduce((talks,Widget)=>{
-									const {id,slug,title, thumb, duration, policy, link, general=policy, shadowing=policy, dictating=policy, retelling=policy}=Widget.defaultProps
-									talks[id]={slug, title, thumb, duration,link, id, general, shadowing, dictating, retelling }
+									const {isWidget, id,slug,title, thumb, duration, policy, link, general=policy, shadowing=policy, dictating=policy, retelling=policy}=Widget.defaultProps
+									talks[id]={isWidget, slug, title, thumb, duration,link, id, general, shadowing, dictating, retelling }
 									return talks
 								},{...talks})
 						}
+						case "persist/REHYDRATE":
+							return { ...action.payload.talks, ...talks}
 						case "talk/toggle":{
-							const {key,value}=action
+							const {key,value, policy}=action
 							const [talk,id]=selectTalk()
-							return {...talks, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
+							switch(key){
+								case "challenging":{
+									const hasChallenges=talk[policy]?.challenges?.length>0
+									if(value==undefined){
+										return {...talks, [id]:{...talk, [policy]:{...talk[policy],challenging:hasChallenges}}}
+									}else if(value===true && hasChallenges){
+										return {...talks, [id]:{...talk, [policy]:{...talk[policy],challenging:true}}}
+									}
+									return talks
+								}
+								default:
+									return {...talks, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
+							}
 						}
 						case "talk/challenge":{
 							const [talk, id]=selectTalk()
@@ -303,21 +317,31 @@ const store = configureStore({
 							return {...talks, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
 						}
 						case "talk/clear/history":{
-							let [id, talk]=selectTalk()
-							if(talks[id]){
-								Object.keys(Policy).forEach(policy=>{
-									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
-									talk=immutableSet(talk, null, [policy])
-								})
-								return {...talks, [id]: talk}
-							}
+							const {id}=action
+							let talk=talks[id]
+							if(!talk)
+								break
+							
+							Object.keys(Policy).forEach(policy=>{
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
+								talk=immutableSet(talk, [policy], 
+									!talk.isWidget ? null : 
+										(({policy:a,[policy]:b=a})=>b)(globalThis.Widgets[talk.id].defaultProps)
+								)
+							})
+							return {...talks, [id]: talk}
 						}
 						case "talk/clear":{
-							const [id]=selectTalk()
-							if(talks[id]){
-								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
-								return immutableSet(talks, null, [id])
+							const {id}=action
+							let talk=talks[id]
+							if(talk.isWidget){
+								store.dispatch({...action,type:"talk/clear/history"})
+								break
 							}
+							if(!talk)
+								break
+							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
+							return immutableSet(talks, [id], null)
 						}
 						default:
 							return talks
@@ -340,17 +364,17 @@ const store = configureStore({
 						}
 						case "plan":{
 							const {plan:{start}}=action
-							return immutableSet(state, action.plan,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
+							return immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], action.plan)
 						}
 						case "plan/remove":{
 							const {time:start}=action
-							const removed=immutableSet(state, null,  [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())])
+							const removed=immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], null)
 							return removed||{}
 						}
 						case "plan/day/template":
-							return immutableSet(state,state.day==action.day ? null : action.day, ['day'])
+							return immutableSet(state, ['day'], state.day==action.day ? null : action.day)
 						case "plan/week/template":
-							return immutableSet(state,Date.from(action.day).isSameWeek(state.week) ? null : action.day, ['week'])
+							return immutableSet(state, ['week'], Date.from(action.day).isSameWeek(state.week) ? null : action.day)
 						case "plan/copy/1":{
 							const {replacements, day, templateDay}=action
 							const template=state[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
@@ -363,7 +387,7 @@ const store = configureStore({
 								}
 								return value
 							})
-							return immutableSet(state,plan,[day.getFullYear(),day.getWeek(),day.getDay()])
+							return immutableSet(state,[day.getFullYear(),day.getWeek(),day.getDay()],plan)
 						}
 						case "plan/copy/7":{
 							const {replacements, day, templateDay}=action
@@ -377,7 +401,7 @@ const store = configureStore({
 								}
 								return value
 							})
-							return immutableSet(state,plan,[day.getFullYear(),day.getWeek()])
+							return immutableSet(state,[day.getFullYear(),day.getWeek()],plan)
 						}
 						
 					}
@@ -421,12 +445,12 @@ function nullClear(o, key, returnEmpty){
 	return Object.keys(o).length==0 ? null : o
 }
 
-function immutableSet(o, value, keys, returnEmpty=true){
+function immutableSet(o, keys, value, returnEmpty=true){
 	if(keys.length==1){
 		return value===null ? nullClear(o,keys[0], returnEmpty) : {...o, [keys[0]]:value}
 	}
 	const first=keys.shift()
-	const firstValue=immutableSet({...o[first]},value, keys, false)
+	const firstValue=immutableSet({...o[first]}, keys ,value, false)
 	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
 
