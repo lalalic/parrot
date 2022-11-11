@@ -156,11 +156,11 @@ export default function Player({
                 if(whitespacing)//don't update until whitespacing is over
                     return state
                 
-                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
+                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
                 if(!isLoaded)
                     return state
 
-                const current={isLoaded,isPlaying,rate,volume,durationMillis,i}
+                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
 
                 //copy temp keys from state
                 ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))

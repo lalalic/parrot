@@ -10,6 +10,10 @@ describe("play features",()=>{
     })
 
     describe("with transcript",()=>{
+        const play=()=>{
+
+        }
+
         describe("corresponding nav bar: or ignore action",()=>{
             it("should diable slow_prev, prev, next when only 1 cue",()=>{
 
@@ -25,13 +29,21 @@ describe("play features",()=>{
         }).skip()
 
         it("should toggle record when pressiong record",()=>{
-            
+
+        })
+
+        it("should pause and record after playing each chunk when policy has whitespace",()=>{
+            return play({whitespace:1}).then(e=>{
+                
+            })
         })
     })
 
     describe("media",()=>{
-        it("can play chunk by chunk",()=>{
-            
+        describe("positioning progress",()=>{
+            it("should only position 1 when set position between 1.time and 1.end",()=>{
+                
+            })
         })
     })
 })

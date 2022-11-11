@@ -1,6 +1,6 @@
 import React from "react"
 import * as Speech from "expo-speech"
-import { Media } from "./media";
+import { ListMedia as Media } from "./media";
 import { Text } from "react-native";
 
 export default class NumberPractice extends Media {
@@ -39,17 +39,14 @@ export default class NumberPractice extends Media {
 
     measureTime(text){
         return new Promise((resolve)=>{
-            let start
+            const start=Date.now()
+            const timer=setTimeout(e=>resolve(Date.now()-start),text.length*500)
             Speech.speak(text,{
                 volume:0,
-                onDone(){
+                onDone:()=>{
+                    clearTimeout(timer)
                     resolve(Date.now()-start+100)
-                },
-                onStart(){
-                    start=Date.now()
-                },
-                onError(){},
-                onStopped(){}
+                }
             })
         })
     }
@@ -57,7 +54,7 @@ export default class NumberPractice extends Media {
     async createTranscript(){
         const [min = 0, max = 10000000, amount = 20] = this.props.source?.split(",").map(a=>parseInt(a))
         const step=await this.measureTime(max+"")
-        this.params={ min, max, amount, step}
+        this.params=Object.assign(this.params,{ min, max, amount, step})
         
         let time=500
         this.cues=[]
@@ -74,18 +71,24 @@ export default class NumberPractice extends Media {
 
     renderAt(){ 
         const {rate, volume}=this.status
-        const {i}=this.state
-        return i>=0 && <Speak key={i} text={this.cues[Math.floor(i)]?.text} {...{rate, volume}}/>
+        const {i=-1}=this.state
+        const text=this.cues[Math.floor(i)]?.text
+        return i>=0 && (
+            <Speak {...{text, key:i, rate, volume}}>
+                <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>
+            </Speak>
+        )
     }
 }
 
-const Speak=({text,style,...options})=>{
+const Speak=({text,style,children,...options})=>{
     React.useEffect(()=>{
         if(text){
-            Speech.speak(text)
+            Speech.speak(text,options)
+            return ()=>Speech.stop()
         }
     },[text])
-    return 
+    return children||null
 }
 
 export class PhoneNumber extends NumberPractice{

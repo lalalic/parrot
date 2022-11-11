@@ -22,12 +22,18 @@ export class Media extends React.Component {
             isLoading: false,
             shouldPlay: false,
             isPlaying: false,
-        };
-        this.state = {};
-
+        }
+        this.params={}
+        
         this.progress = new Animated.Value(positionMillis);
-        this.progress.current = 0;
-        this.progress.last = 0;
+        this.progress.current = 0
+        this.progress.last = 0
+        
+        this.state = {
+            _status:this.status,
+            _params:this.params,
+            _progress:this.progress
+        }
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -126,5 +132,21 @@ export class Media extends React.Component {
                 {this.renderAt()}
             </View>
         )
+    }
+}
+
+export class ListMedia extends Media{
+    constructor(){
+        super(...arguments)
+        this.state.i=-1
+        this.cues=[]
+    }
+
+    setStatusSync({positionMillis}){
+        if(typeof(positionMillis)==`undefined`){
+            return super.setStatusAsync(...arguments)
+        }
+        const i=this.cues.findIndex(a=>a.end>=positionMillis)
+        return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
     }
 }
