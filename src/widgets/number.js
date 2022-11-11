@@ -11,8 +11,8 @@ export default class NumberPractice extends Media {
         title: "Practice Number Sensitivity",
         thumb: require("../../assets/favicon.png"),
         description: "This widget will speak numbers ramdomly, and you have to repeat it and recognized",
-        source:"1,999999,10",
-        policy:{whitespace:2,autoHide:false,chunk:1},
+        source:"100,999999,5",
+        policy:{whitespace:1,autoHide:false,chunk:1},
         controls:{whitespace:true,slow:false,record:false,video:false,caption:false,volume:false,speed:false,  chunk:false, maximize:false,subtitle:true},
     };
 

@@ -11,6 +11,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
+import "./widgets"
 
 const Policy={
 	general: {
@@ -268,6 +269,14 @@ const store = configureStore({
 					}
 
 					switch(action.type){
+						case "@@INIT":{
+							return Object.values(globalThis.Widgets)
+								.reduce((talks,Widget)=>{
+									const {id,slug,title, thumb, duration, policy, link, general=policy, shadowing=policy, dictating=policy, retelling=policy}=Widget.defaultProps
+									talks[id]={slug, title, thumb, duration,link, id, general, shadowing, dictating, retelling }
+									return talks
+								},{...talks})
+						}
 						case "talk/toggle":{
 							const {key,value}=action
 							const [talk,id]=selectTalk()

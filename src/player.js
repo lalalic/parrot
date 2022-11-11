@@ -25,7 +25,7 @@ export default function Player({
     style, 
     children, //customizable controls
     policyName="general", //used to get history of a policy
-    policy,
+    policy=useSelector(state=>selectPolicy(state,policyName,id)),
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
     controls:_controls,
@@ -34,13 +34,12 @@ export default function Player({
     ...props}){
     const performanceCount=React.useRef(0)
     performanceCount.current++
+    console.log(`rendered ${performanceCount.current}`)
     
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
-    const refProgress=React.useRef()
-    policy=policy||useSelector(state=>selectPolicy(state,policyName,id))
-
+    
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
     React.useEffect(()=>{
         //@Hack: to play sound to speaker, otherwise always to earpod
@@ -173,51 +172,14 @@ export default function Player({
             case "record":
                 policy.record && onRecordChunk?.({chunk:chunks[i],...action})
             break
-            case "video/time":
+            case "media/time":
                 video.current.setStatusAsync({positionMillis:action.time})
             break
-            case "video/status":{
-                if(action.status.transcript){
-                    setTranscript(action.status.transcript)
-                }
-
-                if(whitespacing)//don't update until whitespacing is over
-                    return state
-                
-                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
-                if(!isLoaded)
-                    return state
-
-                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
-
-                //copy temp keys from state
-                ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))
-
-                if(shallowEqual(state, current)){
-                    return state
-                }
-                
-                if(positionMillis>=chunks[i]?.end){//current is over
-                    if(policy.whitespace && !state.byNext){
-                        const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
-                        video.current.setStatusAsync({shouldPlay:false})
-                        const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
-                        return {...state, whitespace, whitespacing}
-                    }
-
-                    if(state.byNext){
-                        delete current.byNext
-                        delete state.byNext
-                    }
-                }
-
-                if(didJustFinish){
-                    onFinish?.()
-                }
-
-                current.ic=challenging ? i : challenges?.findIndex(a=>a.time==chunks[current.i]?.time)
-                return current
-            }
+            case "media/finished":
+                onFinish?.()
+            break
+            case "media/status/changed":
+                return action.state
         }
         return state
     },{isLoaded:false, i:-1});
@@ -229,7 +191,57 @@ export default function Player({
         }
     },[_controls,chunks])
 
-    //console.log(`player[${id}] is rendered ${performanceCount.current} times.`)
+    /**
+     * move out of reducer to bail out rerender
+     */
+    const onProgress=React.useRef()
+    const onMediaStatus=React.useCallback((state, action)=>{
+        onProgress.current?.(action.status.positionMillis)
+        const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
+        const nextState=(()=>{
+            if(action.status.transcript){
+                setTranscript(action.status.transcript)
+            }
+
+            if(whitespacing)//don't update until whitespacing is over
+                return state
+            
+            const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
+            if(!isLoaded)
+                return state
+
+            const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
+
+            //copy temp keys from state
+            ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))
+
+            if(positionMillis>=chunks[i]?.end){//current is over
+                if(policy.whitespace && !state.byNext){
+                    console.log('whitespace/start')
+                    const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
+                    video.current.setStatusAsync({shouldPlay:false})
+                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
+                    return {...state, whitespace, whitespacing}
+                }
+
+                if(state.byNext){
+                    delete current.byNext
+                    delete state.byNext
+                }
+            }
+
+            if(didJustFinish){
+                setTimeout(()=>dispatch({type:"media/finished"}),0)
+            }
+
+            current.ic=challenging ? i : challenges?.findIndex(a=>a.time==chunks[current.i]?.time)
+            return current
+        })();
+        if(state!=nextState && !shallowEqual(state,nextState)){
+            dispatch({type:"media/status/changed", state:nextState})
+        }
+    },[policy,chunks, challenges, challenging])
+
     return (
         <>
         <SliderIcon.Container 
@@ -238,10 +250,7 @@ export default function Player({
             {...props}>
             {React.cloneElement(media, {
                 ref:video,
-                onPlaybackStatusUpdate:status =>{
-                    refProgress.current?.(status.positionMillis)//always keep progress bar synced up to video position
-                    dispatch({type:"video/status", status})
-                },
+                onPlaybackStatusUpdate:mediaStatus =>onMediaStatus(status, {type:"media/status", status: mediaStatus}),
                 rate:policy.rate,
                 volume:policy.volume,
             })}
@@ -288,7 +297,7 @@ export default function Player({
                         slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>}
 
                     {false!=controls.maximize && <PressableIcon style={{marginRight:10}} name="zoom-out-map" 
-                        onPress={e=>dispatch({type:'video/fullscreen'})}/>}
+                        onPress={e=>dispatch({type:'media/fullscreen'})}/>}
                 </AutoHide>
 
                 {false!=controls.subtitle && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
@@ -303,10 +312,10 @@ export default function Player({
 
                 {false!=controls.progress && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
-                        callback:refProgress,
+                        onProgress,
                         value: status.positionMillis,
                         duration:status.durationMillis,
-                        onValueChange:time=>dispatch({type:"video/time", time:Math.floor(time)}),
+                        onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())
                     }}/> 
@@ -377,10 +386,10 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     )
 }
 
-export function ProgressBar({value:initValue=0, duration=0,style, onValueChange, callback,onSlidingComplete,onSlidingStart, ...props}){
+export function ProgressBar({value:initValue=0, duration=0,style, onValueChange, onProgress,onSlidingComplete,onSlidingStart, ...props}){
     const [value, setValue]=React.useState(initValue)
     React.useEffect(()=>{
-        callback.current=setValue
+        onProgress.current=setValue
     },[])
     return (
         <View style={[{flex:1,flexDirection:"row"},style]} {...props}>
@@ -461,7 +470,7 @@ export function Subtitles(){
             <FlatList data={chunks} extraData={i} ref={subtitleRef} estimatedItemSize={32}
                 renderItem={({index,item:{text, time}})=>(
                     <>
-                        <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"video/time",time})}>
+                        <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"media/time",time})}>
                             <Text style={{flexGrow:1,color: index==i ? scheme.active : scheme.unactive}}>{text.replace("\n"," ")}</Text>
                         </Pressable>
                     </>
@@ -487,7 +496,7 @@ export function Challenges({style, ...props}){
                     const recognized=records[`${time}-${end}`]
                     return (
                         <View style={{backgroundColor:index==status.ic ? "gray" : undefined, borderColor:"gray", borderTopWidth:1,marginTop:10,paddingTop:10}}>
-                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"video/position",time})}>
+                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"media/position",time})}>
                                 <Text style={{width:20, textAlign:"center"}}>{index+1}</Text>
                                 <Text style={{flexGrow:1,paddingLeft:10}}>{text.replace("\n"," ")}</Text>
                             </Pressable>

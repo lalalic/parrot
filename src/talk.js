@@ -21,7 +21,6 @@ export default function Talk({autoplay}){
 
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk})
     
-    
     const children=React.useMemo(()=>{
         switch(policyName){
             case "general":
@@ -35,11 +34,8 @@ export default function Talk({autoplay}){
         if(talk.isWidget){
             const Widget=globalThis.Widgets[talk.slug]
             const media=<Widget shouldPlay={autoplay}/>
-            const {policy, controls}=media.props
-            return {
-                media,
-                policy, controls,
-            }
+            const {controls}=media.props
+            return {media,  controls,}
         }else{
             return {
                 media:<Video 

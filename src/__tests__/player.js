@@ -32,20 +32,24 @@ describe("play features",()=>{
 
         })
 
-        it("should pause and record after playing each chunk when policy has whitespace",()=>{
-            return play({whitespace:1}).then(e=>{
-                
-            })
+        it("should play 1,2,3 in order when there's no whitespace",()=>{
+
         })
-    })
 
-    describe("media",()=>{
-        describe("number",()=>{
-            it("should be allowed to control whitespace",()=>{
-
-            })
+        it("should pause and record after playing each chunk when policy has whitespace",()=>{
             
-            it("should play 1,2,3 in order when there's no whitespace",()=>{
+        })
+
+        it("should only rerender progress bar when status is not changed although media position changed",()=>{
+
+        })
+
+        it("should trigger onFinish only when all cues are played",()=>{
+
+        })
+
+        describe("number media",()=>{
+            it("should be allowed to control whitespace",()=>{
 
             })
 

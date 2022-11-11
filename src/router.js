@@ -14,8 +14,6 @@ import Test from "./playground"
 import Explorer from "./file-explorer"
 import { ColorScheme } from "./default-style"
 import Home from "./home"
-import "./widgets"
-
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Animated, Easing, Image } from "react-native";
-import * as Speech from "expo-speech"
 
 
 export class Media extends React.Component {
@@ -25,7 +24,7 @@ export class Media extends React.Component {
         }
         this.params={}
         
-        this.progress = new Animated.Value(positionMillis);
+        this.progress = new Animated.Value(0);
         this.progress.current = 0
         this.progress.last = 0
 
@@ -61,7 +60,7 @@ export class Media extends React.Component {
         this.progress.addListener(({ value }) => {
             if (value == 0)
                 return;
-            value = Math.floor(value);
+            value = Math.floor(value)
             this.onPositionMillis(this.progress.current = value)
             if (this.progress.current - this.progress.last >= progressUpdateIntervalMillis) {
                 this.progress.last = value;
@@ -81,9 +80,13 @@ export class Media extends React.Component {
     setStatusSync({ shouldPlay, positionMillis }) {
         console.log(JSON.stringify(arguments[0]))
         if (positionMillis != undefined) {
+            const lastShouldPlay=this.status.shouldPlay
+            this.setStatusSync({shouldPlay:false})//stop to reset
+
             this.progress.last = Math.max(0, positionMillis - (this.progress.current - this.progress.last));
-            this.progress.current = positionMillis;
-            //this.progress.manual=parseFloat(`0.${Date.now()}`)
+            this.progress.current = positionMillis
+            
+            this.setStatusSync({shouldPlay:lastShouldPlay})//recover
         }
 
         if (shouldPlay != undefined) {
@@ -97,26 +100,24 @@ export class Media extends React.Component {
                         duration: this.status.durationMillis - this.progress.current,
                         easing: Easing.linear,
                         useNativeDriver: true,
-                    });
-                    this.progressing.start(finished => {
-                        if (finished) {
-                            this.setState({ didJustFinish: true });
-                            this.progress.setValue(0);
-                            this.progress.current = 0;
-                            this.progress.last = 0;
-                            this.status.isPlaying = false;
-                        }
-                    });
+                        isInteraction:false,
+                    })
+                    this.progressing.start(({finished})=>{
+                        if(!finished)
+                            return
+                        this.status.didJustFinish=true
+                        this.status.isPlaying = false
+                        this.onPlaybackStatusUpdate()
+                        this.progress.setValue(0)
+                        this.progress.current = 0
+                        this.progress.last = 0
+                    })
                 } else {
-                    this.progressing?.stop();
-                    this.status.isPlaying = false;
-                    this.status.shouldPlay = false;
+                    this.progressing?.stop()
+                    this.status.isPlaying = false
+                    this.status.shouldPlay = false
                 }
             }
-        } else if (this.status.shouldPlay && positionMillis != undefined) {
-            this.progressing.stop();
-            this.status.shouldPlay = false;
-            this.setStatusSync({ shouldPlay: true });
         }
     }
 
