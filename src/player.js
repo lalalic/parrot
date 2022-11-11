@@ -21,17 +21,18 @@ export default function Player({
     style, 
     children, //customizable controls
     policyName="general", //used to get history of a policy
-    policy=useSelector(state=>selectPolicy(state,policyName,id)),
+    policy,
     challenging,
     onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
     controls:_controls,
+    transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
-    transcript, //paragraphs transcript, []
     ...props}){
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
     const refProgress=React.useRef()
+    policy=policy||useSelector(state=>selectPolicy(state,policyName,id))
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
     React.useEffect(()=>{
@@ -48,6 +49,9 @@ export default function Player({
     React.useEffect(()=>{
         setAutoHide(Date.now())
     },[policy.autoHide])
+
+    const [transcript, setTranscript]=React.useState(_transcript)
+
     
     const chunks=React.useMemo(()=>{
         if(challenging){
@@ -114,14 +118,14 @@ export default function Player({
             case "nav/prev":
                 return terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time} : undefined)
             case "nav/play":
-                return terminateWhitespace({shouldPlay:!isPlaying})
+                return terminateWhitespace({shouldPlay:!isPlaying, positionMillis: i==-1 ? 0 : undefined})
             case "nav/next":
                 return terminateWhitespace(i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, {byNext:true})
             case "nav/challenge":
                 i!=-1 && onCheckChunk?.(chunks[i])
             break
             case "whitespace/end":
-                return terminateWhitespace(challenging ? {positionMillis:chunks[i+1].start} : undefined,{i:i+1},false)
+                return terminateWhitespace(challenging ? {positionMillis:chunks[i+1].time} : undefined,{i:i+1},false)
             case "volume/toggle":
                 video.current.setStatusAsync({volume:volume==0 ? .50 : 0})
                     .then(a=>changePolicy("volume",a.volume))
@@ -145,14 +149,18 @@ export default function Player({
                 video.current.setStatusAsync({positionMillis:action.time})
             break
             case "video/status":{
+                if(action.status.transcript){
+                    setTranscript(action.status.transcript)
+                }
+
                 if(whitespacing)//don't update until whitespacing is over
                     return state
                 
-                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish}}=action
+                const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
                 if(!isLoaded)
                     return state
 
-                const current={isLoaded,isPlaying,rate,volume,durationMillis,i:chunks.findIndex(a=>a.end>=positionMillis), }
+                const current={isLoaded,isPlaying,rate,volume,durationMillis,i}
 
                 //copy temp keys from state
                 ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))
@@ -207,7 +215,7 @@ export default function Player({
                 rate:policy.rate,
                 volume:policy.volume,
             })}
-            <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:policy.visible?"transparent":"black"},layoverStyle]}>
+            <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
                 {false!=controls.nav && <NavBar {...{
                         controls,
                         dispatch,status,

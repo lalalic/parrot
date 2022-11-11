@@ -24,6 +24,10 @@ export class Media extends React.Component {
             isPlaying: false,
         };
         this.state = {};
+
+        this.progress = new Animated.Value(positionMillis);
+        this.progress.current = 0;
+        this.progress.last = 0;
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -38,43 +42,41 @@ export class Media extends React.Component {
             ...this.status,
             ...particular,
             positionMillis: this.progress.current,
+            ...this.onPlaybackStatusUpdateMore?.()
         });
     }
 
-    componentDidMount() {
-        this.status.durationMillis = this.durationMillis;
-        const { progressUpdateIntervalMillis, positionMillis = 0, shouldPlay } = this.props;
-        this.progress = new Animated.Value(positionMillis);
-        this.progress.current = 0;
-        this.progress.last = 0;
+    onPositionMillis(positionMillis){
 
-        const eventHandler = ({ value }) => {
+    }
+
+    componentDidMount() {
+        const { progressUpdateIntervalMillis, positionMillis = 0, shouldPlay } = this.props;
+        this.progress.addListener(({ value }) => {
             if (value == 0)
                 return;
             value = Math.floor(value);
-            this.progress.current = value;
+            this.onPositionMillis(this.progress.current = value)
             if (this.progress.current - this.progress.last >= progressUpdateIntervalMillis) {
                 this.progress.last = value;
                 this.onPlaybackStatusUpdate();
             }
-            this.playAt(value)
-        };
-
-        this.progress.addListener(eventHandler);
+        })
 
         this.setStatusAsync({ shouldPlay, positionMillis });
-
         this.onPlaybackStatusUpdate();
     }
 
     componentWillUnmount() {
-        clearInterval(this.onPlaybackStatusUpdateInterval);
+        this.progress.removeAllListeners()
+        this.progressing?.stop()
     }
 
     setStatusSync({ shouldPlay, positionMillis }) {
         if (positionMillis != undefined) {
             this.progress.last = Math.max(0, positionMillis - (this.progress.current - this.progress.last));
             this.progress.current = positionMillis;
+            //this.progress.manual=parseFloat(`0.${Date.now()}`)
         }
 
         if (shouldPlay != undefined) {
@@ -92,7 +94,6 @@ export class Media extends React.Component {
                     this.progressing.start(finished => {
                         if (finished) {
                             this.setState({ didJustFinish: true });
-                            this.onPlaybackStatusUpdate({ isPlaying: false });
                             this.progress.setValue(0);
                             this.progress.current = 0;
                             this.progress.last = 0;
@@ -103,7 +104,6 @@ export class Media extends React.Component {
                     this.progressing?.stop();
                     this.status.isPlaying = false;
                     this.status.shouldPlay = false;
-                    this.onPlaybackStatusUpdate();
                 }
             }
         } else if (this.status.shouldPlay && positionMillis != undefined) {
@@ -118,23 +118,13 @@ export class Media extends React.Component {
     }
 
     render() {
-        const { isLoaded, positionMillis, isPlaying, rate, volume, durationMillis, didJustFinish } = this.status;
         const { thumb, posterSource = thumb, source, ...props } = this.props;
-
         return (
-            <View {...props}>
-                {!!posterSource && (<Image source={posterSource}
+            <View {...props} style={{width:"100%",height:"100%",}}>
+                {false && !!posterSource && (<Image source={posterSource}
                     style={{ position: "absolute", width: "100%", height: "100%" }} />)}
-
+                {this.renderAt()}
             </View>
-        );
-    }
-
-    playAt(positionMillis) {
-
-    }
-
-    speak(text) {
-        Speech.speak(text)
+        )
     }
 }

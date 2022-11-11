@@ -1,8 +1,8 @@
 import React from 'react';
-import {View, Text, StyleSheet, Pressable} from "react-native"
+import {View, Text,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
-import Player, {NavBar, Subtitles, Challenges} from "./player"
-import { PressableIcon, PolicyIcons, PlayButton, PolicyChoice, Widget } from './components';
+import Player, {Challenges} from "./player"
+import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
@@ -39,8 +39,7 @@ export default function Talk({autoplay}){
             const {policy, controls}=media.props
             return {
                 media,
-                transcript:Widget.createTranscript(media),
-                policy, controls
+                policy, controls,
             }
         }else{
             return {
@@ -61,12 +60,13 @@ export default function Talk({autoplay}){
     return (
         <View style={{flex:1}}>
             <View style={{flex:1, flexGrow:1}}>
-                <Player {...{challenging, style:{flex:1},key:policyName, policyName,...props}}
+                <Player 
                     onPolicyChange={changed=>toggleTalk(policyName,changed)}
                     onFinish={e=>!challenging && toggleTalk("challenging",true)}
                     onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
                     onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
                     onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
+                    {...{id:talk.id, challenging, style:{flex:1},key:policyName, policyName,...props}}
                     >
                     {children}
                 </Player>
