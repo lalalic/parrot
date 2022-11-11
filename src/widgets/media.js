@@ -28,7 +28,7 @@ export class Media extends React.Component {
         this.progress = new Animated.Value(positionMillis);
         this.progress.current = 0
         this.progress.last = 0
-        
+
         this.state = {
             _status:this.status,
             _params:this.params,
@@ -79,6 +79,7 @@ export class Media extends React.Component {
     }
 
     setStatusSync({ shouldPlay, positionMillis }) {
+        console.log(JSON.stringify(arguments[0]))
         if (positionMillis != undefined) {
             this.progress.last = Math.max(0, positionMillis - (this.progress.current - this.progress.last));
             this.progress.current = positionMillis;
@@ -120,7 +121,10 @@ export class Media extends React.Component {
     }
 
     setStatusAsync() {
-        setTimeout(() => this.setStatusSync(...arguments), 0);
+        return new Promise((resolve) =>{
+            this.setStatusSync(...arguments)
+            resolve()
+        })
     }
 
     render() {
@@ -144,7 +148,7 @@ export class ListMedia extends Media{
 
     setStatusSync({positionMillis}){
         if(typeof(positionMillis)==`undefined`){
-            return super.setStatusAsync(...arguments)
+            return super.setStatusSync(...arguments)
         }
         const i=this.cues.findIndex(a=>a.end>=positionMillis)
         return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})

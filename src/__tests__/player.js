@@ -40,7 +40,15 @@ describe("play features",()=>{
     })
 
     describe("media",()=>{
-        describe("positioning progress",()=>{
+        describe("number",()=>{
+            it("should be allowed to control whitespace",()=>{
+
+            })
+            
+            it("should play 1,2,3 in order when there's no whitespace",()=>{
+
+            })
+
             it("should only position 1 when set position between 1.time and 1.end",()=>{
                 
             })

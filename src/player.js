@@ -15,6 +15,10 @@ import { selectPolicy } from './store'
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
 
+/**
+@TODO: 
+1. why is it constantly rerendered although status is not changed 
+ */
 export default function Player({
     id, //talk id 
     media,
@@ -28,6 +32,9 @@ export default function Player({
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
     ...props}){
+    const performanceCount=React.useRef(0)
+    performanceCount.current++
+    
     const changePolicy=(key,value)=>onPolicyChange({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
@@ -51,7 +58,6 @@ export default function Player({
     },[policy.autoHide])
 
     const [transcript, setTranscript]=React.useState(_transcript)
-
     
     const chunks=React.useMemo(()=>{
         if(challenging){
@@ -96,36 +102,58 @@ export default function Player({
     },[id, policy.chunk, challenging, challenges, transcript])
 
     const [status, dispatch] = React.useReducer((state,action)=>{
+        console.log(action.type)
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const rate=lastRate||currentRate
 
         function terminateWhitespace(next, newState, needClearTimeout=true){
+            if(!needClearTimeout){
+                console.log(`rendered ${performanceCount.current}`)
+            }
+
             if(whitespacing && needClearTimeout){
                 clearTimeout(whitespacing)
             }
 
-            video.current?.setStatusAsync({shouldPlay:true, rate, ...next})
+            video.current.setStatusAsync({shouldPlay:true, rate, ...next})
             return undefinedy({...state, whitespace:undefined, whitespacing:undefined, lastRate:undefined,...newState})
         }
 
         switch(action.type){
             case "nav/replaySlow":
-                return terminateWhitespace({positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)},{lastRate:rate})
+                return terminateWhitespace(
+                    {positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)},
+                    {lastRate:rate}
+                )
             case "nav/replay":
                 return terminateWhitespace({positionMillis:chunks[i].time})
             case "nav/prevSlow":
-                return terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined,{lastRate:rate})
+                return terminateWhitespace(
+                    i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined,
+                    {lastRate:rate}
+                )
             case "nav/prev":
-                return terminateWhitespace(i>1 ? {positionMillis:chunks[i-1].time} : undefined)
+                return terminateWhitespace(
+                    i>1 ? {positionMillis:chunks[i-1].time} : undefined
+                )
             case "nav/play":
-                return terminateWhitespace({shouldPlay:!isPlaying, positionMillis: i==-1 ? 0 : undefined})
+                return terminateWhitespace(
+                    {shouldPlay:!isPlaying, positionMillis: i==-1 ? 0 : undefined}
+                )
             case "nav/next":
-                return terminateWhitespace(i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, {byNext:true})
+                return terminateWhitespace(
+                    i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, 
+                    {byNext:true}
+                )
             case "nav/challenge":
                 i!=-1 && onCheckChunk?.(chunks[i])
             break
             case "whitespace/end":
-                return terminateWhitespace(challenging ? {positionMillis:chunks[i+1].time} : undefined,{i:i+1},false)
+                return terminateWhitespace(
+                    (challenging ? {positionMillis:chunks[i+1].time} : undefined),
+                    {i:i+1},
+                    false//don't need clear whitespace timeout
+                )
             case "volume/toggle":
                 video.current.setStatusAsync({volume:volume==0 ? .50 : 0})
                     .then(a=>changePolicy("volume",a.volume))
@@ -172,8 +200,8 @@ export default function Player({
                 if(positionMillis>=chunks[i]?.end){//current is over
                     if(policy.whitespace && !state.byNext){
                         const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
+                        video.current.setStatusAsync({shouldPlay:false})
                         const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
-                        video.current.setStatusAsync({shouldPlay:false, positionMillis})
                         return {...state, whitespace, whitespacing}
                     }
 
@@ -200,6 +228,8 @@ export default function Player({
             ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,slow:false,prev:false,next:false,select:false}),
         }
     },[_controls,chunks])
+
+    //console.log(`player[${id}] is rendered ${performanceCount.current} times.`)
     return (
         <>
         <SliderIcon.Container 

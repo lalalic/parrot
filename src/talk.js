@@ -14,7 +14,6 @@ import { Video } from 'expo-av';
 export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
-    const color=React.useContext(ColorScheme)
     const {slug,policy: policyName="general"}=useParams()
     const {data:talk={}}=Ted.useTalkQuery({slug})
 
