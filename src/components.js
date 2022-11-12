@@ -2,10 +2,11 @@ import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Link, useNavigate, useParams} from "react-router-native"
-import { ColorScheme, TalkStyle } from './default-style';
+import { ColorScheme, TalkStyle } from './default-style'
+import * as Speech from "./speech"
 
 const AutoHideDuration=6000
-export const PressableIcon = ({onPress, onLongPress, onPressOut, children, label, labelFade, labelStyle,...props }) => {
+export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle,...props }) => {
     if(labelFade===true)
         labelFade=AutoHideDuration
     const opacity = React.useRef(new Animated.Value(1)).current;
@@ -20,7 +21,7 @@ export const PressableIcon = ({onPress, onLongPress, onPressOut, children, label
         }
     },[labelFade])
     return (
-        <Pressable {...{onPress,onLongPress, onPressOut,style:{justifyContent:"center", alignItems:"center"}}}>
+        <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center"}}}>
             <MaterialIcons {...props}/>
             {children || (label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
         </Pressable>
@@ -270,8 +271,22 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 	)
 }
 
-export const Widget=React.forwardRef(({slug, ...props},ref)=>{
-    const ThisWidget=globalThis.Widgets[slug]
-    return <ThisWidget ref={ref} {...props}/>
-})
 
+export function Swipeable(props){
+    return (
+        <Pressable {...props}>
+            {null}
+        </Pressable>
+    )
+}
+
+
+export const Speak=({text,style,children,...options})=>{
+    React.useEffect(()=>{
+        if(text){
+            Speech.speak(text)
+            return ()=>Speech.stop()
+        }
+    },[text])
+    return children||null
+}

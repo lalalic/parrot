@@ -4,7 +4,7 @@ import * as FileSystem from "expo-file-system"
 import { ColorScheme } from "./default-style"
 
 const Context=React.createContext({})
-export default ({dir=FileSystem.documentDirectory, title, ...props})=>{
+export default function FileExplorer({dir=FileSystem.documentDirectory, title, ...props}){
     const [current, setCurrent]=React.useState()
     return (
         <Context.Provider value={{current,setCurrent}}>
@@ -21,7 +21,7 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
 
     React.useEffect(()=>{
         ;(async()=>{
-            const files=(await FileSystem.readDirectoryAsync(info.uri)).filter(a=>excludes.indexOf(a)==-1)
+            const files=(await FileSystem.readDirectoryAsync(info.uri))//.filter(a=>excludes.indexOf(a)==-1)
             const infos=await Promise.all(files.map(name=>FileSystem.getInfoAsync(`${info.uri}${name}`)))
             infos.forEach((a,i)=>a.name=files[i])
             setData(infos)
@@ -33,10 +33,10 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
         <View style={[{paddingLeft:10},style]}>
             {info.name && <View style={{flexDirection:"row", paddingTop:10}}>
                 <Pressable onPress={e=>setOpen(!open)}>
-                    <Text style={{width:20, color:color.unactive}}>{open ? "-" : "+"}</Text>
+                    <Text style={{width:20, color:color.inactive}}>{open ? "-" : "+"}</Text>
                 </Pressable>
                 <Pressable onPress={e=>setCurrent(info)} onLongPress={onDelete}>
-                    <Text style={{color:current==info? color.active : color.unactive}}>
+                    <Text style={{color:current==info? color.active : color.inactive}}>
                         {info.name}
                     </Text>
                 </Pressable>
@@ -53,7 +53,7 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
                     }
                     return (
                         <Pressable onPress={e=>setCurrent(item)} onLongPress={remove}>
-                            <Text style={{marginLeft:30, paddingTop:10,color:current==item? color.active : color.unactive }}>
+                            <Text style={{marginLeft:30, paddingTop:10,color:current==item? color.active : color.inactive }}>
                                 {item.name}
                             </Text>
                         </Pressable>

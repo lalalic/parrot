@@ -6,6 +6,6 @@ describe("store",()=>{
     })
 
     it("should always keep widget talk even when clear and long clear",()=>{
-
+        
     })
 })

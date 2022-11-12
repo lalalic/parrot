@@ -1,6 +1,7 @@
 import React from "react"
 import { registerRootComponent } from 'expo';
 
+import "./widgets"
 import Router from "./router"
 import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./default-style"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Animated, Easing, Image } from "react-native";
-
+import {Speak} from "../components"
 
 export class Media extends React.Component {
     static defaultProps = {
@@ -47,7 +47,7 @@ export class Media extends React.Component {
     }
 
     get offsetTolerance(){
-        return this.prosp.progressUpdateIntervalMillis*1.5
+        return this.props.progressUpdateIntervalMillis*1.5
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -107,7 +107,8 @@ export class Media extends React.Component {
         if (shouldPlay != undefined) {
             if (shouldPlay != this.status.shouldPlay) {
                 if (shouldPlay) {
-                    this.status.shouldPlay = true;
+                    this.status.shouldPlay = true
+                    this.status.didJustFinish=false
                     this.progress.setValue(this.progress.current);
                     this.progressing = Animated.timing(this.progress, {
                         toValue: this.status.durationMillis,
@@ -128,11 +129,11 @@ export class Media extends React.Component {
                         this.progress.last = 0
                     })
                     this.setState({isPlaying:true})
-                    //this.onPlaybackStatusUpdate()
+                    this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
                     this.status.shouldPlay = false
-                    //this.onPlaybackStatusUpdate()
+                    this.onPlaybackStatusUpdate()
                 }
             }
         }
@@ -164,14 +165,57 @@ export class ListMedia extends Media{
         this.cues=[]
     }
 
+    /**
+     * create this.cues=[{time,end,text}]
+     */
+     createTranscript(){
+        
+    }
+
+    doCreateTranscript(){
+        this.createTranscript()
+        this.status.durationMillis=this.cues[this.cues.length-1].time+100
+        this.onPlaybackStatusUpdate({
+            transcript:[{cues:this.cues}], 
+            durationMillis:this.status.durationMillis
+        })
+    }
+
+    onPlaybackStatusUpdateMore(){
+        return {i:this.state.i}
+    }
+
+    onPositionMillis(positionMillis){
+        const i =this.cues?.findIndex(a=>a.end>=(positionMillis-this.offsetTolerance))
+        if(this.state.i!=i){
+            this.setState({i})
+        }
+    }
+
+    componentDidMount(){
+        (async()=>{
+            await this.doCreateTranscript()
+            super.componentDidMount(...arguments)
+        })()
+    }
+
     setStatusSync({positionMillis}){
         if(typeof(positionMillis)==`undefined`){
             return super.setStatusSync(...arguments)
         }
         const i=this.cues.findIndex(a=>a.end>=positionMillis)
-        if(i==-1){
-            debugger
-        }
         return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
     }
+
+    renderAt(){ 
+        const {rate, volume}=this.status
+        const {i=-1}=this.state
+        const text=this.cues[Math.floor(i)]?.text
+        return i>=0 && (
+            <Speak {...{text, key:i, rate, volume}}>
+                <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>
+            </Speak>
+        )
+    }
 }
+

@@ -11,7 +11,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
-import "./widgets"
+import {produce} from "immer"
 
 const Policy={
 	general: {
@@ -277,8 +277,6 @@ const store = configureStore({
 									return talks
 								},{...talks})
 						}
-						case "persist/REHYDRATE":
-							return { ...action.payload.talks, ...talks}
 						case "talk/toggle":{
 							const {key,value, policy}=action
 							const [talk,id]=selectTalk()
@@ -413,7 +411,32 @@ const store = configureStore({
 							return {...state, ...history}
 					}
 					return state
-				}
+				},
+				audiobook(audios=[],{type,...action}){
+					switch(type){
+						case "audiobook/record":
+							return [...audios,action]
+						case "audiobook/remove":{
+							const i=audios.indexOf(a=>a.audioUri==action.audioUri)
+							FileSystem.deleteAsync(action.audioUri,{idempotent:true})
+							return (a=>(a.splice(i,1), a))([...audios])
+						}
+						case "audiobook/tag":{
+							return produce(audios,audios=>{
+								const {tag, audioUri}=action
+								const audio=audios.find(a=>a.audioUri==audioUri)
+								const i=(audio.tags=audio.tags||[]).indexOf(tag)
+								if(i==-1){
+									audio.tags.push(tag)
+								}else{
+									audio.tags.splice(i,1)
+								}
+								return audios
+							})
+						}
+					}
+					return audios
+				},
 		})),
 
 	middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
@@ -457,6 +480,7 @@ function immutableSet(o, keys, value, returnEmpty=true){
 export {
 	Ted, 
 	StoreProvider as Provider,
+	store,
 }
 
 export function selectPlansByDay(state,day){
@@ -474,6 +498,7 @@ export function selectPlansByDay(state,day){
 }
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
+
 export function selectPolicy(state,policyName,id){
 	const Policy=state.policy
 	const {desc,...policy}={
@@ -481,4 +506,12 @@ export function selectPolicy(state,policyName,id){
 		...Policy[policyName],
 		...extract(state.talks[id]?.[policyName],Policy.general)}
 	return policy
+}
+
+export function selectAudioBook(tag){
+	const {audiobook}=store.getState()
+	if(!tag){
+		return audiobook
+	}
+	return audiobook.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
 }

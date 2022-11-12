@@ -362,11 +362,17 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
     const [recognized, setRecognizedText]=React.useState("")
     const scheme=React.useContext(ColorScheme)
     React.useEffect(()=>{
-        let recognized4Cleanup
+        let recognized4Cleanup, start, end
         Voice.onSpeechResults=e=>{
             setRecognizedText(recognized4Cleanup=e?.value.join(""))
         }
-        Voice.onSpeechEnd=Voice.onSpeechStart=Voice.onSpeechVolumeChanged=e=>{};
+        Voice.onSpeechStart=e=>{
+            start=Date.now()
+        }
+        Voice.onSpeechEnd=e=>{
+            end=Date.now()
+        }
+        Voice.onSpeechVolumeChanged=e=>{};
         Voice.onSpeechError=e=>{
             console.error(JSON.stringify(e))
         }
@@ -378,7 +384,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
         return ()=>{
             Voice.destroy()
             if(recognized4Cleanup){
-                onRecord?.({recognized:recognized4Cleanup,audioUri})
+                onRecord?.({recognized:recognized4Cleanup,audioUri, duration:(end||Date.now())-start})
             }else{
                 FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
             }
