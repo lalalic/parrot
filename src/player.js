@@ -260,7 +260,8 @@ export default function Player({
                 rate:policy.rate,
                 volume:policy.volume,
             })}
-            <View style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
+            <View pointerEvents='box-none'
+                style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
                 {false!=controls.nav && <NavBar {...{
                         controls,
                         dispatch,status,

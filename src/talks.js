@@ -1,6 +1,6 @@
 import React from "react"
 import { FlatList, View, TextInput} from 'react-native';
-import { ColorScheme } from "./default-style";
+import { ColorScheme, TitleStyle } from "./default-style";
 import { PressableIcon, TalkThumb } from "./components";
 import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
@@ -42,12 +42,12 @@ export default function Talks(props){
     },[search])
     
 
-    const searchTextStyle={fontSize:16,height:28,color:color.text, paddingLeft:10, position:"absolute",top:2, width:"100%", marginLeft:45 ,paddingRight:45,}
+    const searchTextStyle={fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}
     return (
         <View {...props}>
-            <View style={{flexDirection:"row",height:32,paddingLeft:10,
-                backgroundColor:color.inactive, borderRadius:5,
-                borderWidth:1,marginLeft:4,marginRight:2}}>
+            <View style={[{flexDirection:"row",height:32,paddingLeft:10, 
+                backgroundColor:color.inactive, borderRadius:5,borderWidth:1,height:50,
+                marginLeft:4,marginRight:2},TitleStyle]}>
                 <PressableIcon name={search.people ? "person-search" : "search"} 
                     size={28} style={{marginTop:2}}
                     color={search.people ? color.primary : color.text} 
@@ -67,7 +67,7 @@ export default function Talks(props){
                 onEndReachedThreshold={0.5}
                 onEndReached={e=>search.page<pages && setSearch({...search, page:search.page+1})}
                 />
-                {!search.people && <TextInput placeholder="TED Talks" defaultValue={search.q} 
+                {!search.people && <TextInput placeholder="TED Talk" defaultValue={search.q} 
                         clearButtonMode="while-editing"
                         keyboardType="web-search"
                         onEndEditing={({nativeEvent:{text:q}})=>{
@@ -88,7 +88,7 @@ const PeopleSearch=({style, onValueChange, ...props})=>{
     const {data:people=[]}=Ted.usePeopleQuery({q:search.q.trim()})
     return (
         <>
-            <TextInput style={style} 
+            <TextInput style={style} placeholder="TED Speaker"
                 value={search.q}
                 onChangeText={q=>setSearch({q,showPicker:true})}/>
             {search.showPicker && people.length>0 && <Picker {...props} mode="dropdown" 

@@ -12,7 +12,7 @@ export default ()=>(
     <View style={{flex:1}}>
         <Talks style={{flex:1}}/>
         <Widgets style={{flex:1}}/>
-        <AudioMemo style={{height:100}}/>
+        <AudioMemo style={{height:50}}/>
     </View>
 )
 
@@ -21,12 +21,13 @@ const AudioMemo=({textStyle, style})=>{
     const dispatch=useDispatch()
     const [state, setState]=React.useState({recording:false})
     const desc="Audio Book: record audio"
+    const btnWidth=50
     return (
         <View style={[{flexDirection:"row", justifyContent:"center",backgroundColor:color.inactive},style]}>
-            <View style={{width:70, justifyContent:"center",padding:2}}>
+            <View style={{width:btnWidth, justifyContent:"center"}}>
                 <PressableIcon
                     color={state.recording ? "red" : color.active}
-                    name={ControlIcons.record} size={60} 
+                    name={ControlIcons.record} size={32} 
                     onPressIn={e=>{
                         setState({recording:true, uri:`${FileSystem.documentDirectory}audiobook/${id}.wav`})
                     }}
@@ -35,7 +36,7 @@ const AudioMemo=({textStyle, style})=>{
                     }}
                     />
             </View>
-            <View style={{justifyContent:"center",fontSize:16, flexGrow:1,paddingLeft:70}}>
+            <View style={{justifyContent:"center",fontSize:16, flexGrow:1}}>
                 {state.recording && <Recognizer uri={state.uri} style={textStyle}
                     onRecord={({recognized,...props})=>{
                         setState({...state,recording:false, recognized})
@@ -43,7 +44,7 @@ const AudioMemo=({textStyle, style})=>{
                     }}
                     />
                 }
-                {/*!state.recording && state.recognized &&*/(
+                {state.recording && state.recognized &&(
                     <Swipeable 
                         rightContent={
                             <View style={{}}>
@@ -55,9 +56,9 @@ const AudioMemo=({textStyle, style})=>{
                         <Text style={[{color:color.primary,width:"100%",height:"100%",backgroundColor:"blue"},textStyle]}>{state.recognized||"how are you"}</Text>
                     </Swipeable>
                 )}
-                {/*!state.recording && !state.recognized &&(
-                    <Text style={[{color:color.backgroundColor},textStyle]}>{desc}</Text>
-                )*/}
+                {!state.recording && !state.recognized &&(
+                    <Text style={[textStyle]}>{desc}</Text>
+                )}
             </View>
         </View>
     )

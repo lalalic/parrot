@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text,} from "react-native"
-import { useParams, useNavigate } from 'react-router-native'
+import { useParams, useNavigate, Outlet } from 'react-router-native'
 import Player, {Challenges} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
@@ -14,31 +14,31 @@ import { Video } from 'expo-av';
 export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
-    const {slug,policy: policyName="general"}=useParams()
-    const {data:talk={}}=Ted.useTalkQuery({slug})
+    const {slug,policy: policyName="general", id}=useParams()
+    const {data:talk={}}=Ted.useTalkQuery({slug, id})
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
     const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk, policy:policyName})
     
-    const children=React.useMemo(()=>{
+    const info=React.useMemo(()=>{
         switch(policyName){
             case "general":
-                return <TalkInfo {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>
+                return (<Info {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>)
             default:
                 return <Challenges {...{style:{flex:1, padding:5}}}/>
         }
     },[talk, policyName])
 
     const props=React.useMemo(()=>{
-        if(talk.isWidget){
-            const Widget=globalThis.Widgets[talk.slug]
-            const media=<Widget shouldPlay={autoplay}/>
+        const Widget=globalThis.Widgets[talk.slug]
+        if(Widget){
+            const media=<Widget shouldPlay={autoplay} id={id}/>
             const {controls}=media.props
             return {media,  controls,}
         }else{
             return {
-                media:<Video 
+                media:<TedVideo 
                     posterSource={{uri:talk.thumb}} 
                     source={{uri:talk.resources?.hls.stream}} 
                     shouldPlay={autoplay}
@@ -46,11 +46,21 @@ export default function Talk({autoplay}){
                     shouldCorrectPitch={true}
                     progressUpdateIntervalMillis={100}
                     style={{flex:1}}
+                    talk={talk}
                     />,
                 transcript:talk.languages?.en?.transcript
             }
         }
     },[talk,autoplay])
+
+    const actions=React.useMemo(()=>{
+        const Widget=globalThis.Widgets[talk.slug]
+        if(Widget){
+            return <Widget.Actions talk={talk}/>
+        }else{
+            return <PolicyChoice label={true} labelFade={true} onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
+        }
+    },[talk])
 
     return (
         <View style={{flex:1}}>
@@ -63,26 +73,27 @@ export default function Talk({autoplay}){
                     onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
                     {...{id:talk.id, challenging, style:{flex:1},key:policyName, policyName,...props}}
                     >
-                    {children}
+                    <Outlet/>
                 </Player>
             </View>
-            <PolicyChoice label={true} labelFade={true} onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
+            {actions}
         </View>
     )
 }
 
-function TalkInfo({talk, dispatch, toggleTalk, style}) {
+function Info({talk, dispatch, toggleTalk, style}) {
     const {favorited,hasHistory}=useSelector(state=>({
             favorited:state.talks[talk.id]?.favorited ,
             hasHistory:!!state.talks[talk.id]
         }
     ))
     const hasTranscript=!!talk.languages?.en?.transcript
+    const Widget=globalThis.Widgets[talk.slug]
     return (
         <View style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-evenly", paddingTop: 20, paddingBottom: 20 }}>
-                <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
+                {!Widget && <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async(e)=>{
                         try{
                             const localUri = `${FileSystem.documentDirectory}${talk.id}/video.mp4`
@@ -101,7 +112,8 @@ function TalkInfo({talk, dispatch, toggleTalk, style}) {
                         }catch(e){
                             
                         }
-                    }} />
+                    }} />}
+
                 <PressableIcon name={hasTranscript ? "print" :""}
                     disabled={!hasTranscript}
                     onLongPress={async e=>{
@@ -128,6 +140,7 @@ function TalkInfo({talk, dispatch, toggleTalk, style}) {
             <View>
                 <Text>{talk.description}</Text>
             </View>
+            {!!Widget && <Widget.Management talk={talk}/>}
         </View>
     )
 }
@@ -152,4 +165,6 @@ const html=(talk, lineHeight=120)=>`
     </html>
 
 `
-
+const TedVideo=React.forwardRef((props,ref)=>{
+    return <Video {...props} ref={ref}/>
+})

@@ -50,13 +50,14 @@ const Policy={
 
 const Ted=createApi({
 	reducerPath:"ted",
-	baseQuery:(({baseUrl})=>async({context})=>{	
+	baseQuery:(({baseUrl})=>async({context, headers})=>{	
 		if(!context){
 			return {data:""}
 		}
 		const res=await fetch(`${baseUrl}${context}`,{
 			headers:{
 				"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+				...headers,
 			},
 		})
 		return {data:await res.text()}
@@ -64,9 +65,15 @@ const Ted=createApi({
 	tagTypes:["talk","widget"],
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug, lang="en"})=>{
-				if(slug && globalThis.Widgets[slug])
-					return {data:{data:globalThis.Widgets[slug].defaultProps}}
+			queryFn: async ({slug, lang="en", id},{getState})=>{
+				if(slug && globalThis.Widgets[slug]){
+					const props=globalThis.Widgets[slug].defaultProps
+					if(!!id){
+						return {data:props}
+					}else{
+						return {data:{...props, ...getState().talks[id]}}
+					}
+				}
 				
 				const res=await fetch("https://www.ted.com/graphql",{
 					method:"POST",
@@ -319,10 +326,6 @@ const store = configureStore({
 						case "talk/clear":{
 							const {id}=action
 							let talk=talks[id]
-							if(talk.isWidget){
-								store.dispatch({...action,type:"talk/clear/history"})
-								break
-							}
 							if(!talk)
 								break
 							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})

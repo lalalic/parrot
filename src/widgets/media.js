@@ -1,8 +1,10 @@
 import React from 'react';
-import { View, Animated, Easing, Image } from "react-native";
-import {Speak} from "../components"
+import { View, Animated, Easing, Image, Text } from "react-native";
+import {Speak, PressableIcon} from "../components"
 
 export class Media extends React.Component {
+    static Actions=()=><></>
+    static Management=()=><></>
     static defaultProps = {
         isWidget: true,
         progressUpdateIntervalMillis: 100,
@@ -149,9 +151,9 @@ export class Media extends React.Component {
     render() {
         const { thumb, posterSource = thumb, source, ...props } = this.props
         return (
-            <View {...props} style={{width:"100%",height:"100%",}}>
+            <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 {!!posterSource && (<Image source={posterSource}
-                    style={{ position: "absolute", width: "100%", height: "100%" }} />)}
+                    style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
                 {this.renderAt()}
             </View>
         )
@@ -162,7 +164,7 @@ export class ListMedia extends Media{
     constructor(){
         super(...arguments)
         this.state.i=-1
-        this.cues=[]
+        this.cues=this.state.cues=[]
     }
 
     /**
@@ -174,7 +176,9 @@ export class ListMedia extends Media{
 
     doCreateTranscript(){
         this.createTranscript()
-        this.status.durationMillis=this.cues[this.cues.length-1].time+100
+        if(this.cues.length>0){
+            this.status.durationMillis=this.cues[this.cues.length-1].time+100
+        }
         this.onPlaybackStatusUpdate({
             transcript:[{cues:this.cues}], 
             durationMillis:this.status.durationMillis
@@ -194,8 +198,12 @@ export class ListMedia extends Media{
 
     componentDidMount(){
         (async()=>{
-            await this.doCreateTranscript()
-            super.componentDidMount(...arguments)
+            try{
+                await this.doCreateTranscript()
+                super.componentDidMount(...arguments)
+            }catch(e){
+                console.error(e)
+            }
         })()
     }
 
@@ -208,13 +216,24 @@ export class ListMedia extends Media{
     }
 
     renderAt(){ 
+        const {debug}=this.props
         const {rate, volume}=this.status
         const {i=-1}=this.state
         const text=this.cues[Math.floor(i)]?.text
         return i>=0 && (
+            <>
+        <View style={{flexDirection:"row",width:"100%", justifyContent:"space-around"}}>
+                    <PressableIcon name="mic" style={{backgroundColor:"red"}}
+                        onPress={e=>(alert(1),toggle("Vocabulary"))} />
+                    <PressableIcon name="record-voice-over"  style={{backgroundColor:"blue"}}
+                        onPress={e=>toggle("Speak")}/>
+                    <PressableIcon name="grading"  style={{backgroundColor:"skyblue"}}
+                        onPress={e=>toggle("Grammar")}/>
+                </View>
             <Speak {...{text, key:i, rate, volume}}>
-                <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>
+                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
             </Speak>
+            </>
         )
     }
 }
