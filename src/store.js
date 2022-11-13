@@ -1,4 +1,4 @@
-import {combineReducers} from "redux"
+import { combineReducers } from "redux"
 import { configureStore, isPlain } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
@@ -11,7 +11,7 @@ import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
-import {produce} from "immer"
+import { produce } from "immer"
 
 const Policy={
 	general: {
@@ -50,33 +50,26 @@ const Policy={
 
 const Ted=createApi({
 	reducerPath:"ted",
-	baseQuery:(({baseUrl:base})=>async({baseUrl=base, context,headers,slug, ...params})=>{
-		if(slug && globalThis.Widgets[slug])
-			return {data:{data:globalThis.Widgets[slug].defaultProps}}
-			
+	baseQuery:(({baseUrl})=>async({context})=>{	
 		if(!context){
 			return {data:""}
 		}
-
 		const res=await fetch(`${baseUrl}${context}`,{
 			headers:{
 				"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
-				...headers,
 			},
-			...params
 		})
-		if(headers?.Accept==="application/json"){
-			return {data:await res.json()}
-		}
 		return {data:await res.text()}
 	})({baseUrl:"https://www.ted.com"}),
 	tagTypes:["talk","widget"],
 	endpoints:builder=>({
 		talk:builder.query({
-			query({slug,lang="en"}){
-				return {
-					slug,
-					context:"/graphql",
+			queryFn: async ({slug, lang="en"})=>{
+				if(slug && globalThis.Widgets[slug])
+					return {data:{data:globalThis.Widgets[slug].defaultProps}}
+				
+				const res=await fetch("https://www.ted.com/graphql",{
+					method:"POST",
 					headers:{
 						'Content-Type': 'application/json',
 						'Accept': 'application/json',
@@ -104,17 +97,9 @@ const Ted=createApi({
 							}
 						}`,
 					}),
-					method:"POST"
-				}
-			},
-			providesTags(result, error, {slug}){
-				if(slug && globalThis.Widgets[slug])
-					return ['widget']
-				return ['talk']
-			},
-			async transformResponse({data}){
-				if(!data.translation)
-					return data
+				})
+				const {data}=await res.json()
+					
 				const {translation, video: { playerData, ...metadata },}=data
 				const talk={
 					...JSON.parse(playerData),
@@ -124,7 +109,7 @@ const Ted=createApi({
 				talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
 				
 				if(!translation)
-					return talk
+					return {data:talk}
 
 				const {paragraphs}=translation
 
@@ -154,7 +139,12 @@ const Ted=createApi({
 					cue.time=start
 					cue.end=end
 				}))
-				return talk
+				return {data:talk}
+			},
+			providesTags(result, error, {slug}){
+				if(slug && globalThis.Widgets[slug])
+					return ['widget']
+				return ['talk']
 			}
 		}),
 		talks:builder.query({
@@ -210,14 +200,19 @@ const Ted=createApi({
 			}
 		}),
 		today:builder.query({
-			query:(day)=>({baseUrl:"http://feeds.feedburner.com",context:"/TEDTalks_audio"}),
-			transformResponse(data){
+			queryFn:async (day)=>{
+				const res=await fetch("http://feeds.feedburner.com/TEDTalks_audio",{
+					headers:{
+						"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+					},
+				})
+				const data=await res.text()
 				const {rss}=new XMLParser({
-						ignoreAttributes:false,
-						attributeNamePrefix:"",
-						removeNSPrefix:true,
-						textNodeName:"value",
-					}).parse(data);
+					ignoreAttributes:false,
+					attributeNamePrefix:"",
+					removeNSPrefix:true,
+					textNodeName:"value",
+				}).parse(data);
 				const slug=(link, i=link.lastIndexOf("/"),j=link.indexOf("?"))=>link.substring(i+1,j)
 				const toSec=dur=>{
 					const [h,m,s]=dur.split(":").map(a=>parseInt(a))
@@ -226,7 +221,7 @@ const Ted=createApi({
 				const talks=rss?.channel.item.map(({title,talkId:id, duration,thumbnail, link})=>{
 					return {id, title, duration:toSec(duration), thumb:thumbnail.url,slug:slug(link)}
 				})
-				return {talks}
+				return {data:{talks}}
 			}
 		}),
 	})
@@ -269,14 +264,6 @@ const store = configureStore({
 					}
 
 					switch(action.type){
-						case "@@INIT":{
-							return Object.values(globalThis.Widgets)
-								.reduce((talks,Widget)=>{
-									const {isWidget, id,slug,title, thumb, duration, policy, link, general=policy, shadowing=policy, dictating=policy, retelling=policy}=Widget.defaultProps
-									talks[id]={isWidget, slug, title, thumb, duration,link, id, general, shadowing, dictating, retelling }
-									return talks
-								},{...talks})
-						}
 						case "talk/toggle":{
 							const {key,value, policy}=action
 							const [talk,id]=selectTalk()
