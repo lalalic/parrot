@@ -63,21 +63,17 @@ export default function Talk({autoplay}){
     },[talk])
 
     return (
-        <View style={{flex:1}}>
-            <View style={{flex:1, flexGrow:1}}>
-                <Player 
-                    onPolicyChange={changed=>toggleTalk(policyName,changed)}
-                    onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
-                    onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
-                    onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
-                    onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
-                    {...{id:talk.id, challenging, style:{flex:1},key:policyName, policyName,...props}}
-                    >
-                    <Outlet/>
-                </Player>
-            </View>
-            {actions}
-        </View>
+            <Player 
+                onPolicyChange={changed=>toggleTalk(policyName,changed)}
+                onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
+                onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
+                onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
+                onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
+                {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName,...props}}
+                >
+                {info}
+                {actions}
+            </Player>
     )
 }
 

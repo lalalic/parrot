@@ -53,12 +53,9 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 </Route>
 
                 <Route path="/talk" element={<WithBackButton/>}>
-                    <Route path=":slug">
-                        <Route path="" element={<Talk/>} />
-                        <Route path=":policy" element={<Talk {...{autoplay:true}}/>}>
-                            <Route path="" />
-                            <Route path=":id"/>
-                        </Route>
+                    <Route path=":slug" element={<Talk/>} />
+                    <Route path=":slug/:policy" element={<Talk {...{autoplay:true}}/>}>
+                        <Route path=":id"/>
                     </Route>
                 </Route>
                 <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
