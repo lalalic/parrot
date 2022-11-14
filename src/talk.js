@@ -19,12 +19,17 @@ export default function Talk({autoplay}){
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
-    const toggleTalk=(key,value)=>dispatch({type:"talk/toggle",id:talk.id, key,value, talk, policy:policyName})
+    const toggleTalk=(key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName})
     
     const info=React.useMemo(()=>{
+        const Widget=globalThis.Widgets[talk.slug]
         switch(policyName){
             case "general":
-                return (<Info {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch}}/>)
+                return (
+                    <Info {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch, favoritable:!Widget}}>
+                        {!!Widget?.Management && <Widget.Management/>}
+                    </Info>
+                )
             default:
                 return <Challenges {...{style:{flex:1, padding:5}}}/>
         }
@@ -55,41 +60,41 @@ export default function Talk({autoplay}){
 
     const actions=React.useMemo(()=>{
         const Widget=globalThis.Widgets[talk.slug]
-        if(Widget){
+        if(Widget && Widget.Actions){
             return <Widget.Actions talk={talk}/>
         }else{
-            return <PolicyChoice label={true} labelFade={true} onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
+            return <PolicyChoice label={true} labelFade={true} 
+                onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
         }
     },[talk])
 
     return (
-            <Player 
-                onPolicyChange={changed=>toggleTalk(policyName,changed)}
-                onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
-                onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk,id:talk.id, policy: policyName, chunk})}
-                onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
-                onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk,id:talk.id, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
-                {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName,...props}}
-                >
-                {info}
-                {actions}
-            </Player>
+        <Player 
+            onPolicyChange={changed=>toggleTalk(policyName,changed)}
+            onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
+            onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
+            onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
+            onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
+            {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName,...props}}
+            >
+            {info}
+            {actions}
+        </Player>
     )
 }
 
-function Info({talk, dispatch, toggleTalk, style}) {
+function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
     const {favorited,hasHistory}=useSelector(state=>({
             favorited:state.talks[talk.id]?.favorited ,
             hasHistory:!!state.talks[talk.id]
         }
     ))
     const hasTranscript=!!talk.languages?.en?.transcript
-    const Widget=globalThis.Widgets[talk.slug]
     return (
         <View style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-evenly", paddingTop: 20, paddingBottom: 20 }}>
-                {!Widget && <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
+                {favoritable && <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async(e)=>{
                         try{
                             const localUri = `${FileSystem.documentDirectory}${talk.id}/video.mp4`
@@ -136,7 +141,7 @@ function Info({talk, dispatch, toggleTalk, style}) {
             <View>
                 <Text>{talk.description}</Text>
             </View>
-            {!!Widget && <Widget.Management talk={talk}/>}
+            {children}
         </View>
     )
 }
@@ -164,3 +169,4 @@ const html=(talk, lineHeight=120)=>`
 const TedVideo=React.forwardRef((props,ref)=>{
     return <Video {...props} ref={ref}/>
 })
+

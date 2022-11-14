@@ -1,5 +1,3 @@
-import { View } from "react-native"
-import { PressableIcon } from "../components";
 import { selectAudioBook } from "../store"
 import { ListMedia } from "./media";
 
@@ -10,7 +8,7 @@ export default class AudioBook extends ListMedia {
         slug: "audiobook",
         title: "Record audio as practice material",
         thumb: require("../../assets/widget-audio-book.jpeg"),
-        description: "manage audio book in 3 tags (Vocabulary, Speak, Grammar) and practise them",
+        description: "manage audio book with tags and practise them",
         tags:["Vocabulary","Speak","Grammar"],
     }
 
@@ -29,20 +27,9 @@ export default class AudioBook extends ListMedia {
         }
     }
 
-    renderAt(){
-        const toggle=k=>this.setState({tag:this.state.tag==k ? undefined : k})
-        return (
-            <>
-                <View style={{flexDirection:"row",width:"100%", justifyContent:"space-around"}}>
-                    <PressableIcon name="mic" style={{backgroundColor:"red"}}
-                        onPress={e=>(alert(1),toggle("Vocabulary"))} />
-                    <PressableIcon name="record-voice-over"  style={{backgroundColor:"blue"}}
-                        onPress={e=>toggle("Speak")}/>
-                    <PressableIcon name="grading"  style={{backgroundColor:"skyblue"}}
-                        onPress={e=>toggle("Grammar")}/>
-                </View>
-                {super.renderAt()}
-            </>
-        )
+    title(){
+        return this.props.tag
     }
+
+    static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
 }

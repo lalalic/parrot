@@ -266,7 +266,7 @@ const store = configureStore({
 				},
 				talks(talks={},action){
 					const selectTalk=()=>{
-						const {id,talk:{slug, title, thumb,duration,link}={}}=action
+						const {id:_id, talk:{slug, title, thumb,duration,link,id=_id}={}}=action
 						return [talks[id]||{slug, title, thumb,duration,link,id}, id]
 					}
 
@@ -331,6 +331,8 @@ const store = configureStore({
 							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
 							return immutableSet(talks, [id], null)
 						}
+						case "talk/clear/all":
+							return {}
 						default:
 							return talks
 					}
@@ -427,6 +429,31 @@ const store = configureStore({
 					}
 					return audios
 				},
+				picturebook(pictures=[],{type,...action}){
+					switch(type){
+						case "picturebook/record":
+							return [...pictures,action]
+						case "picturebook/remove":{
+							const i=pictures.indexOf(a=>a.uri==action.uri)
+							FileSystem.deleteAsync(action.uri,{idempotent:true})
+							return (a=>(a.splice(i,1), a))([...pictures])
+						}
+						case "picturebook/tag":{
+							return produce(pictures,pictures=>{
+								const {tag, uri}=action
+								const picture=pictures.find(a=>a.uri==uri)
+								const i=(picture.tags=picture.tags||[]).indexOf(tag)
+								if(i==-1){
+									picture.tags.push(tag)
+								}else{
+									picture.tags.splice(i,1)
+								}
+								return pictures
+							})
+						}
+					}
+					return pictures
+				},
 		})),
 
 	middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
@@ -504,4 +531,12 @@ export function selectAudioBook(tag){
 		return audiobook
 	}
 	return audiobook.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
+}
+
+export function selectPictureBook(tag){
+	const {picturebook}=store.getState()
+	if(!tag){
+		return picturebook
+	}
+	return picturebook.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
 }

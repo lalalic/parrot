@@ -1,10 +1,15 @@
 import React from 'react';
-import { View, Animated, Easing, Image, Text } from "react-native";
-import {Speak, PressableIcon} from "../components"
+import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable} from "react-native";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from 'react-router-native';
+
+import {Speak} from "../components"
+import { ColorScheme } from '../default-style';
 
 export class Media extends React.Component {
-    static Actions=()=><></>
-    static Management=()=><></>
+    static Actions=false
+    static Management=false
+
     static defaultProps = {
         isWidget: true,
         progressUpdateIntervalMillis: 100,
@@ -148,14 +153,74 @@ export class Media extends React.Component {
         })
     }
 
+    title(){
+        return this.props.title
+    }
+
     render() {
-        const { thumb, posterSource = thumb, source, ...props } = this.props
+        const { thumb, posterSource = thumb, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 {!!posterSource && (<Image source={posterSource}
                     style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
+                {<Text style={{paddingTop:50, fontSize:20,height:50}}>{this.title()}</Text>}
                 {this.renderAt()}
             </View>
+        )
+    }
+
+    static List=({data, onEndEditing, navigate=useNavigate(),
+            renderItemText=a=>a.id, 
+            renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
+                <Pressable key={id} 
+                    onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
+                    onLongPress={e=>dispatch({type:"talk/clear", id})}
+                    style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}>
+                    <Text style={{fontSize:16}}>{renderItemText(item)}</Text>
+                </Pressable>
+            ),
+            placeholder, 
+            inputProps:{style:inputStyle,...inputProps}={}, 
+            listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
+            style, ...props})=>{
+        const color=React.useContext(ColorScheme)
+        return (
+            <View style={[{marginTop:10, minHeight:200},style]} {...props}>
+                <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
+                    style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
+                    {...inputProps}
+                    />
+                <FlatList data={data} renderItem={renderItem} style={[listStyle]} keyExtractor={a=>a.id} {...listProps}/>
+            </View>
+        )
+    }
+
+    static Tags=({talk, placeholder})=>{
+        const slug=talk.slug
+        const dispatch=useDispatch()
+        const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+        React.useEffect(()=>{
+            if(list.length==0){
+                talk.tags.forEach(tag=>{
+                    const id=`${talk.id}_${tag}`
+                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+                })
+            }
+        },[list])
+        return (
+            <ListMedia.List data={list} 
+                placeholder={placeholder}
+                onEndEditing={({nativeEvent:{text:tag}})=>{
+                    tag=tag.trim()
+                    if(!tag)
+                        return 
+                   if(-1!==list.findIndex(a=>a.tag==tag))
+                        return 
+                    const id=`${talk.id}_${tag}`
+                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+                }}
+                renderItemText={item=>item.tag}
+                />
         )
     }
 }
@@ -221,19 +286,9 @@ export class ListMedia extends Media{
         const {i=-1}=this.state
         const text=this.cues[Math.floor(i)]?.text
         return i>=0 && (
-            <>
-        <View style={{flexDirection:"row",width:"100%", justifyContent:"space-around"}}>
-                    <PressableIcon name="mic" style={{backgroundColor:"red"}}
-                        onPress={e=>(alert(1),toggle("Vocabulary"))} />
-                    <PressableIcon name="record-voice-over"  style={{backgroundColor:"blue"}}
-                        onPress={e=>toggle("Speak")}/>
-                    <PressableIcon name="grading"  style={{backgroundColor:"skyblue"}}
-                        onPress={e=>toggle("Grammar")}/>
-                </View>
             <Speak {...{text, key:i, rate, volume}}>
                 {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
             </Speak>
-            </>
         )
     }
 }

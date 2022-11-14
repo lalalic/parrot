@@ -30,7 +30,8 @@ export default (props)=>{
 }
 
 const Widgets=globalThis.Widgets=[
-    NumberPractice, PhoneNumber, 
+    NumberPractice, 
+    //PhoneNumber, 
     AudioBook,
     PictureBook,
 ].reduce(((widgets,A)=>{

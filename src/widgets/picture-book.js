@@ -9,4 +9,10 @@ export default class PictureBook extends ListMedia {
         thumb: require("../../assets/widget-picture-book.jpeg"),
         description: "Recognize everything in your world",
     }
+
+    title(){
+        return this.props.tag
+    }
+
+    static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
 }

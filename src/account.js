@@ -27,6 +27,7 @@ export default ()=>{
             <Pressable 
                 onPress={e=>{
                     dispatch(Ted.util.resetApiState())
+                    dispatch({type:"talk/clear/all"})
                 }}
                 style={{flexDirection:"row",width:"100%",height:50, paddingTop:5,paddingBottom:5, borderBottomWidth:1,borderColor:"gray",borderTopWidth:1}}>
                 <MaterialIcons style={{paddingTop:5}} name={"cleaning-services"} size={30} />

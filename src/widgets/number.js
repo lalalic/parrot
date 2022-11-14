@@ -1,10 +1,7 @@
 import React from "react"
 import { ListMedia } from "./media";
 import * as Speech from "../speech"
-import { TextInput, View, Text, Pressable } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { ColorScheme } from "../default-style";
-import { Link, useNavigate } from "react-router-native";
 export default class NumberPractice extends ListMedia {
     static defaultProps = {
         ...super.defaultProps,
@@ -24,6 +21,10 @@ export default class NumberPractice extends ListMedia {
         super(...arguments)
         this.state.Durations=this.constructor.Durations
         Speech.setIgnoreSilentSwitch("ignore")
+    }
+
+    title(){
+        return this.props.source
     }
 
     measureTime(text){
@@ -48,37 +49,33 @@ export default class NumberPractice extends ListMedia {
         Speech.stop()
     }
 
-    static Management({talk}){
-        const {slug}=talk
-        const Widget=globalThis.Widgets[slug]
-        const color=React.useContext(ColorScheme)
+    static Management=()=>{
+        const talk=this.defaultProps
+        const slug=talk.slug
         const dispatch=useDispatch()
-        const navigate=useNavigate()
         const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         return (
-            <View style={{marginTop:10, minHeight:200}}>
-                <TextInput placeholder="New Practice:min,max,count, ex: 100,200,10"
-                    style={{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16}}
-                    onEndEditing={({nativeEvent:{text:param}})=>{
-                        const [min, max, count]=param.split(/[,\s+]/g).map(a=>parseInt(a))
-                        if(max>min && count){
-                            if(-1==list.findIndex(({params:a})=>a.min==min && a.max==max && a.count==count)){
-                                const id=`${Widget.defaultProps.id}_${min}_${max}_${count}`
-                                dispatch({type:"talk/toggle", talk, id, key:"params", value:{min,max,count}})
-                                dispatch({type:"talk/toggle", talk, id, key:"shadowing", shadowing:talk.shadowing})
-                            }
-                        }
-                    }}/>
-                {list.map(({id, params:{min, max, count}})=>(
-                    <Pressable key={id} 
-                        onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
-                        onLongPress={e=>dispatch({type:"talk/clear", id})}
-                        style={{height:50, justifyContent:"center", paddingLeft:20}}>
-                        <Text style={{fontSize:16}}>{count}: {min}-{max}</Text>
-                    </Pressable>
-                ))}
-            </View>
+            <ListMedia.List data={list} 
+                placeholder="min,max,count, such as 100,200,5"
+                onEndEditing={({nativeEvent:{text:param}})=>{
+                    if(!param.trim())
+                        return 
+                    const [min, max, count]=param.split(/[,\s+]/g).map(a=>parseInt(a))
+                    if(!(max>min && count))
+                        return 
+                    const source=`${min},${max},${count}`
+                    if(-1!==list.findIndex((a)=>a.source==source))
+                        return 
+                    const id=`${talk.id}_${min}_${max}_${count}`
+                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"source", value:source})
+                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"shadowing", value:talk.shadowing})
+                }}
+                renderItemText={({source})=>source}/>
         )
+    }
+
+    static Actions=()=>{
+        return null
     }
 }
 
@@ -96,4 +93,6 @@ export class PhoneNumber extends NumberPractice{
         super.createTranscript()
         this.cues.forEach(a=>a.text=a.text.replace(/./g,m=>m+" ").trim())    
     }
+
+    static Management=props=><NumberPractice.Management talk={this.defaultProps} {...props}/>
 }
