@@ -409,14 +409,14 @@ const store = configureStore({
 						case "audiobook/record":
 							return [...audios,action]
 						case "audiobook/remove":{
-							const i=audios.indexOf(a=>a.audioUri==action.audioUri)
-							FileSystem.deleteAsync(action.audioUri,{idempotent:true})
+							const i=audios.indexOf(a=>a.uri==action.uri)
+							FileSystem.deleteAsync(action.uri,{idempotent:true})
 							return (a=>(a.splice(i,1), a))([...audios])
 						}
 						case "audiobook/tag":{
 							return produce(audios,audios=>{
-								const {tag, audioUri}=action
-								const audio=audios.find(a=>a.audioUri==audioUri)
+								const {tag, uri}=action
+								const audio=audios.find(a=>a.uri==uri)
 								const i=(audio.tags=audio.tags||[]).indexOf(tag)
 								if(i==-1){
 									audio.tags.push(tag)

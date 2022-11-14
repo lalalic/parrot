@@ -29,7 +29,7 @@ const AudioMemo=({textStyle, style})=>{
                     color={state.recording ? "red" : color.active}
                     name={ControlIcons.record} size={32} 
                     onPressIn={e=>{
-                        setState({recording:true, uri:`${FileSystem.documentDirectory}audiobook/${id}.wav`})
+                        setState({recording:true, uri:`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`})
                     }}
                     onPressOut={e=>{
                         setState({...state, recording:false})
@@ -41,8 +41,7 @@ const AudioMemo=({textStyle, style})=>{
                     onRecord={({recognized,...props})=>{
                         setState({...state,recording:false, recognized})
                         dispatch({type:"audiobook/record",text:recognized, ...props})
-                    }}
-                    />
+                    }}/>
                 }
                 {state.recording && state.recognized &&(
                     <Swipeable 

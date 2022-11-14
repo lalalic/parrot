@@ -385,7 +385,7 @@ export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
         return ()=>{
             Voice.destroy()
             if(recognized4Cleanup){
-                onRecord?.({recognized:recognized4Cleanup,audioUri, duration:(end||Date.now())-start})
+                onRecord?.({recognized:recognized4Cleanup,uri:audioUri, duration:(end||Date.now())-start})
             }else{
                 FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
             }
