@@ -525,18 +525,10 @@ export function selectPolicy(state,policyName,id){
 	return policy
 }
 
-export function selectAudioBook(tag){
-	const {audiobook}=store.getState()
+export function selectBook(slug, tag){
+	const {[slug]:data}=store.getState()
 	if(!tag){
-		return audiobook
+		return data
 	}
-	return audiobook.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
-}
-
-export function selectPictureBook(tag){
-	const {picturebook}=store.getState()
-	if(!tag){
-		return picturebook
-	}
-	return picturebook.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
+	return data.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
 }

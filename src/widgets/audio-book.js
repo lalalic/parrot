@@ -1,4 +1,4 @@
-import { selectAudioBook } from "../store"
+import { selectBook } from "../store"
 import { ListMedia } from "./media";
 
 export default class AudioBook extends ListMedia {
@@ -12,9 +12,11 @@ export default class AudioBook extends ListMedia {
         tags:["Vocabulary","Speak","Grammar"],
     }
 
+
+
     createTranscript(){
-        const audiobook=selectAudioBook(this.state.tag)
-        audiobook.reduce((cues,{duration, text},i)=>{
+        const book=selectBook(this.slug, this.props.tag)
+        book.reduce((cues,{duration, text},i)=>{
             const time=i==0 ? 0 : cues[i-1].end
             cues.push({text, time, end:time+duration+this.offsetTolerance})
             return cues

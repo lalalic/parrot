@@ -3,7 +3,7 @@ import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable} f
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-native';
 
-import {Speak} from "../components"
+import {PressableIcon, Speak} from "../components"
 import { ColorScheme } from '../default-style';
 
 export class Media extends React.Component {
@@ -14,7 +14,7 @@ export class Media extends React.Component {
         isWidget: true,
         progressUpdateIntervalMillis: 100,
         positionMillis: 0,
-    };
+    }
 
     constructor({ rate = 1, volume, positionMillis = 0 }) {
         super(...arguments)
@@ -55,6 +55,10 @@ export class Media extends React.Component {
 
     get offsetTolerance(){
         return this.props.progressUpdateIntervalMillis*1.5
+    }
+
+    get slug(){
+        return this.constructor.defaultProps.slug
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -148,8 +152,14 @@ export class Media extends React.Component {
 
     setStatusAsync() {
         return new Promise((resolve) =>{
-            this.setStatusSync(...arguments)
-            resolve()
+            try{
+                this.setStatusSync(...arguments)
+            }catch(e){
+                console.error(e)
+            }finally{
+                resolve()
+            }
+            
         })
     }
 
@@ -169,7 +179,7 @@ export class Media extends React.Component {
         )
     }
 
-    static List=({data, onEndEditing, navigate=useNavigate(),
+    static List=({data, onEndEditing, navigate=useNavigate(), children,
             renderItemText=a=>a.id, 
             renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
                 <Pressable key={id} 
@@ -191,36 +201,45 @@ export class Media extends React.Component {
                     {...inputProps}
                     />
                 <FlatList data={data} renderItem={renderItem} style={[listStyle]} keyExtractor={a=>a.id} {...listProps}/>
+                {children}
             </View>
         )
     }
 
     static Tags=({talk, placeholder})=>{
         const slug=talk.slug
+        const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
-        const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+        const navigate=useNavigate()
+        const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         React.useEffect(()=>{
-            if(list.length==0){
+            if(tags.length==0){
                 talk.tags.forEach(tag=>{
                     const id=`${talk.id}_${tag}`
                     dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
                 })
             }
-        },[list])
+        },[tags])
+
         return (
-            <ListMedia.List data={list} 
+            <ListMedia.List data={tags} 
                 placeholder={placeholder}
                 onEndEditing={({nativeEvent:{text:tag}})=>{
                     tag=tag.trim()
                     if(!tag)
                         return 
-                   if(-1!==list.findIndex(a=>a.tag==tag))
+                   if(-1!==tags.findIndex(a=>a.tag==tag))
                         return 
                     const id=`${talk.id}_${tag}`
                     dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
                 }}
                 renderItemText={item=>item.tag}
-                />
+            >
+                <PressableIcon name="category" size={32} color={color.text}
+                    style={{position:"absolute",right:10, top:0, height:50}}
+                    onPress={e=>navigate(`/talk/tagman/${slug}`)}
+                    />
+            </ListMedia.List>
         )
     }
 }
@@ -277,7 +296,9 @@ export class ListMedia extends Media{
             return super.setStatusSync(...arguments)
         }
         const i=this.cues.findIndex(a=>a.end>=positionMillis)
-        return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
+        if(i!=-1){
+            return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
+        }
     }
 
     renderAt(){ 

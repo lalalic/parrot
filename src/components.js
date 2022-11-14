@@ -6,7 +6,7 @@ import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
 
 const AutoHideDuration=6000
-export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle,...props }) => {
+export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style, ...props }) => {
     if(labelFade===true)
         labelFade=AutoHideDuration
     const opacity = React.useRef(new Animated.Value(1)).current;
@@ -21,7 +21,7 @@ export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, chil
         }
     },[labelFade])
     return (
-        <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center"}}}>
+        <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center",...style}}}>
             <MaterialIcons {...props}/>
             {children || (label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
         </Pressable>
@@ -272,11 +272,56 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 }
 
 
-export function Swipeable(props){
+export function Swipeable({children, rightContent, style, ...props}){
+    const [state, setState]=React.useState({swiping:0,x0:0, x1:0,width:0})
+    const left=(()=>{
+        switch(state.swiping){
+            case 0:
+                return 0
+            case 1:
+                return state.x1-state.x0
+            case 2:
+                return -state.width
+        }
+    })();
     return (
-        <Pressable {...props}>
-            {null}
-        </Pressable>
+        <View style={{flex:1}} 
+            onMoveShouldSetResponder={({nativeEvent:{pageX:x0}})=>{
+                if(state.swiping){
+                    return true
+                }
+            }}
+            onResponderRelease={e=>{
+                setState({...state, swiping:2,x0:0, x1:0})
+            }}
+            onResponderMove={({nativeEvent:{pageX:x1}}) => {
+                setState({...state, x1, x0:state.x0||x1})
+            }}
+            >
+            <Pressable style={{height:"100%", width:"100%"}} 
+                onPressIn={e=>{
+                    if(state.swiping==2){
+                        setState({...state, swiping:0})
+                        return 
+                    }
+                    setState({...state, swiping:1})
+                }}
+                {...props}>
+                    <View 
+                        onLayout={e=>{
+                            setState({...state, width: e.nativeEvent.layout.width})
+                        }} 
+                        style={{position:"absolute", height:"100%", right:0}}>
+                        {rightContent}
+                    </View>
+                    <View style={[{ 
+                        position:"absolute",height:"100%", width:"100%", 
+                        justifyContent:"center", left
+                    },style]}>
+                        {children}
+                    </View>
+            </Pressable>
+        </View>
     )
 }
 
