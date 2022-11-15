@@ -359,8 +359,8 @@ export function Subtitle({show,i,delay,title, children, ...props}){
     )
 }
 
-export function Recognizer({uri, onRecord, locale="en_US", style, ...props}){
-    const [recognized, setRecognizedText]=React.useState("")
+export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...props}){
+    const [recognized, setRecognizedText]=React.useState(text)
     const scheme=React.useContext(ColorScheme)
     React.useEffect(()=>{
         let recognized4Cleanup, start, end

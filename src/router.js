@@ -1,5 +1,5 @@
 import React from "react"
-import { SafeAreaView, View, ScrollView} from "react-native"
+import { SafeAreaView, View} from "react-native"
 import {NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
@@ -17,7 +17,7 @@ import Home from "./home"
 import TagMan, {PictureBookMan} from "./tag-man"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/talk/tagman/picturebook"]}>
+    <NativeRouter initialEntries={["/home"]}>
         <SafeAreaView style={{flex:1, backgroundColor:scheme.backgroundColor}}>
             <Routes>
                 <Route path="/" element={React.createElement(()=>{

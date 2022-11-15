@@ -3639,6 +3639,24 @@ expo-gl@~11.4.0:
     expo-gl-cpp "~11.4.0"
     invariant "^2.2.4"
 
+expo-image-loader@~3.2.0:
+  version "3.2.0"
+  resolved "https://registry.npmmirror.com/expo-image-loader/-/expo-image-loader-3.2.0.tgz#d98b021660edef7243f7c5ec011b8d0545626d41"
+
+expo-image-manipulator@~10.4.0:
+  version "10.4.0"
+  resolved "https://registry.npmmirror.com/expo-image-manipulator/-/expo-image-manipulator-10.4.0.tgz#23570d9ca1625b9cb2583f2808172dfa088cea56"
+  dependencies:
+    expo-image-loader "~3.2.0"
+
+expo-image-picker@~13.3.1:
+  version "13.3.1"
+  resolved "https://registry.npmmirror.com/expo-image-picker/-/expo-image-picker-13.3.1.tgz#7e8fe1dd7a58ab9e0fa17569ab6b64256ece0c98"
+  dependencies:
+    "@expo/config-plugins" "~5.0.0"
+    expo-image-loader "~3.2.0"
+    uuid "7.0.2"
+
 expo-json-utils@~0.3.0:
   version "0.3.0"
   resolved "https://registry.npmmirror.com/expo-json-utils/-/expo-json-utils-0.3.0.tgz#0c4a0195ee2bbde02cbb5f4d384d1cb63bea7493"
@@ -7749,6 +7767,10 @@ util-deprecate@^1.0.1, util-deprecate@~1.0.1:
 utils-merge@1.0.1:
   version "1.0.1"
   resolved "https://registry.npmmirror.com/utils-merge/-/utils-merge-1.0.1.tgz#9f95710f50a267947b2ccc124741c1028427e713"
+
+uuid@7.0.2:
+  version "7.0.2"
+  resolved "https://registry.npmmirror.com/uuid/-/uuid-7.0.2.tgz#7ff5c203467e91f5e0d85cfcbaaf7d2ebbca9be6"
 
 uuid@^3.3.2, uuid@^3.4.0:
   version "3.4.0"

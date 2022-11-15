@@ -37,6 +37,11 @@
           "microphonePermission": "Allow input for speech-to-text",
           "speechRecognitionPermission": "Allow speech-to-text"
         }
+      ],[
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
+        }
       ]
     ],
     "extra": {

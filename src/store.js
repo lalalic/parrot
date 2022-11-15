@@ -416,6 +416,8 @@ const store = configureStore({
 						case "audiobook/tag":{
 							return produce(audios,audios=>{
 								const {tag, uri}=action
+								if(!tag)
+									return audios
 								const audio=audios.find(a=>a.uri==uri)
 								const i=(audio.tags=audio.tags||[]).indexOf(tag)
 								if(i==-1){
@@ -426,6 +428,12 @@ const store = configureStore({
 								return audios
 							})
 						}
+						case "audiobook/clear":{
+							audios.forEach(a=>{
+								FileSystem.deleteAsync(a.uri,{idempotent:true})
+							})
+							return []
+						}
 					}
 					return audios
 				},
@@ -433,6 +441,13 @@ const store = configureStore({
 					switch(type){
 						case "picturebook/record":
 							return [...pictures,action]
+						case "picturebook/set":
+							return produce(pictures,pictures=>{
+								const {uri, ...props}=action
+								const picture=pictures.find(a=>a.uri==uri)
+								Object.assign(picture, props)
+								return pictures
+							})
 						case "picturebook/remove":{
 							const i=pictures.indexOf(a=>a.uri==action.uri)
 							FileSystem.deleteAsync(action.uri,{idempotent:true})
@@ -441,6 +456,8 @@ const store = configureStore({
 						case "picturebook/tag":{
 							return produce(pictures,pictures=>{
 								const {tag, uri}=action
+								if(!tag)
+									return pictures
 								const picture=pictures.find(a=>a.uri==uri)
 								const i=(picture.tags=picture.tags||[]).indexOf(tag)
 								if(i==-1){
@@ -450,6 +467,13 @@ const store = configureStore({
 								}
 								return pictures
 							})
+						}
+						case "picturebook/clear":{
+							pictures.forEach(a=>{
+								FileSystem.deleteAsync(a.uri,{idempotent:true})
+								FileSystem.deleteAsync(a.audio,{idempotent:true})
+							})
+							return []
 						}
 					}
 					return pictures
