@@ -1,5 +1,6 @@
 import { selectBook } from "../store"
-import { ListMedia } from "./media";
+import { ListMedia } from "./media"
+import { PlaySound } from "../components"
 
 export default class AudioBook extends ListMedia {
     static defaultProps = {
@@ -12,13 +13,11 @@ export default class AudioBook extends ListMedia {
         tags:["Vocabulary","Speak","Grammar"],
     }
 
-
-
     createTranscript(){
         const book=selectBook(this.slug, this.props.tag)
-        book.reduce((cues,{duration, text},i)=>{
+        book.reduce((cues,{duration, ...cue},i)=>{
             const time=i==0 ? 0 : cues[i-1].end
-            cues.push({text, time, end:time+duration+this.offsetTolerance})
+            cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
             return cues
         },this.cues)
     }
@@ -31,6 +30,16 @@ export default class AudioBook extends ListMedia {
 
     title(){
         return this.props.tag
+    }
+
+    renderAt({text, uri}, i){ 
+        const {debug}=this.props
+        const {rate, volume}=this.status
+        return (
+            <PlaySound {...{text, key:i, audio:uri, rate, volume}}>
+                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
+            </PlaySound>
+        )
     }
 
     static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>

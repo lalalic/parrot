@@ -1,6 +1,11 @@
+import { Image, View } from "react-native"
 import { ListMedia } from "./media"
 import { selectBook } from "../store"
+import { PlaySound } from "../components"
 
+/**
+ * some may not have audio, but the image is able to be shown
+ */
 export default class PictureBook extends ListMedia {
     static defaultProps = {
         ...super.defaultProps,
@@ -14,9 +19,9 @@ export default class PictureBook extends ListMedia {
 
     createTranscript(){
         const book=selectBook(this.slug, this.props.tag)
-        book.reduce((cues,{duration, text},i)=>{
+        book.reduce((cues,{duration=2000, ...cue},i)=>{
             const time=i==0 ? 0 : cues[i-1].end
-            cues.push({text, time, end:time+duration+this.offsetTolerance})
+            cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
             return cues
         },this.cues)
     }
@@ -29,6 +34,24 @@ export default class PictureBook extends ListMedia {
 
     title(){
         return this.props.tag
+    }
+
+    render() {
+        const { thumb, posterSource = thumb, source, title, ...props } = this.props
+        return (
+            <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
+                {this.doRenderAt()}
+            </View>
+        )
+    }
+
+    renderAt({uri, audio}, i){ 
+        const {rate, volume}=this.status
+        return (
+            <PlaySound {...{key:i, audio, rate, volume}}>
+                <Image source={{uri}} style={{flex:1}}/>
+            </PlaySound>
+        )
     }
 
     static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>

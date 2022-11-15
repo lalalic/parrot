@@ -1,7 +1,9 @@
 import React from "react"
+import { useDispatch, useSelector } from "react-redux"
 import { ListMedia } from "./media";
 import * as Speech from "../speech"
-import { useDispatch, useSelector } from "react-redux";
+import { Speak } from "../components";
+
 export default class NumberPractice extends ListMedia {
     static defaultProps = {
         ...super.defaultProps,
@@ -47,6 +49,16 @@ export default class NumberPractice extends ListMedia {
     componentWillUnmount(){
         super.componentWillUnmount?.(...arguments)
         Speech.stop()
+    }
+
+    renderAt({text}, i){ 
+        const {debug}=this.props
+        const {rate, volume}=this.status
+        return (
+            <Speak {...{text, key:i, rate, volume}}>
+                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
+            </Speak>
+        )
     }
 
     static Management=()=>{

@@ -85,6 +85,7 @@ export function PictureBookMan({}){
         FileSystem.deleteAsync(select.uri,{idempotent:true})
         return result
     },[])
+    
     return (
         <TagMan 
             slug={slug}

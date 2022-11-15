@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable} from "react-native";
+import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable, ImageBackground} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from 'react-router-native';
 
-import {PressableIcon, Speak} from "../components"
+import {PressableIcon} from "../components"
 import { ColorScheme } from '../default-style';
 
 export class Media extends React.Component {
@@ -173,10 +173,18 @@ export class Media extends React.Component {
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 {!!posterSource && (<Image source={posterSource}
                     style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
-                {<Text style={{paddingTop:50, fontSize:20,height:50}}>{this.title()}</Text>}
-                {this.renderAt()}
+                <Text style={{paddingTop:50, fontSize:20,height:50}}>{this.title()}</Text>
+                {this.doRenderAt()}
             </View>
         )
+    }
+
+    doRenderAt(){
+        const {i=-1}=this.state
+        const cue=this.cues[Math.floor(i)]
+        if(!cue)
+            return 
+        return this.renderAt(cue, Math.floor(i))
     }
 
     static List=({data, onEndEditing, navigate=useNavigate(), children,
@@ -299,18 +307,6 @@ export class ListMedia extends Media{
         if(i!=-1){
             return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
         }
-    }
-
-    renderAt(){ 
-        const {debug}=this.props
-        const {rate, volume}=this.status
-        const {i=-1}=this.state
-        const text=this.cues[Math.floor(i)]?.text
-        return i>=0 && (
-            <Speak {...{text, key:i, rate, volume}}>
-                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
-            </Speak>
-        )
     }
 }
 

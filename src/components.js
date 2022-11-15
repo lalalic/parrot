@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Link, useNavigate, useParams} from "react-router-native"
+import { Audio } from "expo-av"
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
 
@@ -326,12 +327,30 @@ export function Swipeable({children, rightContent, style, ...props}){
 }
 
 
-export const Speak=({text,style,children,...options})=>{
+export const Speak=({text,children=null})=>{
     React.useEffect(()=>{
         if(text){
             Speech.speak(text)
             return ()=>Speech.stop()
         }
     },[text])
-    return children||null
+    return children
+}
+
+export const PlaySound=({audio, children=null})=>{
+    React.useEffect(()=>{
+        if(audio){
+            return  (async ()=>{
+                try{
+                    const {sound}=await Audio.Sound.createAsync({})
+                    await sount.playAsync()
+                    sound.unloadAsync()
+                }catch(e){
+                    console.error(e)
+                }
+                return ()=>sound.unloadAsync()
+            })(); 
+        }
+    },[audio])
+    return children
 }

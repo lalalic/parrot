@@ -4,6 +4,8 @@ import {NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-rout
 import { MaterialIcons } from '@expo/vector-icons';
 import { StatusBar } from "expo-status-bar"
 import * as FileSystem from "expo-file-system"
+import * as ImagePicker from "expo-image-picker"
+import { Audio } from 'expo-av'
 
 import Talks from "./talks"
 import Account from "./account"
@@ -64,6 +66,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
             </Routes>
             <StatusBar style="light"/>
+            <Permissions/>
         </SafeAreaView>
     </NativeRouter>
 )
@@ -78,3 +81,28 @@ const WithBackButton=()=>(
         </View>
     </View>
 )
+
+const Permissions=()=>{
+    const [, requestCameraPermission] = ImagePicker.useCameraPermissions()
+    const [, requestMediaLibPermission] = ImagePicker.useMediaLibraryPermissions();
+    const [, requestRecordPermission] = Audio.usePermissions()
+
+    React.useEffect(()=>{
+        if(requestCameraPermission){
+            requestCameraPermission()
+        }
+    },[requestCameraPermission,])
+
+    React.useEffect(()=>{
+        if(requestMediaLibPermission){
+            requestMediaLibPermission()
+        }
+    },[requestMediaLibPermission])
+
+    React.useEffect(()=>{
+        if(requestRecordPermission){
+            requestRecordPermission()
+        }
+    },[requestRecordPermission])
+    return null
+}
