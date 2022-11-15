@@ -15,6 +15,13 @@ export default class NumberPractice extends ListMedia {
         source:"100,999999,3",
         shadowing:{whitespace:1,autoHide:false,chunk:1},
         general:{whitespace:1,autoHide:false,chunk:1},
+        onRecordChunk({chunk, recognized}){
+            if(chunk.text==recognized){
+                dispatch({type:"challenge/remove", chunk})
+            }else{
+                dispatch({type:"challenge/add", chunk})
+            }
+        },
         controls:{whitespace:true,slow:false,record:false,video:false,caption:false,volume:false,speed:false,  chunk:false, maximize:false,subtitle:true},
     }
 

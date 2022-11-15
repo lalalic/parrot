@@ -14,7 +14,14 @@ export default class PictureBook extends ListMedia {
         title: "Recognize your world",
         thumb: require("../../assets/widget-picture-book.jpeg"),
         description: "Recognize everything in your world",
-        tags:["kitchen","food"]
+        tags:["kitchen","food"],
+        onRecordChunk({chunk, recognized}){
+            if(chunk.text==recognized){
+                dispatch({type:"challenge/remove", chunk})
+            }else{
+                dispatch({type:"challenge/add", chunk})
+            }
+        },
     }
 
     createTranscript(){
@@ -53,6 +60,8 @@ export default class PictureBook extends ListMedia {
             </PlaySound>
         )
     }
+
+    static Shortcut=()=><PictureBook.TagShortcut slug={PictureBook.defaultProps.slug}/>
 
     static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
 }

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable, ImageBackground} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from 'react-router-native';
+import { Link, useNavigate } from 'react-router-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import {PressableIcon} from "../components"
 import { ColorScheme } from '../default-style';
@@ -243,11 +244,19 @@ export class Media extends React.Component {
                 }}
                 renderItemText={item=>item.tag}
             >
-                <PressableIcon name="category" size={32} color={color.text}
-                    style={{position:"absolute",right:10, top:0, height:50}}
-                    onPress={e=>navigate(`/talk/tagman/${slug}`)}
-                    />
+                <this.TagShortcut slug={slug}/>
             </ListMedia.List>
+        )
+    }
+
+    static TagShortcut=({slug})=>{
+        const color=React.useContext(ColorScheme)
+        return (
+            <Link to={`/talk/tagman/${slug}`} style={{position:"absolute",right:10, top:0, height:50}}
+            >
+                <MaterialIcons name="category" size={32} color={color.text}
+                    />
+            </Link>
         )
     }
 }

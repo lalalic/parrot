@@ -42,5 +42,7 @@ export default class AudioBook extends ListMedia {
         )
     }
 
+    static Shortcut=()=><AudioBook.TagShortcut slug={AudioBook.defaultProps.slug}/>
+
     static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
 }

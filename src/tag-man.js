@@ -11,7 +11,7 @@ import { ColorScheme } from "./default-style"
 import { ControlIcons, Recognizer } from "./player"
 
 
-export default function TagMan({slug=useParams().slug, actions, listProps, ...props}){
+export default function TagMan({slug=useParams().slug, actions, listProps={}, ...props}){
     const color=React.useContext(ColorScheme)
     const dispatch=useDispatch()
     const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})

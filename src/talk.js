@@ -8,7 +8,6 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import {Ted} from "./store"
-import { ColorScheme } from './default-style';
 import { Video } from 'expo-av';
 
 export default function Talk({autoplay}){

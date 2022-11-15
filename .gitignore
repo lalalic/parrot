@@ -9,7 +9,10 @@ npm-debug.*
 *.mobileprovision
 *.orig.*
 web-build/
-
+expo-build
+ios
+Android
+parrot.app
 # macOS
 .DS_Store
 
