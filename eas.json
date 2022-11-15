@@ -1,14 +1,12 @@
 {
   "cli": {
-    "version": ">= 2.5.1"
+    "version": ">= 2.5.1",
+    "promptToConfigurePushNotifications": false
   },
   "build": {
     "development": {
-      "developmentClient": true,
-      "distribution": "internal",
-      "ios":{
-        "simulator":true
-      }
+      "developmentClient": false,
+      "distribution": "internal"
     },
     "preview": {
       "distribution": "internal"
