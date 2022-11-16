@@ -2,7 +2,7 @@ import React, {} from 'react';
 import {View, Text, ActivityIndicator, Pressable} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av';
-import Slider from '@react-native-community/slider'
+import {default as Slider} from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import Voice from "@react-native-voice/voice"
 import { MaterialIcons } from '@expo/vector-icons';

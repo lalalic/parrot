@@ -1847,9 +1847,9 @@
     prompts "^2.4.0"
     semver "^6.3.0"
 
-"@react-native-community/slider@4.2.3":
-  version "4.2.3"
-  resolved "https://registry.npmmirror.com/@react-native-community/slider/-/slider-4.2.3.tgz#7ed4f00ca2c50c666c47a59205b3df031d2588eb"
+"@react-native-community/slider@^4.3.3":
+  version "4.3.3"
+  resolved "https://registry.npmmirror.com/@react-native-community/slider/-/slider-4.3.3.tgz#281e90523ab3fac3463edf271ffe465cfd9932c9"
 
 "@react-native-picker/picker@2.4.2":
   version "2.4.2"
@@ -1894,11 +1894,11 @@
     component-type "^1.2.1"
     join-component "^1.1.0"
 
-"@shopify/flash-list@^1.3.1":
-  version "1.3.1"
-  resolved "https://registry.npmmirror.com/@shopify/flash-list/-/flash-list-1.3.1.tgz#0bf5816028049a26fec09117ad70b761a8258a99"
+"@shopify/flash-list@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.npmmirror.com/@shopify/flash-list/-/flash-list-1.4.0.tgz#cf299486ec9a7c97b7a8b1e8b6bf144a78141ed6"
   dependencies:
-    recyclerlistview "4.1.2"
+    recyclerlistview "4.2.0"
     tslib "2.4.0"
 
 "@sideway/address@^4.1.3":
@@ -6537,9 +6537,9 @@ recast@^0.20.4:
     source-map "~0.6.1"
     tslib "^2.0.1"
 
-recyclerlistview@4.1.2:
-  version "4.1.2"
-  resolved "https://registry.npmmirror.com/recyclerlistview/-/recyclerlistview-4.1.2.tgz#3629c2faff13be3dc64bca82490e9a5efb2303aa"
+recyclerlistview@4.2.0:
+  version "4.2.0"
+  resolved "https://registry.npmmirror.com/recyclerlistview/-/recyclerlistview-4.2.0.tgz#a140149aaa470c9787a1426452651934240d69ef"
   dependencies:
     lodash.debounce "4.0.8"
     prop-types "15.8.1"

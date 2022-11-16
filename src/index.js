@@ -1,15 +1,9 @@
 import React from "react"
-import { AppRegistry } from "react-native";
-import { registerRootComponent } from 'expo';
-
-import "./widgets"
 import Router from "./router"
 import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./default-style"
 
-//const registerRootComponent=Root=>AppRegistry.registerComponent('main', Root)
-
-registerRootComponent(()=>{
+export default ()=>{
     const scheme="dark"//useColorScheme()
     const [style, setStyle]=React.useState({})
     React.useEffect(()=>{
@@ -39,4 +33,4 @@ registerRootComponent(()=>{
             </ColorScheme.Provider>
         </Provider>
     )
-});
+}
