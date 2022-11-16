@@ -66,12 +66,13 @@ const Ted=createApi({
 	endpoints:builder=>({
 		talk:builder.query({
 			queryFn: async ({slug, lang="en", id},{getState})=>{
-				if(slug && globalThis.Widgets[slug]){
-					const props=globalThis.Widgets[slug].defaultProps
+				const Widget=globalThis.Widgets[slug]
+				if(Widget){
+					const {defaultProps:{id:_id, slug, title, description, thumb}}=Widget
 					if(!!id){
-						return {data:props}
+						return {data:{id, slug, title, description, thumb}}
 					}else{
-						return {data:{...props, ...getState().talks[id]}}
+						return {data:{id:_id, slug, title, description, thumb, ...getState().talks[id]}}
 					}
 				}
 				

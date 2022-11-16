@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import {PressableIcon} from "../components"
 import { ColorScheme } from '../default-style';
 
 export class Media extends React.Component {
@@ -219,7 +218,6 @@ export class Media extends React.Component {
         const slug=talk.slug
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
-        const navigate=useNavigate()
         const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         React.useEffect(()=>{
             if(tags.length==0){
@@ -231,7 +229,7 @@ export class Media extends React.Component {
         },[tags])
 
         return (
-            <ListMedia.List data={tags} 
+            <Media.List data={tags} 
                 placeholder={placeholder}
                 onEndEditing={({nativeEvent:{text:tag}})=>{
                     tag=tag.trim()
@@ -244,18 +242,16 @@ export class Media extends React.Component {
                 }}
                 renderItemText={item=>item.tag}
             >
-                <this.TagShortcut slug={slug}/>
-            </ListMedia.List>
+                <Media.TagShortcut slug={slug}/>
+            </Media.List>
         )
     }
 
     static TagShortcut=({slug})=>{
         const color=React.useContext(ColorScheme)
         return (
-            <Link to={`/talk/tagman/${slug}`} style={{position:"absolute",right:10, top:0, height:50}}
-            >
-                <MaterialIcons name="category" size={32} color={color.text}
-                    />
+            <Link to={`/talk/tagman/${slug}`} style={{position:"absolute",right:10, top:0, height:50}} >
+                <MaterialIcons name="category" size={32} color={color.text}/>
             </Link>
         )
     }

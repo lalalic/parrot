@@ -63,5 +63,5 @@ export default class PictureBook extends ListMedia {
 
     static Shortcut=()=><PictureBook.TagShortcut slug={PictureBook.defaultProps.slug}/>
 
-    static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
+    static Management=props=><ListMedia.Tags talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
 }

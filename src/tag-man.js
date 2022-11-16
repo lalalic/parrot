@@ -63,7 +63,6 @@ export default function TagMan({slug=useParams().slug, actions, listProps={}, ..
 }
 
 export function PictureBookMan({}){
-    const color=React.useContext(ColorScheme)
     const slug="picturebook"
     const dispatch=useDispatch()
     const {width}=useWindowDimensions()
@@ -156,6 +155,59 @@ function Recorder({uri,audio, text="Kitchen"}){
                 }
             {!state.recording && (<Text style={textStyle}>{state.text}</Text>)}
         </>
+    )
+}
+
+export function AudioBookMan({}){
+    const slug="audiobook"
+    const dispatch=useDispatch()
+    const {width}=useWindowDimensions()
+    const thumbStyle={flex:1,height:width/2, padding:10}
+    const options={
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0,
+        allowsMultipleSelection:true,
+    }
+    const actions=[{resize:{width:400}}]
+    const saveOptions={
+        compress:0,
+        format:"jpeg"
+    }
+    const resize=React.useCallback(async (select)=>{
+        const result=await ImageManipulator.manipulateAsync(select.uri,actions, saveOptions)
+        FileSystem.deleteAsync(select.uri,{idempotent:true})
+        return result
+    },[])
+    
+    return (
+        <TagMan 
+            slug={slug}
+            actions={<PressableIcon name="mic" 
+                onPress={e=>{
+                    (async()=>{
+                        const select=await ImagePicker.launchCameraAsync(options)
+                        if(select.cancelled)
+                            return 
+                        const result=await resize(select)
+                        dispatch({type:"picturebook/record", uri:result.uri})
+                    })()
+                }}
+                onLongPress={e=>{
+                    (async ()=>{
+                        const select = await ImagePicker.launchImageLibraryAsync(options)
+                        if(select.cancelled)
+                            return 
+                        select.selected.forEach(a=>{
+                            (async ()=>{
+                                const result=await resize(a)
+                                dispatch({type:"picturebook/record", uri:result.uri})
+                            })()
+                        })
+                    })();
+                }}/>}
+        />
     )
 }
 

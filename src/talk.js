@@ -67,7 +67,7 @@ export default function Talk({autoplay}){
         }
     },[talk])
 
-    return (
+    return (!!talk.id && 
         <Player 
             onPolicyChange={changed=>toggleTalk(policyName,changed)}
             onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}

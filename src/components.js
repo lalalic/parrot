@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Link, useNavigate, useParams} from "react-router-native"
+import { Link, useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio } from "expo-av"
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
@@ -258,12 +258,17 @@ export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=
 export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
     const {thumb,duration,title, slug}=item
+    const navigate=useNavigate()
+    const location=useLocation()
     return (
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
-                <Link to={`/talk/${slug}`}>
+                <Pressable onPress={e=>{
+                    navigate(location.pathname,{replace:true, state:{id:item.id}})
+                    navigate(`/talk/${slug}`)
+                }}>
                     <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
-                </Link>
+                </Pressable>
                 {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
                 {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
             </View>

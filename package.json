@@ -54,5 +54,5 @@
     "jest-expo": "^46.0.1"
   },
   "private": true,
-  "main": "./src/index.js"
+  "main": "./index.js"
 }

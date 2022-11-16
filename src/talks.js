@@ -5,8 +5,10 @@ import { PressableIcon, TalkThumb } from "./components";
 import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-native";
 
 export default function Talks(props){
+    const {state}=useLocation()
     const color=React.useContext(ColorScheme)
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
     const imageStyle={height:180}
@@ -40,7 +42,18 @@ export default function Talks(props){
     React.useEffect(()=>{
         dispatch({type:"history", search})
     },[search])
-    
+
+    const data=React.useMemo(()=>{
+        if(!search.q || search.page==1 || search.people)
+            return talks
+        return talkPageCache.current.flat()
+    },[!search.q || search.page==1 || search.people, talkPageCache.current?.length])
+
+    const initialScrollIndex=React.useMemo(()=>{
+        if(!!state?.id && data.length>2){
+            return data.findIndex(a=>a.id==state.id)
+        }
+    },[data, state?.id])
 
     const searchTextStyle={fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}
     return (
@@ -55,16 +68,14 @@ export default function Talks(props){
                     />
             </View>
             <FlatList
-                data={(()=>{
-                    if(!search.q || search.page==1 || search.people)
-                        return talks
-                    return talkPageCache.current.flat()
-                })()}
-                extraData={`${search.q}-${search.page}`}
+                data={data}
+                extraData={`${search.q}-${search.page}-${initialScrollIndex}`}
                 renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
                 keyExtractor={item=>item.slug}
                 horizontal={true}
                 onEndReachedThreshold={0.5}
+                initialScrollIndex={initialScrollIndex}
+                getItemLayout={(data,index)=>({length:240, offset:240*index, index})}
                 onEndReached={e=>search.page<pages && setSearch({...search, page:search.page+1})}
                 />
                 {!search.people && <TextInput placeholder="TED Talk" defaultValue={search.q} 
