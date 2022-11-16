@@ -1,0 +1,3 @@
+describe('widget',()=>{
+    it("init",()=>{})
+})

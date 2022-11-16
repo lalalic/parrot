@@ -236,16 +236,21 @@ export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=
         if(sliding || hide===false){
             return
         }
-        opacityTimeout.current=setTimeout(()=>{
+        let timing=null
+        const timeout=opacityTimeout.current=setTimeout(()=>{
             opacityTimeout.current=null
-            opacity.setValue(1)
-            Animated.timing(opacity, {
+            opacity.setValue(1);
+            (timing=Animated.timing(opacity, {
                 toValue: 0,
                 duration,
                 easing: Easing.linear,
                 useNativeDriver:true,
-            }).start();
+            })).start();
         }, hide-Date.now()+2000)
+        return ()=>{
+            clearTimeout(timeout)
+            timing && timing.stop()
+        }
     },[hide,!!sliding])
 
     return (

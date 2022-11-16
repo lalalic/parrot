@@ -2,7 +2,7 @@ import React, {} from 'react';
 import {View, Text, ActivityIndicator, Pressable} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av';
-import {default as Slider} from '@react-native-community/slider'
+import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import Voice from "@react-native-voice/voice"
 import { MaterialIcons } from '@expo/vector-icons';
@@ -36,7 +36,7 @@ export default function Player({
     performanceCount.current++
     console.log(`rendered ${performanceCount.current}`)
     
-    const changePolicy=(key,value)=>onPolicyChange({[key]:value})
+    const changePolicy=(key,value)=>onPolicyChange?.({[key]:value})
     const color=React.useContext(ColorScheme)
     const video=React.useRef()
     
@@ -268,42 +268,42 @@ export default function Player({
                         navable:chunks?.length>=2,
                         size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
-                <AutoHide hide={autoHideActions} style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
-                    {false!=controls.record && <PressableIcon style={{marginRight:10}}
+                <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                    {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
                         name={`${ControlIcons.record}${!policy.record?"-off":""}`} 
                         color={policy.record && status.whitespacing ? color.warn : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
                         />}
 
-                    {false!=controls.video && <PressableIcon style={{marginRight:10}}
+                    {false!=controls.video && <PressableIcon style={{marginRight:10}} testID="video"
                         name={`${ControlIcons.visible}${!policy.visible?"-off":""}`} 
                         onPress={e=>changePolicy("visible",!policy.visible)}/>}
 
-                    {false!=controls.caption && <SliderIcon style={{marginRight:10}} 
+                    {false!=controls.caption && <SliderIcon style={{marginRight:10}} testID="caption"
                         icon={`${ControlIcons.caption}${!policy.caption ? "-disabled":""}`}
                         onToggle={()=>changePolicy("caption",!policy.caption)}
                         onSlideFinish={delay=>changePolicy("captionDelay",delay)}
                         slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>}
                     
-                    {false!=controls.speed && <SliderIcon style={{marginRight:10}} 
+                    {false!=controls.speed && <SliderIcon style={{marginRight:10}} testID="speed"
                         icon={ControlIcons.speed} 
                         onToggle={()=>dispatch({type:"speed/toggle"})}
                         onSlideFinish={rate=>dispatch({type:"speed/tune",rate})}
                         slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:status.rate,text:t=>`${t}x`}}/>}
 
-                    {false!=controls.whitespace && <SliderIcon style={{marginRight:10}} 
+                    {false!=controls.whitespace && <SliderIcon style={{marginRight:10}} testID="whitespace"
                         icon={policy.whitespace>0 ? ControlIcons.whitespace : "notifications-off"}
                         onToggle={()=>changePolicy("whitespace",policy.whitespace>0 ? 0 : 1)}
                         onSlideFinish={value=>changePolicy("whitespace",value)}
                         slider={{minimumValue:0.5,maximumValue:4,step:0.5,value:policy.whitespace,text:t=>`${t}x`}}/>}
 
-                    {false!=controls.chunk && <SliderIcon style={{marginRight:10}}
+                    {false!=controls.chunk && <SliderIcon style={{marginRight:10}} testID="chunk"
                         icon={policy.chunk>0 ? ControlIcons.chunk : "flash-off"}
                         onToggle={()=>changePolicy("chunk",policy.chunk>0 ? 0 : 1)}
                         onSlideFinish={get=>(dx,dy)=>changePolicy("chunk",get(dy))}
                         slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>}
 
-                    {false!=controls.maximize && <PressableIcon style={{marginRight:10}} name="zoom-out-map" 
+                    {false!=controls.maximize && <PressableIcon style={{marginRight:10}} name="zoom-out-map" testID="fullscreen"
                         onPress={e=>dispatch({type:'media/fullscreen'})}/>}
                 </AutoHide>
 
@@ -437,28 +437,28 @@ export function NavBar({dispatch,status={},controls={}, navable,style, size=24,.
     return (
         <View style={[containerStyle,style]} {...props}>
             {status.isLoaded && (<>
-            <PressableIcon size={size}
+            <PressableIcon size={size} testID="slow"
                 disabled={!navable||controls.slow==false}
                 name={controls.slow==false ? "" : (status.whitespacing ? "replay-5":"subdirectory-arrow-left")} 
                 onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}Slow`})}/>
-            <PressableIcon size={size} 
+            <PressableIcon size={size} testID="prev"
                 disabled={!navable||controls.prev==false}
                 name={controls.prev==false ? "" : (status.whitespacing ? "replay" : "keyboard-arrow-left")} 
                 onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}`})}/>
 
-            <PlayButton size={size}  
+            <PlayButton size={size}  testID="play"
                 whitespacing={status.whitespace} 
                 disabled={status.whitespacing}
                 color={status.whitespacing ? color.warn : undefined}
                 name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
                 onPress={e=>dispatch({type:"nav/play"})}/>
             
-            <PressableIcon size={size} 
+            <PressableIcon size={size} testID="next"
                 disabled={!navable||controls.next==false}
                 name={controls.next==false ? "" : "keyboard-arrow-right"}
                 onPress={e=>dispatch({type:"nav/next"})}/>
             
-            <PressableIcon size={size} 
+            <PressableIcon size={size} testID="check"
                 disabled={!navable||controls.select==false}
                 name={controls.select==false ? "" : (status.ic>-1 ? "alarm-on" : "alarm-add")}
                 onPress={e=>dispatch({type:"nav/challenge"})} 
