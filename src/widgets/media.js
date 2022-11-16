@@ -1,6 +1,6 @@
-import React from 'react';
+import React from 'react'
 import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable, ImageBackground} from "react-native";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -15,6 +15,8 @@ export class Media extends React.Component {
         progressUpdateIntervalMillis: 100,
         positionMillis: 0,
     }
+
+    static contextType=ReactReduxContext
 
     constructor({ rate = 1, volume, positionMillis = 0 }) {
         super(...arguments)

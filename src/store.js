@@ -555,8 +555,8 @@ export function selectPolicy(state,policyName,id){
 	return policy
 }
 
-export function selectBook(slug, tag){
-	const {[slug]:data}=store.getState()
+export function selectBook(state, slug, tag){
+	const {[slug]:data}=state
 	if(!tag){
 		return data
 	}
