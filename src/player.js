@@ -187,7 +187,8 @@ export default function Player({
     const controls=React.useMemo(()=>{
         return {
             ..._controls,
-            ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,slow:false,prev:false,next:false,select:false}),
+            ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,chunk:false, slow:false,prev:false,next:false,select:false}),
+            ...(challenging && {chunk:false}),
         }
     },[_controls,chunks])
 

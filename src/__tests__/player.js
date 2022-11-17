@@ -31,12 +31,13 @@ describe("play features",()=>{
             expect(navBar.findByType(PlayButton).props.disabled).not.toBe(true)
         })
 
-        it("should not show record, video, caption, subtitle",()=>{
+        it("should not show record, video, caption, subtitle, chunk",()=>{
             const controlBar=player.root.findByProps({testID:"controlBar"})
             expect(()=>controlBar.findByProps({testID:"record"})).toThrow()
             expect(()=>controlBar.findByProps({testID:"video"})).toThrow()
             expect(()=>controlBar.findByProps({testID:"caption"})).toThrow()
             expect(()=>controlBar.findByType(Subtitle)).toThrow()
+            expect(()=>controlBar.findByProps({testID:"chunk"})).toThrow()
         })
     })
 
@@ -66,7 +67,7 @@ describe("play features",()=>{
             })
         })
 
-        fit("should enable all control buttons",()=>{
+        it("should enable all control buttons",()=>{
             const controlBar=create0().player.root.findByProps({testID:"controlBar"})
             const controls=controlBar.props.children
             expect(controls.length>=7).toBe(true)

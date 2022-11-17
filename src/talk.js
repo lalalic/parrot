@@ -18,7 +18,7 @@ export default function Talk({autoplay}){
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
-    const toggleTalk=(key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName})
+    const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
     
     const info=React.useMemo(()=>{
         const Widget=globalThis.Widgets[talk.slug]
@@ -69,7 +69,7 @@ export default function Talk({autoplay}){
 
     return (!!talk.id && 
         <Player 
-            onPolicyChange={changed=>toggleTalk(policyName,changed)}
+            onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
             onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}

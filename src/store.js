@@ -236,6 +236,59 @@ const Ted=createApi({
 })
 
 export function createStore(needPersistor){
+	const checkAction=(action,keys)=>{
+		const missing=keys.filter(a=>action[a]==undefined)
+		if(missing.length>0){
+			throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`)
+		}
+		return true
+	}
+
+	const createBookReducer=book=>(items=[],{type,...action})=>{
+		switch(type){
+			case `${book}/record`:
+				return [...items,action]
+			case `${book}/set`:
+				return produce(items,items=>{
+					checkAction(action, ["uri"])
+					const {uri, ...props}=action
+					const item=items.find(a=>a.uri==uri)
+					Object.assign(item, props)
+					return items
+				})
+			case `${book}/remove`:{
+				checkAction(action, ["uri"])
+				const i=items.indexOf(a=>a.uri==action.uri)
+				FileSystem.deleteAsync(action.uri,{idempotent:true})
+				return (a=>(a.splice(i,1), a))([...items])
+			}
+			case `${book}/tag`:{
+				return produce(items,items=>{
+					checkAction(action, ["tag","uri"])
+					const {tag, uri}=action
+					if(!tag)
+						return items
+					const item=items.find(a=>a.uri==uri)
+					const i=(item.tags=item.tags||[]).indexOf(tag)
+					if(i==-1){
+						item.tags.push(tag)
+					}else{
+						item.tags.splice(i,1)
+					}
+					return items
+				})
+			}
+			case `${book}/clear`:{
+				items.forEach(a=>{
+					FileSystem.deleteAsync(a.uri,{idempotent:true})
+					FileSystem.deleteAsync(a.audio,{idempotent:true})
+				})
+				return []
+			}
+		}
+		return items
+	}
+
 	const store = configureStore({
 		/** reducer can't directly change any object in state, instead shallow copy and change */
 		reducer: 
@@ -256,7 +309,7 @@ export function createStore(needPersistor){
 								break
 							}
 							case "policy":
-								return {
+								return checkAction(action,["target","payload"]) && {
 									...state,
 									[action.target]: {
 										...state[action.target],
@@ -267,72 +320,79 @@ export function createStore(needPersistor){
 						return state;
 					},
 					talks(talks={},action){
-						const selectTalk=()=>{
-							const {id:_id, talk:{slug, title, thumb,duration,link,id=_id}={}}=action
-							return [talks[id]||{slug, title, thumb,duration,link,id}, id]
-						}
-
 						switch(action.type){
-							case "talk/toggle":{
-								const {key,value, policy}=action
-								const [talk,id]=selectTalk()
-								switch(key){
-									case "challenging":{
-										const hasChallenges=talk[policy]?.challenges?.length>0
-										if(value==undefined){
-											return {...talks, [id]:{...talk, [policy]:{...talk[policy],challenging:hasChallenges}}}
-										}else if(value===true && hasChallenges){
-											return {...talks, [id]:{...talk, [policy]:{...talk[policy],challenging:true}}}
+							case "talk/toggle":
+								return produce(talks, talks=>{
+									const {key,value, policy, talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									checkAction(action, ["key","talk"])
+									switch(key){
+										case "challenging":{
+											checkAction(action, ["policy"])
+											const hasChallenges=talk[policy]?.challenges?.length>0
+											if(value==undefined){
+												(talk[policy]||(talk[policy]={})).challenging=hasChallenges
+											}else if(value===true && hasChallenges){
+												(talk[policy]||(talk[policy]={})).challenging=true
+											}
+											break
 										}
-										return talks
+										default:
+											talk[key]=value!=undefined ? value : !talk[key]
 									}
-									default:
-										return {...talks, [id]:{...talk,[key]:typeof(value)!="undefined" ? value : !!!talk[key]}}
-								}
-							}
-							case "talk/challenge":{
-								const [talk, id]=selectTalk()
-								const {chunk, policy="general"}=action
-								let {challenges=[]}=talk[policy]||{}
-								const i=challenges.findIndex(a=>a.time>=chunk.time)
-								if(i==-1){
-									challenges=[...challenges,chunk]
-								}else if(challenges[i].time==chunk.time){
-									(challenges=[...challenges]).splice(i,1,chunk)
-								}else{
-									(challenges=[...challenges]).splice(i,0,chunk)
-								}
-								
-								return {...talks, [id]: {...talk, [policy]:{...talk[policy],challenges}}}
-							}
-							case "talk/recording":{
-								const [talk, id]=selectTalk()
-								const { record,policy="general"}=action
-								return {...talks, [id]: {...talk, [policy]:{...talk[policy],records:{...talk[policy]?.records, ...record}}}}
-							}
-							case "talk/clear/history":{
-								const {id}=action
-								let talk=talks[id]
-								if(!talk)
-									break
-								
-								Object.keys(Policy).forEach(policy=>{
-									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}/${policy}`,{idempotent:true})
-									talk=immutableSet(talk, [policy], 
-										!talk.isWidget ? null : 
-											(({policy:a,[policy]:b=a})=>b)(globalThis.Widgets[talk.id].defaultProps)
-									)
 								})
-								return {...talks, [id]: talk}
+							case "talk/policy":
+								return produce(talks, talks=>{
+									checkAction(action, ["payload","talk"])
+									const {target="general", payload, talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									if(talk[target]?.challenging){
+										delete payload.chunk
+									}
+									talk[target]={...talk[target], ...payload}
+								})
+							case "talk/challenge":{
+								return produce(talks, talks=>{
+									checkAction(action, ["chunk","talk"])
+									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+
+									const {challenges=[]}=talk[policy]||(talk[policy]={})
+									talk[policy].challenges=challenges
+									const i=challenges.findIndex(a=>a.time>=chunk.time)
+									if(i==-1){
+										challenges.push(chunk)
+									}else if(challenges[i].time==chunk.time){
+										challenges.splice(i,1)
+									}else{
+										challenges.splice(i,0,chunk)
+									}
+								})
 							}
-							case "talk/clear":{
-								const {id}=action
-								let talk=talks[id]
-								if(!talk)
-									break
-								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${id}`,{idempotent:true})
-								return immutableSet(talks, [id], null)
-							}
+							case "talk/recording":
+								return produce(talks, talks=>{
+									checkAction(action, ["record","talk","policy"])
+									const {record, policy,talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									const {records=[]}=(talk[policy]||(talk[policy]={}));
+									(talk[policy].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
+								})
+							case "talk/clear/history":
+								return produce(talks, talks=>{
+									checkAction(action, ["id"])
+									const talk=talks[action.id]
+									if(talk){ 
+										Object.keys(Policy).forEach(policy=>{
+											FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+											talk[policy]=!talk.isWidget ? undefined : globalThis.Widgets[talk.id].defaultProps[policy]
+										})
+									}
+								})
+							case "talk/clear":
+								return produce(talks, talks=>{
+									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${action.id}`,{idempotent:true})
+									delete talks[action.id]
+								})
 							case "talk/clear/all":
 								return {}
 							default:
@@ -356,18 +416,22 @@ export function createStore(needPersistor){
 							}
 							case "plan":{
 								const {plan:{start}}=action
+								checkAction(action, ["plan"])
 								return immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], action.plan)
 							}
 							case "plan/remove":{
 								const {time:start}=action
+								checkAction(action, ["time"])
 								const removed=immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], null)
 								return removed||{}
-							}
+							}/*
 							case "plan/day/template":
 								return immutableSet(state, ['day'], state.day==action.day ? null : action.day)
 							case "plan/week/template":
 								return immutableSet(state, ['week'], Date.from(action.day).isSameWeek(state.week) ? null : action.day)
+							*/
 							case "plan/copy/1":{
+								checkAction(action, ["replacements","day","templateDay"])
 								const {replacements, day, templateDay}=action
 								const template=state[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
 								const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
@@ -382,6 +446,8 @@ export function createStore(needPersistor){
 								return immutableSet(state,[day.getFullYear(),day.getWeek(),day.getDay()],plan)
 							}
 							case "plan/copy/7":{
+								checkAction(action, ["replacements","day","templateDay"])
+								
 								const {replacements, day, templateDay}=action
 								const template=state[templateDay.getFullYear()][templateDay.getWeek()]
 								const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
@@ -406,80 +472,8 @@ export function createStore(needPersistor){
 						}
 						return state
 					},
-					audiobook(audios=[],{type,...action}){
-						switch(type){
-							case "audiobook/record":
-								return [...audios,action]
-							case "audiobook/remove":{
-								const i=audios.indexOf(a=>a.uri==action.uri)
-								FileSystem.deleteAsync(action.uri,{idempotent:true})
-								return (a=>(a.splice(i,1), a))([...audios])
-							}
-							case "audiobook/tag":{
-								return produce(audios,audios=>{
-									const {tag, uri}=action
-									if(!tag)
-										return audios
-									const audio=audios.find(a=>a.uri==uri)
-									const i=(audio.tags=audio.tags||[]).indexOf(tag)
-									if(i==-1){
-										audio.tags.push(tag)
-									}else{
-										audio.tags.splice(i,1)
-									}
-									return audios
-								})
-							}
-							case "audiobook/clear":{
-								audios.forEach(a=>{
-									FileSystem.deleteAsync(a.uri,{idempotent:true})
-								})
-								return []
-							}
-						}
-						return audios
-					},
-					picturebook(pictures=[],{type,...action}){
-						switch(type){
-							case "picturebook/record":
-								return [...pictures,action]
-							case "picturebook/set":
-								return produce(pictures,pictures=>{
-									const {uri, ...props}=action
-									const picture=pictures.find(a=>a.uri==uri)
-									Object.assign(picture, props)
-									return pictures
-								})
-							case "picturebook/remove":{
-								const i=pictures.indexOf(a=>a.uri==action.uri)
-								FileSystem.deleteAsync(action.uri,{idempotent:true})
-								return (a=>(a.splice(i,1), a))([...pictures])
-							}
-							case "picturebook/tag":{
-								return produce(pictures,pictures=>{
-									const {tag, uri}=action
-									if(!tag)
-										return pictures
-									const picture=pictures.find(a=>a.uri==uri)
-									const i=(picture.tags=picture.tags||[]).indexOf(tag)
-									if(i==-1){
-										picture.tags.push(tag)
-									}else{
-										picture.tags.splice(i,1)
-									}
-									return pictures
-								})
-							}
-							case "picturebook/clear":{
-								pictures.forEach(a=>{
-									FileSystem.deleteAsync(a.uri,{idempotent:true})
-									FileSystem.deleteAsync(a.audio,{idempotent:true})
-								})
-								return []
-							}
-						}
-						return pictures
-					},
+					audiobook:createBookReducer("audiobook"),
+					picturebook:createBookReducer('picturebook'),
 			})),
 
 		middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
@@ -525,10 +519,7 @@ function immutableSet(o, keys, value, returnEmpty=true){
 	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
 
-export {
-	Ted, 
-	StoreProvider as Provider,
-}
+export {Ted, StoreProvider as Provider,}
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];
