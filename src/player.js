@@ -106,18 +106,12 @@ export default function Player({
         const rate=lastRate||currentRate
 
         function terminateWhitespace(next, newState, needClearTimeout=true){
-            if(!needClearTimeout){
-                console.log(`rendered ${performanceCount.current}`)
-            }
-
             if(whitespacing && needClearTimeout){
                 clearTimeout(whitespacing)
             }
-
-            video.current.setStatusAsync({shouldPlay:true, rate, ...next})
+            setTimeout(()=>video.current.setStatusAsync({shouldPlay:true, rate, ...next}),0)
             return undefinedy({...state, whitespace:undefined, whitespacing:undefined, lastRate:undefined,...newState})
         }
-
         switch(action.type){
             case "nav/replaySlow":
                 return terminateWhitespace(
@@ -133,7 +127,7 @@ export default function Player({
                 )
             case "nav/prev":
                 return terminateWhitespace(
-                    i>1 ? {positionMillis:chunks[i-1].time} : undefined
+                    i>0 ? {positionMillis:chunks[i-1].time} : undefined
                 )
             case "nav/play":
                 return terminateWhitespace(
@@ -196,6 +190,7 @@ export default function Player({
      * move out of reducer to bail out rerender
      */
     const onProgress=React.useRef()
+
     const onMediaStatus=React.useCallback((state, action)=>{
         setTimeout(()=>onProgress.current?.(action.status.positionMillis),0)
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
@@ -242,7 +237,7 @@ export default function Player({
             dispatch({type:"media/status/changed", state:nextState})
         }
     },[policy,chunks, challenges, challenging])
-
+    
     return (
         <>
         <SliderIcon.Container 
@@ -308,15 +303,16 @@ export default function Player({
                         onPress={e=>dispatch({type:'media/fullscreen'})}/>}
                 </AutoHide>
 
-                {false!=controls.subtitle && <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
-                    i={status.i} title={chunks[status.i]?.text}
+                <Subtitle style={[{width:"100%",height:40, textAlign:"center",position:"absolute",bottom:20},subtitleStyle]}
+                    i={status.i} 
+                    title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
                     delay={policy.captionDelay} show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 
                         style={{width:"100%",height:20, textAlign:"center",position:"absolute",bottom:0}}
                         onRecord={props=>dispatch({type:"record",...props})} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
-                </Subtitle>}
+                </Subtitle>
 
                 {false!=controls.progress && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
@@ -384,7 +380,7 @@ export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...pr
             Voice.start(locale,{audioUri})  
         })();
         return ()=>{
-            Voice.destroy()
+            Voice.destroy?.()
             if(recognized4Cleanup){
                 onRecord?.({recognized:recognized4Cleanup,uri:audioUri, duration:(end||Date.now())-start})
             }else{

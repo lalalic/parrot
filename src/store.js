@@ -323,23 +323,27 @@ export function createStore(needPersistor){
 						switch(action.type){
 							case "talk/toggle":
 								return produce(talks, talks=>{
-									const {key,value, policy, talk:{slug, title, thumb,duration,link,id}}=action
+									const {key,value, policy,payload={[key]:value}, talk:{slug, title, thumb,duration,link,id}}=action
 									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
-									checkAction(action, ["key","talk"])
-									switch(key){
-										case "challenging":{
-											checkAction(action, ["policy"])
-											const hasChallenges=talk[policy]?.challenges?.length>0
-											if(value==undefined){
-												(talk[policy]||(talk[policy]={})).challenging=hasChallenges
-											}else if(value===true && hasChallenges){
-												(talk[policy]||(talk[policy]={})).challenging=true
+									checkAction(action, ["talk"])
+									Object.keys(payload).forEach(key=>{
+										let value=payload[key]
+										switch(key){
+											case "challenging":{
+												checkAction(action, ["policy"])
+												const hasChallenges=talk[policy]?.challenges?.length>0
+												if(value==undefined){
+													(talk[policy]||(talk[policy]={})).challenging=hasChallenges
+												}else if(value===true && hasChallenges){
+													(talk[policy]||(talk[policy]={})).challenging=true
+												}
+												break
 											}
-											break
+											default:
+												talk[key]=value!=undefined ? value : !talk[key]
 										}
-										default:
-											talk[key]=value!=undefined ? value : !talk[key]
-									}
+									})
+									
 								})
 							case "talk/policy":
 								return produce(talks, talks=>{

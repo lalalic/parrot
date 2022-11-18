@@ -69,8 +69,7 @@ export default class NumberPractice extends ListMedia {
     }
 
     static Management=()=>{
-        const talk=this.defaultProps
-        const slug=talk.slug
+        const {id, slug, title, thumb, shadowing}=this.defaultProps
         const dispatch=useDispatch()
         const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         return (
@@ -80,14 +79,17 @@ export default class NumberPractice extends ListMedia {
                     if(!param.trim())
                         return 
                     const [min, max, count]=param.split(/[,\s+]/g).map(a=>parseInt(a))
-                    if(!(max>min && count))
+                    if(!(max>min && count)){
+                        alert(`min,max,count(${param}) don't make sense`)
                         return 
+                    }
                     const source=`${min},${max},${count}`
-                    if(-1!==list.findIndex((a)=>a.source==source))
+                    if(-1!==list.findIndex((a)=>a.source==source)){
+                        alert(`You already have the same one.`)
                         return 
-                    const id=`${talk.id}_${min}_${max}_${count}`
-                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"source", value:source})
-                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"shadowing", value:talk.shadowing})
+                    }
+                    const id=`${id}_${min}_${max}_${count}`
+                    dispatch({type:"talk/toggle", talk:{id, slug, title, thumb}, payload:{source, shadowing}})
                 }}
                 renderItemText={({source})=>source}/>
         )

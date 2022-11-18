@@ -39,7 +39,7 @@ export default function Talk({autoplay}){
         if(Widget){
             const media=<Widget shouldPlay={autoplay} id={id}/>
             const {controls}=media.props
-            return {media,  controls,}
+            return {media,  controls}
         }else{
             return {
                 media:<TedVideo 

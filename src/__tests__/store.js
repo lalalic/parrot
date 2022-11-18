@@ -26,7 +26,12 @@ describe("store",()=>{
             expect(store.getState().talks.hello.shadowing).toMatchObject(shadowing)
         })
 
-
+        it("talk/toggle playload",()=>{
+            store.dispatch({type:"talk/toggle", talk, payload:{a:1, b:undefined}})
+            expect(store.getState().talks[talk.id]).toMatchObject({a:1,b:true})
+            store.dispatch({type:"talk/toggle", talk, payload:{a:2, b:undefined}})
+            expect(store.getState().talks[talk.id]).toMatchObject({a:2,b:false})
+        })
 
         describe(`{talks:{hello, hello1}}}`,()=>{
             const talks=[talk, {...talk, id:"hello1",slug:"hello1"}]

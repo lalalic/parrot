@@ -190,7 +190,7 @@ export class Media extends React.Component {
     }
 
     static List=({data, onEndEditing, navigate=useNavigate(), children,
-            renderItemText=a=>a.id, 
+            renderItemText=a=>a.id, dispatch=useDispatch(),
             renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
                 <Pressable key={id} 
                     onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
