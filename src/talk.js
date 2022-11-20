@@ -1,7 +1,6 @@
 import React from 'react';
 import {View, Text,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
-import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 import Player, {Challenges} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
@@ -140,13 +139,6 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
             </View>
             <View>
                 <Text>{talk.description}</Text>
-                <BannerAd 
-                    size={BannerAdSize.FULL_BANNER}
-                    requestOptions={{
-                      requestNonPersonalizedAdsOnly: true,
-                    }}
-                    unitId={__DEV__ ? TestIds.BANNER : "ca-app-pub-4303160366764980/8471430153"}
-                    />
             </View>
             {children}
         </View>

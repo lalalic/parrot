@@ -4,7 +4,6 @@ import { StatusBar } from "expo-status-bar"
 import * as ImagePicker from "expo-image-picker"
 import { Audio } from 'expo-av'
 import * as ExpoSplashScreen from 'expo-splash-screen'
-import SplashScreen from "./splash-screen"
 
 import Router from "./router"
 import {Provider} from "./store"
@@ -46,7 +45,6 @@ export default ()=>{
 
     return  (
         <Provider onReady={e=>setDataReady(true)}>
-            {!dataReady && <SplashScreen/>}
             {dataReady && <SafeAreaView 
                 onLayout={onLayout}
                 style={{flex:1, backgroundColor:style.backgroundColor}}>
