@@ -34,10 +34,9 @@ export default (props)=>{
 }
 
 export const Widgets=globalThis.Widgets=[
-    NumberPractice, 
-    //PhoneNumber, 
-    AudioBook,
     PictureBook,
+    AudioBook,
+    NumberPractice, 
 ].reduce(((widgets,A)=>{
     widgets[A.defaultProps.slug]=A
     return widgets

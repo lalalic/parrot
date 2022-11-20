@@ -248,10 +248,10 @@ export class Media extends React.Component {
         )
     }
 
-    static TagShortcut=({slug})=>{
+    static TagShortcut=({slug, style})=>{
         const color=React.useContext(ColorScheme)
         return (
-            <Link to={`/talk/manage/${slug}`} style={{position:"absolute",right:10, top:10, height:50}} >
+            <Link to={`/talk/manage/${slug}`} style={[{position:"absolute",left:10, top:10, height:50},style]} >
                 <MaterialIcons name="category" size={32} color={color.text}/>
             </Link>
         )
