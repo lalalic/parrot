@@ -33,7 +33,7 @@ export default (props)=>{
     )
 }
 
-const Widgets=globalThis.Widgets=[
+export const Widgets=globalThis.Widgets=[
     NumberPractice, 
     //PhoneNumber, 
     AudioBook,

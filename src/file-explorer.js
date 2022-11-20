@@ -4,12 +4,15 @@ import * as FileSystem from "expo-file-system"
 import { ColorScheme } from "./default-style"
 
 const Context=React.createContext({})
-export default function FileExplorer({dir=FileSystem.documentDirectory, title, ...props}){
+export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSystem.cacheDirectory], title, ...props}){
     const [current, setCurrent]=React.useState()
     return (
         <Context.Provider value={{current,setCurrent}}>
             {title && <Text style={{fontSize:12, textAlign:"center",fontWeight:"bold",marginTop:20, marginBottom:20}}>{title}</Text>}
-            <Folder info={{isDirectory:true, uri: dir}} open={true} {...props}/>
+            {dir.map(uri=>{
+                const name=uri.split("/").reverse().find(a=>!!a)
+                return <Folder key={uri} info={{isDirectory:true, uri, name}} open={true}  {...props}/>
+            })}
         </Context.Provider>
     )
 }

@@ -62,7 +62,6 @@ const Ted=createApi({
 		})
 		return {data:await res.text()}
 	})({baseUrl:"https://www.ted.com"}),
-	tagTypes:["talk","widget"],
 	endpoints:builder=>({
 		talk:builder.query({
 			queryFn: async ({slug, lang="en", id},{getState})=>{
@@ -149,11 +148,6 @@ const Ted=createApi({
 				}))
 				return {data:talk}
 			},
-			providesTags(result, error, {slug}){
-				if(slug && globalThis.Widgets[slug])
-					return ['widget']
-				return ['talk']
-			}
 		}),
 		talks:builder.query({
 			query:({q, page})=>({context:!q ? null : `/search?cat=videos${q ? `&q=${encodeURI(q)}` :""}${page>1 ? `&page=${page}`:""}`}),
@@ -171,7 +165,7 @@ const Ted=createApi({
 				}).toArray()
 				const pages=parseInt($(".search__pagination .pagination__item").last().text())||1
 				return {talks,page,pages}
-			}
+			},
 		}),
 		people:builder.query({
 			query:({q})=>({context:!q ? null : `/search?cat=people&q=${encodeURI(q)}`}),
@@ -257,10 +251,18 @@ export function createStore(needPersistor){
 					return items
 				})
 			case `${book}/remove`:{
-				checkAction(action, ["uri"])
-				const i=items.indexOf(a=>a.uri==action.uri)
-				FileSystem.deleteAsync(action.uri,{idempotent:true})
-				return (a=>(a.splice(i,1), a))([...items])
+				return produce(items, items=>{
+					checkAction(action, ["uri"])
+					const i=items.findIndex(a=>a.uri==action.uri)
+					if(i!=-1){
+						try{
+							FileSystem.deleteAsync(action.uri,{idempotent:true})
+						}finally{
+							items.splice(i,1)
+						}
+					}
+				})
+				
 			}
 			case `${book}/tag`:{
 				return produce(items,items=>{
@@ -280,8 +282,12 @@ export function createStore(needPersistor){
 			}
 			case `${book}/clear`:{
 				items.forEach(a=>{
-					FileSystem.deleteAsync(a.uri,{idempotent:true})
-					FileSystem.deleteAsync(a.audio,{idempotent:true})
+					try{
+						a.uri && FileSystem.deleteAsync(a.uri,{idempotent:true})
+						a.audio && FileSystem.deleteAsync(a.audio,{idempotent:true})
+					}catch{
+
+					}
 				})
 				return []
 			}

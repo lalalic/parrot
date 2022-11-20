@@ -1,6 +1,7 @@
 jest.mock("@react-native-voice/voice",()=>({}))
 jest.mock("react-native-tts",()=>({
-    setIgnoreSilentSwitch:jest.fn()
+    setIgnoreSilentSwitch:jest.fn(),
+    stop: jest.fn(),
 }))
 jest.mock("@react-native-community/slider",()=>jest.fn())
 
@@ -14,24 +15,42 @@ jest.mock('react-router-native', () => ({
    useNavigate: () => jest.fn(),
  }));
 
- global.dispatch=jest.fn()
- global.alert=jest.fn()
  jest.mock("react-redux",()=>({
     ...jest.requireActual('react-redux'),
-    useDispatch:() =>global.dispatch
+    useDispatch:() =>global.dispatch,
+ }))
+
+ jest.mock("../components",()=>({
+    ...jest.requireActual('../components'),
+    Recorder:jest.fn(),
  }))
 
  jest.mock('@expo/vector-icons',()=>({
     MaterialIcons:"a"
  }))
 
-//console.log=jest.fn()
-
+console.log=jest.fn()
+console.warn=jest.fn()
+global.dispatch=jest.fn()
+global.alert=jest.fn()
+ 
+ 
 import {Provider} from "../store"
 import renderer from "react-test-renderer"
 
-global.render=el=>renderer.create(
-    <Provider persistor={false}>
-        {el}
-    </Provider>
-)
+global.render=el=>{
+    const render=renderer.create(
+        <Provider persistor={false}>
+            {el}
+        </Provider>
+    )
+    
+    render.update=(_update=>el=>{
+        _update.call(render, (
+            <Provider persistor={false}>
+                {el}
+            </Provider>
+        ))
+    })(render.update);
+    return render
+}

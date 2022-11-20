@@ -1,6 +1,10 @@
+import * as FileSystem from "expo-file-system"
 import { selectBook } from "../store"
 import { ListMedia } from "./media"
-import { PlaySound } from "../components"
+import { PlaySound, Recorder } from "../components"
+import { ManageList } from "./manage-list"
+import { useDispatch } from "react-redux"
+
 
 export default class AudioBook extends ListMedia {
     static defaultProps = {
@@ -36,7 +40,7 @@ export default class AudioBook extends ListMedia {
         const {debug}=this.props
         const {rate, volume}=this.status
         return (
-            <PlaySound {...{text, key:i, audio:uri, rate, volume}}>
+            <PlaySound {...{key:i, audio:uri, rate, volume}}>
                 {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
             </PlaySound>
         )
@@ -44,5 +48,18 @@ export default class AudioBook extends ListMedia {
 
     static Shortcut=()=><AudioBook.TagShortcut slug={AudioBook.defaultProps.slug}/>
 
-    static Management=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
+    static Tags=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
+    static ManageList=({slug="audiobook"})=>{
+        const dispatch=useDispatch()
+        return (
+            <ManageList slug={slug}
+                audioUri={item=>item.uri}
+                actions={<Recorder size={32}
+                    textStyle={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}
+                    onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
+                    onRecord={({audio:uri, ...record})=>dispatch({type:"audiobook/record",uri, ...record})}
+                />}
+            />
+        )
+    }
 }

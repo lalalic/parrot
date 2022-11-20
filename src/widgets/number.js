@@ -68,7 +68,7 @@ export default class NumberPractice extends ListMedia {
         )
     }
 
-    static Management=()=>{
+    static Tags=()=>{
         const {id, slug, title, thumb, shadowing}=this.defaultProps
         const dispatch=useDispatch()
         const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
@@ -115,5 +115,5 @@ export class PhoneNumber extends NumberPractice{
         this.cues.forEach(a=>a.text=a.text.replace(/./g,m=>m+" ").trim())    
     }
 
-    static Management=props=><NumberPractice.Management talk={this.defaultProps} {...props}/>
+    static Tags=props=><NumberPractice.Tags talk={this.defaultProps} {...props}/>
 }

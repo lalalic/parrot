@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text,} from "react-native"
-import { useParams, useNavigate, Outlet } from 'react-router-native'
+import { useParams, useNavigate } from 'react-router-native'
 import Player, {Challenges} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
@@ -26,7 +26,7 @@ export default function Talk({autoplay}){
             case "general":
                 return (
                     <Info {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch, favoritable:!Widget}}>
-                        {!!Widget?.Management && <Widget.Management/>}
+                        {!!Widget?.Tags && <Widget.Tags/>}
                     </Info>
                 )
             default:
@@ -67,7 +67,7 @@ export default function Talk({autoplay}){
         }
     },[talk])
 
-    return (!!talk.id && 
+    return (
         <Player 
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}

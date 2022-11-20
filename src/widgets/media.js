@@ -8,7 +8,7 @@ import { ColorScheme } from '../default-style';
 
 export class Media extends React.Component {
     static Actions=false
-    static Management=false
+    static Tags=false
 
     static defaultProps = {
         isWidget: true,
@@ -26,7 +26,6 @@ export class Media extends React.Component {
             isLoaded: true,
             didJustFinish: false,
             durationMillis: 0,
-            positionMillis,
             rate,
             volume,
             isLoading: false,
@@ -252,7 +251,7 @@ export class Media extends React.Component {
     static TagShortcut=({slug})=>{
         const color=React.useContext(ColorScheme)
         return (
-            <Link to={`/talk/tagman/${slug}`} style={{position:"absolute",right:10, top:0, height:50}} >
+            <Link to={`/talk/manage/${slug}`} style={{position:"absolute",right:10, top:10, height:50}} >
                 <MaterialIcons name="category" size={32} color={color.text}/>
             </Link>
         )
@@ -296,14 +295,8 @@ export class ListMedia extends Media{
     }
 
     componentDidMount(){
-        (async()=>{
-            try{
-                await this.doCreateTranscript()
-                super.componentDidMount(...arguments)
-            }catch(e){
-                console.error(e)
-            }
-        })()
+        this.doCreateTranscript()
+        super.componentDidMount(...arguments)
     }
 
     setStatusSync({positionMillis}){

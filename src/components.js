@@ -1,8 +1,11 @@
 import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Link, useLocation, useNavigate, useParams} from "react-router-native"
+import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio } from "expo-av"
+import * as FileSystem from "expo-file-system"
+import Voice from "@react-native-voice/voice"
+
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
 
@@ -13,12 +16,14 @@ export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, chil
     const opacity = React.useRef(new Animated.Value(1)).current;
     React.useEffect(()=>{
         if(labelFade){
-            Animated.timing(opacity, {
+            const timing=Animated.timing(opacity, {
                 toValue: 0,
                 duration:3000,
                 easing: Easing.linear,
                 useNativeDriver:true,
-            }).start();
+            })
+            timing.start()
+            return ()=>timing.stop()
         }
     },[labelFade])
     return (
@@ -347,20 +352,128 @@ export const Speak=({text,children=null})=>{
     return children
 }
 
-export const PlaySound=({audio, children=null})=>{
+export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
     React.useEffect(()=>{
         if(audio){
-            return  (async ()=>{
+            let sound,status
+            ;(async ()=>{
                 try{
-                    const {sound}=await Audio.Sound.createAsync({})
-                    await sount.playAsync()
-                    sound.unloadAsync()
+                    ({sound,status}=await Audio.Sound.createAsync({uri:audio}));
+                    await sound.playAsync()
+                    setTimeout(()=>{
+                        sound?.unloadAsync()
+                        onFinish?.()
+                    },status.durationMillis)
                 }catch(e){
                     console.error(e)
                 }
-                return ()=>sound.unloadAsync()
-            })(); 
+            })();
+
+            return ()=>sound?.unloadAsync()
         }
     },[audio])
     return children
+},{
+    async play(audio){
+        if(!audio)
+            return 
+        try{
+            
+            return sound
+        }catch(e){
+            console.error(e)
+        }
+    }, 
+    Trigger({name="mic", audio}){
+        const color=React.useContext(ColorScheme)
+        const [playing, setPlaying]=React.useState(false)
+        return (
+            <>
+                <PressableIcon name={name} onPress={e=>setPlaying(true)} color={playing ? color.primary : undefined}/>
+                {playing && <PlaySound audio={audio} onFinish={e=>setPlaying(false)}/>}
+            </>
+        )
+    }
+})
+
+
+export function Recorder({audio, text,style, textStyle, size=40, onRecord, onRecordUri,color:_color}){
+    const color=React.useContext(ColorScheme)
+    const [recording, setRecording]=React.useState(false)
+    return (
+        <>
+            <PressableIcon style={style} size={size} name={ControlIcons.record} 
+                color={recording ? "red" : (audio ? color.primary : _color)}
+                onPressIn={e=>{setRecording(true)}}
+                onPressOut={e=>{setRecording(false)}}
+                />                       
+            {recording && <Recognizer uri={audio||onRecordUri?.()} 
+                    text={text} style={textStyle}
+                    onRecord={({recognized:text,uri:audio, ...props})=>{
+                        onRecord?.({...props, text, audio})
+                        setTimeout(()=>setRecording(false),0)
+                    }}/>
+                }
+            {!recording && (<Text style={textStyle}>{text}</Text>)}
+        </>
+    )
+}
+
+export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...props}){
+    const [recognized, setRecognizedText]=React.useState(text)
+    const scheme=React.useContext(ColorScheme)
+    React.useEffect(()=>{
+        let recognized4Cleanup, start, end
+        Voice.onSpeechResults=e=>{
+            setRecognizedText(recognized4Cleanup=e?.value.join(""))
+        }
+        Voice.onSpeechStart=e=>{
+            start=Date.now()
+        }
+        Voice.onSpeechEnd=e=>{
+            end=Date.now()
+        }
+        Voice.onSpeechVolumeChanged=e=>{};
+        Voice.onSpeechError=e=>{
+            console.error(JSON.stringify(e))
+        }
+        const audioUri=uri.replace("file://","")
+        ;(async()=>{
+            const folder=uri.substring(0,uri.lastIndexOf("/")+1)
+            const info=await FileSystem.getInfoAsync(folder)
+            if(!info.exists){
+                await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
+            }
+            Voice.start(locale,{audioUri})  
+        })();
+        return ()=>{
+            Voice.destroy?.()
+            if(recognized4Cleanup){
+                onRecord?.({recognized:recognized4Cleanup,uri:`file://${audioUri}`, duration:(end||Date.now())-start})
+            }else{
+                try{
+                    FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
+                }catch{
+
+                }
+            }
+        }
+    },[])
+
+    return (
+        <Text style={{color:scheme.primary, ...style}} {...props}>
+            {recognized}
+        </Text>
+    )
+}
+
+export const ControlIcons={
+    record:"mic",
+    visible:"visibility",
+    caption:"closed-caption",
+    captionDelay:"closed-caption",
+    volume:"volume-up",
+    speed:"speed", 
+    whitespace:"notifications", 
+    chunk:"flash-on", 
 }

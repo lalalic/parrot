@@ -1,16 +1,25 @@
+jest.mock("../store",()=>({
+    ...jest.requireActual('../store'),
+    selectBook:jest.fn(),
+ }))
 
 import React from "react"
 import {act} from "react-test-renderer"
-import Player, {NavBar, Subtitle} from "../player"
-import {PlayButton, PressableIcon} from "../components"
-import {Policy} from "../store"
+import Player, {NavBar, Subtitle, ProgressBar} from "../player"
+import {PlayButton, PressableIcon, Recognizer} from "../components"
+import {Policy, selectBook} from "../store"
 import NumberMedia from "../widgets/number"
+import AudioBook from "../widgets/audio-book"
+import PictureBook from "../widgets/picture-book"
 import { TextInput } from "react-native"
 
 describe("play features",()=>{
     class TestMedia extends React.Component{
         render(){
             return <>{this.props.children}</>
+        }
+        setStatusAsync(){
+
         }
     }
     const transcript=[{cues:[
@@ -19,6 +28,8 @@ describe("play features",()=>{
         {text:"hello2",time:7000, end:15000}
     ]}]
 
+    beforeAll(()=>jest.useFakeTimers())
+
     it("<Player media={<div/>}/>",()=>{
         expect(()=>render(<Player media={<TestMedia/>}/>)).not.toThrow()
     })
@@ -26,14 +37,14 @@ describe("play features",()=>{
     const create=(el=<Player/>, status)=>{
         let player, updateStatus
         status={isLoaded:true, isPlaying:true, positionMillis:0, durationMillis:10*1000,...status}
-        act(()=>player=render(React.cloneElement(el,{media:el.props.media||<TestMedia/>})))
-        const media=player.root.findByType(TestMedia)
+        const mediaEl=el.props.media||<TestMedia/>
+        act(()=>player=render(React.cloneElement(el,{media:mediaEl})))
+        const media=player.root.findByType(mediaEl.type)
         updateStatus=current=>{//must dynamically call to onPlaybackStatusUpdate since onPlaybackStatusUpdate is changed on every render
             status={...status,...current}
             media.props.onPlaybackStatusUpdate(status)
         }
-        media.instance.setStatusAsync=jest.fn()
-        jest.useFakeTimers()//avoid update ProgressBar
+        jest.spyOn(media.instance,"setStatusAsync")
         act(()=>updateStatus())
         return {player, updateStatus, media}
     }
@@ -60,8 +71,21 @@ describe("play features",()=>{
             expect(()=>controlBar.findByProps({testID:"chunk"})).toThrow()
         })
 
-        it("should prepare chunks after transcript is sent",()=>{
-            act(()=>updateStatus({transcript}))
+        it("should prepare chunks after transcript is sent by state",()=>{
+            act(()=>{
+                updateStatus({transcript})
+                jest.runOnlyPendingTimers()
+            })
+
+            const controlBar=player.root.findByProps({testID:"controlBar"})
+            expect(()=>controlBar.findByProps({testID:"record"})).not.toThrow()
+            expect(()=>controlBar.findByProps({testID:"video"})).not.toThrow()
+            expect(()=>controlBar.findByProps({testID:"caption"})).not.toThrow()
+            expect(()=>controlBar.findByProps({testID:"chunk"})).not.toThrow()
+        })
+
+        it("should prepare chunks after transcript is set by props",()=>{
+            act(()=>player.update(<Player {...player.root.findByType(Player).props} transcript={transcript}/>))
             const controlBar=player.root.findByProps({testID:"controlBar"})
             expect(()=>controlBar.findByProps({testID:"record"})).not.toThrow()
             expect(()=>controlBar.findByProps({testID:"video"})).not.toThrow()
@@ -100,17 +124,27 @@ describe("play features",()=>{
                 expect(current()).toBe(0)
             })
 
-            it("should play 2nd when positionMillis=6000 and whitespace>0",()=>{
-                act(()=>updateStatus({positionMillis:6000}))//whitespace/start
+            it("should whitespace when after 1st",()=>{
+                act(()=>updateStatus({positionMillis:transcript[0].cues[0].end+100}))//whitespace/start
                 expect(current()).toBe(0)
+                expect(()=>player.root.findByType(Recognizer)).not.toThrow()
                 act(()=>jest.runOnlyPendingTimers())//whitespacing/end
+                expect(()=>player.root.findByType(Recognizer)).toThrow()
                 expect(current()).toBe(1)
             })
 
-            fit("should have whitespace for last chunk",()=>{
-                debugger
+            it("should not whitespace when jump from 0 to 2",()=>{
                 act(()=>updateStatus({positionMillis:transcript[0].cues[2].time+100}))
                 expect(current()).toBe(2)
+                expect(()=>player.findByType(Recognizer)).toThrow()
+            })
+
+            it("should have whitespace for last chunk",()=>{
+                act(()=>updateStatus({positionMillis:transcript[0].cues[2].time+100}))
+                expect(current()).toBe(2)
+                act(()=>updateStatus({positionMillis:transcript[0].cues[2].end+100}))
+                expect(current()).toBe(2)
+                expect(()=>player.root.findByType(Recognizer)).not.toThrow()
             })
 
             it("should pause and record after playing each chunk",()=>{
@@ -190,11 +224,11 @@ describe("play features",()=>{
     })
 
     describe("number media",()=>{
-        describe("management",()=>{
+        describe("tags",()=>{
             let man, input
             beforeEach(()=>{
                 global.alert.mockClear()
-                man=render(<NumberMedia.Management/>)
+                man=render(<NumberMedia.Tags/>)
                 input=man.root.findByType(TextInput)
             })
 
@@ -216,17 +250,57 @@ describe("play features",()=>{
             })
         })
         
+        describe("with player",()=>{
+            let player,media, updateStatus
+            beforeEach(()=>{
+                ({player,media, updateStatus}=create(<Player media={<NumberMedia/>}/>));
+                act(()=>jest.runOnlyPendingTimers())
+            })
 
-        it("should be allowed to control whitespace",()=>{
-            const onPlaybackStatusUpdate=jest.fn()
-            render(<NumberMedia onPlaybackStatusUpdate={onPlaybackStatusUpdate}/>)
-            const call=onPlaybackStatusUpdate.mock.calls.find(([a])=>!!a.transcript)
-            expect(call[0].transcript[0].cues.length>0).toBe(true)
+            it("nav.next is enabled",()=>{
+                expect(player.root.findByProps({testID:"next"}).props.disabled).not.toBe(true)
+            })
+
+            it("should be allowed to control whitespace",()=>{
+                expect(()=>player.root.findByProps({testID:"whitespace"})).not.toThrow()
+            })
+
+            it("should only position 1 when set position between 1.time and 1.end",()=>{
+                act(()=>{media.instance.setStatusAsync({positionMillis:media.instance.cues[1].time+100})})
+                expect(media.instance.progress.current).toBe(media.instance.cues[1].time)
+            })
+        })
+    })
+
+    describe("audiobook",()=>{
+        it("<Player media={<AudioBook/>}> without book",()=>{
+            selectBook.mockReturnValue([])
+            const {player,media, updateStatus}=create(<Player media={<AudioBook/>}/>)
+            act(()=>jest.runOnlyPendingTimers())
+            expect(player.root.findByProps({testID:"next"}).props.disabled).toBe(true)
         })
 
-        xit("should only position 1 when set position between 1.time and 1.end",()=>{
-            const onPlaybackStatusUpdate=jest.fn()
-            const media=render(<NumberMedia onPlaybackStatusUpdate={onPlaybackStatusUpdate}/>)
+        it("<Player media={<AudioBook/>}> with book",()=>{
+            selectBook.mockReturnValue([{uri:"1",text:"hello",duration:1000},{uri:"2",text:"hello",duration:2000}])
+            const {player,media, updateStatus}=create(<Player media={<AudioBook/>}/>)
+            act(()=>jest.runOnlyPendingTimers())
+            expect(player.root.findByProps({testID:"next"}).props.disabled).not.toBe(true)
+        })
+    })
+
+    describe("picturebook",()=>{
+        it("<Player media={<AudioBook/>}> without book",()=>{
+            selectBook.mockReturnValue([])
+            const {player,media, updateStatus}=create(<Player media={<PictureBook/>}/>)
+            act(()=>jest.runOnlyPendingTimers())
+            expect(player.root.findByProps({testID:"next"}).props.disabled).toBe(true)
+        })
+
+        it("<Player media={<AudioBook/>}> with book",()=>{
+            selectBook.mockReturnValue([{uri:"1",text:"hello",duration:1000},{uri:"2",text:"hello",duration:2000}])
+            const {player,media, updateStatus}=create(<Player media={<PictureBook/>}/>)
+            act(()=>jest.runOnlyPendingTimers())
+            expect(player.root.findByProps({testID:"next"}).props.disabled).not.toBe(true)
         })
     })
 })

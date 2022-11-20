@@ -3,11 +3,9 @@ import {View, Text, ActivityIndicator, Pressable} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
-import * as FileSystem from "expo-file-system"
-import Voice from "@react-native-voice/voice"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { PressableIcon, SliderIcon, PlayButton, AutoHide } from './components';
+import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
 import { ColorScheme } from './default-style';
 import { selectPolicy } from './store'
@@ -57,6 +55,9 @@ export default function Player({
     },[policy.autoHide])
 
     const [transcript, setTranscript]=React.useState(_transcript)
+    React.useEffect(()=>{
+        setTranscript(_transcript)
+    },[_transcript])
     
     const chunks=React.useMemo(()=>{
         if(challenging){
@@ -196,7 +197,7 @@ export default function Player({
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const nextState=(()=>{
             if(action.status.transcript){
-                setTranscript(action.status.transcript)
+                setTimeout(()=>setTranscript(action.status.transcript))
             }
 
             if(whitespacing)//don't update until whitespacing is over
@@ -211,7 +212,7 @@ export default function Player({
             //copy temp keys from state
             ;["lastRate","byNext"].forEach(k=>k in state && (current[k]=state[k]))
 
-            if(positionMillis>=chunks[i]?.end){//current is over
+            if(positionMillis>=chunks[i]?.end && (i+1==_i || i==chunks.length-1)){//current is over
                 if(policy.whitespace && !state.byNext){
                     console.log('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
@@ -317,7 +318,6 @@ export default function Player({
                 {false!=controls.progress && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         onProgress,
-                        value: status.positionMillis,
                         duration:status.durationMillis,
                         onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
@@ -353,46 +353,6 @@ export function Subtitle({show,i,delay,title, children, ...props}){
             </Text>
             {children}
         </>
-    )
-}
-
-export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...props}){
-    const [recognized, setRecognizedText]=React.useState(text)
-    const scheme=React.useContext(ColorScheme)
-    React.useEffect(()=>{
-        let recognized4Cleanup, start, end
-        Voice.onSpeechResults=e=>{
-            setRecognizedText(recognized4Cleanup=e?.value.join(""))
-        }
-        Voice.onSpeechStart=e=>{
-            start=Date.now()
-        }
-        Voice.onSpeechEnd=e=>{
-            end=Date.now()
-        }
-        Voice.onSpeechVolumeChanged=e=>{};
-        Voice.onSpeechError=e=>{
-            console.error(JSON.stringify(e))
-        }
-        const audioUri=uri.replace("file://","")
-        ;(async()=>{
-            await FileSystem.makeDirectoryAsync(uri.substring(0,uri.lastIndexOf("/")+1),{intermediates:true})
-            Voice.start(locale,{audioUri})  
-        })();
-        return ()=>{
-            Voice.destroy?.()
-            if(recognized4Cleanup){
-                onRecord?.({recognized:recognized4Cleanup,uri:audioUri, duration:(end||Date.now())-start})
-            }else{
-                FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
-            }
-        }
-    },[])
-
-    return (
-        <Text style={{color:scheme.primary, ...style}} {...props}>
-            {recognized}
-        </Text>
     )
 }
 
@@ -532,17 +492,6 @@ export function Challenges({style, ...props}){
                 />
         </View>
     )
-}
-
-export const ControlIcons={
-    record:"mic",
-    visible:"visibility",
-    caption:"closed-caption",
-    captionDelay:"closed-caption",
-    volume:"volume-up",
-    speed:"speed", 
-    whitespace:"notifications", 
-    chunk:"flash-on", 
 }
 
 

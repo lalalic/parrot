@@ -16,7 +16,7 @@ import Test from "./playground"
 import Explorer from "./file-explorer"
 import { ColorScheme } from "./default-style"
 import Home from "./home"
-import TagMan, {PictureBookMan} from "./tag-man"
+import ManageList from "./widgets/manage-list"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>
@@ -48,7 +48,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="" element={<Account/>}/>
                         <Route element={<WithBackButton/>}>
                             <Route path="policy" element={<Policy/>}/>
-                            <Route path="files" element={<Explorer dir={FileSystem.documentDirectory} exclude={["appData"]} title="File Explorer"/>}/>
+                            <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         </Route>
                     </Route>
                     <Route path="plan" element={<Scheduler/>}/>
@@ -60,8 +60,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     <Route path=":slug/:policy" element={<Talk {...{autoplay:true}}/>}>
                         <Route path=":id"/>
                     </Route>
-                    <Route path="tagman/:slug" element={<TagMan/>} />
-                    <Route path="tagman/picturebook" element={<PictureBookMan/>} />
+                    <Route path="manage/:slug" element={<ManageList/>} />
                 </Route>
                 <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
             </Routes>
