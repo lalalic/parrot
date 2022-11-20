@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "parrot",
-    "slug": "parrot",
+    "name": "Parrot Talk",
+    "slug": "parrot-talk",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -17,8 +17,8 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "developmentClient":{
-      "silentLaunch":true
+    "developmentClient": {
+      "silentLaunch": true
     },
     "ios": {
       "supportsTablet": true,
@@ -40,11 +40,18 @@
           "microphonePermission": "Allow input for speech-to-text",
           "speechRecognitionPermission": "Allow speech-to-text"
         }
-      ],[
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends.",
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios":{"useFrameworks":"static"}
         }
       ]
     ],
@@ -53,5 +60,9 @@
         "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004"
       }
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-4303160366764980~4182198331",
+    "ios_app_id": "ca-app-pub-4303160366764980~4182198331"
   }
 }

@@ -500,8 +500,18 @@ export function createStore(needPersistor){
 	return {store, persistor}
 }
 
-const StoreProvider=({children, persistor:needPersistor=true})=>{
-	const {store, persistor}=React.useMemo(()=>createStore(needPersistor),[])
+const StoreProvider=({children, persistor:needPersistor=true, onReady})=>{
+	const {store, persistor}=React.useMemo(()=>{
+		const data=createStore(needPersistor)
+		const unsub=data.store.subscribe(()=>{
+			const state=data.store.getState()
+			if(state._persist?.rehydrated){
+				unsub()
+				setTimeout(()=>onReady?.(),4000)
+			}
+		})
+		return data
+	},[])
 	return (
 		<Provider store={store}>
 			{!!persistor && <PersistGate {...{loading:null, persistor}}>
