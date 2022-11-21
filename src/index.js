@@ -1,13 +1,12 @@
 import React from "react"
 import { SafeAreaView} from "react-native"
 import { StatusBar } from "expo-status-bar"
-import * as ImagePicker from "expo-image-picker"
-import { Audio } from 'expo-av'
 import * as ExpoSplashScreen from 'expo-splash-screen'
 
 import Router from "./router"
 import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./default-style"
+import { Permissions } from "./permissions"
 
 
 ExpoSplashScreen.preventAutoHideAsync()
@@ -59,27 +58,4 @@ export default ()=>{
 }
 
 
-const Permissions=()=>{
-    const [, requestCameraPermission] = ImagePicker.useCameraPermissions()
-    const [, requestMediaLibPermission] = ImagePicker.useMediaLibraryPermissions();
-    const [, requestRecordPermission] = Audio.usePermissions()
 
-    React.useEffect(()=>{
-        if(requestCameraPermission){
-            requestCameraPermission()
-        }
-    },[requestCameraPermission,])
-
-    React.useEffect(()=>{
-        if(requestMediaLibPermission){
-            requestMediaLibPermission()
-        }
-    },[requestMediaLibPermission])
-
-    React.useEffect(()=>{
-        if(requestRecordPermission){
-            requestRecordPermission()
-        }
-    },[requestRecordPermission])
-    return null
-}

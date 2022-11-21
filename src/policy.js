@@ -6,7 +6,8 @@ import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
 import {Ted} from "./store"
-import Player, { ControlIcons } from "./components"
+import { ControlIcons } from "./components"
+import Player from "./player"
 import { ColorScheme } from "./default-style"
 
 const slug="noah_raford_how_gaming_can_be_a_force_for_good"

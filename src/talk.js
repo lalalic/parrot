@@ -62,7 +62,7 @@ export default function Talk({autoplay}){
         if(Widget && Widget.Actions){
             return <Widget.Actions talk={talk}/>
         }else{
-            return <PolicyChoice label={true} labelFade={true} 
+            return <PolicyChoice label={true} labelFade={true} value={policyName}
                 onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
         }
     },[talk])

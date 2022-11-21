@@ -205,7 +205,9 @@ const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
                         <TimeSelector selectedValue={i} style={{flexGrow:1}} enabled={false}/>
                     </View>
                     <View style={rowStyle}>
-                        <TimeSelector start={i} max={nextPlan?.start.getHalfHour()||undefined} selectedValue={i+plan.coures} style={{flexGrow:1}} 
+                        <TimeSelector start={i} style={{flexGrow:1}} 
+                            max={nextPlan?.start.getHalfHour()||undefined} 
+                            selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
                     <PolicyChoice style={rowStyle} value={plan.policy}
@@ -228,7 +230,7 @@ const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
     )
 }
 
-const TimeSelector=({style, start=-1, max=24, ...props})=>{
+const TimeSelector=({style, start=-1, max=48, ...props})=>{
     const color=React.useContext(ColorScheme)
     return (
         <Picker style={style} mode="dropdown" itemStyle={{color:color.text}} {...props}>

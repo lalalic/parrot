@@ -434,12 +434,7 @@ export function createStore(needPersistor){
 								checkAction(action, ["time"])
 								const removed=immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], null)
 								return removed||{}
-							}/*
-							case "plan/day/template":
-								return immutableSet(state, ['day'], state.day==action.day ? null : action.day)
-							case "plan/week/template":
-								return immutableSet(state, ['week'], Date.from(action.day).isSameWeek(state.week) ? null : action.day)
-							*/
+							}
 							case "plan/copy/1":{
 								checkAction(action, ["replacements","day","templateDay"])
 								const {replacements, day, templateDay}=action
@@ -493,7 +488,7 @@ export function createStore(needPersistor){
 						return isPlain(value)||value?.constructor===Date
 					}
 				}
-			}).concat(Ted.middleware,Ted.middleware),
+			}).prepend(Ted.middleware),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined
 	setupListeners(store)
