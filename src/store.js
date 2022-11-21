@@ -25,6 +25,8 @@ export const Policy={
 		record: false,
 		chunk: 0, //0:chunck by chunck, n: chunks totally n seconds, 7: paragraph, 10: whole
 		autoHide: true,
+		autoChallenge:60,
+		autoChallengeTimes:2, 
 	},
 	shadowing: {
 		desc: "options when you learn language by shadowing chunck by chunck",
@@ -366,7 +368,7 @@ export function createStore(needPersistor){
 								})
 							case "talk/challenge":{
 								return produce(talks, talks=>{
-									checkAction(action, ["chunk","talk"])
+									checkAction(action, ["chunk","talk","policy"])
 									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
 									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
 
@@ -379,6 +381,26 @@ export function createStore(needPersistor){
 										challenges.splice(i,1)
 									}else{
 										challenges.splice(i,0,chunk)
+									}
+									if(challenges.length==0){
+										delete talk[policy].challenging
+									}
+								})
+							}
+							case "talk/challenge/remove":{
+								return produce(talks, talks=>{
+									checkAction(action, ["chunk","talk","policy"])
+									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+
+									const {challenges=[]}=talk[policy]||(talk[policy]={})
+									talk[policy].challenges=challenges
+									const i=challenges.findIndex(a=>a.time==chunk.time)
+									if(i!==-1){
+										challenges.splice(i,1)
+									}
+									if(challenges.length==0){
+										delete talk[policy].challenging
 									}
 								})
 							}

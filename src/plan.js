@@ -3,6 +3,8 @@ import { Text, View, FlatList, Modal, Pressable, ScrollView, Animated} from "rea
 import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker"
+import { MaterialIcons } from '@expo/vector-icons';
+
 import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide} from "./components";
 import { ColorScheme } from "./default-style";
 import { selectPlansByDay } from "./store";
@@ -56,9 +58,10 @@ export default function Scheduler({}) {
                             onPress={e=>dispatch({type:"plan/slot",time:plan.start})}
                             onLongPress={e=>dispatch({type:"plan/remove",time:plan.start})}
                             >
-                            <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false}>
+                            <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false} 
+                                    getLinkUri={e=>`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`}>
                                 <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
-                                    <PressableIcon name={PolicyIcons[plan.policy]} color={color.primary} size={24}/>
+                                    <MaterialIcons name={PolicyIcons[plan.policy]} color={color.primary} size={24}/>
                                 </View>
                             </TalkThumb>
                             <Text style={{paddingLeft:10,flex:1,flexGrow:1,color:"black"}}>

@@ -32,7 +32,10 @@ export default function Talk({autoplay}){
                     </Info>
                 )
             default:
-                return <Challenges {...{style:{flex:1, padding:5}}}/>
+                return <Challenges {...{
+                    style:{flex:1, padding:5},
+                    onLongPress:chunk=>dispatch({type:"talk/challenge/remove",chunk, talk, policy:policyName}),
+                }}/>
         }
     },[talk, policyName])
 

@@ -265,7 +265,7 @@ export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=
     )
 }
 
-export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6}){
+export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
     const {thumb,duration,title, slug}=item
     const navigate=useNavigate()
@@ -274,8 +274,12 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
                 <Pressable onPress={e=>{
-                    navigate(location.pathname,{replace:true, state:{id:item.id}})
-                    navigate(`/talk/${slug}`)
+                    if(!getLinkUri){
+                        navigate(location.pathname,{replace:true, state:{id:item.id}})
+                        navigate(`/talk/${slug}`)
+                    }else{
+                        navigate(getLinkUri(item))
+                    }
                 }}>
                     <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
                 </Pressable>
@@ -462,7 +466,7 @@ export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...pr
 
     return (
         <Text style={{color:scheme.primary, ...style}} {...props}>
-            {recognized||"how can I help you to improve your english!"}
+            {recognized}
         </Text>
     )
 }

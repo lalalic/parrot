@@ -3,7 +3,8 @@ import {View, Text, ActivityIndicator, Pressable} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons'
+import * as FileSystem from "expo-file-system"
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons } from './components';
 import {FlashList as FlatList} from "@shopify/flash-list"
@@ -116,7 +117,7 @@ export default function Player({
                     {lastRate:rate}
                 )
             case "nav/replay":
-                return terminateWhitespace({positionMillis:chunks[i].time})
+                return terminateWhitespace({positionMillis:chunks[i].time},{canReplay:state.canReplay-1})
             case "nav/prevSlow":
                 return terminateWhitespace(
                     i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined,
@@ -135,13 +136,15 @@ export default function Player({
                     i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, 
                     {byNext:true}
                 )
-            case "nav/challenge":
+            case "nav/challenge":{
+                const i=action.i!=undefined ? action.i : state.i
                 i!=-1 && onCheckChunk?.(chunks[i])
-            break
+                break
+            }
             case "whitespace/end":
                 return terminateWhitespace(
                     (challenging ? {positionMillis:chunks[i+1].time} : undefined),
-                    {i:i+1},
+                    {i:i+1,},
                     false//don't need clear whitespace timeout
                 )
             case "volume/toggle":
@@ -320,7 +323,24 @@ export default function Player({
                     show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 
                         style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20}}
-                        onRecord={props=>dispatch({type:"record",...props})} 
+                        onRecord={({recognized,...props})=>{
+                            let score=undefined, i=status.i
+                            /*
+                            if(policy.autoChallenge){//@NOTE: chunk[i+1] is playing
+                                if((score=diff(chunks[i].text,recognized))<policy.autoChallenge){
+                                    if(status.canReplay>0){
+                                        dispatch({type:"nav/prev"})
+                                        return 
+                                    }else if(!challenging && !challenges?.find(a=>a.time==chunks[i].time)){
+                                        dispatch({type:"nav/challenge", i:i-1})
+                                    }
+                                }else if(challenging){
+                                    dispatch({type:"nav/challenge",i:i-1})
+                                }
+                            }
+                            */
+                            dispatch({type:"record",recognized,score,...props})
+                        }} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
                 </Subtitle>
@@ -460,7 +480,7 @@ export function Subtitles(){
     ) 
 }
 
-export function Challenges({style, ...props}){
+export function Challenges({style,onLongPress, ...props}){
     const color=React.useContext(ColorScheme)
     const {id, status, i=status.i,dispatch, onRecordChunkUri, policy="general"}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
@@ -476,23 +496,33 @@ export function Challenges({style, ...props}){
                     const recognized=records[`${time}-${end}`]
                     return (
                         <View style={{backgroundColor:index==status.ic ? "gray" : undefined, borderColor:"gray", borderTopWidth:1,marginTop:10,paddingTop:10}}>
-                            <Pressable style={{flexDirection:"row",marginBottom:10}} onPress={e=>dispatch({type:"media/position",time})}>
+                            <Pressable style={{flexDirection:"row",marginBottom:10}} 
+                                onLongPress={e=>onLongPress?.(item)}
+                                onPress={e=>dispatch({type:"media/time",time})}>
                                 <Text style={{width:20, textAlign:"center"}}>{index+1}</Text>
                                 <Text style={{flexGrow:1,paddingLeft:10}}>{text.replace("\n"," ")}</Text>
                             </Pressable>
-                            <Pressable style={{marginTop:3, flexDirection:"row"}} onPress={e=>{
-                                if(!uri)
-                                    return 
-                                Audio.Sound.createAsync(
-                                    {uri},
-                                    {shouldPlay:true},
-                                    status=>{
-                                        if(status.error || status.didJustFinish){
-                                            sound.unloadAsync()
-                                        }
-                                    }
-                                )
-                            }}>
+                            <Pressable style={{marginTop:3, flexDirection:"row"}} 
+                                onLongPress={e=>onLongPress?.(item)}
+                                onPress={e=>{
+                                    if(!uri)
+                                        return 
+
+                                    ;(async ()=>{
+                                        const info=await FileSystem.getInfoAsync(uri)
+                                        if(!info.exists)
+                                            return 
+                                        Audio.Sound.createAsync(
+                                            {uri},
+                                            {shouldPlay:true},
+                                            status=>{
+                                                if(status.error || status.didJustFinish){
+                                                    sound.unloadAsync()
+                                                }
+                                            }
+                                        )
+                                    })();
+                                }}>
                                 <MaterialIcons size={20} name={recognized && uri ? "replay" : undefined}/>
                                 <Text style={{color:color.primary,lineHeight:20,paddingLeft:10}}>{recognized}</Text>
                             </Pressable>
@@ -504,5 +534,11 @@ export function Challenges({style, ...props}){
     )
 }
 
+function diff(source,recognized){
+    source=source.split(/\s+/g)
+    const recognizedWords=recognized.split(/\s+/g).reduce((score,a,i,)=>{
+        return score+(source.includes(a) ? 1 : 0)
+    },0)
 
-
+    return Math.ceil(100*recognizedWords/source.length)
+}
