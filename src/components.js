@@ -462,7 +462,7 @@ export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...pr
 
     return (
         <Text style={{color:scheme.primary, ...style}} {...props}>
-            {recognized}
+            {recognized||"how can I help you to improve your english!"}
         </Text>
     )
 }

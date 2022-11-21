@@ -312,12 +312,14 @@ export default function Player({
                         onPress={e=>dispatch({type:'media/fullscreen'})}/>}
                 </AutoHide>
 
-                <Subtitle style={[{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20},subtitleStyle]}
+                <Subtitle 
                     i={status.i} 
+                    style={[{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20},subtitleStyle]}
                     title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
-                    delay={policy.captionDelay} show={policy.caption}>
+                    delay={policy.captionDelay} 
+                    show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} 
-                        style={{width:"100%",height:20, textAlign:"center",position:"absolute",bottom:0}}
+                        style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20}}
                         onRecord={props=>dispatch({type:"record",...props})} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
