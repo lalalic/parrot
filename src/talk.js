@@ -18,6 +18,8 @@ export default function Talk({autoplay}){
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
 
+    const positionMillis=useSelector(state=>state.talks[talk.id]?.[policyName]?.history||0)
+
     const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
     
     const info=React.useMemo(()=>{
@@ -37,7 +39,7 @@ export default function Talk({autoplay}){
     const props=React.useMemo(()=>{
         const Widget=globalThis.Widgets[talk.slug]
         if(Widget){
-            const media=<Widget shouldPlay={autoplay} id={id}/>
+            const media=<Widget shouldPlay={autoplay} id={id} positionMillis={positionMillis}/>
             const {controls}=media.props
             return {media,  controls}
         }else{
@@ -51,6 +53,7 @@ export default function Talk({autoplay}){
                     progressUpdateIntervalMillis={100}
                     style={{flex:1}}
                     talk={talk}
+                    positionMillis={positionMillis}
                     />,
                 transcript:talk.languages?.en?.transcript
             }
@@ -71,6 +74,7 @@ export default function Talk({autoplay}){
         <Player 
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
+            onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
             onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk, policy: policyName, record:{[`${time}-${end}`]:recognized}})}

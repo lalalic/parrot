@@ -343,6 +343,9 @@ export function createStore(needPersistor){
 												}else if(value===true && hasChallenges){
 													(talk[policy]||(talk[policy]={})).challenging=true
 												}
+												if(talk[policy]){
+													delete talk[policy].history
+												}
 												break
 											}
 											default:

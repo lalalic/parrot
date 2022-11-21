@@ -25,7 +25,7 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy=useSelector(state=>selectPolicy(state,policyName,id)),
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish,  
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -39,17 +39,13 @@ export default function Player({
     const video=React.useRef()
     
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
-    React.useEffect(()=>{
-        //@Hack: to play sound to speaker, otherwise always to earpod
-        Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
-    },[])
-
     const autoHideActions=React.useRef()
     const autoHideProgress=React.useRef()
     const setAutoHide=React.useCallback((time)=>{
         autoHideProgress.current?.(time)
         autoHideActions.current?.(policy.autoHide ? time : false)
     },[policy.autoHide])
+
     React.useEffect(()=>{
         setAutoHide(Date.now())
     },[policy.autoHide])
@@ -239,6 +235,18 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
+
+    const saveHistory=React.useRef(0)
+    saveHistory.current=media.props.shouldPlay && chunks.length>0 && status.i>0 && status.i<chunks.length-1 && chunks[status.i]?.time
+    React.useEffect(()=>{
+        //@Hack: to play sound to speaker, otherwise always to earpod
+        Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+        return ()=>{
+            if(saveHistory.current){
+                onQuit?.({time:saveHistory.current})
+            }
+        }
+    },[])
     return (
         <>
         <SliderIcon.Container 
@@ -315,7 +323,7 @@ export default function Player({
                         />}
                 </Subtitle>
 
-                {false!=controls.progress && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         onProgress,
                         duration:status.durationMillis,
@@ -323,7 +331,7 @@ export default function Player({
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())
                     }}/> 
-                </AutoHide>}
+                </AutoHide>
             </View>
         </SliderIcon.Container>
         <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName}}>
