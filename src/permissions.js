@@ -2,13 +2,17 @@ import React from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Audio } from 'expo-av';
 import * as Calendar from 'expo-calendar';
+import { useDispatch, useSelector } from "react-redux";
 
 export const Permissions = () => {
+    const dispatch=useDispatch()
     const [, requestCameraPermission] = ImagePicker.useCameraPermissions();
     const [, requestMediaLibPermission] = ImagePicker.useMediaLibraryPermissions();
     const [, requestRecordPermission] = Audio.usePermissions();
     const [, requestCalendarPermission] = Calendar.useCalendarPermissions()
     const [, requestReminderPermission] = Calendar.useRemindersPermissions()
+
+    const calendarID=useSelector(state=>state.plan.calendar)
 
     React.useEffect(() => {
         if (requestCameraPermission) {
@@ -39,6 +43,25 @@ export const Permissions = () => {
             requestReminderPermission()
         }
     },[requestReminderPermission])
+
+    React.useEffect(()=>{
+        if(!calendarID){
+            (async()=>{
+                const defaultCalendar =await Calendar.getDefaultCalendarAsync()
+                const id=await Calendar.createCalendarAsync({
+                    title:"Parrot Talk",
+                    color:"blue",
+                    entityType: Calendar.EntityTypes.EVENT,
+                    sourceId: defaultCalendar.source.id,
+                    source: defaultCalendar.source,
+                    name: 'Parrot',
+                    ownerAccount: 'personal',
+                    accessLevel: Calendar.CalendarAccessLevel.OWNER
+                })
+                dispatch({type:"plan/calendar", id})
+            })();
+        }
+    },[calendarID])
 
     return null;
 };

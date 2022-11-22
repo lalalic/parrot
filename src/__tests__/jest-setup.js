@@ -29,6 +29,12 @@ jest.mock('react-router-native', () => ({
     MaterialIcons:"a"
  }))
 
+ jest.mock("../calendar",()=>({
+    deleteEvents:jest.fn(),
+    createEvents:jest.fn(),
+}))
+
+
 console.log=jest.fn()
 console.warn=jest.fn()
 global.dispatch=jest.fn()

@@ -77,9 +77,9 @@ export default function Scheduler({}) {
                 {!!active && (()=>{
                     const i=events.findIndex(a=>a.plan.start.getTime()==active.getTime())
                     return (
-                        <SlotScheduler dispatch={dispatch} 
+                        <SlotScheduler dispatch={dispatch} i={i}
                             plan={events[i]?.plan||{start:active, coures:1}}
-                            nextPlan={events[i+1]?.plan}
+                            nextPlan={i!=-1 ? events[i+1]?.plan : undefined}
                             height={100} style={{
                                 width:"100%",
                                 height:"100%", 
@@ -194,7 +194,7 @@ const Copy=({cancel, mode, ...props})=>{
     )
 }
 
-const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
+function SlotScheduler({dispatch, nextPlan, style,...props}){
     const color=React.useContext(ColorScheme)
     const rowStyle={overflow:"hidden",flexDirection:"row", alignItems:"center", height:70,borderBottomColor:"gray",borderWidth:1}
     
@@ -208,8 +208,8 @@ const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
                         <TimeSelector selectedValue={i} style={{flexGrow:1}} enabled={false}/>
                     </View>
                     <View style={rowStyle}>
-                        <TimeSelector start={i} style={{flexGrow:1}} 
-                            max={nextPlan?.start.getHalfHour()||undefined} 
+                        <TimeSelector min={i+1} style={{flexGrow:1}} 
+                            max={nextPlan?.start.getHalfHour()||48} 
                             selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
@@ -233,12 +233,12 @@ const SlotScheduler=({dispatch, nextPlan, style,...props})=>{
     )
 }
 
-const TimeSelector=({style, start=-1, max=48, ...props})=>{
+const TimeSelector=({style, min=0, max=48, ...props})=>{
     const color=React.useContext(ColorScheme)
     return (
         <Picker style={style} mode="dropdown" itemStyle={{color:color.text}} {...props}>
-            {new Array(48).fill(0).map((a,index)=>{
-                if(index>start && index<=max){
+            {new Array(49).fill(0).map((a,index)=>{
+                if(index>=min && index<=max){
                     const label=`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`
                     return <Picker.Item key={index} label={label} value={index}/>
                 }

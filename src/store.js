@@ -13,6 +13,8 @@ import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
 
+import * as Calendar from "./calendar"
+
 export const Policy={
 	general: {
 		desc: "General options to control player and reaction.",
@@ -434,36 +436,53 @@ export function createStore(needPersistor){
 								return talks
 						}
 					},
-					plan(state={},action){
+					plan(plans={},action){
 						switch(action.type){
 							case "persist/REHYDRATE":{
-								if(action.payload?.plan){
-									return (function deep(a){
-										if('start' in a){
-											a.start=new Date(a.start)
-										}else{
-											Object.values(a).forEach(deep)
-										}
-										return a
-									})(action.payload.plan);
-								}
-								break
+								const {plan:{calendar, ...lastPlans}={}}=action.payload||{}
+								return {
+									...plans,
+									calendar,
+									...(function deep(a){
+											if(a.start){
+												a.start=new Date(a.start)
+											}else{
+												Object.values(a).forEach(deep)
+											}
+											return a
+										})(lastPlans)
+									}
 							}
+							case "plan/calendar":
+								return produce(plans,plans=>{
+									plans.calendar=action.id
+								})
+							case "plan/events":
+								return produce(plans,plans=>{
+									action.events.forEach(({start,eventID})=>{
+										const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+										plans[y][w][d][h].eventID=eventID
+									})
+								})
 							case "plan":{
 								const {plan:{start}}=action
 								checkAction(action, ["plan"])
-								return immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], action.plan)
+								const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+								Calendar.createEvents(store, action.plan, plans[y]?.[w]?.[d]?.[h])
+								return immutableSet(plans, [y,w,d,h], action.plan)
 							}
 							case "plan/remove":{
 								const {time:start}=action
 								checkAction(action, ["time"])
-								const removed=immutableSet(state, [start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())], null)
+								const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+								Calendar.deleteEvents(plans[y]?.[w]?.[d]?.[h])
+								const removed=immutableSet(plans, [y,w,d,h], null)
 								return removed||{}
 							}
 							case "plan/copy/1":{
 								checkAction(action, ["replacements","day","templateDay"])
 								const {replacements, day, templateDay}=action
-								const template=state[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
+								const template=plans[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
 								const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
 									switch(key){
 										case "start":
@@ -473,13 +492,15 @@ export function createStore(needPersistor){
 									}
 									return value
 								})
-								return immutableSet(state,[day.getFullYear(),day.getWeek(),day.getDay()],plan)
+								const [y,w,d]=[day.getFullYear(),day.getWeek(),day.getDay()]
+								Calendar.createEvents(store, plan, plans[y]?.[w]?.[d])
+								return immutableSet(plans,[y,w,d],plan)
 							}
 							case "plan/copy/7":{
 								checkAction(action, ["replacements","day","templateDay"])
 								
 								const {replacements, day, templateDay}=action
-								const template=state[templateDay.getFullYear()][templateDay.getWeek()]
+								const template=plans[templateDay.getFullYear()][templateDay.getWeek()]
 								const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
 									switch(key){
 										case "start":
@@ -489,11 +510,13 @@ export function createStore(needPersistor){
 									}
 									return value
 								})
-								return immutableSet(state,[day.getFullYear(),day.getWeek()],plan)
+								const [y,w]=[day.getFullYear(),day.getWeek()]
+								Calendar.createEvents(store, plan, plans[y]?.[w])
+								return immutableSet(plans,[y,w],plan)
 							}
 							
 						}
-						return state
+						return plans
 					},
 					history(state={},{type, ...history}){
 						switch(type){
