@@ -21,7 +21,7 @@ export default ()=>{
                 )} 
                 data={[
                     {name:"Policy", icon:"policy"},
-                    //{name:"Files", icon:"file-present"},
+                    {name:"Files", icon:"file-present"},
                 ]} />     
             
             <Pressable 

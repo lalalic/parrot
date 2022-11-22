@@ -203,8 +203,10 @@ export default function Player({
                 return state
             
             const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
-            if(!isLoaded)
+            if(!isLoaded){//init video pitch, props can't work
+                video.current.setStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
                 return state
+            }
 
             const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
 

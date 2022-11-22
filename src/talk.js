@@ -1,14 +1,14 @@
 import React from 'react';
 import {View, Text,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
-import Player, {Challenges} from "./player"
+import Player, {Challenges, Subtitles} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import {Ted} from "./store"
-import { Video } from 'expo-av';
+import { Video, Audio } from 'expo-av';
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -31,13 +31,21 @@ export default function Talk({autoplay}){
                         {!!Widget?.Tags && <Widget.Tags/>}
                     </Info>
                 )
-            default:
-                return <Challenges {...{
-                    style:{flex:1, padding:5},
-                    onLongPress:chunk=>dispatch({type:"talk/challenge/remove",chunk, talk, policy:policyName}),
-                }}/>
+            default:{
+                if(challenging){
+                    return <Challenges {...{
+                        style:{flex:1, padding:5},
+                        onLongPress:chunk=>dispatch({type:"talk/challenge/remove",chunk, talk, policy:policyName}),
+                    }}/>
+                }else{
+                    return <Subtitles {...{
+                        style:{flex:1, padding:5},
+                        
+                    }}/>
+                }
+            }
         }
-    },[talk, policyName])
+    },[talk, policyName, challenging])
 
     const props=React.useMemo(()=>{
         const Widget=globalThis.Widgets[talk.slug]
@@ -53,7 +61,8 @@ export default function Talk({autoplay}){
                     shouldPlay={autoplay}
                     useNativeControls={false}
                     shouldCorrectPitch={true}
-                    progressUpdateIntervalMillis={100}
+                    pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
+                    progressUpdateIntervalMillis={30}
                     style={{flex:1}}
                     talk={talk}
                     positionMillis={positionMillis}
@@ -69,9 +78,9 @@ export default function Talk({autoplay}){
             return <Widget.Actions talk={talk}/>
         }else{
             return <PolicyChoice label={true} labelFade={true} value={policyName}
-                onValueChange={policy=>navigate(`/talk/${slug}/${policy}`,{replace:true})}/>
+                onValueChange={policy=>navigate(`/talk/${slug}/${policy}`)}/>
         }
-    },[talk])
+    },[talk,policyName])
 
     return (
         <Player 
