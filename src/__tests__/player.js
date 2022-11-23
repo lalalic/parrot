@@ -5,7 +5,7 @@ jest.mock("../store",()=>({
 
 import React from "react"
 import {act} from "react-test-renderer"
-import Player, {NavBar, Subtitle, ProgressBar} from "../player"
+import Player, {NavBar, Subtitle} from "../player"
 import {PlayButton, PressableIcon, Recognizer} from "../components"
 import {Policy, selectBook} from "../store"
 import NumberMedia from "../widgets/number"
@@ -31,14 +31,14 @@ describe("play features",()=>{
     beforeAll(()=>jest.useFakeTimers())
 
     it("<Player media={<div/>}/>",()=>{
-        expect(()=>render(<Player media={<TestMedia/>}/>)).not.toThrow()
+        expect(()=>render(<Player media={<TestMedia/>} policy={Policy.general}/>)).not.toThrow()
     })
 
     const create=(el=<Player/>, status)=>{
         let player, updateStatus
         status={isLoaded:true, isPlaying:true, positionMillis:0, durationMillis:10*1000,...status}
         const mediaEl=el.props.media||<TestMedia/>
-        act(()=>player=render(React.cloneElement(el,{media:mediaEl})))
+        act(()=>player=render(React.cloneElement(el,{media:mediaEl, policy:el.props.policy||Policy.general})))
         const media=player.root.findByType(mediaEl.type)
         updateStatus=current=>{//must dynamically call to onPlaybackStatusUpdate since onPlaybackStatusUpdate is changed on every render
             status={...status,...current}
@@ -203,6 +203,7 @@ describe("play features",()=>{
         })
 
         it("should trigger onFinish only when all cues are played",()=>{
+            handlers.onFinish.mockClear()
             act(()=>{
                 updateStatus({didJustFinish:true})
                 jest.runOnlyPendingTimers()

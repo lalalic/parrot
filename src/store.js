@@ -411,7 +411,7 @@ export function createStore(needPersistor){
 									checkAction(action, ["record","talk","policy"])
 									const {record, policy,talk:{slug, title, thumb,duration,link,id}}=action
 									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
-									const {records=[]}=(talk[policy]||(talk[policy]={}));
+									const {records={}}=(talk[policy]||(talk[policy]={}));
 									(talk[policy].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
 								})
 							case "talk/clear/history":
@@ -535,7 +535,10 @@ export function createStore(needPersistor){
 					isSerializable(value){
 						return isPlain(value)||value?.constructor===Date
 					}
-				}
+				},
+				immutableCheck:{
+					warnAfter:100,
+				},
 			}).prepend(Ted.middleware),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined

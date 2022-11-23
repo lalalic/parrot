@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList , Animated, Easing, Image} from "react-native";
+import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio } from "expo-av"
@@ -362,11 +362,16 @@ export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
             let sound,status
             ;(async ()=>{
                 try{
-                    ({sound,status}=await Audio.Sound.createAsync({uri:audio}));
+                    const info=await FileSystem.getInfoAsync(audio)
+                    if(!info.exists){
+                        onFinish?.(false)
+                        return
+                    }
+                    ;({sound,status}=await Audio.Sound.createAsync({uri:audio}));
                     await sound.playAsync()
                     setTimeout(()=>{
                         sound?.unloadAsync()
-                        onFinish?.()
+                        onFinish?.(true)
                     },status.durationMillis)
                 }catch(e){
                     console.error(e)
@@ -378,16 +383,6 @@ export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
     },[audio])
     return children
 },{
-    async play(audio){
-        if(!audio)
-            return 
-        try{
-            
-            return sound
-        }catch(e){
-            console.error(e)
-        }
-    }, 
     Trigger({name="mic", audio}){
         const color=React.useContext(ColorScheme)
         const [playing, setPlaying]=React.useState(false)
@@ -423,13 +418,14 @@ export function Recorder({audio, text,style, textStyle, size=40, onRecord, onRec
     )
 }
 
-export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...props}){
+export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ...props}){
     const [recognized, setRecognizedText]=React.useState(text)
     const scheme=React.useContext(ColorScheme)
     React.useEffect(()=>{
         let recognized4Cleanup, start, end
         Voice.onSpeechResults=e=>{
             setRecognizedText(recognized4Cleanup=e?.value.join(""))
+            DeviceEventEmitter.emit("recognized",[recognized4Cleanup,i])
         }
         Voice.onSpeechStart=e=>{
             start=Date.now()
@@ -438,9 +434,7 @@ export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...pr
             end=Date.now()
         }
         Voice.onSpeechVolumeChanged=e=>{};
-        Voice.onSpeechError=e=>{
-            console.error(JSON.stringify(e))
-        }
+        Voice.onSpeechError=e=>{}
         const audioUri=uri.replace("file://","")
         ;(async()=>{
             const folder=uri.substring(0,uri.lastIndexOf("/")+1)
@@ -450,25 +444,45 @@ export function Recognizer({uri, text="", onRecord, locale="en_US", style, ...pr
             }
             Voice.start(locale,{audioUri})  
         })();
-        return ()=>{
-            Voice.destroy?.()
+        return async ()=>{
+            Voice.destroy()
             if(recognized4Cleanup){
-                onRecord?.({recognized:recognized4Cleanup,uri:`file://${audioUri}`, duration:(end||Date.now())-start})
+                const uri=`file://${audioUri}`
+                const info=await FileSystem.getInfoAsync(uri)
+                if(info.exists){
+                    onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})
+                }else{
+                    console.warn(`recognized(${recognized4Cleanup}), but file's gone at ${uri}`)
+                }
+                return 
             }else{
                 try{
                     FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
-                }catch{
-
-                }
+                }catch{}
             }
         }
     },[])
 
-    return (
+    return !DeviceEventEmitter.listenerCount('recognized') && (
         <Text style={{color:scheme.primary, ...style}} {...props}>
             {recognized}
         </Text>
     )
+}
+
+Recognizer.Text=({children,i,style, ...props})=>{
+    const color=React.useContext(ColorScheme)
+    const [recognized, setRecognized]=React.useState(children)
+    React.useEffect(()=>{
+        const listener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
+            if(i==index){
+                setRecognized(recognized)
+            }
+        })
+        return ()=>listener.remove()
+    },[])
+
+    return <Text style={{color:recognized!=children ? color.primary : color.text, ...style}} {...props}>{recognized}</Text>
 }
 
 export const ControlIcons={

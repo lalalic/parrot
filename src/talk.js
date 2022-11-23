@@ -7,7 +7,7 @@ import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
-import {Ted} from "./store"
+import { Ted, selectPolicy} from "./store"
 import { Video, Audio } from 'expo-av';
 
 export default function Talk({autoplay}){
@@ -15,15 +15,16 @@ export default function Talk({autoplay}){
     const dispatch=useDispatch()
     const {slug,policy: policyName="general", id}=useParams()
     const {data:talk={}}=Ted.useTalkQuery({slug, id})
+    
+    const Widget=globalThis.Widgets[slug]
+
+    const policy=useSelector(state=>selectPolicy(state,policyName,id))
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
-
-    const positionMillis=useSelector(state=>state.talks[talk.id]?.[policyName]?.history||0)
-
+    
     const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
     
     const info=React.useMemo(()=>{
-        const Widget=globalThis.Widgets[talk.slug]
         switch(policyName){
             case "general":
                 return (
@@ -32,25 +33,14 @@ export default function Talk({autoplay}){
                     </Info>
                 )
             default:{
-                if(challenging){
-                    return <Challenges {...{
-                        style:{flex:1, padding:5},
-                        onLongPress:chunk=>dispatch({type:"talk/challenge/remove",chunk, talk, policy:policyName}),
-                    }}/>
-                }else{
-                    return <Subtitles {...{
-                        style:{flex:1, padding:5},
-                        
-                    }}/>
-                }
+                return <Subtitles {...{ policy:policyName, style:{flex:1, padding:5}}}/>
             }
         }
-    },[talk, policyName, challenging])
+    },[talk, policyName])
 
     const props=React.useMemo(()=>{
-        const Widget=globalThis.Widgets[talk.slug]
         if(Widget){
-            const media=<Widget shouldPlay={autoplay} id={id} positionMillis={positionMillis}/>
+            const media=<Widget shouldPlay={autoplay} id={id}/>
             const {controls}=media.props
             return {media,  controls}
         }else{
@@ -64,8 +54,6 @@ export default function Talk({autoplay}){
                     pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
                     progressUpdateIntervalMillis={30}
                     style={{flex:1}}
-                    talk={talk}
-                    positionMillis={positionMillis}
                     />,
                 transcript:talk.languages?.en?.transcript
             }
@@ -73,7 +61,6 @@ export default function Talk({autoplay}){
     },[talk,autoplay])
 
     const actions=React.useMemo(()=>{
-        const Widget=globalThis.Widgets[talk.slug]
         if(Widget && Widget.Actions){
             return <Widget.Actions talk={talk}/>
         }else{
@@ -81,7 +68,6 @@ export default function Talk({autoplay}){
                 onValueChange={policy=>navigate(`/talk/${slug}/${policy}`)}/>
         }
     },[talk,policyName])
-
     return (
         <Player 
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
@@ -90,7 +76,7 @@ export default function Talk({autoplay}){
             onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
-            {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName,...props}}
+            {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName, policy, ...props}}
             >
             {info}
             {actions}
