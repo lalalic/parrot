@@ -18,7 +18,7 @@ export default function Talk({autoplay}){
     
     const Widget=globalThis.Widgets[slug]
 
-    const policy=useSelector(state=>selectPolicy(state,policyName,id))
+    const policy=useSelector(state=>selectPolicy(state,policyName,talk.id))
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
     

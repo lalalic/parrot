@@ -7,7 +7,6 @@ import * as FileSystem from "expo-file-system"
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
 import { ColorScheme } from './default-style';
-//import {FlashList as FlatList}  from "@shopify/flash-list"
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
 
@@ -479,7 +478,7 @@ export function Subtitles({style,policy, itemHeight:height=70, onLongPress, ...p
     
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
-        if(i>=0 && subtitleRef.current){
+        if(i>=0 && subtitleRef.current && i<chunks.length-1){
             subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
         }
     },[i])
