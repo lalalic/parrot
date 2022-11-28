@@ -414,6 +414,12 @@ export function createStore(needPersistor){
 									const {records={}}=(talk[policy]||(talk[policy]={}));
 									(talk[policy].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
 								})
+							case "talk/recording/miss":
+								return produce(talks, data=>{
+									checkAction(action, ["record", "policy"])
+									const {record, policy, talk : {id}}=action
+									delete data[id]?.[policy]?.records?.[record]
+								})
 							case "talk/clear/history":
 								return produce(talks, talks=>{
 									checkAction(action, ["id"])

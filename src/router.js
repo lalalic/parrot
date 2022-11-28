@@ -15,7 +15,7 @@ import ManageList from "./widgets/manage-list"
 import ARTest from "./ar-test"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/account/artest"]}>
+    <NativeRouter initialEntries={["/talk/matthew_garcia_how_global_virtual_communities_can_help_kids_achieve_their_dreams/shadowing"]}>
         <Routes>
             <Route path="/" element={React.createElement(()=>{
                     const {pathname}=useLocation()

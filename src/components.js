@@ -102,7 +102,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
     const change=k=>(setValue(k),onValueChange?.(k));
     return (
         <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
-            {"shadowing,dictating,retelling".split(",").map(k=>(
+            {"general,shadowing,dictating,retelling".split(",").map(k=>(
                 <PressableIcon key={k} 
                     color={value==k ? color.primary : undefined}
                     name={PolicyIcons[k]} labelFade={labelFade}

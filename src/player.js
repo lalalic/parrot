@@ -1,15 +1,13 @@
 import React, {} from 'react';
-import {View, Text, ActivityIndicator, Pressable} from "react-native"
+import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av';
 import Slider from '@react-native-community/slider'
-import { MaterialIcons } from '@expo/vector-icons'
 import * as FileSystem from "expo-file-system"
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
-import {FlashList as FlatList} from "@shopify/flash-list"
 import { ColorScheme } from './default-style';
-
+//import {FlashList as FlatList}  from "@shopify/flash-list"
 const Context=React.createContext({})
 const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
 
@@ -25,7 +23,7 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -172,6 +170,9 @@ export default function Player({
             break
             case "record":
                 policy.record && onRecordChunk?.(action)
+            break
+            case "record/miss":
+                onRecordAudioMiss?.(action)
             break
             case "media/time":
                 return terminateWhitespace({positionMillis:action.time})
@@ -469,7 +470,7 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitles({style,policy, onLongPress, ...props}){
+export function Subtitles({style,policy, itemHeight:height=70, onLongPress, ...props}){
     const {id, status, i=status.i, chunks, onRecordChunkUri}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[id]?.[policy]?.challenges, 
@@ -483,14 +484,17 @@ export function Subtitles({style,policy, onLongPress, ...props}){
         }
     },[i])
     
+
     return (
         <View {...props} style={[{padding:4},style]}>
             <FlatList data={chunks} 
                 ref={subtitleRef}
                 extraData={`${i}-${challenges.length}`} 
-                estimatedItemSize={50}
+                estimatedItemSize={height+10}
+                getItemLayout={(data, index)=>({length:height+10, offset: index*(height+10), index})}
                 keyExtractor={({time,end})=>`${time}-${end}`}
                 renderItem={({ index, item })=><SubtitleItem {...{
+                    style:{height},
                     index, item, onLongPress,
                     audio:onRecordChunkUri?.(item),
                     recognized:records[`${item.time}-${item.end}`],
@@ -501,13 +505,26 @@ export function Subtitles({style,policy, onLongPress, ...props}){
     )
 }
 
-function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged}) {
+function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged, style}) {
     const {dispatch, status, current=status.i}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
     const [playing, setPlaying] = React.useState(false);
-    const { text, time } = item;
+    const { text, time, end } = item;
+    const [audioExists, setAudioExists]=React.useState(false)
+    React.useEffect(()=>{
+        if(audio && recognized){
+            (async()=>{
+                const info=await FileSystem.getInfoAsync(audio)
+                if(info.exists){
+                    setAudioExists(true)
+                }else{
+                    dispatch({type:"record/miss", record: item })
+                }
+            })();
+        }
+    },[recognized, audio])
     return (
-        <View style={{ borderColor: "gray", borderTopWidth: 1, marginTop: 10, paddingTop: 10 }}>
+        <View style={{ borderColor: "gray", borderTopWidth: 1, marginTop: 10, paddingTop: 10 , ...style}}>
             <Pressable style={{ flexDirection: "row", marginBottom: 10, alignContent:"center" }}
                 onLongPress={e => onLongPress?.(item)}
                 onPress={e => dispatch({ type: "media/time", time })}>
@@ -517,11 +534,11 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
             </Pressable>
             <Pressable style={{ marginTop: 3, flexDirection: "row" }}
                 onLongPress={e => onLongPress?.(item)}
-                onPress={e => setPlaying(true)}>
+                onPress={e => audioExists && setPlaying(true)}>
                 <PressableIcon size={20} 
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
                     name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
-                <Recognizer.Text i={index} style={{ color: playing ? "red" : color.primary, lineHeight: 20, paddingLeft: 10 }}>{recognized}</Recognizer.Text>
+                <Recognizer.Text i={index} style={{ color: playing ? "red" : (audioExists ? color.primary : color.inactive), lineHeight: 20, paddingLeft: 10 }}>{recognized}</Recognizer.Text>
                 {!!playing && !!audio && <PlaySound audio={audio} onFinish={e =>setPlaying(false)} />}
             </Pressable>
         </View>

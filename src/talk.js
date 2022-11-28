@@ -76,6 +76,7 @@ export default function Talk({autoplay}){
             onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
+            onRecordAudioMiss={({record:{time,end}})=>dispatch({type:"talk/recording/miss", talk, policy: policyName, record:`${time}-${end}` })}
             {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName, policy, ...props}}
             >
             {info}
