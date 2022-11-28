@@ -12,9 +12,10 @@ import Explorer from "./file-explorer"
 import { ColorScheme } from "./default-style"
 import Home from "./home"
 import ManageList from "./widgets/manage-list"
+import ARTest from "./ar-test"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/home"]}>
+    <NativeRouter initialEntries={["/account/artest"]}>
         <Routes>
             <Route path="/" element={React.createElement(()=>{
                     const {pathname}=useLocation()
@@ -43,6 +44,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     <Route element={<WithBackButton/>}>
                         <Route path="policy" element={<Policy/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
+                        <Route path="artest" element={<ARTest/>}/>
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>

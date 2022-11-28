@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide} from "./components";
 import { ColorScheme } from "./default-style";
 import { selectPlansByDay } from "./store";
+import { useNavigate } from "react-router-native";
 
 export default function Scheduler({}) {
     const color=React.useContext(ColorScheme)
@@ -38,7 +39,7 @@ export default function Scheduler({}) {
     const events=useSelector(state=>selectPlansByDay(state, day))
 
     const [copy, setCopyMode]=React.useState(0)
-    
+    const navigate=useNavigate()
     return (
         <CalendarProvider date={new Date().asDateString()} 
             onDateChanged={(date)=>dispatch({type:"day", date})}>
@@ -58,12 +59,14 @@ export default function Scheduler({}) {
                             onPress={e=>dispatch({type:"plan/slot",time:plan.start})}
                             onLongPress={e=>dispatch({type:"plan/remove",time:plan.start})}
                             >
-                            <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false} 
-                                    getLinkUri={e=>`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`}>
-                                <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
-                                    <MaterialIcons name={PolicyIcons[plan.policy]} color={color.primary} size={24}/>
-                                </View>
-                            </TalkThumb>
+                            <Pressable onPress={e=>navigate(`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`)}>  
+                                <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false} 
+                                        getLinkUri={e=>`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`}>
+                                    <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
+                                        <MaterialIcons name={PolicyIcons[plan.policy]} color={color.primary} size={24}/>
+                                    </View>
+                                </TalkThumb>
+                            </Pressable>  
                             <Text style={{paddingLeft:10,flex:1,flexGrow:1,color:"black"}}>
                                 {`${plan.policy?.toUpperCase()||""}\n${talk?.title||""}`}
                             </Text>
