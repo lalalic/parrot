@@ -126,9 +126,9 @@ export default function Player({
             })
         }
 
-        const CurrentChunkPositionMillis=()=>chunks[i-1]?.end ?? chunks[0]?.time
-        const PrevChunkPositionMillis=()=>chunks[i-2]?.end ?? chunks[0]?.time
-        const NextChunkPositionMillis=()=>chunks[i]?.end
+        const CurrentChunkPositionMillis=(I=i)=>chunks[I-1]?.end ?? chunks[0]?.time
+        const PrevChunkPositionMillis=(I=i)=>chunks[I-2]?.end ?? chunks[0]?.time
+        const NextChunkPositionMillis=(I=i)=>chunks[I]?.end
         switch(action.type){
             case "nav/replaySlow":
                 return terminateWhitespace(
@@ -194,9 +194,9 @@ export default function Player({
                 onRecordAudioMiss?.(action)
             break
             case "media/time":{
-                const i=chunks.findIndex(a=>a.end>=action.time)
+                const i=chunks.findIndex(a=>a.time>=action.time)
                 return terminateWhitespace(
-                    {positionMillis:action.time,shouldPlay:isPlaying},
+                    {positionMillis:CurrentChunkPositionMillis(i),shouldPlay:action.shouldPlay ?? isPlaying},
                     {i: i==-1 ? chunks.length-1 : i}
                 )
             }
@@ -502,7 +502,7 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitles({style,policy, itemHeight:height=70, onLongPress, ...props}){
+export function Subtitles({style,policy, itemHeight:height=80, onLongPress, ...props}){
     const {id, status, i=status.i, chunks, onRecordChunkUri}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[id]?.[policy]?.challenges, 
@@ -555,22 +555,31 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
             })();
         }
     },[recognized, audio])
+    const textProps={
+        style:{ flexGrow: 1, paddingLeft: 10, flexShrink:1,height:40},
+        adjustsFontSizeToFit:true,
+        numberOfLines:2,
+    }
     return (
         <View style={{ borderColor: "gray", borderTopWidth: 1, marginTop: 10, paddingTop: 10 , ...style}}>
-            <Pressable style={{ flexDirection: "row", marginBottom: 10, alignContent:"center" }}
+            <Pressable style={{ flex:1, flexDirection: "row", marginBottom: 10, alignContent:"center", }}
                 onLongPress={e => onLongPress?.(item)}
-                onPress={e => dispatch({ type: "media/time", time })}>
+                onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
                 <Text style={{ width: 20, textAlign: "center", fontSize:10,
                     color: index == current ? color.primary : color.text }}>{index + 1}</Text>
-                <Text style={{ flexGrow: 1, paddingLeft: 10 }}>{text.replace("\n", " ")}</Text>
+                <Text {...textProps}>{text.replace("\n", " ")}</Text>
             </Pressable>
-            <Pressable style={{ marginTop: 3, flexDirection: "row" }}
+            <Pressable style={{ flex:1, marginTop: 3, flexDirection: "row" }}
                 onLongPress={e => onLongPress?.(item)}
                 onPress={e => audioExists && setPlaying(true)}>
                 <PressableIcon size={20} 
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
                     name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
-                <Recognizer.Text i={index} style={{ color: playing ? "red" : (audioExists ? color.primary : color.inactive), lineHeight: 20, paddingLeft: 10 }}>{recognized}</Recognizer.Text>
+                <Recognizer.Text i={index} {...textProps} 
+                    style={{
+                        ...textProps.style, 
+                        color: playing ? "red" : (audioExists ? color.primary : color.inactive)
+                    }}>{recognized}</Recognizer.Text>
                 {!!playing && !!audio && <PlaySound audio={audio} onFinish={e =>setPlaying(false)} />}
             </Pressable>
         </View>

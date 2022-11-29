@@ -356,6 +356,7 @@ export const Speak=({text,children=null})=>{
     return children
 }
 
+let gPlaying=false
 export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
     React.useEffect(()=>{
         if(audio){
@@ -388,8 +389,19 @@ export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
         const [playing, setPlaying]=React.useState(false)
         return (
             <>
-                <PressableIcon name={name} onPress={e=>setPlaying(true)} color={playing ? color.primary : undefined}/>
-                {playing && <PlaySound audio={audio} onFinish={e=>setPlaying(false)}/>}
+                <PressableIcon name={name} 
+                    onPress={e=>{
+                        if(gPlaying){
+                            gPlaying=true
+                            setPlaying(true)
+                        }
+                    }} 
+                    color={playing ? color.primary : undefined}/>
+                {playing && <PlaySound audio={audio} 
+                    onFinish={e=>{
+                        gPlaying=false
+                        setPlaying(false)
+                    }}/>}
             </>
         )
     }
