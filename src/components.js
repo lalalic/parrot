@@ -445,7 +445,8 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             Voice.start(locale,{audioUri})  
         })();
         return async ()=>{
-            Voice.destroy()
+            await Voice.stop()
+            await Voice.destroy()
             if(recognized4Cleanup){
                 const uri=`file://${audioUri}`
                 const info=await FileSystem.getInfoAsync(uri)
