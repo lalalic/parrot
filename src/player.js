@@ -9,8 +9,6 @@ import * as FileSystem from "expo-file-system"
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
 import { ColorScheme } from './default-style';
 const Context=React.createContext({})
-const undefinedy=(o)=>(Object.keys(o).forEach(k=>o[k]===undefined && delete o[k]),o)
-
 /**
 @TODO: 
 1. why is it constantly rerendered although status is not changed 
@@ -31,8 +29,6 @@ export default function Player({
     const performanceCount=React.useRef(0)
     console.debug(`player rendered ${performanceCount.current++} times`)
     
-    const changePolicy=(key,value)=>onPolicyChange?.({[key]:value})
-    const color=React.useContext(ColorScheme)
     const video=React.useRef()
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
@@ -43,6 +39,11 @@ export default function Player({
         autoHideActions.current?.(policy.autoHide ? time : false)
     },[policy.autoHide])
 
+    const changePolicy=(key,value)=>{
+        onPolicyChange?.({[key]:value})
+        setAutoHide(Date.now())
+    }
+    
     React.useEffect(()=>{
         setAutoHide(Date.now())
     },[policy.autoHide])
@@ -291,6 +292,14 @@ export default function Player({
         }
     },[])
 
+    React.useEffect(()=>{
+        if(policy.fullscreen){
+            
+        }else{
+            
+        }
+    },[policy.fullscreen])
+
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
@@ -311,6 +320,7 @@ export default function Player({
                 },
                 rate:policy.rate,
                 volume:policy.volume,
+                style,
                 positionMillis: positionMillisHistory||chunks[0]?.time
             })}
             <View pointerEvents='box-none'
@@ -324,7 +334,6 @@ export default function Player({
                 <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
                         name={`${ControlIcons.record}${!policy.record?"-off":""}`} 
-                        color={policy.record && status.whitespacing ? color.warn : undefined}
                         onPress={e=>changePolicy("record",!policy.record)}
                         />}
 
@@ -356,8 +365,9 @@ export default function Player({
                         onSlideFinish={get=>(dx,dy)=>changePolicy("chunk",get(dy))}
                         slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>}
 
-                    {false!=controls.maximize && <PressableIcon style={{marginRight:10}} name="zoom-out-map" testID="fullscreen"
-                        onPress={e=>dispatch({type:'media/fullscreen'})}/>}
+                    {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
+                        name={!policy.fullscreen ? "zoom-out-map" : "fullscreen-exit"}
+                        onPress={e=>changePolicy("fullscreen", !policy.fullscreen)}/>}
                 </AutoHide>
 
                 <Subtitle 
@@ -402,9 +412,9 @@ export default function Player({
                 </AutoHide>
             </View>
         </SliderIcon.Container>
-        <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName}}>
             {children}
-        </Context.Provider>
+        </Context.Provider>}
         </>
     )
 }
@@ -515,7 +525,6 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress, ...p
             subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
         }
     },[i])
-    
 
     return (
         <View {...props} style={[{padding:4},style]}>

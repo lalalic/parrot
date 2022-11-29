@@ -29,6 +29,7 @@ export const Policy={
 		autoHide: true,
 		autoChallenge:60,
 		autoChallengeTimes:2, 
+		fullscreen: false,
 	},
 	shadowing: {
 		desc: "options when you learn language by shadowing chunck by chunck",

@@ -25,15 +25,16 @@ export default function Talk({autoplay}){
     const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
     
     const info=React.useMemo(()=>{
+        const style={ flex: 1, padding: 5, flexGrow:1 }
         switch(policyName){
             case "general":
                 return (
-                    <Info {...{style:{ flex: 1, padding: 5, }, talk, toggleTalk,dispatch, favoritable:!Widget}}>
+                    <Info {...{style, talk, toggleTalk,dispatch, favoritable:!Widget}}>
                         {!!Widget?.Tags && <Widget.Tags/>}
                     </Info>
                 )
             default:{
-                return <Subtitles {...{ policy:policyName, style:{flex:1, padding:5}}}/>
+                return <Subtitles {...{ policy:policyName, style}}/>
             }
         }
     },[talk, policyName])
@@ -68,6 +69,8 @@ export default function Talk({autoplay}){
                 onValueChange={policy=>navigate(`/talk/${slug}/${policy}`)}/>
         }
     },[talk,policyName])
+
+    const style=React.useMemo(()=>policy.visible ? {flex:1}: {height:150} ,[policy.visible])
     return (
         <Player 
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
@@ -77,7 +80,10 @@ export default function Talk({autoplay}){
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             onRecordChunk={({chunk:{time,end},recognized})=>dispatch({type:"talk/recording",talk, policy: policyName, record:{[`${time}-${end}`]:recognized}})}
             onRecordAudioMiss={({record:{time,end}})=>dispatch({type:"talk/recording/miss", talk, policy: policyName, record:`${time}-${end}` })}
-            {...{id:talk.id, challenging, style:{flex:1, flexGrow:1},key:policyName, policyName, policy, ...props}}
+            {...{id:talk.id, challenging, key:policyName, policyName, policy, 
+                style,
+                ...props
+            }}
             >
             {info}
             {actions}
