@@ -52,7 +52,7 @@ export default function Talk({autoplay}){
                     useNativeControls={false}
                     shouldCorrectPitch={true}
                     pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
-                    progressUpdateIntervalMillis={30}
+                    progressUpdateIntervalMillis={100}
                     style={{flex:1}}
                     />,
                 transcript:talk.languages?.en?.transcript

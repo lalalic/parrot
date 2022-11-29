@@ -1,7 +1,8 @@
 import React, {} from 'react';
 import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
-import { Audio } from 'expo-av';
+import { Audio } from 'expo-av'
+import { produce } from "immer"
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 
@@ -28,8 +29,7 @@ export default function Player({
     layoverStyle, navStyle, subtitleStyle, progressStyle,
     ...props}){
     const performanceCount=React.useRef(0)
-    performanceCount.current++
-    console.log(`rendered ${performanceCount.current}`)
+    console.debug(`player rendered ${performanceCount.current++} times`)
     
     const changePolicy=(key,value)=>onPolicyChange?.({[key]:value})
     const color=React.useContext(ColorScheme)
@@ -98,73 +98,93 @@ export default function Player({
         return []
     },[id, policy.chunk, challenging, challenges, transcript])
 
+    const stopOnMediaStatus=React.useRef(false)
+    const setVideoStatusAsync=React.useCallback(async status=>{
+        stopOnMediaStatus.current=true
+        const done = await video.current?.setStatusAsync(status)
+        stopOnMediaStatus.current=false
+        return done
+    },[])
+
     const [status, dispatch] = React.useReducer((state,action)=>{
-        console.log(action.type)
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const rate=lastRate||currentRate
 
-        function terminateWhitespace(next, newState, needClearTimeout=true){
-            if(whitespacing && needClearTimeout){
-                clearTimeout(whitespacing)
-            }
-            setTimeout(()=>video.current.setStatusAsync({shouldPlay:true, rate, ...next}),0)
-            state=undefinedy({...state, whitespace:undefined, whitespacing:undefined, lastRate:undefined,...newState})
-            if(next?.positionMillis)
-                state.minPositionMillis=next.positionMillis
-            return state
+        function terminateWhitespace(next, newState){
+            whitespacing && clearTimeout(whitespacing)
+            setVideoStatusAsync(next={shouldPlay:true, rate, ...next})
+            return produce(state, $state=>{
+                $state.isPlaying=next.shouldPlay
+                delete $state.whitespace
+                delete $state.whitespacing
+                delete $state.lastRate
+                if(next?.positionMillis)
+                    $state.minPositionMillis=next.positionMillis
+                for (const key in newState){
+                    $state[key]=newState[key]
+                }
+            })
         }
+
+        const CurrentChunkPositionMillis=()=>chunks[i-1]?.end ?? chunks[0]?.time
+        const PrevChunkPositionMillis=()=>chunks[i-2]?.end ?? chunks[0]?.time
+        const NextChunkPositionMillis=()=>chunks[i]?.end
         switch(action.type){
             case "nav/replaySlow":
                 return terminateWhitespace(
-                    {positionMillis:chunks[i].time,rate:Math.max(0.25,rate-0.25)},
+                    {positionMillis:CurrentChunkPositionMillis(),rate:Math.max(0.25,rate-0.25)},
                     {lastRate:rate}
                 )
             case "nav/replay":
-                return terminateWhitespace({positionMillis:chunks[i].time},{canReplay:state.canReplay-1})
+                return terminateWhitespace(
+                    {positionMillis:CurrentChunkPositionMillis()},
+                    {canReplay:state.canReplay-1}
+                )
             case "nav/prevSlow":
                 return terminateWhitespace(
-                    i>1 ? {positionMillis:chunks[i-1].time,rate:Math.max(0.25,rate-0.25)} : undefined,
+                    {positionMillis:PrevChunkPositionMillis(), rate:Math.max(0.25,rate-0.25)},
                     {lastRate:rate}
                 )
             case "nav/prev":
                 return terminateWhitespace(
-                    i>0 ? {positionMillis:chunks[i-1].time} : undefined
+                    {positionMillis:PrevChunkPositionMillis()},
+                    {i: Math.max(i-1,0)}
                 )
             case "nav/play":
-                return terminateWhitespace(
-                    {shouldPlay:!isPlaying, positionMillis: i==-1 ? 0 : undefined}
-                )
+                return terminateWhitespace({
+                    shouldPlay:whitespacing ? true : !isPlaying, 
+                    positionMillis: CurrentChunkPositionMillis()
+                })
             case "nav/next":
                 return terminateWhitespace(
-                    i<chunks.length-1 ? {positionMillis:chunks[i+1].time} : undefined, 
-                    {i:i+1}
+                    {positionMillis:NextChunkPositionMillis()}, 
+                    {i:Math.min(i+1,chunks.length-1)}
                 )
             case "nav/challenge":{
-                const i=action.i!=undefined ? action.i : state.i
+                const i=action.i ?? state.i
                 i!=-1 && onCheckChunk?.(chunks[i])
                 break
             }
             case "whitespace/end":{
                 return terminateWhitespace(
-                    (challenging ? {positionMillis:chunks[i+1]?.time} : undefined),
-                    {i:i+1,minPositionMillis:chunks[i+1]?.time},
-                    false//don't need clear whitespace timeout
+                    {positionMillis:chunks[i].end},
+                    {i:Math.min(i+1, chunks.length-1)}
                 )
             }
             case "volume/toggle":
-                video.current.setStatusAsync({volume:volume==0 ? .50 : 0})
+                setVideoStatusAsync({volume:volume==0 ? .50 : 0})
                     .then(a=>changePolicy("volume",a.volume))
             break
             case "volume/tune":
-                video.current.setStatusAsync({volume})
+                setVideoStatusAsync({volume})
                     .then(a=>changePolicy("volume",a.volume))
             break
             case "speed/toggle":
-                video.current.setStatusAsync({rate:rate==0.75 ? 1 : 0.75})
+                setVideoStatusAsync({rate:rate==0.75 ? 1 : 0.75})
                     .then(a=>changePolicy("speed",a.rate))
             break
             case "speed/tune":
-                video.current.setStatusAsync({rate:action.rate})
+                setVideoStatusAsync({rate:action.rate})
                     .then(a=>changePolicy("speed",a.rate))
             break
             case "record":
@@ -173,15 +193,23 @@ export default function Player({
             case "record/miss":
                 onRecordAudioMiss?.(action)
             break
-            case "media/time":
-                return terminateWhitespace({positionMillis:action.time})
+            case "media/time":{
+                const i=chunks.findIndex(a=>a.end>=action.time)
+                return terminateWhitespace(
+                    {positionMillis:action.time,shouldPlay:isPlaying},
+                    {i: i==-1 ? chunks.length-1 : i}
+                )
+            }
             case "media/finished":
                 onFinish?.()
-                return terminateWhitespace({shouldPlay:false, positionMillis:chunks[0]?.time})
-            break
+                return terminateWhitespace(
+                    {shouldPlay:false, positionMillis:chunks[0]?.time},
+                    {i:0}
+                )
             case "media/status/changed":
                 return action.state
         }
+
         return state
     },{isLoaded:false, i:-1});
 
@@ -200,22 +228,26 @@ export default function Player({
 
     const onMediaStatus=React.useCallback((state, action)=>{
         setTimeout(()=>onProgress.current?.(action.status.positionMillis),0)
-        const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate, minPositionMillis}=state
+        
+        if(action.status.transcript){
+            setTimeout(()=>setTranscript(action.status.transcript))
+        }
+
+        const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const nextState=(()=>{
-            if(action.status.transcript){
-                setTimeout(()=>setTranscript(action.status.transcript))
-            }
-
-            if(whitespacing)//don't update until whitespacing is over
+            if(stopOnMediaStatus.current // setting status async
+                || action.status.shouldPlay!=action.status.isPlaying // player is ajusting play status 
+                || action.status.positionMillis<=state.minPositionMillis //player offset ajustment
+                || whitespacing //
+            ){
                 return state
+            }
             
-            const {status:{isLoaded,positionMillis,isPlaying,rate,volume,durationMillis,didJustFinish, i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
+            const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis,didJustFinish, 
+                i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
+            
             if(!isLoaded){//init video pitch, props can't work
-                video.current?.setStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
-                return state
-            }
-
-            if(minPositionMillis>positionMillis){
+                setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
                 return state
             }
 
@@ -228,7 +260,7 @@ export default function Player({
                 if(policy.whitespace){
                     console.log('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
-                    video.current.setStatusAsync({shouldPlay:false})
+                    setVideoStatusAsync({shouldPlay:false})
                     const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
                     return {...state, whitespace, whitespacing}
                 }
@@ -240,6 +272,7 @@ export default function Player({
 
             return current
         })();
+
         if(state!=nextState && !shallowEqual(state,nextState)){
             dispatch({type:"media/status/changed", state:nextState})
         }
