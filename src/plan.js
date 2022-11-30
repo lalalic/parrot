@@ -10,7 +10,7 @@ import { ColorScheme } from "./default-style";
 import { selectPlansByDay } from "./store";
 import { useNavigate, useLocation } from "react-router-native";
 
-export default function Scheduler({}) {
+export default function Scheduler() {
     const color=React.useContext(ColorScheme)
     const remoteDispatch=useDispatch()
     const location=useLocation()
@@ -43,24 +43,50 @@ export default function Scheduler({}) {
     const navigate=useNavigate()
 
     React.useEffect(()=>{
-        if(day.getTime()!=location.state?.day.getTime()){
+        if(day.asDateString()!=location.state?.day.asDateString()){
             navigate(location.pathname,{replace:true, state:{day}})
         }
     },[day])
+
+    const plans=useSelector(state=>state.plan)
+    const planedDates=React.useMemo(()=>{
+        const y=day.getFullYear(), planed={}
+        const w=Date.from(`${y}-${day.getMonth()+1}-01`).getWeek()
+        for(let i=w;i<w+5;i++){
+            const weekPlan=plans?.[y]?.[i]
+            if(!weekPlan)
+                continue
+            Object.keys(weekPlan).forEach(d=>{
+                const ywd=Date.fromWeek(y,i,parseInt(d)).asDateString()
+                const dayPlan=weekPlan?.[d]
+                
+                planed[ywd]={
+                    dots: Array.from(Object.values(dayPlan).reduce((types, a)=>{
+                        types.add(PlanPolicyDots[a.policy])
+                        return types
+                    },new Set())).sort((a,b)=>a.key.charCodeAt(0)-b.key.charCodeAt(0))
+                }
+            })
+        }
+        return planed
+    },[plans, day.getFullYear(), day.getMonth()])
 
     return (
         <CalendarProvider date={day.asDateString()} 
             onDateChanged={(date)=>{
                 dispatch({type:"day", date})
             }}>
-            <ExpandableCalendar firstDay={1} />
+            <ExpandableCalendar firstDay={1} 
+                markedDates={planedDates}
+                markingType="multi-dot"
+                disableWeekScroll={true/*otherwise day will be reset to today*/}/>
             <Timeline 
                 date={day.asDateString()}
                 events={events}
                 onBackgroundLongPress={time=>{
                     dispatch({type:"plan/slot", time:Date.from(time)})
                 }}
-                scrollToFirst
+                scrollToFirst={true}
                 showNowIndicator={true}
                 timelineLeftInset={72}
                 renderEvent={({plan,talk, width})=>{
@@ -73,7 +99,7 @@ export default function Scheduler({}) {
                                 <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false} 
                                         getLinkUri={e=>`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`}>
                                     <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
-                                        <MaterialIcons name={PolicyIcons[plan.policy]} color={color.primary} size={24}/>
+                                        <MaterialIcons name={PolicyIcons[plan.policy]} color={PlanPolicyDots[plan.policy].color} size={24}/>
                                     </View>
                                 </TalkThumb>
                             </Pressable>  
@@ -290,4 +316,10 @@ const TalkSelectedIndicator=({talk, selected, activeColor, setSelected})=>{
                 />
         </View>
     )
+}
+
+const PlanPolicyDots={
+    shadowing:{key:"shadowing", color:"red"},
+    dictating:{key:"dictating",color:"blue"},
+    retelling:{key:"retelling", color:"green"}
 }

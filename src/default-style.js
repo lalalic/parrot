@@ -101,4 +101,18 @@ if(!Date.prototype.getWeek){
         const [y,m,...data]=time.split(/[-\s\:]/).map(a=>parseInt(a))
         return new Date(y, m-1, ...data)
     }
+
+    Date.prototype.getMonthWeeks=function(){
+        const firstDay=Date.from(`${this.getFullYear}-${this.getMonth()+1}-01`)
+        return [firstDay, firstDay.nextDay(7), firstDay.nextDay(14), firstDay.nextDay(21), firstDay.nextDay(28)]
+    }
+
+    Date.prototype.nextDay=function(offset=1){
+        return new Date(this.getTime()+offset*24*60*60*1000)
+    }
+
+    Date.fromWeek=function(year, week, day){
+        const firstDay=Date.from(`${year}-1-1`)
+        return firstDay.nextDay(week*7+day-firstDay.getDay())
+    }
 }
