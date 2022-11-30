@@ -164,7 +164,7 @@ export default function Player({
                 )
             case "nav/challenge":{
                 const i=action.i ?? state.i
-                i!=-1 && onCheckChunk?.(chunks[i])
+                i!=-1 && (async()=>onCheckChunk?.(chunks[i]))()
                 break
             }
             case "whitespace/end":{
@@ -190,10 +190,10 @@ export default function Player({
                     .then(a=>changePolicy("speed",a.rate))
             break
             case "record":
-                policy.record && onRecordChunk?.(action)
+                policy.record && (async ()=>onRecordChunk?.(action))();
             break
             case "record/miss":
-                onRecordAudioMiss?.(action)
+                (async()=>onRecordAudioMiss?.(action))()
             break
             case "media/time":{
                 const i=chunks.findIndex(a=>a.time>=action.time)
@@ -203,7 +203,7 @@ export default function Player({
                 )
             }
             case "media/finished":
-                onFinish?.()
+                (async ()=>onFinish?.())();
                 return terminateWhitespace(
                     {shouldPlay:false, positionMillis:chunks[0]?.time},
                     {i:0}
