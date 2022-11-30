@@ -375,7 +375,11 @@ export default function Player({
 
                 <Subtitle 
                     i={status.i} 
-                    style={[{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20},subtitleStyle]}
+                    selectRecognized={state=>{
+                        const a=chunks?.[status.i];
+                        return state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]
+                    }}
+                    style={{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20,...subtitleStyle}}
                     title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
                     numberOfLines={2}
                     adjustsFontSizeToFit={true}
@@ -423,8 +427,24 @@ export default function Player({
     )
 }
 
-export function Subtitle({show,i,delay,title, children, ...props}){
+export function Subtitle({show,i,delay,title, selectRecognized, children, style, ...props}){
     const [text, setText]=React.useState(title)
+    const recognized=useSelector(selectRecognized)
+
+    const [$title, $children]=React.useMemo(()=>{
+        if(!children && recognized){
+            const diffs=diffPretty(title, recognized)
+            return [
+                diffs[0],
+                <Text {...props} children={diffs[1]} style={[style, {bottom:style.bottom+40}]}/>
+            ]
+        }
+        return [
+            text, 
+            React.isValidElement(children) && React.cloneElement(children,{...props, style:[style, {bottom:style.bottom+40}]})
+        ]
+    },[recognized, text, children])
+
     React.useEffect(()=>{
         if(!show){
             setText("")
@@ -438,10 +458,10 @@ export function Subtitle({show,i,delay,title, children, ...props}){
     },[i, show])
     return (
         <>
-            <Text {...props}>
-                {text}
+            <Text {...props} style={style}>
+                {$title}
             </Text>
-            {children}
+            {$children}
         </>
     )
 }
