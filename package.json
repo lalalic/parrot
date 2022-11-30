@@ -57,7 +57,8 @@
     "react-router-native": "^6.4.2",
     "redux": "^4.2.0",
     "redux-persist": "^6.0.0",
-    "redux-persist-expo-filesystem": "^2.0.0"
+    "redux-persist-expo-filesystem": "^2.0.0",
+    "word-diff": "^1.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

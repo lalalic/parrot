@@ -28,7 +28,6 @@ export const Policy={
 		chunk: 0, //0:chunck by chunck, n: chunks totally n seconds, 7: paragraph, 10: whole
 		autoHide: true,
 		autoChallenge:60,
-		autoChallengeTimes:2, 
 		fullscreen: false,
 	},
 	shadowing: {

@@ -8,6 +8,7 @@ import * as FileSystem from "expo-file-system"
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
 import { ColorScheme } from './default-style';
+import { diffScore, diffPretty } from './diff';
 const Context=React.createContext({})
 /**
 @TODO: 
@@ -367,35 +368,45 @@ export default function Player({
 
                     {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
                         name={!policy.fullscreen ? "zoom-out-map" : "fullscreen-exit"}
-                        onPress={e=>changePolicy("fullscreen", !policy.fullscreen)}/>}
+                        onPress={e=>{
+                            changePolicy("fullscreen", !policy.fullscreen)
+                        }}/>}
                 </AutoHide>
 
                 <Subtitle 
                     i={status.i} 
                     style={[{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20},subtitleStyle]}
                     title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
+                    numberOfLines={2}
+                    adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
                     show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} i={status.i}
-                        style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20}}
-                        onRecord={({recognized,...props})=>{
-                            let score=undefined, i=status.i
-                            const chunk=chunks[status.i]
-                            /*
-                            if(policy.autoChallenge){//@NOTE: chunk[i+1] is playing
-                                if((score=diff(chunks[i].text,recognized))<policy.autoChallenge){
-                                    if(status.canReplay>0){
-                                        dispatch({type:"nav/prev"})
-                                        return 
-                                    }else if(!challenging && !challenges?.find(a=>a.time==chunks[i].time)){
-                                        dispatch({type:"nav/challenge", i:i-1})
-                                    }
-                                }else if(challenging){
-                                    dispatch({type:"nav/challenge",i:i-1})
+                        numberOfLines={2}
+                        adjustsFontSizeToFit={true}
+                        style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20,...subtitleStyle}}
+                        onRecord={props=>{
+                            const {i, chunk=chunks[i], recognized=props.recognized}=status
+
+                            if(!policy.autoChallenge){
+                                dispatch({type:"record",chunk,...props})
+                                return 
+                            }
+
+                            const score=diffScore(chunk.text,recognized)
+
+                            if(score<policy.autoChallenge){
+                                if(!challenging && !challenges?.find(a=>a.time==chunk.time)){
+                                    dispatch({type:"nav/challenge", i})
+                                }
+                                dispatch({type:"record",chunk,...props})
+                                return
+                            }else {
+                                if(challenging){
+                                    dispatch({type:"nav/unchallenge",i})
                                 }
                             }
-                            */
-                            dispatch({type:"record",recognized,score,chunk,...props})
+                            return false
                         }} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
@@ -531,8 +542,8 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress, ...p
             <FlatList data={chunks} 
                 ref={subtitleRef}
                 extraData={`${i}-${challenges.length}`} 
-                estimatedItemSize={height+10}
-                getItemLayout={(data, index)=>({length:height+10, offset: index*(height+10), index})}
+                estimatedItemSize={height}
+                getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
                 keyExtractor={({time,end})=>`${time}-${end}`}
                 renderItem={({ index, item })=><SubtitleItem {...{
                     style:{height},
@@ -565,41 +576,44 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
         }
     },[recognized, audio])
     const textProps={
-        style:{ flexGrow: 1, paddingLeft: 10, flexShrink:1,height:40},
+        style:{ flexGrow: 1, paddingLeft: 10, },
         adjustsFontSizeToFit:true,
         numberOfLines:2,
     }
+
+    const [$text, $recognized]=React.useMemo(()=>diffPretty(text, recognized),[text, recognized])
     return (
-        <View style={{ borderColor: "gray", borderTopWidth: 1, marginTop: 10, paddingTop: 10 , ...style}}>
-            <Pressable style={{ flex:1, flexDirection: "row", marginBottom: 10, alignContent:"center", }}
-                onLongPress={e => onLongPress?.(item)}
-                onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
-                <Text style={{ width: 20, textAlign: "center", fontSize:10,
-                    color: index == current ? color.primary : color.text }}>{index + 1}</Text>
-                <Text {...textProps}>{text.replace("\n", " ")}</Text>
-            </Pressable>
-            <Pressable style={{ flex:1, marginTop: 3, flexDirection: "row" }}
-                onLongPress={e => onLongPress?.(item)}
-                onPress={e => audioExists && setPlaying(true)}>
-                <PressableIcon size={20} 
+        <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
+                flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
+            <View style={{width:20, justifyContent:"space-between", alignItems:"center"}}>
+                <Text style={{ textAlign: "center", fontSize:10 }}>{index + 1}</Text>
+                <PressableIcon size={20} color={color.text}
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
                     name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
-                <Recognizer.Text i={index} {...textProps} 
-                    style={{
-                        ...textProps.style, 
-                        color: playing ? "red" : (audioExists ? color.primary : color.inactive)
-                    }}>{recognized}</Recognizer.Text>
-                {!!playing && !!audio && <PlaySound audio={audio} onFinish={e =>setPlaying(false)} />}
-            </Pressable>
+                <Text style={{textAlign: "center",fontSize:10}}>{!!recognized ? diffScore(text, recognized) : ""}</Text>
+            </View>
+            <View style={{flex:1, flexGrow:1 }}>
+                <Pressable style={{flex:1}}
+                    onLongPress={e => onLongPress?.(item)}
+                    onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
+                    <Text {...textProps}>{$text}</Text>
+                </Pressable>
+                <Pressable style={{ flex:1, justifyContent:"flex-end" }}
+                    onLongPress={e => onLongPress?.(item)}
+                    onPress={e => {
+                        if(audioExists){
+                            setPlaying(true)
+                        }
+                    }}>
+                    <Recognizer.Text i={index} {...textProps} 
+                        style={{
+                            ...textProps.style, 
+                            color: playing ? "red" : color.primary
+                        }}>{$recognized}</Recognizer.Text>
+                    {!!playing && !!audio && <PlaySound audio={audio} onFinish={e =>setPlaying(false)} />}
+                </Pressable>
+            </View>
         </View>
-        )
+    )
 }
 
-function diff(source,recognized){
-    source=source.split(/\s+/g)
-    const recognizedWords=recognized.split(/\s+/g).reduce((score,a,i,)=>{
-        return score+(source.includes(a) ? 1 : 0)
-    },0)
-
-    return Math.ceil(100*recognizedWords/source.length)
-}

@@ -87,7 +87,7 @@ export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, na
 };
 
 export const PolicyIcons={
-    general:"play-arrow",
+    general:"home-work",
     shadowing:"connect-without-contact",
     dictating:"contact-phone",
     retelling:"contact-mail",
@@ -457,21 +457,22 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             Voice.start(locale,{audioUri})  
         })();
         return async ()=>{
+            const removeAudioFile=() =>{try{ FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})}catch{}}
             await Voice.stop()
             await Voice.destroy()
             if(recognized4Cleanup){
                 const uri=`file://${audioUri}`
                 const info=await FileSystem.getInfoAsync(uri)
                 if(info.exists){
-                    onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})
+                    if(!onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})){
+                        removeAudioFile()
+                    }
                 }else{
                     console.warn(`recognized(${recognized4Cleanup}), but file's gone at ${uri}`)
                 }
                 return 
             }else{
-                try{
-                    FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})
-                }catch{}
+                removeAudioFile()
             }
         }
     },[])

@@ -7798,6 +7798,10 @@ wonka@^6.0.0:
   version "6.1.0"
   resolved "https://registry.npmmirror.com/wonka/-/wonka-6.1.0.tgz#65297ebf7031ae46d4b0c56da93950fb3ae5baaa"
 
+word-diff@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmmirror.com/word-diff/-/word-diff-1.0.1.tgz#a41eed2feb835ac807f2f3b24ff2f1a32276d9b4"
+
 word-wrap@~1.2.3:
   version "1.2.3"
   resolved "https://registry.npmmirror.com/word-wrap/-/word-wrap-1.2.3.tgz#610636f6b1f703891bd34771ccb17fb93b47079c"
