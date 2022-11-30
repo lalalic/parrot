@@ -413,6 +413,7 @@ export function createStore(needPersistor){
 									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
 									const {records={}}=(talk[policy]||(talk[policy]={}));
 									(talk[policy].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
+									records.changed=Date.now()
 								})
 							case "talk/recording/miss":
 								return produce(talks, data=>{

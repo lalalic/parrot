@@ -446,7 +446,9 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             end=Date.now()
         }
         Voice.onSpeechVolumeChanged=e=>{};
-        Voice.onSpeechError=e=>{}
+        Voice.onSpeechError=e=>{
+            //console.error(`${e.error.code}:${e?.error?.message}`)
+        }
         const audioUri=uri.replace("file://","")
         ;(async()=>{
             const folder=uri.substring(0,uri.lastIndexOf("/")+1)
@@ -457,22 +459,23 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             Voice.start(locale,{audioUri})  
         })();
         return async ()=>{
-            const removeAudioFile=() =>{try{ FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})}catch{}}
+            const removeAudioFile=(message) =>{
+                try{ FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})}catch{}
+            }
             await Voice.stop()
             await Voice.destroy()
             if(recognized4Cleanup){
                 const uri=`file://${audioUri}`
                 const info=await FileSystem.getInfoAsync(uri)
                 if(info.exists){
-                    if(!onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})){
-                        removeAudioFile()
-                    }
+                    DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
+                    onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})
                 }else{
                     console.warn(`recognized(${recognized4Cleanup}), but file's gone at ${uri}`)
                 }
                 return 
             }else{
-                removeAudioFile()
+                removeAudioFile("no recognized")
             }
         }
     },[])
@@ -484,16 +487,24 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
     )
 }
 
-Recognizer.Text=({children,i,style, ...props})=>{
+Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{
     const color=React.useContext(ColorScheme)
     const [recognized, setRecognized]=React.useState(children)
     React.useEffect(()=>{
-        const listener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
+        const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
             if(i==index){
                 setRecognized(recognized)
             }
         })
-        return ()=>listener.remove()
+        const doneListener=DeviceEventEmitter.addListener('recognized.done',([recognized,index])=>{
+            if(i==index){
+                onRecognizeEnd?.(recognized)
+            }
+        })
+        return ()=>{
+            doneListener.remove()
+            recognizedListener.remove()
+        }
     },[])
 
     return <Text style={{color:recognized!=children ? color.primary : color.text, ...style}} {...props}>{recognized}</Text>

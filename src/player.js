@@ -386,27 +386,20 @@ export default function Player({
                         adjustsFontSizeToFit={true}
                         style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20,...subtitleStyle}}
                         onRecord={props=>{
-                            const {i, chunk=chunks[i], recognized=props.recognized}=status
-
-                            if(!policy.autoChallenge){
-                                dispatch({type:"record",chunk,...props})
-                                return 
-                            }
-
-                            const score=diffScore(chunk.text,recognized)
-
-                            if(score<policy.autoChallenge){
-                                if(!challenging && !challenges?.find(a=>a.time==chunk.time)){
-                                    dispatch({type:"nav/challenge", i})
+                                const {i, chunk=chunks[i], recognized=props.recognized}=status
+                                if(policy.autoChallenge){
+                                    const score=diffScore(chunk.text,recognized)
+                                    if(score<policy.autoChallenge){
+                                        if(!challenging && !challenges?.find(a=>a.time==chunk.time)){
+                                            dispatch({type:"nav/challenge", i})
+                                        }
+                                    }else {
+                                        if(challenging){
+                                            dispatch({type:"nav/unchallenge",i})
+                                        }
+                                    }
                                 }
                                 dispatch({type:"record",chunk,...props})
-                                return
-                            }else {
-                                if(challenging){
-                                    dispatch({type:"nav/unchallenge",i})
-                                }
-                            }
-                            return false
                         }} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
@@ -541,10 +534,10 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress, ...p
         <View {...props} style={[{padding:4},style]}>
             <FlatList data={chunks} 
                 ref={subtitleRef}
-                extraData={`${i}-${challenges.length}`} 
+                extraData={`${i}-${challenges.length}-${records?.changed}`} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({time,end})=>`${time}-${end}`}
+                keyExtractor={({time,end})=>`${time}-${end}-${records[`${time}-${end}`]}`}
                 renderItem={({ index, item })=><SubtitleItem {...{
                     style:{height},
                     index, item, onLongPress,

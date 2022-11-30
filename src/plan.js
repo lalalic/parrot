@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, FlatList, Modal, Pressable, ScrollView, Animated} from "react-native";
+import { Text, View, FlatList, Modal, Pressable, ScrollView} from "react-native";
 import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker"
@@ -8,11 +8,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide} from "./components";
 import { ColorScheme } from "./default-style";
 import { selectPlansByDay } from "./store";
-import { useNavigate } from "react-router-native";
+import { useNavigate, useLocation } from "react-router-native";
 
 export default function Scheduler({}) {
     const color=React.useContext(ColorScheme)
     const remoteDispatch=useDispatch()
+    const location=useLocation()
     
     const [{active, day}, dispatch] = React.useReducer((state,action)=>{
         const dispatch=action=>setTimeout(()=>remoteDispatch(action),0)
@@ -34,16 +35,25 @@ export default function Scheduler({}) {
                 return {...state,  day:Date.from(action.date)}
         }
         return state
-    },{day:new Date()});
+    },{day: location.state?.day ?? new Date()});
 
     const events=useSelector(state=>selectPlansByDay(state, day))
 
     const [copy, setCopyMode]=React.useState(0)
     const navigate=useNavigate()
+
+    React.useEffect(()=>{
+        if(day.getTime()!=location.state?.day.getTime()){
+            navigate(location.pathname,{replace:true, state:{day}})
+        }
+    },[day])
+
     return (
-        <CalendarProvider date={new Date().asDateString()} 
-            onDateChanged={(date)=>dispatch({type:"day", date})}>
-            <ExpandableCalendar firstDay={1}/>
+        <CalendarProvider date={day.asDateString()} 
+            onDateChanged={(date)=>{
+                dispatch({type:"day", date})
+            }}>
+            <ExpandableCalendar firstDay={1} />
             <Timeline 
                 date={day.asDateString()}
                 events={events}
