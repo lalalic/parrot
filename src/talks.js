@@ -17,10 +17,8 @@ export default function Talks(props){
         return {...last, ...next}
     },useSelector(state=>{
         const {search}=state.history
-        if(search){
-            return {q:search.q, page:1, people:search.people}
-        }
-    })||{q:"",page:1, people:false})
+        return search && (search.page=1) && search
+    })||{q:"",page:1, people:false, peopleName:""})
     
     const {data:{talks=[],pages=1}={}}=useTalksQuery(search)
 
@@ -61,30 +59,31 @@ export default function Talks(props){
                         clearButtonMode="while-editing"
                         keyboardType="web-search"
                         onEndEditing={({nativeEvent:{text:q}})=>{
-                            setSearch({ q, page:1})
+                            setSearch({ q, page:1, peopleName:""})
                         }}
                         style={searchTextStyle}/>}
                 {search.people && <PeopleSearch style={searchTextStyle}
-                        selectedValue={search.q} 
-                        onValueChange={(q)=>setSearch({ q, page:1})}/>}
+                        value={search.q}
+                        name={search.peopleName}
+                        onValueChange={(q, peopleName)=>setSearch({ q,peopleName, page:1})}/>}
         </View>
     )
 }
 
-const PeopleSearch=({style, onValueChange, ...props})=>{
+const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     const color=React.useContext(ColorScheme)
-    const [search, setSearch]=React.useState({q:"", showPicker:false})
+    const [search, setSearch]=React.useState({q:value, name, showPicker:false})
     const {data:people=[]}=Ted.usePeopleQuery({q:search.q.trim()})
     return (
         <>
             <TextInput style={style} placeholder="TED Speaker"
-                value={search.q}
+                value={search.name}
                 onChangeText={q=>setSearch({q,showPicker:true})}/>
             {search.showPicker && people.length>0 && <Picker {...props} mode="dropdown" 
                 itemStyle={{color:color.primary}}
-                onValueChange={value=>{
-                    setSearch({q:people.find(a=>a.slug==value).name, showPicker:false})
-                    onValueChange?.(value)
+                onValueChange={(value,i)=>{
+                    setSearch({name:people[i].name, q: value, showPicker:false})
+                    onValueChange?.(value, people[i].name)
                 }}
                 style={{position:"absolute",width:"100%",
                     backgroundColor:color.inactive,top:35, 
