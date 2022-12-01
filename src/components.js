@@ -465,16 +465,14 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             await Voice.stop()
             await Voice.destroy()
             if(recognized4Cleanup){
-                const uri=`file://${audioUri}`
-                const info=await FileSystem.getInfoAsync(uri)
-                if(info.exists){
-                    DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
-                    onRecord?.({recognized:recognized4Cleanup,uri, duration:(end||Date.now())-start})
-                }else{
-                    console.warn(`recognized(${recognized4Cleanup}), but file's gone at ${uri}`)
-                }
-                return 
+                DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
+                onRecord?.({
+                    recognized:recognized4Cleanup, 
+                    uri:`file://${audioUri}`, 
+                    duration:(end||Date.now())-start
+                })
             }else{
+                onRecord?.({})
                 removeAudioFile("no recognized")
             }
         }

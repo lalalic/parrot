@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Text,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
-import Player, {Challenges, Subtitles} from "./player"
+import Player, {Subtitles} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
@@ -56,7 +56,7 @@ export default function Talk({autoplay}){
                     progressUpdateIntervalMillis={100}
                     style={{flex:1}}
                     />,
-                transcript:talk.languages?.en?.transcript
+                transcript:talk.languages?.mine?.transcript
             }
         }
     },[talk,autoplay])

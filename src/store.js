@@ -68,7 +68,8 @@ const Ted=createApi({
 	})({baseUrl:"https://www.ted.com"}),
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug, lang="en", id},{getState})=>{
+			queryFn: async ({slug, id},{getState})=>{
+				const {lang="en", mylang="zh-cn"}=getState().my
 				const Widget=globalThis.Widgets[slug]
 				if(Widget){
 					const {defaultProps:{id:_id, slug, title, description, thumb}}=Widget
@@ -123,32 +124,44 @@ const Ted=createApi({
 					return {data:talk}
 
 				const {paragraphs}=translation
+				let isSameLang=true
 
-				talk.languages.en.transcript=paragraphs
+				talk.languages.mine={transcript:paragraphs}
 				
 				const resHlsMeta=await fetch(talk.resources.hls.metadata)
 				const hlsMeta=await resHlsMeta.json()
-				const resVtt=await fetch(hlsMeta.subtitles[0].webvtt)
+				const resVtt=await fetch((()=>{
+					const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang) ?? hlsMeta.subtitles[0]
+					isSameLang=target.code.toLowerCase()==lang
+					return target
+				})().webvtt)
 				const vtt=await resVtt.text()
 
 				let last=0
 				const nextCue=()=>{
 					const i0=vtt.indexOf("\n\n",last)
+					if(i0==-1)//The last may not have data
+						return []
 					const i=vtt.indexOf("\n",i0+2)
 					const duration=vtt.substring(i0+2,i)
 					try{
-						return duration.split("-->").map(a=>{
+						const [start, end]=duration.split("-->").map(a=>{
 							const [h,m,s]=a.split(":")
 							return parseInt(s.replace(".",""))+(h*60+m)*60*1000
 						})
+						const text= !isSameLang ? vtt.substring(i+1, vtt.indexOf("\n", i+1)) : undefined
+						return [start, end, text]
 					}finally{
 						last=i+1
 					}
 				}
 				paragraphs.forEach(p=>p.cues.forEach(cue=>{
-					const [start, end]=nextCue()
+					const [start=cue.time, end=talk.duration*1000, text]=nextCue()
 					cue.time=start
 					cue.end=end
+					if(text){
+						cue.my=text
+					}
 				}))
 				return {data:talk}
 			},
@@ -306,28 +319,23 @@ export function createStore(needPersistor){
 				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 				combineReducers({
 					[Ted.reducerPath]: Ted.reducer,
-					policy(state = Policy, action) {
+					my(state = {policy:Policy, lang:"en", mylang: "zh-cn"}, action) {
 						switch (action.type) {
-							case "persist/REHYDRATE":{
-								if(action.payload?.policy){
-									const policy=action.payload.policy
-									return Object.keys(state).reduce((merged,k)=>{
-										merged[k]={...state[k],...merged[k]}
-										return merged
-									},{...policy})
-								}
-								break
-							}
+							case "persist/REHYDRATE":
+								return produce(state, $state=>{
+									$state.policy=Object.keys(action.payload?.my?.policy ?? {})
+										.reduce((merged,k)=>{
+											merged[k]={...state[k],...merged[k]}
+											return merged
+										},{...state.policy})
+								})
 							case "policy":
-								return checkAction(action,["target","payload"]) && {
-									...state,
-									[action.target]: {
-										...state[action.target],
-										...action.payload,
-									},
-								};
+								return produce(state, $state=>{
+									checkAction(action,["target","payload"])
+									Object.assign($state.policy[action.target], action.payload)
+								})
 						}
-						return state;
+						return state
 					},
 					talks(talks={},action){
 						switch(action.type){
@@ -611,7 +619,9 @@ export function selectPlansByDay(state,day){
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 
 export function selectPolicy(state,policyName,id){
-	const Policy=state.policy
+	const Policy=state.my.policy
+	if(!policyName)
+		return Policy
 	const {desc,...policy}={
 		...Policy.general,
 		...Policy[policyName],

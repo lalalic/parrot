@@ -5,7 +5,7 @@ import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import {Ted} from "./store"
+import {selectPolicy, Ted} from "./store"
 import { ControlIcons } from "./components"
 import Player from "./player"
 import { ColorScheme } from "./default-style"
@@ -14,7 +14,7 @@ const slug="noah_raford_how_gaming_can_be_a_force_for_good"
 export default ()=>{
     const dispatch=useDispatch()
     const color=React.useContext(ColorScheme)
-    const policy=useSelector(state=>state.policy)
+    const policy=useSelector(state=>selectPolicy(state))
     const {data:talk={}}=Ted.useTalkQuery({slug})
     const [target, setTarget]=React.useState("general")
 

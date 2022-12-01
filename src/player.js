@@ -5,6 +5,7 @@ import { Audio } from 'expo-av'
 import { produce } from "immer"
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
 import { ColorScheme } from './default-style';
@@ -280,7 +281,7 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
-
+    const updateScore=React.useRef()
     const saveHistory=React.useRef(0)
     saveHistory.current=media.props.shouldPlay && chunks.length>0 && status.i>0 && status.i<chunks.length-1 && chunks[status.i]?.time
     React.useEffect(()=>{
@@ -375,24 +376,26 @@ export default function Player({
 
                 <Subtitle 
                     i={status.i} 
+                    callback={updateScore}
                     selectRecognized={state=>{
                         const a=chunks?.[status.i];
                         return state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]
                     }}
                     style={{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20,...subtitleStyle}}
                     title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
+                    my={chunks[status.i]?.my}
+                    autoChallenge={policy.autoChallenge}
                     numberOfLines={2}
                     adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
+                    score={<Score length={chunks.length} callback={updateScore}/>}
                     show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} i={status.i}
-                        numberOfLines={2}
-                        adjustsFontSizeToFit={true}
-                        style={{width:"100%",textAlign:"center",position:"absolute",bottom:60,fontSize:20,...subtitleStyle}}
                         onRecord={props=>{
                                 const {i, chunk=chunks[i], recognized=props.recognized}=status
-                                if(policy.autoChallenge){
-                                    const score=diffScore(chunk.text,recognized)
+                                const score=diffScore(chunk.text,recognized)
+                                updateScore.current.score(score)
+                                if(policy.autoChallenge){    
                                     if(score<policy.autoChallenge){
                                         if(!challenging && !challenges?.find(a=>a.time==chunk.time)){
                                             dispatch({type:"nav/challenge", i})
@@ -403,7 +406,10 @@ export default function Player({
                                         }
                                     }
                                 }
-                                dispatch({type:"record",chunk,...props})
+                                if(recognized){
+                                    dispatch({type:"record",chunk,...props})
+                                }
+
                         }} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
@@ -420,16 +426,18 @@ export default function Player({
                 </AutoHide>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
         </>
     )
 }
 
-export function Subtitle({show,i,delay,title, selectRecognized, children, style, ...props}){
+export function Subtitle({show,i,delay,title,my, selectRecognized, children, style, score,  ...props}){
+    const color=React.useContext(ColorScheme)
     const [text, setText]=React.useState(title)
     const recognized=useSelector(selectRecognized)
+    const [showMy, setShowMy]=React.useState(false)
 
     const [$title, $children]=React.useMemo(()=>{
         if(!children && recognized){
@@ -458,9 +466,13 @@ export function Subtitle({show,i,delay,title, selectRecognized, children, style,
     },[i, show])
     return (
         <>
-            <Text {...props} style={style}>
-                {$title}
-            </Text>
+            <Pressable onPressIn={e=>!!my && setShowMy(true)} onPressOut={e=>setShowMy(false)}>
+                {!!my && <MaterialIcons name="translate" size={20} color={color.primary} style={{position:"absolute", left:10, top:-60, opacity:0.6}}/>}
+                {score && <Text style={{position:"absolute", right:10, top:-60, opacity:0.6}}>{score}</Text>}
+                <Text {...props} style={style}>
+                    {showMy ? my : $title}
+                </Text>
+            </Pressable>
             {$children}
         </>
     )
@@ -536,7 +548,7 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitles({style,policy, itemHeight:height=80, onLongPress, ...props}){
+export function Subtitles({style,policy, itemHeight:height=80, onLongPress,  ...props}){
     const {id, status, i=status.i, chunks, onRecordChunkUri}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[id]?.[policy]?.challenges, 
@@ -630,3 +642,17 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
     )
 }
 
+function Score({length, callback, onQuit}){
+    const [score, setScore]=React.useState(0)
+    React.useEffect(()=>{
+        callback.current={
+            score(a){
+                setScore(score)
+            }
+        }
+        return ()=>{
+            onQuit?.(score)
+        }
+    })
+    return score
+}
