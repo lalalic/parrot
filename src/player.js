@@ -247,7 +247,7 @@ export default function Player({
             }
             
             const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis,didJustFinish, 
-                i:_i=chunks.findIndex(a=>a.end>=positionMillis)}}=action
+                i:_i=positionMillis<=chunks[0].time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
             
             if(!isLoaded){//init video pitch, props can't work
                 setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
@@ -302,28 +302,24 @@ export default function Player({
         }
     },[policy.fullscreen])
 
-    const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history)
+    const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
     return (
         <>
         <SliderIcon.Container 
-            style={{width:"100%",...style}} 
+            style={style} 
             onStartShouldSetResponder={e=>setAutoHide(Date.now())}
             {...props}>
             {React.cloneElement(media, {
                 ref:video,
                 onPlaybackStatusUpdate:mediaStatus =>{
-                    try{
-                        onMediaStatus(status, {type:"media/status", status: mediaStatus})
-                    }catch(e){
-                        console.error(e)
-                    }
+                    onMediaStatus(status, {type:"media/status", status: mediaStatus})
                 },
                 rate:policy.rate,
                 volume:policy.volume,
-                style,
-                positionMillis: positionMillisHistory||chunks[0]?.time
+                style:{position:"absolute", width:"100%", height:"100%"},
+                positionMillis: positionMillisHistory
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>

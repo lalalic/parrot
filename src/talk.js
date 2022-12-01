@@ -15,7 +15,6 @@ export default function Talk({autoplay}){
     const dispatch=useDispatch()
     const {slug,policy: policyName="general", id}=useParams()
     const {data:talk={}}=Ted.useTalkQuery({slug, id})
-    
     const Widget=globalThis.Widgets[slug]
 
     const policy=useSelector(state=>selectPolicy(state,policyName,talk.id))
