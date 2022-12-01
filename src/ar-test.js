@@ -29,7 +29,7 @@ export default ()=>(
 
 
 export default function AR(){
-    const [source, setSource]=React.useState(Image.resolveAssetSource(require("../assets/face.scn")).uri)
+    const [source, setSource]=React.useState(Image.resolveAssetSource(require("../assets/coolface.usdz")))
     const [leftEye, setLeftEye]=React.useState({})
     return (
         <View style={{flex:1, backgroundColor:"red"}}>
@@ -44,8 +44,8 @@ export default function AR(){
                     }}/>
                 <PressableIcon name="airplay" 
                     onPress={async e=>{
-                        //const {uri} =await DocumentPicker.getDocumentAsync()
-                        //setSource({uri:Image.resolveAssetSource(require("../assets/face.scn"))})
+                        const {uri} =await DocumentPicker.getDocumentAsync({copyToCacheDirectory:true})
+                        setSource({uri})
                     }}/>
             </View>
             <ARMotion style={{flex:1, flexGrow:1}}

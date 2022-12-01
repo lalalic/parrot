@@ -166,7 +166,7 @@ const Ted=createApi({
 				return {data:talk}
 			},
 		}),
-		talks:builder.query({
+		videos:builder.query({
 			query:({q, page})=>({context:!q ? null : `/search?cat=videos${q ? `&q=${encodeURI(q)}` :""}${page>1 ? `&page=${page}`:""}`}),
 			transformResponse(data, meta, {page}){
 				const $=cheerio.load(data)
@@ -184,6 +184,37 @@ const Ted=createApi({
 				return {talks,page,pages}
 			},
 		}),
+
+		talks:builder.query({
+			query:({q, page})=>{
+				let minutes=0
+				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
+				const query=[
+					minutes>0 && `duration=${(Math.ceil(minutes/6)-1)*6}-${Math.ceil(minutes/6)*6}`,
+					!!q ? "sort=relevance" : "sort=newest",
+					!!q && `q=${encodeURI(q)}`,
+					page>1 && `page=${page}`
+				].filter(a=>!!a).join("&")
+
+				return {context:`/talks${!!query ? `?${query}` :""}`}
+			},
+			transformResponse(data, meta, {page}){
+				const $=cheerio.load(data)
+				const talks=$("#browse-results .media").map((i,el)=>{
+					const $el=$(el)
+					const link=$el.find("a.ga-link").last()
+					return {
+						title:link.text(),
+						slug:link.attr("href").split("/").pop(),
+						thumb:$el.find('img').attr('src'),
+						duration:(([m,s])=>parseInt(m)*60+parseInt(s))($el.find('.thumb__duration').text().split(":"))
+					}
+				}).toArray()
+				const pages=parseInt($("#browse-results>.results__pagination .pagination__item").last().text())||1
+				return {talks,page,pages}
+			},
+		}),
+
 		people:builder.query({
 			query:({q})=>({context:!q ? null : `/search?cat=people&q=${encodeURI(q)}`}),
 			transformResponse(data){

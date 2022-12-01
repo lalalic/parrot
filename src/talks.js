@@ -4,21 +4,20 @@ import { ColorScheme, TitleStyle } from "./default-style";
 import { PressableIcon, TalkThumb } from "./components";
 import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
+import { createSelector } from "@reduxjs/toolkit";
+import { defaultMemoize } from "reselect";
 
 export default function Talks(props){
-    const dispatch=useDispatch()
     const {state: history}=useLocation()
     const color=React.useContext(ColorScheme)
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
     
-    const [search, setSearch]=React.useReducer((last, next)=>{
-        return {...last, ...next}
-    },useSelector(state=>{
-        const {search}=state.history
-        return search && (search.page=1) && search
-    })||{q:"",page:1, people:false, peopleName:""})
+    const [search, setSearch]=React.useReducer(defaultMemoize(
+        (last, next)=>({...last, ...next}),
+        shallowEqual,
+    ),{ q:"",people:false, peopleName:"", ...useSelector(state=>state.history.search), page:1})
     
     const {data:{talks=[],pages=1}={}}=useTalksQuery(search)
 
@@ -51,7 +50,7 @@ export default function Talks(props){
                 getItemLayout={(data,index)=>({length:240, offset:240*index, index})}
                 onEndReached={e=>{
                     if(search.page<pages){
-                        setSearch({ page:search.page+1})
+                        setSearch({ page:(search.page??1)+1})
                     }
                 }}
                 />
@@ -94,9 +93,10 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     )
 }
 
+const VOID=state=>({})
 export function useTalksQuery(search){
     const dispatch=useDispatch()
-
+    const select=React.useRef(VOID)
     React.useEffect(()=>{
         try{
             if(!search.q){
@@ -112,34 +112,40 @@ export function useTalksQuery(search){
             const subs=new Array(search.page).fill(0).map((a,i)=>dispatch(Ted.endpoints.talks.initiate({...search,page:i+1})))
             return ()=>subs.forEach(a=>a.unsubscribe())
         }finally{
+            select.current=defaultMemoize(
+                state=>{    
+                    if(!search.q){
+                        return Ted.endpoints.today.select()(state)
+                    }
+                
+                    if(search.people){
+                        return Ted.endpoints.speakerTalks.select(search)(state)
+                    }
+            
+                    const selects=new Array(search.page).fill(0).map((a,i)=>{
+                        return Ted.endpoints.talks.select({...search,page:i+1})(state)
+                    })
+                    const unfinished=selects.find(a=>a.status!=="fulfilled")
+                    if(unfinished)
+                        return {}
+                    
+                    return selects.reduce(((talks,a,i,arr)=>{
+                        talks.push(a.data.talks)
+                        if(i==arr.length-1){
+                            return {...a, data:{...a.data, talks:talks.flat()}}
+                        }
+                        return talks
+                    }),[])
+                },
+                (a,b)=>a.ted.queries==b.ted.queries
+            )
+
             dispatch({type:"history", search})
         }
     },[search])
 
-    return useSelector(state=>{
-        if(!search.q){
-            return Ted.endpoints.today.select()(state)
-        }
-    
-        if(search.people){
-            return Ted.endpoints.speakerTalks.select(search)(state)
-        }
-
-        const selects=new Array(search.page).fill(0).map((a,i)=>{
-            return Ted.endpoints.talks.select({...search,page:i+1})(state)
-        })
-        const unfinished=selects.find(a=>a.status!=="fulfilled")
-        if(unfinished)
-            return {}
-        
-        return selects.reduce(((talks,a,i,arr)=>{
-            talks.push(a.data.talks)
-            if(i==arr.length-1){
-                return {...a, data:{...a.data, talks:talks.flat()}}
-            }
-            return talks
-        }),[])
-    })
+    const selector=React.useCallback(select.current,[search, select.current])
+    return useSelector(selector)
 }
 
 const imageStyle={height:180}
