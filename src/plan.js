@@ -252,7 +252,7 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
                             selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
-                    <PolicyChoice style={rowStyle} value={plan.policy}
+                    <PolicyChoice style={rowStyle} value={plan.policy} excludes={["general"]}
                         onValueChange={policy=>setPlan({...plan, policy})}
                         />
                     <TalkSelector style={[rowStyle, {height:130, topMargin:10, alignItems:undefined}]}>

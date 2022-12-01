@@ -388,13 +388,13 @@ export default function Player({
                     numberOfLines={2}
                     adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
-                    score={<Score length={chunks.length} callback={updateScore}/>}
+                    //score={<Score length={chunks.length} callback={updateScore}/>}
                     show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} i={status.i}
                         onRecord={props=>{
                                 const {i, chunk=chunks[i], recognized=props.recognized}=status
                                 const score=diffScore(chunk.text,recognized)
-                                updateScore.current.score(score)
+                                updateScore.current?.(score)
                                 if(policy.autoChallenge){    
                                     if(score<policy.autoChallenge){
                                         if(!challenging && !challenges?.find(a=>a.time==chunk.time)){

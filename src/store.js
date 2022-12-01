@@ -239,7 +239,7 @@ const Ted=createApi({
 				}
 				const talks=rss?.channel.item.map(({title,talkId:id, duration,thumbnail, link})=>{
 					return {id, title, duration:toSec(duration), thumb:thumbnail.url,slug:slug(link)}
-				})
+				}).filter(a=>!!a.duration)
 				return {data:{talks}}
 			}
 		}),

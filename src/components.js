@@ -93,7 +93,7 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade, excludes=[]})=>{
     const color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
@@ -102,7 +102,8 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
     const change=k=>(setValue(k),onValueChange?.(k));
     return (
         <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
-            {"general,shadowing,dictating,retelling".split(",").map(k=>(
+            {"general,shadowing,dictating,retelling".split(",")
+                .filter(a=>excludes.indexOf(a)==-1).map(k=>(
                 <PressableIcon key={k} 
                     color={value==k ? color.primary : undefined}
                     name={PolicyIcons[k]} labelFade={labelFade}
