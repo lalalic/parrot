@@ -318,7 +318,7 @@ export default function Player({
                 },
                 rate:policy.rate,
                 volume:policy.volume,
-                style:{position:"absolute", width:"100%", height:"100%"},
+                style:{flex:1},
                 positionMillis: positionMillisHistory
             })}
             <View pointerEvents='box-none'
