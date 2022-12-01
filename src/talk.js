@@ -1,5 +1,5 @@
 import React from 'react';
-import {View, Text,} from "react-native"
+import {View, Text, ScrollView,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
 import Player, {Subtitles} from "./player"
 import { PressableIcon, PolicyChoice } from './components';
@@ -49,7 +49,7 @@ export default function Talk({autoplay}){
             return {
                 media:<TedVideo 
                     posterSource={{uri:talk.thumb}} 
-                    source={{uri:localUri || talk.resources?.hls.stream}} 
+                    source={{uri:/*localUri || */talk.resources?.hls.stream}} 
                     shouldPlay={autoplay}
                     useNativeControls={false}
                     shouldCorrectPitch={true}
@@ -100,7 +100,7 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
     ))
     const hasTranscript=!!talk.languages?.en?.transcript
     return (
-        <View style={style}>
+        <ScrollView style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
             <View style={{ flexDirection: "row", justifyContent: "space-evenly", paddingTop: 20, paddingBottom: 20 }}>
                 {favoritable && <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
@@ -151,7 +151,7 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
                 <Text>{talk.description}</Text>
             </View>
             {children}
-        </View>
+        </ScrollView>
     )
 }
 

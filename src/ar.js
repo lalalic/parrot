@@ -25,7 +25,7 @@ const factory=(MotionView, AView)=> ({createItem=el=>el, ...props}) =>{
         onUpdate={({nativeEvent:{anchor}})=>{
           const i=faces.findIndex(a=>a.uuid==anchor.uuid)
           if(i!=-1){
-            const face=faces.splice(i,1)
+            const [face]=faces.splice(i,1)
             faces.splice(i,0,{...face,...anchor})
             setFaces([...faces])
           }

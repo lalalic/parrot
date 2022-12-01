@@ -1,5 +1,5 @@
 import React, {} from 'react';
-import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
+import {View, Text, ActivityIndicator, Pressable, FlatList, ScrollView, useWindowDimensions} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
 import { produce } from "immer"
@@ -246,8 +246,8 @@ export default function Player({
                 return state
             }
             
-            const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis,didJustFinish, 
-                i:_i=positionMillis<=chunks[0].time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
+            const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis=0,didJustFinish, 
+                i:_i=positionMillis<=chunks[0]?.time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
             
             if(!isLoaded){//init video pitch, props can't work
                 setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
@@ -305,6 +305,7 @@ export default function Player({
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
+    
     return (
         <>
         <SliderIcon.Container 
@@ -318,7 +319,7 @@ export default function Player({
                 },
                 rate:policy.rate,
                 volume:policy.volume,
-                style:{flex:1},
+                style:{flex:1, minHeight:150},
                 positionMillis: positionMillisHistory
             })}
             <View pointerEvents='box-none'

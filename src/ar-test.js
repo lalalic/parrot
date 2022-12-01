@@ -29,21 +29,29 @@ export default ()=>(
 
 
 export default function AR(){
-    const [leftEye, setLeftEye]=React.useState(Image.resolveAssetSource(require("../assets/widget-audio-book.jpeg")))
-
-
+    const [source, setSource]=React.useState(Image.resolveAssetSource(require("../assets/face.scn")).uri)
+    const [leftEye, setLeftEye]=React.useState({})
     return (
         <View style={{flex:1, backgroundColor:"red"}}>
-            <Text>Hello</Text>
-            <PressableIcon name="airplay" 
-                onPress={async e=>{
-                    const {uri} =await DocumentPicker.getDocumentAsync()
-                    setLeftEye({uri})
-                }}/>
+            <View style={{flexDirection:"row", justifyContent:"space-around"}}>
+                <PressableIcon name="airplay" label="mesh"
+                    onPress={async e=>{
+                        setSource({mesh:{fillMesh:true, fillMode: 1}})
+                    }}/>
+                <PressableIcon name="airplay" label="fillMode"
+                    onPress={async e=>{
+                        setLeftEye(Image.resolveAssetSource(require("../assets/widget-audio-book.jpeg")))
+                    }}/>
+                <PressableIcon name="airplay" 
+                    onPress={async e=>{
+                        //const {uri} =await DocumentPicker.getDocumentAsync()
+                        //setSource({uri:Image.resolveAssetSource(require("../assets/face.scn"))})
+                    }}/>
+            </View>
             <ARMotion style={{flex:1, flexGrow:1}}
                 createItem={face=>{
                     return React.cloneElement(face,{
-                        source : {mesh:{fillMesh:false, fillMode: 0}},
+                        source,
                         leftEye,
                         rightEye: Image.resolveAssetSource(require("../assets/icon.png")),
                         mouth: Image.resolveAssetSource(require("../assets/widget-picture-book.jpeg")),
