@@ -1,6 +1,6 @@
 import React from "react"
 import { combineReducers } from "redux"
-import { configureStore, isPlain } from "@reduxjs/toolkit";
+import { configureStore, createSelector, isPlain } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
@@ -350,7 +350,7 @@ export function createStore(needPersistor){
 				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 				combineReducers({
 					[Ted.reducerPath]: Ted.reducer,
-					my(state = {policy:Policy, lang:"en", mylang: "zh-cn"}, action) {
+					my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now()}, action) {
 						switch (action.type) {
 							case "persist/REHYDRATE":
 								return produce(state, $state=>{

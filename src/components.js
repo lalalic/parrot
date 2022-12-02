@@ -102,13 +102,13 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
     const change=k=>(setValue(k),onValueChange?.(k));
     return (
         <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
-            {"general,shadowing,dictating,retelling".split(",")
+            {"shadowing,dictating,retelling".split(",")
                 .filter(a=>excludes.indexOf(a)==-1).map(k=>(
                 <PressableIcon key={k} 
                     color={value==k ? color.primary : undefined}
                     name={PolicyIcons[k]} labelFade={labelFade}
                     label={!!label && k.toUpperCase()}
-                    onPress={e=>change(value==k ? null : k)}/>
+                    onPress={e=>change(value==k ? "general" : k)}/>
             ))}
         </View>
     )

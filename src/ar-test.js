@@ -31,6 +31,7 @@ export default ()=>(
 export default function AR(){
     const [source, setSource]=React.useState(Image.resolveAssetSource(require("../assets/coolface.usdz")))
     const [leftEye, setLeftEye]=React.useState({})
+    const [background, setBackground]=React.useState("h")
     return (
         <View style={{flex:1, backgroundColor:"red"}}>
             <View style={{flexDirection:"row", justifyContent:"space-around"}}>
@@ -44,11 +45,14 @@ export default function AR(){
                     }}/>
                 <PressableIcon name="airplay" 
                     onPress={async e=>{
-                        const {uri} =await DocumentPicker.getDocumentAsync({copyToCacheDirectory:true})
-                        setSource({uri})
+                        //const {uri} =await DocumentPicker.getDocumentAsync({copyToCacheDirectory:true})
+                        //setSource({uri})
+                        setBackground(!background)
                     }}/>
             </View>
-            <ARMotion style={{flex:1, flexGrow:1}}
+            <ARMotion style={{flex:1, flexGrow:1}} 
+                background={background}
+                verticeTextFilter={[3]}
                 createItem={face=>{
                     return React.cloneElement(face,{
                         source,

@@ -11,13 +11,13 @@ import Player from "./player"
 import { ColorScheme } from "./default-style"
 
 const slug="noah_raford_how_gaming_can_be_a_force_for_good"
-export default ()=>{
+export default function Policy(){
     const dispatch=useDispatch()
     const color=React.useContext(ColorScheme)
-    const policy=useSelector(state=>selectPolicy(state))
-    const {data:talk={}}=Ted.useTalkQuery({slug})
     const [target, setTarget]=React.useState("general")
-
+    const policy=useSelector(state=>state.my.policy)
+    const {data:talk={}}=Ted.useTalkQuery({slug})
+    
     return (
         <View style={{flex:1}}>
             <Player key={target}
@@ -30,11 +30,11 @@ export default ()=>{
                     shouldCorrectPitch={true}
                     style={{flex:1}}
                     />}
-                policy={policy[target]} 
+                policy={{...policy.general, ...policy[target]}} 
                 policyName={target}
                 autoHide={false}
-                transcript={talk.languages?.en?.transcript}
-                onPolicyChange={policy=>dispatch({type:"policy",target, payload:policy})}
+                transcript={talk.languages?.mine?.transcript}
+                onPolicyChange={({name, desc, ...policy})=>dispatch({type:"policy",target, payload:policy})}
                 onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 
             <View style={{flex:1, padding:10}}>
