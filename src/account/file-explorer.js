@@ -1,7 +1,7 @@
 import React from "react"
 import {FlatList, Pressable, Text, View} from "react-native"
 import * as FileSystem from "expo-file-system"
-import { ColorScheme } from "./default-style"
+import { ColorScheme } from "../components/default-style"
 
 const Context=React.createContext({})
 export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSystem.cacheDirectory], title, ...props}){

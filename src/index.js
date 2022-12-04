@@ -5,7 +5,7 @@ import * as ExpoSplashScreen from 'expo-splash-screen'
 
 import Router from "./router"
 import {Provider} from "./store"
-import setDefaultStyle, {ColorScheme} from "./default-style"
+import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
 
 

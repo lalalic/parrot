@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import Voice from "@react-native-voice/voice"
+import { useSelector } from "react-redux"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
@@ -518,4 +519,25 @@ export const ControlIcons={
     speed:"speed", 
     whitespace:"notifications", 
     chunk:"flash-on", 
+}
+
+export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), ...props}){
+    const talks=useSelector(({talks={}})=>{
+        return Object.keys(talks).map(id=>{
+            return filter(talks[id])
+        }).filter(a=>!!a)
+    })
+
+    return (
+        <FlatList 
+            data={talks}
+            getItemLayout={(data,index)=>({length:thumbStyle.width, offset: thumbStyle.width*index, index})}
+            renderItem={props=><TalkThumb {...props} style={thumbStyle} children={children}/>}
+            keyExtractor={item=>item?.id}
+            horizontal={true}
+            initialScrollIndex={talks.indexOf(a=>a.id==selected)}
+            extraData={selected}
+            {...props}
+            />
+    )
 }

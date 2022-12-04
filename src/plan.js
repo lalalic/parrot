@@ -5,8 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide} from "./components";
-import { ColorScheme } from "./default-style";
+import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
+import { ColorScheme } from "./components/default-style";
 import { selectPlansByDay } from "./store";
 import { useNavigate, useLocation } from "react-router-native";
 
@@ -284,27 +284,6 @@ const TimeSelector=({style, min=0, max=48, ...props})=>{
             })}
         </Picker>
     ) 
-}
-
-const TalkSelector=({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), ...props})=>{
-    const [talks]=React.useState(useSelector(({talks={}})=>{
-        return Object.keys(talks).map(id=>{
-            return filter(talks[id])
-        }).filter(a=>!!a)
-    }))
-
-    return (
-        <FlatList 
-            data={talks}
-            getItemLayout={(data,index)=>({length:thumbStyle.width, offset: thumbStyle.width*index, index})}
-            renderItem={props=><TalkThumb {...props} style={thumbStyle} children={children}/>}
-            keyExtractor={item=>item?.id}
-            horizontal={true}
-            initialScrollIndex={talks.indexOf(a=>a.id==selected)}
-            extraData={selected}
-            {...props}
-            />
-    )
 }
 
 const TalkSelectedIndicator=({talk, selected, activeColor, setSelected})=>{

@@ -4,7 +4,7 @@ import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { ColorScheme } from '../default-style';
+import { ColorScheme } from '../components/default-style';
 
 export class Media extends React.Component {
     static Actions=false

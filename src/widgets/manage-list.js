@@ -3,7 +3,7 @@ import { FlatList, Pressable, TextInput, View, Text} from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "react-router-native"
 import { PressableIcon, PlaySound } from "../components"
-import { ColorScheme } from "../default-style"
+import { ColorScheme } from "../components/default-style"
 
 export default Wrapper=({slug=useParams().slug})=>{
     if(Widgets[slug]?.ManageList){

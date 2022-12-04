@@ -3,7 +3,7 @@ import {View, Text, Pressable, SectionList} from "react-native"
 import { Link } from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch } from "react-redux";
-import {Ted} from "./store"
+import {Ted} from "../store"
 
 export default ()=>{
     const dispatch=useDispatch()
@@ -29,6 +29,7 @@ export default ()=>{
                 sections={[
                     {title:"Settings", data:[
                         {name:"Policy", icon:"policy"},
+                        {name:"Favorites", icon:"favorite"},
                     ]},
                     {title:"Developer", data:[
                         {name:"Files", icon:"file-present"},

@@ -5,10 +5,10 @@ import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import {selectPolicy, Ted} from "./store"
-import { ControlIcons } from "./components"
-import Player from "./player"
-import { ColorScheme } from "./default-style"
+import { Ted } from "../store"
+import { ControlIcons } from "../components"
+import Player from "../components/player"
+import { ColorScheme } from "../components/default-style"
 
 const slug="noah_raford_how_gaming_can_be_a_force_for_good"
 export default function Policy(){

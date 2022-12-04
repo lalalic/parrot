@@ -4,15 +4,18 @@ import { NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-rou
 import { MaterialIcons } from '@expo/vector-icons';
 
 import Talks from "./talks"
-import Account from "./account"
 import Talk from "./talk"
-import Policy from "./policy"
 import Scheduler from "./plan"
-import Explorer from "./file-explorer"
-import { ColorScheme } from "./default-style"
+
+import Account from "./account"
+import Explorer from "./account/file-explorer"
+import Policy from "./account/policy"
+import Favorites from "./account/favorites"
+
+import { ColorScheme } from "./components/default-style"
 import Home from "./home"
 import ManageList from "./widgets/manage-list"
-import ARTest from "./ar-test"
+import ARTest from "./experiment/ar-test"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>
@@ -43,6 +46,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     <Route path="" element={<Account/>}/>
                     <Route element={<WithBackButton/>}>
                         <Route path="policy" element={<Policy/>}/>
+                        <Route path="favorites" element={<Favorites/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         <Route path="artest" element={<ARTest/>}/>
                     </Route>

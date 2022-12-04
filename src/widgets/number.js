@@ -1,7 +1,7 @@
 import React from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { ListMedia } from "./media";
-import * as Speech from "../speech"
+import * as Speech from "../components/speech"
 import { Speak } from "../components";
 
 export default class NumberPractice extends ListMedia {

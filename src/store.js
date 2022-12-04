@@ -13,7 +13,7 @@ import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
 
-import * as Calendar from "./calendar"
+import * as Calendar from "./experiment/calendar"
 
 export const Policy={
 	general: {

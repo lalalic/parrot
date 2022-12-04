@@ -1,6 +1,6 @@
 import React from "react"
 import { FlatList, View, TextInput} from 'react-native';
-import { ColorScheme, TitleStyle } from "./default-style";
+import { ColorScheme, TitleStyle } from "./components/default-style";
 import { PressableIcon, TalkThumb } from "./components";
 import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"

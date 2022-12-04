@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Text, ScrollView,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
-import Player, {Subtitles} from "./player"
+import Player, {Subtitles} from "./components/player"
 import { PressableIcon, PolicyChoice } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';

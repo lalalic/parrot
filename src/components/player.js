@@ -7,9 +7,9 @@ import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from './components';
+import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from '../components';
 import { ColorScheme } from './default-style';
-import { diffScore, diffPretty } from './diff';
+import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
 /**
 @TODO: 
