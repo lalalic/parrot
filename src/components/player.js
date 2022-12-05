@@ -129,9 +129,13 @@ export default function Player({
             })
         }
 
-        const CurrentChunkPositionMillis=(I=i)=>chunks[I-1]?.end ?? chunks[0]?.time
-        const PrevChunkPositionMillis=(I=i)=>chunks[I-2]?.end ?? chunks[0]?.time
-        const NextChunkPositionMillis=(I=i)=>chunks[I]?.end
+        function asyncCall(fn){
+           return setTimeout(fn, 0)
+        }
+
+        const CurrentChunkPositionMillis=(I=i)=>chunks[I]?.time ?? chunks[0]?.time
+        const PrevChunkPositionMillis=(I=i)=>chunks[I-1]?.time ?? chunks[0]?.time
+        const NextChunkPositionMillis=(I=i)=>chunks[I+1]?.time
         const nextState=(()=>{
             switch(action.type){
                 case "nav/replaySlow":
@@ -145,35 +149,30 @@ export default function Player({
                         {canReplay:state.canReplay-1}
                     )
                 case "nav/prevSlow":
-                    return terminateWhitespace(
-                        {positionMillis:PrevChunkPositionMillis(), rate:Math.max(0.25,rate-0.25)},
-                        {lastRate:rate}
-                    )
+                    return (i=>terminateWhitespace(
+                        {positionMillis:CurrentChunkPositionMillis(i), rate:Math.max(0.25,rate-0.25)},
+                        {lastRate:rate, i}
+                    ))(Math.max(i-1,0))
                 case "nav/prev":
-                    return terminateWhitespace(
-                        {positionMillis:PrevChunkPositionMillis()},
-                        {i: Math.max(i-1,0)}
-                    )
+                    return (i=>terminateWhitespace(
+                        {positionMillis:CurrentChunkPositionMillis(i)},
+                        {i}
+                    ))(Math.max(i-1,0))
                 case "nav/play":
                     return terminateWhitespace({
                         shouldPlay:whitespacing ? true : !isPlaying, 
                         positionMillis: CurrentChunkPositionMillis()
                     })
+                case "whitespace/end":
                 case "nav/next":
-                    return terminateWhitespace(
-                        {positionMillis:NextChunkPositionMillis()}, 
-                        {i:Math.min(i+1,chunks.length-1)}
-                    )
+                    return (i=>terminateWhitespace(
+                        {positionMillis:CurrentChunkPositionMillis(i)}, 
+                        {i}
+                    ))((i+1)%(chunks.length-1))
                 case "nav/challenge":{
                     const i=action.i ?? state.i
-                    i!=-1 && (async()=>onCheckChunk?.(chunks[i]))()
+                    i!=-1 && asyncCall(()=>onCheckChunk?.(chunks[i]))
                     break
-                }
-                case "whitespace/end":{
-                    return terminateWhitespace(
-                        {positionMillis:chunks[i].end},
-                        {i:Math.min(i+1, chunks.length-1)}
-                    )
                 }
                 case "volume/toggle":
                     setVideoStatusAsync({volume:volume==0 ? .50 : 0})
@@ -191,11 +190,8 @@ export default function Player({
                     setVideoStatusAsync({rate:action.rate})
                         .then(a=>changePolicy("speed",a.rate))
                 break
-                case "record":
-                    policy.record && (async ()=>onRecordChunk?.(action))();
-                break
                 case "record/miss":
-                    (async()=>onRecordAudioMiss?.(action))()
+                    asyncCall(()=>onRecordAudioMiss?.(action))
                 break
                 case "media/time":{
                     const i=chunks.findIndex(a=>a.time>=action.time)
@@ -205,7 +201,7 @@ export default function Player({
                     )
                 }
                 case "media/finished":
-                    (async ()=>onFinish?.())();
+                    asyncCall(()=>onFinish?.())
                     return terminateWhitespace(
                         {shouldPlay:false, positionMillis:chunks[0]?.time},
                         {i:0}
@@ -411,7 +407,7 @@ export default function Player({
                                     }
                                 }
                                 if(recognized){
-                                    dispatch({type:"record",chunk,...props})
+                                    policy.record && onRecordChunk?.({type:"record",chunk,...props})
                                 }
 
                         }} 
