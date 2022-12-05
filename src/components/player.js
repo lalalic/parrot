@@ -445,7 +445,7 @@ export function Subtitle({show,i,delay,title,my, selectRecognized, children, sty
 
     const [$title, $children]=React.useMemo(()=>{
         if(!show)
-            return ["",""]
+            return ["",children]
         if(!children && recognized){
             const diffs=diffPretty(title, recognized)
             return [
