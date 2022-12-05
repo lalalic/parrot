@@ -265,7 +265,7 @@ export default function Player({
             //copy temp keys from state
             ;["lastRate"].forEach(k=>k in state && (current[k]=state[k]))
 
-            if(positionMillis>=chunks[i]?.end && (i+1==_i || i==chunks.length-1)){//current is over
+            if(positionMillis>=chunks[i]?.end && i+1==_i){//current is over
                 if(policy.whitespace){
                     console.debug('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
