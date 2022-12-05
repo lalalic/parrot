@@ -354,11 +354,13 @@ export function createStore(needPersistor){
 						switch (action.type) {
 							case "persist/REHYDRATE":
 								return produce(state, $state=>{
-									$state.policy=Object.keys(action.payload?.my?.policy ?? {})
-										.reduce((merged,k)=>{
-											merged[k]={...state[k],...merged[k]}
-											return merged
-										},{...state.policy})
+									const history=action.payload?.my?.policy
+									if(history?.general){
+										Object.assign($state.policy.general, history.general)
+										Object.assign($state.policy.shadowing, history.shadowing)
+										Object.assign($state.policy.dictating, history.dictating)
+										Object.assign($state.policy.retelling, history.retelling)
+									}
 								})
 							case "policy":
 								return produce(state, $state=>{

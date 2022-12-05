@@ -3,16 +3,30 @@ import { View, Text, Image} from "react-native"
 //import {ARFaceMotionView as ARFaceMotion} from "react-native-armotion"
 import { ARMotion } from "./ar"
 import {PressableIcon} from "../components"
-import * as DocumentPicker from 'expo-document-picker';
+import * as DocumentPicker from 'expo-document-picker'
+import * as FileSystem from "expo-file-system"
 
 /*
-import {ViroARScene, ViroText, ViroARSceneNavigator} from "@viro-community/react-viro"
+import {ViroARScene, ViroText, ViroARSceneNavigator, Viro3DObject, ViroVideo} from "@viro-community/react-viro"
 const InitialScene=()=>(
     <ViroARScene>
         <ViroText text="Happy Birthday, Maggie!" 
             position={[0,0,0]}
-            style={{fontSize:30}}
+            style={{fontSize:10, color: "red"}}
             />
+        <Viro3DObject
+            source={require("../../assets/LadyCat.obj")}
+            position={[1,0,0]}
+            scale={[0.05, 0.05, 0.05]}
+            rotation={[0, 0, 0]}
+            type="OBJ"
+        />
+        <ViroVideo 
+        source={{uri:`${FileSystem.documentDirectory}/1737/video.mp4`}}
+            loop={true}
+            position={[0,2,-5]}
+            scale={[2, 2, 0]}/>
+
     </ViroARScene>
 )
 export default ()=>(
@@ -20,16 +34,16 @@ export default ()=>(
         styles={{flex:1}}
         initialScene={{
             scene:InitialScene
-        }}
-    >
+        }}>
 
     </ViroARSceneNavigator>
 )
 */
 
 
+
 export default function AR(){
-    const [source, setSource]=React.useState(Image.resolveAssetSource(require("../../assets/coolface.usdz")))
+    const [source, setSource]=React.useState(Image.resolveAssetSource(require("../../assets/face.scn")))
     const [leftEye, setLeftEye]=React.useState({})
     const [background, setBackground]=React.useState("h")
     return (
