@@ -1,5 +1,5 @@
 import React, {} from 'react';
-import {View, Text, ActivityIndicator, Pressable, FlatList, ScrollView, useWindowDimensions} from "react-native"
+import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
 import { produce } from "immer"
@@ -102,10 +102,11 @@ export default function Player({
     },[id, policy.chunk, challenging, challenges, transcript])
 
     const stopOnMediaStatus=React.useRef(false)
-    const setVideoStatusAsync=React.useCallback(async status=>{
+    const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
         stopOnMediaStatus.current=true
         const done = await video.current?.setStatusAsync(status)
         stopOnMediaStatus.current=false
+        callback?.()
         return done
     },[])
 
@@ -113,9 +114,9 @@ export default function Player({
         const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
         const rate=lastRate||currentRate
 
-        function terminateWhitespace(next, newState){
+        function terminateWhitespace(next, newState, callback){
             whitespacing && clearTimeout(whitespacing)
-            setVideoStatusAsync(next={shouldPlay:true, rate, ...next})
+            setVideoStatusAsync(next={shouldPlay:true, rate, ...next}, callback)
             return produce(state, $state=>{
                 $state.isPlaying=next.shouldPlay
                 delete $state.whitespace
@@ -173,7 +174,7 @@ export default function Player({
                     return terminateWhitespace({
                         shouldPlay:false, 
                         positionMillis: CurrentChunkPositionMillis()
-                    })
+                    },{}, action.callback)
                 case "nav/challenge":{
                     const i=action.i ?? state.i
                     i!=-1 && asyncCall(()=>onCheckChunk?.(chunks[i]))
@@ -634,7 +635,7 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
                     onLongPress={e => onLongPress?.(item)}
                     onPress={e => {
                         if(audioExists){
-                            setPlaying(true)
+                            dispatch({type:"nav/pause", callback:()=>setPlaying(true)})
                         }
                     }}>
                     <Recognizer.Text i={index} {...textProps} 

@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
-import { Audio } from "expo-av"
-import * as FileSystem from "expo-file-system"
+import { Audio, Video as ExpoVideo } from "expo-av"
 import Voice from "@react-native-voice/voice"
+import * as FileSystem from "expo-file-system"
 import { useSelector } from "react-redux"
 
 import { ColorScheme, TalkStyle } from './default-style'
@@ -370,12 +370,15 @@ export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
                         onFinish?.(false)
                         return
                     }
+                    await requestPlayMediaLock()
                     ;({sound,status}=await Audio.Sound.createAsync({uri:audio}));
                     await sound.playAsync()
                     setTimeout(()=>{
                         sound?.unloadAsync()
+                        releasePlayMediaLock()
                         onFinish?.(true)
                     },status.durationMillis)
+
                 }catch(e){
                     console.error(e)
                 }
@@ -458,11 +461,13 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             if(!info.exists){
                 await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
             }
+            await requestPlayMediaLock()
             Voice.start(locale,{audioUri})  
         })();
         return async ()=>{
             await Voice.stop()
             await Voice.destroy()
+            await releasePlayMediaLock()
             if(recognized4Cleanup){
                 DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
                 onRecord?.({
@@ -537,3 +542,29 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
             />
     )
 }
+
+export const Video=React.forwardRef((props,ref)=>{
+
+    return <ExpoVideo 
+        shouldCorrectPitch={true}
+        pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
+        progressUpdateIntervalMillis={100}
+        {...props} 
+        ref={ref}/>
+})
+
+let playMediaLock=0
+export function requestPlayMediaLock(){
+    return new Promise((resolve, reject)=>{
+        playMediaLock++
+        resolve()
+    })
+}
+
+export function releasePlayMediaLock(){
+    playMediaLock=Math.min(playMediaLock-1, 0)
+}
+
+
+
+                    

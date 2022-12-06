@@ -2,13 +2,13 @@ import React from 'react';
 import {View, Text, ScrollView,} from "react-native"
 import { useParams, useNavigate } from 'react-router-native'
 import Player, {Subtitles} from "./components/player"
-import { PressableIcon, PolicyChoice } from './components';
+import { PressableIcon, PolicyChoice, Video } from './components';
 import * as Print from "expo-print"
 import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import { Ted, selectPolicy} from "./store"
-import { Video, Audio } from 'expo-av';
+import { Audio } from 'expo-av';
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -47,14 +47,11 @@ export default function Talk({autoplay}){
             return {media,  controls}
         }else{
             return {
-                media:<TedVideo 
+                media:<Video 
                     posterSource={{uri:talk.thumb}} 
                     source={{uri:/*localUri || */talk.resources?.hls.stream}} 
                     shouldPlay={autoplay}
                     useNativeControls={false}
-                    shouldCorrectPitch={true}
-                    pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
-                    progressUpdateIntervalMillis={100}
                     style={{flex:1}}
                     />,
                 transcript:talk.languages?.mine?.transcript
@@ -175,7 +172,4 @@ const html=(talk, lineHeight=120)=>`
     </html>
 
 `
-const TedVideo=React.forwardRef((props,ref)=>{
-    return <Video {...props} ref={ref}/>
-})
 
