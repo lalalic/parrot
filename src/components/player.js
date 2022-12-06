@@ -160,7 +160,7 @@ export default function Player({
                     ))(Math.max(i-1,0))
                 case "nav/play":
                     return terminateWhitespace({
-                        shouldPlay:whitespacing ? true : !isPlaying, 
+                        shouldPlay:whitespacing ? false : !isPlaying, 
                         positionMillis: CurrentChunkPositionMillis()
                     })
                 case "whitespace/end":
@@ -168,7 +168,12 @@ export default function Player({
                     return (i=>terminateWhitespace(
                         {positionMillis:CurrentChunkPositionMillis(i)}, 
                         {i}
-                    ))((i+1)%(chunks.length-1))
+                    ))((i+1)%chunks.length)
+                case "nav/pause":
+                    return terminateWhitespace({
+                        shouldPlay:false, 
+                        positionMillis: CurrentChunkPositionMillis()
+                    })
                 case "nav/challenge":{
                     const i=action.i ?? state.i
                     i!=-1 && asyncCall(()=>onCheckChunk?.(chunks[i]))

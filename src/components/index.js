@@ -449,7 +449,7 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
         }
         Voice.onSpeechVolumeChanged=e=>{};
         Voice.onSpeechError=e=>{
-            //console.error(`${e.error.code}:${e?.error?.message}`)
+            console.error(e)
         }
         const audioUri=uri.replace("file://","")
         ;(async()=>{
@@ -461,9 +461,6 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
             Voice.start(locale,{audioUri})  
         })();
         return async ()=>{
-            const removeAudioFile=(message) =>{
-                try{ FileSystem.deleteAsync("file://"+audioUri,{idempotent:true})}catch{}
-            }
             await Voice.stop()
             await Voice.destroy()
             if(recognized4Cleanup){
@@ -475,7 +472,6 @@ export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ..
                 })
             }else{
                 onRecord?.({})
-                removeAudioFile("no recognized")
             }
         }
     },[])
