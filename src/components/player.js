@@ -355,6 +355,12 @@ export default function Player({
                         onSlideFinish={delay=>changePolicy("captionDelay",delay)}
                         slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>}
                     
+                    {false!=controls.autoChallenge && <SliderIcon style={{marginRight:10}} testID="autoChallenge"
+                        icon={policy.autoChallenge>0 ? ControlIcons.autoChallenge : "alarm-off"}
+                        onToggle={e=>changePolicy("autoChallenge",policy.autoChallenge ? 0 : 80)}
+                        onSlideFinish={value=>changePolicy("autoChallenge",value)}
+                        slider={{minimumValue:0,maximumValue:100,step:5,value:policy.autoChallenge??0}}/>}
+
                     {false!=controls.speed && <SliderIcon style={{marginRight:10}} testID="speed"
                         icon={ControlIcons.speed} 
                         onToggle={()=>dispatch({type:"speed/toggle"})}

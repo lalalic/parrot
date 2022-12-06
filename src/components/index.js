@@ -520,6 +520,7 @@ export const ControlIcons={
     speed:"speed", 
     whitespace:"notifications", 
     chunk:"flash-on", 
+    autoChallenge: "alarm",
 }
 
 export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), ...props}){
@@ -544,7 +545,6 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
 }
 
 export const Video=React.forwardRef((props,ref)=>{
-
     return <ExpoVideo 
         shouldCorrectPitch={true}
         pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
