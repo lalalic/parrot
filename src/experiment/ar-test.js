@@ -53,7 +53,7 @@ export default function AR(){
     const [source, setSource]=React.useReducer((state,action)=>{
         if(action.uri)
             return action
-        return {...state, mesh:{...state.mesh, ...action}}
+        return {mesh:{fillMesh:true, fillMode:true, ...state.mesh, ...action}}
     },{mesh:{fillMesh:false, fillMode:0}})
     const [background, setBackground]=React.useState("h")
     return (
@@ -69,7 +69,7 @@ export default function AR(){
                     }}/>
                 <PressableIcon name="airplay" label="Face"
                     onPress={async e=>{
-                        setSource(Image.resolveAssetSource(require("../../assets/face.scn")))
+                        setSource({...Image.resolveAssetSource(require("../../assets/face.scn")), type:"model"})
                     }}/>
                 <PressableIcon name="airplay" label="Background"
                     onPress={async e=>{
@@ -79,11 +79,24 @@ export default function AR(){
             <ARMotion style={{flex:1, flexGrow:1, backgroundColor:"none"}} 
                 background={background}
                 verticeTextFilter={[3]}
+                /*
+                source={{
+                    mesh:{
+                        fillMesh:true, 
+                        fillMode:0
+                    },
+                    face: Image.resolveAssetSource(require("../../assets/icon.png")),
+                    eyeLeft: {emoji:"👁", size:20},
+                    eyeRight: "👁",
+                    mouse: "👄",
+                }}
+                */
                 createItem={face=>{
                     return React.cloneElement(face,{
                         source,
-                        onSmile:e=>console.log("smiling"),
-                        rightEye: Image.resolveAssetSource(require("../../assets/icon.png")),
+                        //onSmile:e=>console.log("smiling"),
+                        eyeLeft: Image.resolveAssetSource(require("../../assets/icon.png")),
+                        eyeRight: {emoji:"👁"},
                         mouth: Image.resolveAssetSource(require("../../assets/widget-picture-book.jpeg")),
                     })
                 }}
@@ -91,3 +104,6 @@ export default function AR(){
         </View>
     )
 }
+let eyeOptions = ["👁", "🌕", "🌟", "🔥", "⚽️", "🔎", " "]
+let mouthOptions = ["👄", "👅", "❤️", " "]
+let hatOptions = ["🎓", "🎩", "🧢", "⛑", "👒", " "]
