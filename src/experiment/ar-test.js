@@ -6,7 +6,7 @@ import {PressableIcon} from "../components"
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from "expo-file-system"
 
-
+/*
 import {ViroARScene, ViroText, ViroARSceneNavigator, Viro3DObject, ViroVideo} from "@viro-community/react-viro"
 const InitialScene=()=>(
     <ViroARScene>
@@ -47,7 +47,7 @@ export function scene(){
         </ViroARSceneNavigator>
     )
 }
-
+*/
 
 export default function AR(){
     const [source, setSource]=React.useReducer((state,action)=>{
