@@ -6,6 +6,7 @@ import { Audio, Video as ExpoVideo } from "expo-av"
 import Voice from "@react-native-voice/voice"
 import * as FileSystem from "expo-file-system"
 import { useSelector } from "react-redux"
+import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
@@ -347,170 +348,6 @@ export function Swipeable({children, rightContent, style, ...props}){
     )
 }
 
-
-export const Speak=({text,children=null})=>{
-    React.useEffect(()=>{
-        if(text){
-            Speech.speak(text)
-            return ()=>Speech.stop()
-        }
-    },[text])
-    return children
-}
-
-let gPlaying=false
-export const PlaySound=Object.assign(({audio, children=null, onFinish})=>{
-    React.useEffect(()=>{
-        if(audio){
-            let sound,status
-            ;(async ()=>{
-                try{
-                    const info=await FileSystem.getInfoAsync(audio)
-                    if(!info.exists){
-                        onFinish?.(false)
-                        return
-                    }
-                    await requestPlayMediaLock()
-                    ;({sound,status}=await Audio.Sound.createAsync({uri:audio}));
-                    await sound.playAsync()
-                    setTimeout(()=>{
-                        sound?.unloadAsync()
-                        releasePlayMediaLock()
-                        onFinish?.(true)
-                    },status.durationMillis)
-
-                }catch(e){
-                    console.error(e)
-                }
-            })();
-
-            return ()=>sound?.unloadAsync()
-        }
-    },[audio])
-    return children
-},{
-    Trigger({name="mic", audio}){
-        const color=React.useContext(ColorScheme)
-        const [playing, setPlaying]=React.useState(false)
-        return (
-            <>
-                <PressableIcon name={name} 
-                    onPress={e=>{
-                        if(gPlaying){
-                            gPlaying=true
-                            setPlaying(true)
-                        }
-                    }} 
-                    color={playing ? color.primary : undefined}/>
-                {playing && <PlaySound audio={audio} 
-                    onFinish={e=>{
-                        gPlaying=false
-                        setPlaying(false)
-                    }}/>}
-            </>
-        )
-    }
-})
-
-
-export function Recorder({audio, text,style, textStyle, size=40, onRecord, onRecordUri,color:_color}){
-    const color=React.useContext(ColorScheme)
-    const [recording, setRecording]=React.useState(false)
-    return (
-        <>
-            <PressableIcon style={style} size={size} name={ControlIcons.record} 
-                color={recording ? "red" : (audio ? color.primary : _color)}
-                onPressIn={e=>{setRecording(true)}}
-                onPressOut={e=>{setRecording(false)}}
-                />                       
-            {recording && <Recognizer uri={audio||onRecordUri?.()} 
-                    text={text} style={textStyle}
-                    onRecord={({recognized:text,uri:audio, ...props})=>{
-                        onRecord?.({...props, text, audio})
-                        setTimeout(()=>setRecording(false),0)
-                    }}/>
-                }
-            {!recording && (<Text style={textStyle}>{text}</Text>)}
-        </>
-    )
-}
-
-export function Recognizer({i, uri, text="", onRecord, locale="en_US", style, ...props}){
-    const [recognized, setRecognizedText]=React.useState(text)
-    const scheme=React.useContext(ColorScheme)
-    React.useEffect(()=>{
-        let recognized4Cleanup, start, end
-        Voice.onSpeechResults=e=>{
-            setRecognizedText(recognized4Cleanup=e?.value.join(""))
-            DeviceEventEmitter.emit("recognized",[recognized4Cleanup,i])
-        }
-        Voice.onSpeechStart=e=>{
-            start=Date.now()
-        }
-        Voice.onSpeechEnd=e=>{
-            end=Date.now()
-        }
-        Voice.onSpeechVolumeChanged=e=>{};
-        Voice.onSpeechError=e=>{
-            console.error(e)
-        }
-        const audioUri=uri.replace("file://","")
-        ;(async()=>{
-            const folder=uri.substring(0,uri.lastIndexOf("/")+1)
-            const info=await FileSystem.getInfoAsync(folder)
-            if(!info.exists){
-                await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
-            }
-            await requestPlayMediaLock()
-            Voice.start(locale,{audioUri})  
-        })();
-        return async ()=>{
-            await Voice.stop()
-            await Voice.destroy()
-            await releasePlayMediaLock()
-            if(recognized4Cleanup){
-                DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
-                onRecord?.({
-                    recognized:recognized4Cleanup, 
-                    uri:`file://${audioUri}`, 
-                    duration:(end||Date.now())-start
-                })
-            }else{
-                onRecord?.({})
-            }
-        }
-    },[])
-
-    return !DeviceEventEmitter.listenerCount('recognized') && (
-        <Text style={{color:scheme.primary, ...style}} {...props}>
-            {recognized}
-        </Text>
-    )
-}
-
-Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{
-    const color=React.useContext(ColorScheme)
-    const [recognized, setRecognized]=React.useState(children)
-    React.useEffect(()=>{
-        const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
-            if(i==index){
-                setRecognized(recognized)
-            }
-        })
-        const doneListener=DeviceEventEmitter.addListener('recognized.done',([recognized,index])=>{
-            if(i==index){
-                onRecognizeEnd?.(recognized)
-            }
-        })
-        return ()=>{
-            doneListener.remove()
-            recognizedListener.remove()
-        }
-    },[])
-
-    return <Text style={{color:recognized!=children ? color.primary : color.text, ...style}} {...props}>{recognized}</Text>
-}
-
 export const ControlIcons={
     record:"mic",
     visible:"visibility",
@@ -544,27 +381,213 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
     )
 }
 
-export const Video=React.forwardRef((props,ref)=>{
-    return <ExpoVideo 
-        shouldCorrectPitch={true}
-        pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
-        progressUpdateIntervalMillis={100}
-        {...props} 
-        ref={ref}/>
+// Speak, PlaySound, Recognizer, and Video share mutex lock
+const lock=new (class extends Mutex{
+    async acquire(){
+        this.cancel()
+        return await super.acquire()
+    }
+})();
+export const Speak=({text,children=null})=>{
+    React.useEffect(()=>{
+        if(text){
+            let releaseLock
+            (async()=>{
+                releaseLock = await lock.acquire()
+                await Speech.speak(text)
+            })();
+            return ()=>{
+                try{
+                    Speech.stop()
+                }finally{
+                    releaseLock?.()
+                }
+            }
+        }
+    },[text])
+    return children
+}
+
+export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
+    React.useEffect(()=>{
+        if(audio){
+            let sound,status,releaseLock
+            ;(async ()=>{
+                try{
+                    const info=await FileSystem.getInfoAsync(audio)
+                    if(!info.exists){
+                        destroy?.()
+                        return
+                    }
+                    releaseLock=await lock.acquire(destroy)
+                    await new Promise((resolve,reject)=>{
+                        let resolved=false
+                        setTimeout(()=>{
+                            if(!resolved){
+                                FileSystem.deleteAsync(audio, {idempotent:true})
+                                return reject(new Error("bad audio file, discard it!"))
+                            }
+                        },1000)
+                        ;(async()=>{
+                            ({sound,status}=await Audio.Sound.createAsync({uri:audio}));
+                            resolved=true
+                            resolve()
+                        })();
+                    })
+                    await sound.playAsync()
+                    setTimeout(()=>{
+                        sound?.unloadAsync()
+                        destroy?.()
+                    },status.durationMillis)
+                }catch(e){
+                    destroy?.()
+                    console.info(e.message)
+                }
+            })();
+
+            return ()=>{
+                try{
+                    sound?.unloadAsync()
+                }finally{
+                    releaseLock?.()
+                }
+            }
+        }
+    },[audio])
+    return children
+},{
+    Trigger({name="mic", audio}){
+        const color=React.useContext(ColorScheme)
+        const [playing, setPlaying]=React.useState(false)
+        return (
+            <>
+                <PressableIcon name={name} 
+                    onPress={e=>setPlaying(true)} 
+                    color={playing ? color.primary : undefined}/>
+                {playing && <PlaySound audio={audio} destroy={setPlaying}/>}
+            </>
+        )
+    }
 })
 
-let playMediaLock=0
-export function requestPlayMediaLock(){
-    return new Promise((resolve, reject)=>{
-        playMediaLock++
-        resolve()
+export function Recorder({audio, text,style, textStyle, size=40, onRecord, onRecordUri,color:_color}){
+    const color=React.useContext(ColorScheme)
+    const [recording, setRecording]=React.useState(false)
+    return (
+        <>
+            <PressableIcon style={style} size={size} name={ControlIcons.record} 
+                color={recording ? "red" : (audio ? color.primary : _color)}
+                onPressIn={e=>{setRecording(true)}}
+                onPressOut={e=>{setRecording(false)}}
+                />                       
+            {recording && <Recognizer uri={audio||onRecordUri?.()} 
+                    text={text} style={textStyle}
+                    onRecord={({recognized:text,uri:audio, ...props})=>{
+                        onRecord?.({...props, text, audio})
+                        setTimeout(()=>setRecording(false),0)
+                    }}/>
+                }
+            {!recording && (<Text style={textStyle}>{text}</Text>)}
+        </>
+    )
+}
+
+export const Recognizer=(()=>{
+    function Recognizer({i, uri, text="", onRecord, destroy, locale="en_US", style, ...props}){
+        const [recognized, setRecognizedText]=React.useState(text)
+        const scheme=React.useContext(ColorScheme)
+        React.useEffect(()=>{
+            let recognized4Cleanup, start, end, releaseLock
+            Voice.onSpeechResults=e=>{
+                setRecognizedText(recognized4Cleanup=e?.value.join(""))
+                DeviceEventEmitter.emit("recognized",[recognized4Cleanup,i])
+            }
+            Voice.onSpeechStart=e=>{
+                start=Date.now()
+            }
+            Voice.onSpeechEnd=e=>{
+                end=Date.now()
+            }
+            Voice.onSpeechVolumeChanged=e=>{};
+            Voice.onSpeechError=e=>{
+                console.error(e)
+            }
+            const audioUri=uri.replace("file://","")
+            ;(async()=>{
+                const folder=uri.substring(0,uri.lastIndexOf("/")+1)
+                const info=await FileSystem.getInfoAsync(folder)
+                if(!info.exists){
+                    await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
+                }
+                releaseLock=await lock.acquire()
+                Voice.start(locale,{audioUri})  
+            })();
+            return async ()=>{
+                try{
+                    await Voice.stop()
+                    await Voice.destroy()
+                    if(recognized4Cleanup){
+                        DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
+                        onRecord?.({
+                            recognized:recognized4Cleanup, 
+                            uri:`file://${audioUri}`, 
+                            duration:(end||Date.now())-start
+                        })
+                    }else{
+                        onRecord?.({})
+                    }
+                }finally{
+                    releaseLock?.()
+                }
+            }
+        },[])
+
+        return !DeviceEventEmitter.listenerCount('recognized') && (
+            <Text style={{color:scheme.primary, ...style}} {...props}>
+                {recognized}
+            </Text>
+        )
+    }
+
+    Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{
+        const color=React.useContext(ColorScheme)
+        const [recognized, setRecognized]=React.useState(children)
+        React.useEffect(()=>{
+            const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
+                if(i==index){
+                    setRecognized(recognized)
+                }
+            })
+            const doneListener=DeviceEventEmitter.addListener('recognized.done',([recognized,index])=>{
+                if(i==index){
+                    onRecognizeEnd?.(recognized)
+                }
+            })
+            return ()=>{
+                doneListener.remove()
+                recognizedListener.remove()
+            }
+        },[])
+
+        return <Text style={{color:recognized!=children ? color.primary : color.text, ...style}} {...props}>{recognized}</Text>
+    }
+
+    return Recognizer
+})();
+
+export const Video=(()=>{
+    return React.forwardRef(({onPlaybackStatusUpdate,...props},ref)=>{
+        return <ExpoVideo 
+            shouldCorrectPitch={true}
+            pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
+            progressUpdateIntervalMillis={100}
+            onPlaybackStatusUpdate={status=>{
+                onPlaybackStatusUpdate?.(status)
+            }}
+            {...props} 
+            ref={ref}/>
     })
-}
-
-export function releasePlayMediaLock(){
-    playMediaLock=Math.min(playMediaLock-1, 0)
-}
-
+})();
 
 
                     

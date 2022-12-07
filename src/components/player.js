@@ -649,7 +649,7 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
                             ...textProps.style, 
                             color: playing ? "red" : color.primary
                         }}>{$recognized}</Recognizer.Text>
-                    {!!playing && !!audio && <PlaySound audio={audio} onFinish={e =>setPlaying(false)} />}
+                    {!!playing && !!audio && <PlaySound audio={audio} destroy={setPlaying} />}
                 </Pressable>
             </View>
         </View>

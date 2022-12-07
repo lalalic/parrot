@@ -24,6 +24,7 @@
     ]
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "~1.17.3",
     "@react-native-community/slider": "^4.3.3",
     "@react-native-picker/picker": "2.4.2",
     "@react-native-voice/voice": "https://github.com/lalalic/speech-to-text#v3.2.40",
@@ -31,6 +32,7 @@
     "@tensorflow/tfjs": "^4.1.0",
     "@tensorflow/tfjs-react-native": "^0.8.0",
     "@viro-community/react-viro": "^2.23.0",
+    "async-mutex": "^0.4.0",
     "async-storage": "^0.1.0",
     "cheerio": "^1.0.0-rc.12",
     "expo": "~46.0.16",
