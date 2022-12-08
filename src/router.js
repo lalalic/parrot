@@ -16,7 +16,6 @@ import { ColorScheme } from "./components/default-style"
 import Home from "./home"
 import ManageList from "./widgets/manage-list"
 import ARTest from "./experiment/ar-test"
-import TTS from "./experiment/tts"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>
@@ -50,7 +49,6 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="favorites" element={<Favorites/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         <Route path="artest" element={<ARTest/>}/>
-                        {<Route path="tts" element={<TTS/>}/>}
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>

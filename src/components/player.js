@@ -23,7 +23,7 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,onChallengePass,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -61,7 +61,7 @@ export default function Player({
      */
     const chunks=React.useMemo(()=>{
         if(challenging){
-            return challenges||[]
+            return (challenges||[]).filter(a=>a.score??0 <= policy.autoChallenge??0 )
         }else if(transcript && typeof(policy.chunk)=="number"){
             const paragraphs=transcript
             switch(policy.chunk){        
@@ -99,7 +99,7 @@ export default function Player({
             }
         }
         return []
-    },[id, policy.chunk, challenging, challenges, transcript])
+    },[id, policy.chunk, policy.autoChallenge, challenging, challenges, transcript])
 
     const stopOnMediaStatus=React.useRef(false)
     const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
@@ -180,6 +180,9 @@ export default function Player({
                     i!=-1 && asyncCall(()=>onCheckChunk?.(chunks[i]))
                     break
                 }
+                case "nav/challenge/pass":
+                    asyncCall(()=>onChallengePass?.(chunks[action.i]))
+                    break
                 case "volume/toggle":
                     setVideoStatusAsync({volume:volume==0 ? .50 : 0})
                         .then(a=>changePolicy("volume",a.volume))
@@ -272,7 +275,7 @@ export default function Player({
                     console.debug('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
                     setVideoStatusAsync({shouldPlay:false})
-                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace)
+                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace+1000)
                     return {...state, whitespace, whitespacing}
                 }
             }
@@ -302,14 +305,6 @@ export default function Player({
             }
         }
     },[])
-
-    React.useEffect(()=>{
-        if(policy.fullscreen){
-            
-        }else{
-            
-        }
-    },[policy.fullscreen])
 
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
@@ -409,17 +404,21 @@ export default function Player({
                                 updateScore.current?.(score)
                                 if(policy.autoChallenge){    
                                     if(score<policy.autoChallenge){
-                                        if(!challenging && !challenges?.find(a=>a.time==chunk.time)){
-                                            dispatch({type:"nav/challenge", i})
+                                        if(!challenging){
+                                            if(!challenges?.find(a=>a.time==chunk.time)){
+                                                onCheckChunk?.(chunks[i])
+                                            }
+                                        }else {
+                                            //dispatch({})
                                         }
                                     }else {
                                         if(challenging){
-                                            dispatch({type:"nav/unchallenge",i})
+                                            onChallengePass?.(chunks[i])
                                         }
                                     }
                                 }
                                 if(recognized){
-                                    policy.record && onRecordChunk?.({type:"record",chunk,...props})
+                                    policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
                                 }
 
                         }} 
@@ -441,53 +440,6 @@ export default function Player({
         {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
-        </>
-    )
-}
-
-export function Subtitle({show,i,delay,title,my, selectRecognized, children, style, score,  ...props}){
-    const color=React.useContext(ColorScheme)
-    const [text, setText]=React.useState(title)
-    const recognized=useSelector(selectRecognized)
-    const [showMy, setShowMy]=React.useState(false)
-
-    const [$title, $children]=React.useMemo(()=>{
-        if(!show)
-            return ["",children]
-        if(!children && recognized){
-            const diffs=diffPretty(title, recognized)
-            return [
-                diffs[0],
-                <Text {...props} children={diffs[1]} style={[style, {bottom:style.bottom+40}]}/>
-            ]
-        }
-        return [
-            text, 
-            React.isValidElement(children) && React.cloneElement(children,{...props, style:[style, {bottom:style.bottom+40}]})
-        ]
-    },[recognized, text, children, show])
-
-    React.useEffect(()=>{
-        if(!show){
-            setText("")
-        }else{
-            if(delay){
-                setTimeout(()=>setText(title),delay*1000)
-            }else{
-                setText(title)
-            }
-        }
-    },[i, show])
-    return (
-        <>
-            <Pressable onPressIn={e=>!!my && setShowMy(true)} onPressOut={e=>setShowMy(false)}>
-                {!!my && <MaterialIcons name="translate" size={20} color={color.primary} style={{position:"absolute", left:10, top:-60, opacity:0.6}}/>}
-                {score && <Text style={{position:"absolute", right:10, top:-60, opacity:0.6}}>{score}</Text>}
-                <Text {...props} style={style}>
-                    {showMy ? my : $title}
-                </Text>
-            </Pressable>
-            {$children}
         </>
     )
 }
@@ -562,12 +514,61 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitles({style,policy, itemHeight:height=80, onLongPress,  ...props}){
+export function Subtitle({show,i,delay,title,my, selectRecognized, children, style, score,  ...props}){
+    const color=React.useContext(ColorScheme)
+    const [text, setText]=React.useState(title)
+    const recognized=useSelector(selectRecognized)
+    const [showMy, setShowMy]=React.useState(false)
+
+    const [$title, $children]=React.useMemo(()=>{
+        if(!show || Subtitle.shouldHide)
+            return ["",children]
+        if(!children && recognized){
+            const diffs=diffPretty(title, recognized)
+            return [
+                diffs[0],
+                <Text {...props} children={diffs[1]} style={[style, {bottom:style.bottom+40}]}/>
+            ]
+        }
+        return [
+            text, 
+            React.isValidElement(children) && React.cloneElement(children,{...props, style:[style, {bottom:style.bottom+40}]})
+        ]
+    },[recognized, text, children, show])
+
+    React.useEffect(()=>{
+        if(!show){
+            setText("")
+        }else{
+            if(delay){
+                setTimeout(()=>setText(title),delay*1000)
+            }else{
+                setText(title)
+            }
+        }
+    },[i, show])
+    return (
+        <>
+            {!Subtitle.shouldHide  && <Pressable onPressIn={e=>!!my && setShowMy(true)} onPressOut={e=>setShowMy(false)}>
+                {!!my && <MaterialIcons name="translate" size={20} color={color.primary} style={{position:"absolute", left:10, top:-60, opacity:0.6}}/>}
+                {score && <Text style={{position:"absolute", right:10, top:-60, opacity:0.6}}>{score}</Text>}
+                <Text {...props} style={style}>
+                    {showMy ? my : $title}
+                </Text>
+            </Pressable>}
+            {$children}
+        </>
+    )
+}
+
+export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
     const {id, status, i=status.i, chunks, onRecordChunkUri}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[id]?.[policy]?.challenges, 
         records:state.talks[id]?.[policy]?.records,
     }))
+
+    const shouldCaption=policy=="shadowing"
     
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
@@ -575,6 +576,11 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress,  ...
             subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
         }
     },[i])
+
+    React.useEffect(()=>{
+        Subtitle.shouldHide=true
+        return ()=>delete Subtitle.shouldHide
+    },[])
 
     return (
         <View {...props} style={[{padding:4},style]}>
@@ -585,8 +591,8 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress,  ...
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
                 keyExtractor={({time,end})=>`${time}-${end}-${records[`${time}-${end}`]}`}
                 renderItem={({ index, item })=><SubtitleItem {...{
-                    style:{height},
-                    index, item, onLongPress,
+                    style:{height}, shouldCaption,
+                    index, item, 
                     audio:onRecordChunkUri?.(item),
                     recognized:records[`${item.time}-${item.end}`],
                     isChallenged: !!challenges.find(a=>a.time==item.time)
@@ -596,7 +602,7 @@ export function Subtitles({style,policy, itemHeight:height=80, onLongPress,  ...
     )
 }
 
-function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged, style}) {
+function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, item, isChallenged, style}) {
     const {dispatch, status, current=status.i}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
     const [playing, setPlaying] = React.useState(false);
@@ -620,6 +626,8 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
         numberOfLines:2,
     }
 
+    const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
+
     const [$text, $recognized]=React.useMemo(()=>diffPretty(text, recognized),[text, recognized])
     return (
         <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
@@ -633,12 +641,12 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
             </View>
             <View style={{flex:1, flexGrow:1 }}>
                 <Pressable style={{flex:1}}
-                    onLongPress={e => onLongPress?.(item)}
+                    onPressOut={e=>!$shouldCaption && setShouldCaption(false)}
+                    onLongPress={e=>!$shouldCaption && setShouldCaption(true)}
                     onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
-                    <Text {...textProps}>{$text}</Text>
+                    <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end" }}
-                    onLongPress={e => onLongPress?.(item)}
                     onPress={e => {
                         if(audioExists){
                             dispatch({type:"nav/pause", callback:()=>setPlaying(true)})
@@ -654,19 +662,4 @@ function SubtitleItem({audio, recognized, onLongPress, index, item, isChallenged
             </View>
         </View>
     )
-}
-
-function Score({length, callback, onQuit}){
-    const [score, setScore]=React.useState(0)
-    React.useEffect(()=>{
-        callback.current={
-            score(a){
-                setScore(score)
-            }
-        }
-        return ()=>{
-            onQuit?.(score)
-        }
-    })
-    return score
 }

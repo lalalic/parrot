@@ -450,10 +450,10 @@ export function createStore(needPersistor){
 							case "talk/recording":
 								return produce(talks, talks=>{
 									checkAction(action, ["record","talk","policy"])
-									const {record, policy,talk:{slug, title, thumb,duration,link,id}}=action
+									const {record, score, policy: policyName,talk:{slug, title, thumb,duration,link,id}}=action
 									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
-									const {records={}}=(talk[policy]||(talk[policy]={}));
-									(talk[policy].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
+									const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
+									(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
 									records.changed=Date.now()
 								})
 							case "talk/recording/miss":
