@@ -384,9 +384,29 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
 // Speak, PlaySound, Recognizer, and Video share mutex lock
 const lock=new (class extends Mutex{
     async acquire(){
-        this.cancel()
-        return await super.acquire()
+        await this.cancel()
+        return super.acquire()
     }
+    /*
+    constructor(){
+        this.lock=this.createPromise()
+        this.lock.resolve()
+    }
+    createPromise(cancel, placeholder){
+        return Object.assign(new Promise((resolve,reject)=>placeholder={resolve, reject}), {...placeholder, cancel})
+    }
+
+    async acquire(cancel){
+        if(cancel){
+            this.lock.cancel?.()
+            this.lock.resolve()
+            const lock=this.lock=this.createPromise(cancel)
+            return Promise.resolve(()=>lock.resolve())
+        }else{
+            return Promise.resolve(()=>void 0)
+        }
+    }
+    */
 })();
 export const Speak=({text,children=null})=>{
     React.useEffect(()=>{
@@ -470,25 +490,26 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     }
 })
 
-export function Recorder({audio, text,style, textStyle, size=40, onRecord, onRecordUri,color:_color}){
+export function Recorder({style, textStyle, size=40,color:_color, onStart=callback=>callback()}){
     const color=React.useContext(ColorScheme)
-    const [recording, setRecording]=React.useState(false)
+    const [recording, $setRecording]=React.useState(false)
+    const setRecording=React.useCallback((value)=>{
+        if(value){
+            return onStart(()=>$setRecording(value))
+        }
+        $setRecording(value)
+    },[$setRecording, onStart])
     return (
-        <>
-            <PressableIcon style={style} size={size} name={ControlIcons.record} 
-                color={recording ? "red" : (audio ? color.primary : _color)}
-                onPressIn={e=>{setRecording(true)}}
+        <View style={[style, {flexDirection:"row", width:recording ? "100%": 40}]}>
+            <View style={{alignContent:"center",backgroundColor:recording ? color.backgroundColor : "transparent", flex:1, flexGrow:1}}>
+                {recording && <Recognizer/>}
+                {recording && <Recognizer.Text style={{...textStyle,fontSize:20,color:"yellow",paddingLeft:20}}/>}
+            </View>
+            <PressableIcon size={size} name={ControlIcons.record}
+                onPressIn={e=>{setRecording(true)}} 
                 onPressOut={e=>{setRecording(false)}}
-                />                       
-            {recording && <Recognizer uri={audio||onRecordUri?.()} 
-                    text={text} style={textStyle}
-                    onRecord={({recognized:text,uri:audio, ...props})=>{
-                        onRecord?.({...props, text, audio})
-                        setTimeout(()=>setRecording(false),0)
-                    }}/>
-                }
-            {!recording && (<Text style={textStyle}>{text}</Text>)}
-        </>
+                /> 
+        </View>
     )
 }
 
@@ -512,12 +533,14 @@ export const Recognizer=(()=>{
             Voice.onSpeechError=e=>{
                 console.error(e)
             }
-            const audioUri=uri.replace("file://","")
+            const audioUri=uri?.replace("file://","")
             ;(async()=>{
-                const folder=uri.substring(0,uri.lastIndexOf("/")+1)
-                const info=await FileSystem.getInfoAsync(folder)
-                if(!info.exists){
-                    await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
+                if(audioUri){
+                    const folder=uri.substring(0,uri.lastIndexOf("/")+1)
+                    const info=await FileSystem.getInfoAsync(folder)
+                    if(!info.exists){
+                        await FileSystem.makeDirectoryAsync(folder,{intermediates:true})
+                    }
                 }
                 releaseLock=await lock.acquire()
                 Voice.start(locale,{audioUri})  

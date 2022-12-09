@@ -68,10 +68,8 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
 const WithBackButton=()=>(
     <View style={{flex:1}}>
         <Outlet/>
-        <View style={{position:"absolute",left:10}}>
-            <Link to={-1}>
-                <MaterialIcons name="keyboard-arrow-left"  size={32}/>
-            </Link>
-        </View>
+        <Link to={-1} style={{position:"absolute",left:10}}>
+            <MaterialIcons name="keyboard-arrow-left"  size={32}/>
+        </Link>
     </View>
 )

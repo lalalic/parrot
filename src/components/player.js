@@ -7,7 +7,7 @@ import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from '../components';
+import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
 import { ColorScheme } from './default-style';
 import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
@@ -440,6 +440,7 @@ export default function Player({
         {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
+        <Recorder style={{position:"absolute", right:20, bottom:100}} onStart={callback=>dispatch({type:"nav/pause",callback})}/>
         </>
     )
 }
