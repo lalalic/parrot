@@ -490,7 +490,8 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     }
 })
 
-export function Recorder({style, textStyle, size=40,color:_color, onStart=callback=>callback()}){
+export function Recorder({style, recordingStyle, children, name=ControlIcons.record, size=40,color:_color, 
+    onStart=callback=>callback()},onRecordUri, ...props){
     const color=React.useContext(ColorScheme)
     const [recording, $setRecording]=React.useState(false)
     const setRecording=React.useCallback((value)=>{
@@ -500,12 +501,12 @@ export function Recorder({style, textStyle, size=40,color:_color, onStart=callba
         $setRecording(value)
     },[$setRecording, onStart])
     return (
-        <View style={[style, {flexDirection:"row", width:recording ? "100%": 40}]}>
+        <View style={[style, recording ? recordingStyle : undefined]}>
             <View style={{alignContent:"center",backgroundColor:recording ? color.backgroundColor : "transparent", flex:1, flexGrow:1}}>
-                {recording && <Recognizer/>}
-                {recording && <Recognizer.Text style={{...textStyle,fontSize:20,color:"yellow",paddingLeft:20}}/>}
+                {recording && <Recognizer uri={onRecordUri?.()} {...props}/>}
+                {recording && children}
             </View>
-            <PressableIcon size={size} name={ControlIcons.record}
+            <PressableIcon size={size} name={name} color={_color}
                 onPressIn={e=>{setRecording(true)}} 
                 onPressOut={e=>{setRecording(false)}}
                 /> 

@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system"
 import { selectBook } from "../store"
 import { ListMedia } from "./media"
-import { PlaySound, Recorder } from "../components"
+import { PlaySound, Recognizer, Recorder } from "../components"
 import { ManageList } from "./manage-list"
 import { useDispatch } from "react-redux"
 
@@ -55,9 +55,9 @@ export default class AudioBook extends ListMedia {
             <ManageList slug={slug}
                 audioUri={item=>item.uri}
                 actions={<Recorder size={32}
-                    textStyle={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}
                     onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
                     onRecord={({audio:uri, ...record})=>dispatch({type:"audiobook/record",uri, ...record})}
+                    children={<Recognizer.Text style={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}/>}
                 />}
             />
         )
