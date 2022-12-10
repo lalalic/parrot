@@ -1,0 +1,113 @@
+diff --git a/node_modules/@react-native-voice/voice/dist/index.js b/node_modules/@react-native-voice/voice/dist/index.js
+index a10af13..916dc18 100644
+--- a/node_modules/@react-native-voice/voice/dist/index.js
++++ b/node_modules/@react-native-voice/voice/dist/index.js
+@@ -72,7 +72,7 @@ class RCTVoice {
+                 }, options), callback);
+             }
+             else {
+-                Voice.startSpeech(locale, callback);
++                Voice.startSpeech(locale, options, callback);
+             }
+         });
+     }
+diff --git a/node_modules/@react-native-voice/voice/ios/Voice/Voice.m b/node_modules/@react-native-voice/voice/ios/Voice/Voice.m
+index fd9dad8..dbff760 100644
+--- a/node_modules/@react-native-voice/voice/ios/Voice/Voice.m
++++ b/node_modules/@react-native-voice/voice/ios/Voice/Voice.m
+@@ -108,7 +108,7 @@
+         self.audioSession = [AVAudioSession sharedInstance];
+     }
+     // Set audio session to inactive and notify other sessions
+-    // [self.audioSession setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error: nil];
++    //[self.audioSession setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error: nil];
+     NSString* audioCategory = [self.audioSession category];
+     // Category hasn't changed -- do nothing
+     if ([self.priorAudioCategory isEqualToString:audioCategory]) return;
+@@ -118,11 +118,12 @@
+     } else {
+         [self.audioSession setCategory:self.priorAudioCategory withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error: nil];
+     }
++     
+     // Remove pointer reference
+     self.audioSession = nil;
+ }
+ 
+-- (void) setupAndStartRecognizing:(NSString*)localeStr {
++- (void) setupAndStartRecognizing:(NSString*)localeStr :(NSDictionary *)options {
+     self.audioSession = [AVAudioSession sharedInstance];
+     self.priorAudioCategory = [self.audioSession category];
+     // Tear down resources before starting speech recognition..
+@@ -173,7 +174,6 @@
+     
+     [self sendEventWithName:@"onSpeechStart" body:nil];
+     
+-    
+     // A recognition task represents a speech recognition session.
+     // We keep a reference to the task so that it can be cancelled.
+     NSString *taskSessionId = self.sessionId;
+@@ -216,10 +216,22 @@
+         
+     }];
+     
+-    AVAudioFormat* recordingFormat = [inputNode outputFormatForBus:0];
++    AVAudioFormat* recordingFormat = [inputNode inputFormatForBus:0];
+     AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
+     [self.audioEngine attachNode:mixer];
+     
++    AVAudioFile *audioFile = nil;
++    if(options[@"audioUri"]){
++        NSError* recordError = nil;
++        audioFile=[[AVAudioFile alloc]
++                   initForWriting:[NSURL fileURLWithPath:options[@"audioUri"]]
++                   settings:recordingFormat.settings
++                   error:&recordError];
++        if (recordError != nil) {
++            [self sendResult:@{@"code": @"record_error", @"message": [recordError localizedDescription], @"domain": [recordError domain], @"audioUri":options[@"audioUri"]} :nil :nil :nil];
++        }
++    }
++
+     // Start recording and append recording buffer to speech recognizer
+     @try {
+         [mixer installTapOnBus:0 bufferSize:1024 format:recordingFormat block:^(AVAudioPCMBuffer * _Nonnull buffer, AVAudioTime * _Nonnull when) {
+@@ -253,6 +265,9 @@
+             // Todo: write recording buffer to file (if user opts in)
+             if (self.recognitionRequest != nil) {
+                 [self.recognitionRequest appendAudioPCMBuffer:buffer];
++                if(audioFile != nil){
++                    [audioFile writeFromBuffer:buffer error:nil];
++                }
+             }
+         }];
+     } @catch (NSException *exception) {
+@@ -368,7 +383,7 @@ RCT_EXPORT_METHOD(isRecognizing:(RCTResponseSenderBlock)callback) {
+     }
+ }
+ 
+-RCT_EXPORT_METHOD(startSpeech:(NSString*)localeStr callback:(RCTResponseSenderBlock)callback) {
++RCT_EXPORT_METHOD(startSpeech:(NSString*)localeStr options:(NSDictionary *)options callback:(RCTResponseSenderBlock)callback) {
+     if (self.recognitionTask != nil) {
+         [self sendResult:RCTMakeError(@"Speech recognition already started!", nil, nil) :nil :nil :nil];
+         return;
+@@ -386,7 +401,7 @@ RCT_EXPORT_METHOD(startSpeech:(NSString*)localeStr callback:(RCTResponseSenderBl
+                 [self sendResult:RCTMakeError(@"Speech recognition restricted on this device", nil, nil) :nil :nil :nil];
+                 break;
+             case SFSpeechRecognizerAuthorizationStatusAuthorized:
+-                [self setupAndStartRecognizing:localeStr];
++                [self setupAndStartRecognizing:localeStr :options];
+                 break;
+         }
+     }];
+diff --git a/node_modules/@react-native-voice/voice/src/index.ts b/node_modules/@react-native-voice/voice/src/index.ts
+index 8b51121..97d1f93 100644
+--- a/node_modules/@react-native-voice/voice/src/index.ts
++++ b/node_modules/@react-native-voice/voice/src/index.ts
+@@ -96,7 +96,7 @@ class RCTVoice {
+           callback,
+         );
+       } else {
+-        Voice.startSpeech(locale, callback);
++        Voice.startSpeech(locale, options, callback);
+       }
+     });
+   }

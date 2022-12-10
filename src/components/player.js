@@ -295,7 +295,7 @@ export default function Player({
     
     const updateScore=React.useRef()
     const saveHistory=React.useRef(0)
-    saveHistory.current=media.props.shouldPlay && chunks.length>0 && status.i>0 && status.i<chunks.length-1 && chunks[status.i]?.time
+    saveHistory.current=chunks[status.i]?.time
     React.useEffect(()=>{
         //@Hack: to play sound to speaker, otherwise always to earpod
         Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
@@ -444,7 +444,9 @@ export default function Player({
             style={{position:"absolute", right:20, bottom:100, flexDirection:"row", width:40}} 
             recordingStyle={{width:"100%"}}
             onStart={callback=>dispatch({type:"nav/pause",callback})}>
-            <Recognizer.Text style={{fontSize:20,color:"yellow",paddingLeft:20}}/>
+                <View style={{alignContent:"center",backgroundColor:"lightgray", flex:1, flexGrow:1}}>
+                    <Recognizer.Text style={{fontSize:20,color:"yellow",paddingLeft:20}}/>
+                </View>
         </Recorder>
         </>
     )

@@ -54,11 +54,14 @@ export default class AudioBook extends ListMedia {
         return (
             <ManageList slug={slug}
                 audioUri={item=>item.uri}
-                actions={<Recorder size={32}
-                    onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                    onRecord={({audio:uri, ...record})=>dispatch({type:"audiobook/record",uri, ...record})}
-                    children={<Recognizer.Text style={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}/>}
-                />}
+                actions={
+
+                    <Recorder size={32}
+                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, ...record})}
+                        children={<Recognizer.Text style={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}/>}
+                    />
+                }
             />
         )
     }

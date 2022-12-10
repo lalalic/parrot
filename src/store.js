@@ -279,7 +279,7 @@ const Ted=createApi({
 
 export function createStore(needPersistor){
 	const checkAction=(action,keys)=>{
-		const missing=keys.filter(a=>action[a]==undefined)
+		const missing=keys.filter(a=>!(a in action))
 		if(missing.length>0){
 			throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`)
 		}

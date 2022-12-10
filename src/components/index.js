@@ -384,7 +384,9 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
 // Speak, PlaySound, Recognizer, and Video share mutex lock
 const lock=new (class extends Mutex{
     async acquire(){
-        await this.cancel()
+        if(this.isLocked()){
+            //await this.cancel()
+        }
         return super.acquire()
     }
     /*
@@ -490,9 +492,8 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     }
 })
 
-export function Recorder({style, recordingStyle, children, name=ControlIcons.record, size=40,color:_color, 
-    onStart=callback=>callback()},onRecordUri, ...props){
-    const color=React.useContext(ColorScheme)
+export function Recorder({style, recordingStyle, children, onStart=callback=>callback(),
+    name=ControlIcons.record, size=40,color:_color, onRecordUri, ...props}){
     const [recording, $setRecording]=React.useState(false)
     const setRecording=React.useCallback((value)=>{
         if(value){
@@ -500,18 +501,25 @@ export function Recorder({style, recordingStyle, children, name=ControlIcons.rec
         }
         $setRecording(value)
     },[$setRecording, onStart])
-    return (
-        <View style={[style, recording ? recordingStyle : undefined]}>
-            <View style={{alignContent:"center",backgroundColor:recording ? color.backgroundColor : "transparent", flex:1, flexGrow:1}}>
-                {recording && <Recognizer uri={onRecordUri?.()} {...props}/>}
-                {recording && children}
-            </View>
+    const content=(
+        <>
+            {recording && children}
             <PressableIcon size={size} name={name} color={_color}
                 onPressIn={e=>{setRecording(true)}} 
                 onPressOut={e=>{setRecording(false)}}
                 /> 
-        </View>
+            {recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}}/>}
+        </>
     )
+    if(style || recordingStyle){
+        return (
+            <View style={[style, recording ? recordingStyle : undefined]}>
+                {content}
+            </View>
+        )
+    }
+
+    return content
 }
 
 export const Recognizer=(()=>{

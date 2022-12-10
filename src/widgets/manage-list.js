@@ -61,7 +61,6 @@ export const ManageList=(()=>{
                         />
                 </View>
                 <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
-                    <PressableIcon name="delete-outline" label=" " disabled={!!state.tag}/>
                     {actions}
                     <PressableIcon name="edit" label={state.tag}
                         onLongPress={e=>setState({tag:null})}
