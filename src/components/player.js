@@ -202,6 +202,16 @@ export default function Player({
                 case "record/miss":
                     asyncCall(()=>onRecordAudioMiss?.(action))
                 break
+                /*
+                case "record/chunk":{
+                    const {time, end, whitespace=end-time}=action.chunk
+                    return terminateWhitespace(
+                        {positionMillis:time,shouldPlay:true},
+                        {whitespace, i: chunks.indexOf(action.chunk),
+                        whitespacing: setTimeout(()=>dispatch({type:"nav/pause"}),whitespace+1000)}
+                    )
+                }
+                */
                 case "media/time":{
                     const i=chunks.findIndex(a=>a.time>=action.time)
                     return terminateWhitespace(
@@ -293,7 +303,6 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
-    const updateScore=React.useRef()
     const saveHistory=React.useRef(0)
     saveHistory.current=chunks[status.i]?.time
     React.useEffect(()=>{
@@ -383,7 +392,6 @@ export default function Player({
 
                 <Subtitle 
                     i={status.i} 
-                    callback={updateScore}
                     selectRecognized={state=>{
                         const a=chunks?.[status.i];
                         return state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]
@@ -395,32 +403,29 @@ export default function Player({
                     numberOfLines={2}
                     adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
-                    //score={<Score length={chunks.length} callback={updateScore}/>}
                     show={policy.caption}>
                     {status.whitespacing && <Recognizer key={status.i} i={status.i}
                         onRecord={props=>{
                                 const {i, chunk=chunks[i], recognized=props.recognized}=status
                                 const score=diffScore(chunk.text,recognized)
-                                updateScore.current?.(score)
                                 if(policy.autoChallenge){    
                                     if(score<policy.autoChallenge){
                                         if(!challenging){
                                             if(!challenges?.find(a=>a.time==chunk.time)){
-                                                onCheckChunk?.(chunks[i])
+                                                onCheckChunk?.(chunk)
                                             }
                                         }else {
-                                            //dispatch({})
+                                            
                                         }
                                     }else {
                                         if(challenging){
-                                            onChallengePass?.(chunks[i])
+                                            onChallengePass?.(chunk)
                                         }
                                     }
                                 }
                                 if(recognized){
                                     policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
                                 }
-
                         }} 
                         uri={onRecordChunkUri?.(chunks[status.i])}
                         />}
@@ -655,6 +660,10 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                     <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end" }}
+                    onLongPress={e=>{
+                        dispatch({type:"record/chunk", chunk:item})
+
+                    }}
                     onPress={e => {
                         if(audioExists){
                             dispatch({type:"nav/pause", callback:()=>setPlaying(true)})

@@ -96,7 +96,7 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
             hasHistory:!!state.talks[talk.id]
         }
     ))
-    const hasTranscript=!!talk.languages?.en?.transcript
+    const hasTranscript=!!talk.languages?.mine?.transcript
     return (
         <ScrollView style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
