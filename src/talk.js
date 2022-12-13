@@ -97,6 +97,7 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
         }
     ))
     const hasTranscript=!!talk.languages?.mine?.transcript
+    const margins={right:100,left:20,top:20,bottom:20}
     return (
         <ScrollView style={style}>
             <Text style={{ fontSize: 20, }}>{talk.title}</Text>
@@ -126,14 +127,14 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
                     disabled={!hasTranscript}
                     onLongPress={async e=>{
                         try{
-                            await Print.printAsync({html: html(talk, 200)})
+                            await Print.printAsync({html: html(talk, 130, margins,true),margins})
                         }catch(e){
 
                         }
                     }}
                     onPress={async e=>{
                         try{
-                            await Print.printAsync({html: html(talk, 120)})
+                            await Print.printAsync({html: html(talk, 130, margins,false),margins})
                         }catch(e){
 
                         }
@@ -153,22 +154,25 @@ function Info({talk, dispatch, toggleTalk, style, favoritable, children}) {
     )
 }
 
-const html=(talk, lineHeight=120)=>`
+const html=(talk, lineHeight, margins, needMy)=>`
     <html>
         <style>
-            p{line-height:${lineHeight}%;margin:0;}
-            body{padding:5mm}
+            p{line-height:${lineHeight}%;margin:0;text-align:justify}
             @page{
-                margin-top:2cm;
-                margin-bottom:1cm;
+                ${Object.keys(margins).map(k=>`margin-${k}:${margins[k]}`).join(";")}
             }
         </style>
         <body>
             <h2>
                 <span>${talk.title}</span>
-                <span style="font-size:12pt;float:right;padding-right:10mm">${new Date().asDateString()}</span>
+                <span style="font-size:12pt;float:right;padding-right:10mm">${talk.speaker} ${new Date().asDateString()}</span>
             </h2>
-            ${talk.languages?.en?.transcript?.map(a => a.cues.map(b => b.text).join("")).map(a=>`<p>${a}</p>`).join("\n")}
+            ${talk.languages?.mine?.transcript?.map(a =>{
+                const content=a.cues.map(b => b.text).join("")
+                const my=needMy && a.cues.map(b=>b.my??"").join("")
+                const time=((m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`)(a.cues[0].time)
+                return `<p><i>${time}</i> ${content}</p>${my ? `<p>${my}</p>` : ""}`
+            }).join("\n")}
         </body>
     </html>
 
