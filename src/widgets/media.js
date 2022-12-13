@@ -209,7 +209,7 @@ export class Media extends React.Component {
                     style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
                     {...inputProps}
                     />
-                <FlatList data={data} renderItem={renderItem} style={[listStyle]} keyExtractor={a=>a.id} {...listProps}/>
+                {data.map(item=>renderItem({item}))}
                 {children}
             </View>
         )

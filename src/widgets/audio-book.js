@@ -55,7 +55,6 @@ export default class AudioBook extends ListMedia {
             <ManageList slug={slug}
                 audioUri={item=>item.uri}
                 actions={
-
                     <Recorder size={32}
                         onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
                         onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, ...record})}
