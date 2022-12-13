@@ -3739,6 +3739,10 @@ expo-print@^11.3.0:
   version "11.3.0"
   resolved "https://registry.npmmirror.com/expo-print/-/expo-print-11.3.0.tgz#d59fc766b521f6c4d51273dcaf979c3639919191"
 
+expo-sharing@~10.3.0:
+  version "10.3.0"
+  resolved "https://registry.npmmirror.com/expo-sharing/-/expo-sharing-10.3.0.tgz#4e8e2a50d1c22ea510699664bb6ce827cb06738e"
+
 expo-splash-screen@~0.16.2:
   version "0.16.2"
   resolved "https://registry.npmmirror.com/expo-splash-screen/-/expo-splash-screen-0.16.2.tgz#38ecba9fc9fc2234ee38bcb818d8c88cd83cff9e"

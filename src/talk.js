@@ -8,7 +8,6 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import { Ted, selectPolicy} from "./store"
-import { Audio } from 'expo-av';
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -18,8 +17,6 @@ export default function Talk({autoplay}){
     const Widget=globalThis.Widgets[slug]
 
     const policy=useSelector(state=>selectPolicy(state,policyName,talk.id))
-
-    const localUri = useSelector(state=>state.talks[talk.id]?.favorited?.trim?.())
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
     
@@ -49,7 +46,7 @@ export default function Talk({autoplay}){
             return {
                 media:<Video 
                     posterSource={{uri:talk.thumb}} 
-                    source={{uri:/*localUri || */talk.resources?.hls.stream}} 
+                    source={{uri:talk.resources?.hls.stream}} 
                     shouldPlay={autoplay}
                     useNativeControls={false}
                     style={{flex:1}}

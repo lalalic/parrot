@@ -2,7 +2,7 @@ import React from "react"
 import { FlatList, View, Text } from "react-native"
 import { TalkThumb } from "../components"
 import { ColorScheme } from "../components/default-style"
-import NumberPractice, {PhoneNumber} from "./number"
+import NumberPractice from "./number"
 import AudioBook from "./audio-book"
 import PictureBook from "./picture-book"
 

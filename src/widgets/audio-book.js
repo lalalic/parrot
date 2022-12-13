@@ -18,7 +18,9 @@ export default class AudioBook extends ListMedia {
     }
 
     createTranscript(){
-        const book=selectBook(this.context.store.getState(), this.slug, this.props.tag)
+        const state=this.context.store.getState()
+        this.tag=state.talks[this.props.id].tag
+        const book=selectBook(state, this.slug, this.tag)
         book.reduce((cues,{duration, ...cue},i)=>{
             const time=i==0 ? 0 : cues[i-1].end
             cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
@@ -33,7 +35,7 @@ export default class AudioBook extends ListMedia {
     }
 
     title(){
-        return this.props.tag
+        return this.tag
     }
 
     renderAt({text, uri}, i){ 
