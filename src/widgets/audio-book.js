@@ -22,7 +22,7 @@ export default class AudioBook extends ListMedia {
         this.tag=state.talks[this.props.id].tag
         const book=selectBook(state, this.slug, this.tag)
         book.reduce((cues,{duration, ...cue},i)=>{
-            const time=i==0 ? 0 : cues[i-1].end
+            const time=(i==0 ? 0 : cues[i-1].end)+100
             cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
             return cues
         },this.cues)

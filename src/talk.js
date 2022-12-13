@@ -57,8 +57,10 @@ export default function Talk({autoplay}){
     },[talk,autoplay])
 
     const actions=React.useMemo(()=>{
-        if(Widget && Widget.Actions){
-            return <Widget.Actions talk={talk}/>
+        if(Widget){
+            if(Widget.Actions){
+                return <Widget.Actions talk={talk}/>
+            }
         }else{
             return <PolicyChoice label={true} labelFade={true} value={policyName}
                 onValueChange={policy=>navigate(`/talk/${slug}/${policy}`, {replace:true})}/>

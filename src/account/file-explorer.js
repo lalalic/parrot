@@ -2,10 +2,20 @@ import React from "react"
 import {FlatList, Pressable, Text, View} from "react-native"
 import * as FileSystem from "expo-file-system"
 import { ColorScheme } from "../components/default-style"
+import * as Sharing from "expo-sharing"
 
 const Context=React.createContext({})
 export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSystem.cacheDirectory], title, ...props}){
-    const [current, setCurrent]=React.useState()
+    const [current, $setCurrent]=React.useState()
+    const setCurrent=React.useCallback(a=>{
+        $setCurrent(a)
+        ;(async ()=>{
+            const available=await Sharing.isAvailableAsync()
+            if(available){
+                await Sharing.shareAsync(a.uri)
+            }
+        })();
+    },[$setCurrent])
     return (
         <Context.Provider value={{current,setCurrent}}>
             {title && <Text style={{fontSize:12, textAlign:"center",fontWeight:"bold",marginTop:20, marginBottom:20}}>{title}</Text>}
