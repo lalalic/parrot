@@ -369,7 +369,7 @@ export default function Player({
                         icon={ControlIcons.speed} 
                         onToggle={()=>dispatch({type:"speed/toggle"})}
                         onSlideFinish={rate=>dispatch({type:"speed/tune",rate})}
-                        slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:status.rate,text:t=>`${t}x`}}/>}
+                        slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:policy.speed,text:t=>`${t}x`}}/>}
 
                     {false!=controls.whitespace && <SliderIcon style={{marginRight:10}} testID="whitespace"
                         icon={policy.whitespace>0 ? ControlIcons.whitespace : "notifications-off"}
@@ -380,8 +380,8 @@ export default function Player({
                     {false!=controls.chunk && <SliderIcon style={{marginRight:10}} testID="chunk"
                         icon={policy.chunk>0 ? ControlIcons.chunk : "flash-off"}
                         onToggle={()=>changePolicy("chunk",policy.chunk>0 ? 0 : 1)}
-                        onSlideFinish={get=>(dx,dy)=>changePolicy("chunk",get(dy))}
-                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t}s`}}/>}
+                        onSlideFinish={value=>changePolicy("chunk",value)}
+                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t} chunks`}}/>}
 
                     {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
                         name={!policy.fullscreen ? "zoom-out-map" : "fullscreen-exit"}
