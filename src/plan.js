@@ -9,6 +9,7 @@ import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSele
 import { ColorScheme } from "./components/default-style";
 import { selectPlansByDay } from "./store";
 import { useNavigate, useLocation } from "react-router-native";
+import produce from "immer";
 
 export default function Scheduler() {
     const color=React.useContext(ColorScheme)
@@ -198,14 +199,27 @@ const Copy=({cancel, mode, ...props})=>{
                         {talks.map(a=>{
                             return (
                                 <View key={a.id} style={{flexDirection:"row", width:"100%", height:100, marginBottom:10}}>
-                                    <TalkThumb item={a} text={false} style={thumbStyle}/>
+                                    <TalkThumb item={a} text={false} style={thumbStyle}>
+                                        {!replacements[a.id] &&  (
+                                            <TalkSelectedIndicator talk={a}
+                                            selected={a.id} 
+                                            activeColor={color.primary}/>
+                                        )}
+                                    </TalkThumb>
                                     <TalkSelector filter={b=>b.favorited && a.id!=b.id && b} 
                                         thumbStyle={thumbStyle}
                                         style={{paddingLeft:5, flex:1, flexGrow:1}}>
                                         <TalkSelectedIndicator
                                             selected={replacements[a.id]} 
                                             activeColor={color.primary} 
-                                            setSelected={id=>replace({...replacements, [a.id]:id})}/>
+                                            setSelected={id=>
+                                                replace(produce(replacements, $replacements=>{
+                                                    if($replacements[a.id]==id)
+                                                        delete $replacements[a.id]
+                                                    else
+                                                        $replacements[a.id]=id
+                                                }))
+                                            }/>
                                     </TalkSelector>
                                 </View>
                             )
