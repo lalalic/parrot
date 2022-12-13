@@ -243,15 +243,15 @@ export class Media extends React.Component {
                 }}
                 renderItemText={item=>item.tag}
             >
-                <Media.TagShortcut slug={slug}/>
+                <Media.TagShortcut slug={slug} style={{right:10}}/>
             </Media.List>
         )
     }
 
-    static TagShortcut=({slug, style})=>{
+    static TagShortcut=({slug, style={left:10}})=>{
         const color=React.useContext(ColorScheme)
         return (
-            <Link to={`/talk/manage/${slug}`} style={[{position:"absolute",left:10, top:10, height:50},style]} >
+            <Link to={`/talk/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
                 <MaterialIcons name="category" size={32} color={color.text}/>
             </Link>
         )
