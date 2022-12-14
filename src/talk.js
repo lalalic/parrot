@@ -51,7 +51,20 @@ export default function Talk({autoplay}){
                     useNativeControls={false}
                     style={{flex:1}}
                     />,
-                transcript:talk.languages?.mine?.transcript
+                transcript:talk.languages?.mine?.transcript,
+                onLongtermChallenge:chunk=>{
+                    dispatch({type:"talk/challenge/remove",talk, policy: policyName, chunk})
+                    dispatch({type:"talk/challenge", policy:policyName, 
+                        chunk:{...chunk, uri: talk.resources?.hls.stream},
+                        talk:{
+                            slug:"long_term_challenge",
+                            title:"challenges from talks",
+                            thumb: require("../assets/challenge-book.jpeg"),
+                            id:"challenge",
+                            favorited:true,
+                        }
+                    })
+                }
             }
         }
     },[talk,autoplay])

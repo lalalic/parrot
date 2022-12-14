@@ -14,7 +14,7 @@ export default class AudioBook extends ListMedia {
         title: "Record audio as practice material",
         thumb: require("../../assets/widget-audio-book.jpeg"),
         description: "manage audio book with tags and practise them",
-        tags:["Vocabulary","Speak","Grammar"],
+        tags:["Vocabulary","Speak","Grammar", "Talk"],
     }
 
     createTranscript(){

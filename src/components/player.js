@@ -61,7 +61,7 @@ export default function Player({
      */
     const chunks=React.useMemo(()=>{
         if(challenging){
-            return (challenges||[]).filter(a=>a.score??0 <= policy.autoChallenge??0 )
+            return (challenges||[]).filter(a=>a.score??0 <= policy.autoChallenge??0)
         }else if(transcript && typeof(policy.chunk)=="number"){
             const paragraphs=transcript
             switch(policy.chunk){        
@@ -202,16 +202,9 @@ export default function Player({
                 case "record/miss":
                     asyncCall(()=>onRecordAudioMiss?.(action))
                 break
-                /*
-                case "record/chunk":{
-                    const {time, end, whitespace=end-time}=action.chunk
-                    return terminateWhitespace(
-                        {positionMillis:time,shouldPlay:true},
-                        {whitespace, i: chunks.indexOf(action.chunk),
-                        whitespacing: setTimeout(()=>dispatch({type:"nav/pause"}),whitespace+1000)}
-                    )
-                }
-                */
+                case "record/chunk":
+                    asyncCall(()=>onLongtermChallenge?.(action.chunk))
+                break
                 case "media/time":{
                     const i=chunks.findIndex(a=>a.time>=action.time)
                     return terminateWhitespace(
@@ -662,7 +655,6 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                 <Pressable style={{ flex:1, justifyContent:"flex-end" }}
                     onLongPress={e=>{
                         dispatch({type:"record/chunk", chunk:item})
-
                     }}
                     onPress={e => {
                         if(audioExists){

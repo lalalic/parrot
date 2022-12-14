@@ -400,20 +400,20 @@ export function createStore(needPersistor){
 									
 								})
 							case "talk/policy":
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									checkAction(action, ["payload","talk"])
 									const {target="general", payload, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
 									if(talk[target]?.challenging){
 										delete payload.chunk
 									}
 									talk[target]={...talk[target], ...payload}
 								})
 							case "talk/challenge":{
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									checkAction(action, ["chunk","talk","policy"])
 									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
 
 									const {challenges=[]}=talk[policy]||(talk[policy]={})
 									talk[policy].challenges=challenges
@@ -431,10 +431,10 @@ export function createStore(needPersistor){
 								})
 							}
 							case "talk/challenge/remove":{
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									checkAction(action, ["chunk","talk","policy"])
 									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
 
 									const {challenges=[]}=talk[policy]||(talk[policy]={})
 									talk[policy].challenges=challenges
@@ -448,10 +448,10 @@ export function createStore(needPersistor){
 								})
 							}
 							case "talk/recording":
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									checkAction(action, ["record","talk","policy"])
 									const {record, score, policy: policyName,talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
 									const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
 									(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
 									records.changed=Date.now()
@@ -463,9 +463,9 @@ export function createStore(needPersistor){
 									delete data[id]?.[policy]?.records?.[record]
 								})
 							case "talk/clear/history":
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									checkAction(action, ["id"])
-									const talk=talks[action.id]
+									const talk=$talks[action.id]
 									if(talk){ 
 										Object.keys(Policy).forEach(policy=>{
 											FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
@@ -474,9 +474,9 @@ export function createStore(needPersistor){
 									}
 								})
 							case "talk/clear":
-								return produce(talks, talks=>{
+								return produce(talks, $talks=>{
 									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${action.id}`,{idempotent:true})
-									delete talks[action.id]
+									delete $talks[action.id]
 								})
 							case "talk/clear/all":
 								return {}
