@@ -1,7 +1,7 @@
 import React from "react"
 import renderer from "react-test-renderer"
 import {Provider, createStore} from "../store"
-import "../default-style"
+import "../components/default-style"
 
 describe("store",()=>{
     it("<Provider/>=render()",()=>{

@@ -5,7 +5,7 @@ jest.mock("../store",()=>({
 
 import React from "react"
 import {act} from "react-test-renderer"
-import Player, {NavBar, Subtitle} from "../player"
+import Player, {NavBar, Subtitle} from "../components/player"
 import {PlayButton, PressableIcon, Recognizer} from "../components"
 import {Policy, selectBook} from "../store"
 import NumberMedia from "../widgets/number"
