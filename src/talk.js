@@ -93,6 +93,7 @@ export default function Talk({autoplay}){
             onRecordAudioMiss={({record:{time,end}})=>dispatch({type:"talk/recording/miss", talk, policy: policyName, record:`${time}-${end}` })}
             {...{id:talk.id, challenging, key:policyName, policyName, policy, 
                 style,
+                title:talk.title,
                 ...props
             }}
             >

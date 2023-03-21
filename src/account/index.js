@@ -30,16 +30,6 @@ export default ()=>{
                     {title:"Settings", data:[
                         {name:"Policy", icon:"policy"},
                         {name:"Favorites", icon:"favorite"},
-                    ]},
-                    {title:"Developer", data:[
-                        {name:"Files", icon:"file-present"},
-                        {name:"Artest", icon:"person-pin-circle"},
-                    ]},
-                    {title:"Cache", data:[
-                        {name:"Clear Ted", icon: "cleaning-services", onPress:e=>dispatch(Ted.util.resetApiState())},
-                        {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
-                        {name:"Clear Audio Book", icon: "cleaning-services", onPress:e=>dispatch({type:"audiobook/clear"})},
-                        {name:"Clear Picture Book", icon: "cleaning-services", onPress:e=>dispatch({type:"picturebook/clear"})},
                     ]}
                 ]} /> 
         </View>

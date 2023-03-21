@@ -6,6 +6,9 @@ import { produce } from "immer"
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
+import * as Sharing from "expo-sharing"
+import * as ImagePicker from "expo-image-picker"
+
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
 import { ColorScheme } from './default-style';
@@ -18,7 +21,7 @@ const Context=React.createContext({})
 export default function Player({
     id, //talk id 
     media,
-    style, 
+    style, title,
     children, //customizable controls
     policyName="general", //used to get history of a policy
     policy,
@@ -66,8 +69,15 @@ export default function Player({
             const paragraphs=transcript
             switch(policy.chunk){        
                 case 0:
-                case 1:
+                case 1:{
+                    if(policy.fullscreen){
+                        const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1].end*2.5>=5*60*1000)
+                        if(i!=-1){
+                            return paragraphs.slice(0,i).map(p=>p.cues).flat()
+                        }
+                    }    
                     return paragraphs.map(p=>p.cues).flat()
+                }
                 case 9:
                     return (paragraphs.map(p=>{
                         const text=p.cues.map(a=>a.text).join("")
@@ -99,7 +109,7 @@ export default function Player({
             }
         }
         return []
-    },[id, policy.chunk, policy.autoChallenge, challenging, challenges, transcript])
+    },[id, policy.chunk, policy.autoChallenge, policy.fullscreen, challenging, challenges, transcript])
 
     const stopOnMediaStatus=React.useRef(false)
     const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
@@ -213,7 +223,9 @@ export default function Player({
                     )
                 }
                 case "media/finished":
-                    asyncCall(()=>onFinish?.())
+                    if(!policy.fullscreen){
+                        asyncCall(()=>onFinish?.())
+                    }
                     return terminateWhitespace(
                         {shouldPlay:false, positionMillis:chunks[0]?.time},
                         {i:0}
@@ -235,8 +247,9 @@ export default function Player({
             ..._controls,
             ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,chunk:false, slow:false,prev:false,next:false,select:false}),
             ...(challenging && {chunk:false}),
+            ...(policy.fullscreen && {slow:false,prev:false,next:false,select:false})
         }
-    },[_controls,chunks])
+    },[_controls,chunks, policy.fullscreen, challenging,])
 
     /**
      * move out of reducer to bail out rerender
@@ -302,7 +315,7 @@ export default function Player({
         //@Hack: to play sound to speaker, otherwise always to earpod
         Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
         return ()=>{
-            if(saveHistory.current){
+            if(saveHistory.current && !policy.fullscreen){
                 onQuit?.({time:saveHistory.current})
             }
         }
@@ -334,7 +347,7 @@ export default function Player({
                         controls,isChallenged,
                         dispatch,status,
                         navable:chunks?.length>=2,
-                        size:32, style:[{flexGrow:1,opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
+                        size:32, style:[{flexGrow: policy.fullscreen ? 0 : 1, opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
                 <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
@@ -378,6 +391,19 @@ export default function Player({
 
                     {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
                         name={!policy.fullscreen ? "zoom-out-map" : "fullscreen-exit"}
+                        onLongPress={e=>{
+                            (async()=>{
+                                let result = await ImagePicker.launchImageLibraryAsync({
+                                    mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                                    allowsEditing: true,
+                                  });
+                                if(!result.cancelled){
+                                    if(available){
+                                        await Sharing.shareAsync(result.assets[0].uri)
+                                    }
+                                }
+                            })();
+                        }}
                         onPress={e=>{
                             changePolicy("fullscreen", !policy.fullscreen)
                         }}/>}
@@ -389,11 +415,11 @@ export default function Player({
                         const a=chunks?.[status.i];
                         return state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]
                     }}
-                    style={{width:"100%",textAlign:"center",position:"absolute",bottom:20,fontSize:20,...subtitleStyle}}
-                    title={false!=controls.subtitle ? chunks[status.i]?.text : ""}
+                    style={{width:"100%",textAlign:"center",position:"absolute",fontSize:20,...subtitleStyle}}
+                    title={false!=controls.subtitle ? chunks[status.i]?.text||title : ""}
                     my={chunks[status.i]?.my}
                     autoChallenge={policy.autoChallenge}
-                    numberOfLines={2}
+                    numberOfLines={4}
                     adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
                     show={policy.caption}>
@@ -424,10 +450,18 @@ export default function Player({
                         />}
                 </Subtitle>
 
+                {policy.fullscreen && status.i==-1 && 
+                    <View style={{justifyContent:"center", bottom:50, position:"absolute", width:"100%"}}>
+                        <Text style={{color:"red", fontWeight:"bold", fontSize:30,textAlign:"center"}}>
+                            {`每天2分钟\n跟读TED\n自动暂停\n听说自由`}
+                        </Text>
+                    </View>
+                }
+
                 <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         onProgress,
-                        duration:status.durationMillis,
+                        duration:policy.fullscreen ? chunks[chunks.length-1].end+1000 : status.durationMillis,
                         onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())
@@ -438,14 +472,14 @@ export default function Player({
         {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
-        <Recorder 
+        {!policy.fullscreen && <Recorder 
             style={{position:"absolute", right:20, bottom:100, flexDirection:"row", width:40}} 
             recordingStyle={{width:"100%"}}
             onStart={callback=>dispatch({type:"nav/pause",callback})}>
                 <View style={{alignContent:"center",backgroundColor:"lightgray", flex:1, flexGrow:1}}>
                     <Recognizer.Text style={{fontSize:20,color:"yellow",paddingLeft:20}}/>
                 </View>
-        </Recorder>
+        </Recorder>}
         </>
     )
 }
@@ -521,11 +555,9 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
 }
 
 export function Subtitle({show,i,delay,title,my, selectRecognized, children, style, score,  ...props}){
-    const color=React.useContext(ColorScheme)
     const [text, setText]=React.useState(title)
     const recognized=useSelector(selectRecognized)
-    const [showMy, setShowMy]=React.useState(false)
-
+    
     const [$title, $children]=React.useMemo(()=>{
         if(!show || Subtitle.shouldHide)
             return ["",children]
@@ -555,11 +587,10 @@ export function Subtitle({show,i,delay,title,my, selectRecognized, children, sty
     },[i, show])
     return (
         <>
-            {!Subtitle.shouldHide  && <Pressable onPressIn={e=>!!my && setShowMy(true)} onPressOut={e=>setShowMy(false)}>
-                {!!my && <MaterialIcons name="translate" size={20} color={color.primary} style={{position:"absolute", left:10, top:-60, opacity:0.6}}/>}
-                {score && <Text style={{position:"absolute", right:10, top:-60, opacity:0.6}}>{score}</Text>}
+            {!Subtitle.shouldHide  && <Pressable>
                 <Text {...props} style={style}>
-                    {showMy ? my : $title}
+                    {$title||""} {"\n"}
+                    <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
                 </Text>
             </Pressable>}
             {$children}
