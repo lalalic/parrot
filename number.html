@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script>
+            class NumberReader{
+                static random(min=10, max=100000000000){
+                    const num=parseInt(Math.random() * (max - min) + min)
+                    return num.toLocaleString('en')
+                }
+
+                static randomFloat(min, max){
+                    const num=this.random(min, max)
+                    const point=parseInt(num)%num.length
+                    if(point>0)
+                        return (num.substring(0,point)+"."+num.substring(point)).replace(",","")
+                    return num
+                }
+
+                static randomX(min, max){
+                    const x=this.randomFloat(min,max)
+                    return x+" "+["","thousand","billion", "million", "%"][parseInt(this.random(0,5))]
+                }
+
+                static async read1(num){
+                    return new Promise(resolve=>{
+                        const msg = new SpeechSynthesisUtterance(num);
+                        msg.onend=()=>setTimeout(resolve,document.querySelector('[name=timeout]').value)
+                        window.speechSynthesis.speak(msg)
+                    })
+                }
+
+                static async readAll(){
+                    const nums=document.querySelector('textarea').value
+                        .split("\n").map(a=>a.trim())
+                        .filter(a=>!!a)
+                    await this.read1(" ")
+                    for(let i=0;i<nums.length;i++){
+                        await this.read1(nums[i])
+                    }
+                }
+
+                static create(amount=10, 
+                    min=parseInt(document.querySelector("[name=min]").value), 
+                    max=parseInt(document.querySelector('[name=max]').value)){
+                    const nums=new Array(amount).fill(0).map(a=>this.randomFloat(min, max)).join("\n")
+                    document.querySelector('textarea').value=nums
+                    return this
+                }
+            }
+
+        </script>
+        <style>
+            body{
+                margin: 50px;
+            }
+            textarea{
+                width: 100%;
+                height: 500px;
+                border: 1px solid black;
+                padding:10px;
+                margin:10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div style="text-align: center;">
+            <input name="timeout" type="number" min="1000" step="500" value="2000" style="width:100px"/><br/>
+            <input name="min" type="number" min="0" step="50" value="100" style="width:100px"/><br/>
+            <input name="max" type="number" value="999" style="width:200px"/><br/>
+            <Button onclick="NumberReader.readAll()">Read</Button>
+            <Button onclick="NumberReader.create().readAll()">Create & Read</Button>
+        </div>
+        <textarea placeholder="reading numbers">
+        </textarea>
+    </body>
+</html>
