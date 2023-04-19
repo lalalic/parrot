@@ -5,6 +5,7 @@ import { ColorScheme } from "../components/default-style"
 import NumberPractice from "./number"
 import AudioBook from "./audio-book"
 import PictureBook from "./picture-book"
+import Conversion from "./openai"
 
 export default (props)=>{
     const color=React.useContext(ColorScheme)
@@ -34,6 +35,7 @@ export default (props)=>{
 }
 
 export const Widgets=globalThis.Widgets=[
+    Conversion,
     PictureBook,
     AudioBook,
     NumberPractice, 

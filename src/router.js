@@ -1,6 +1,6 @@
 import React from "react"
 import { View } from "react-native"
-import { NativeRouter, Route, Routes, Link, Outlet, useLocation} from "react-router-native"
+import { NativeRouter, Route, Routes, Link, Outlet, useLocation, useParams} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 
 import Talks from "./talks"
@@ -59,6 +59,14 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 <Route path=":slug/:policy" element={<Talk/>} />
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
                 <Route path="manage/:slug" element={<ManageList/>} />
+            </Route>
+            <Route path="/widget" element={<WithBackButton/>}>
+                <Route path=":slug" element={React.createElement(()=>{
+                        const {slug}=useParams()
+                        const Widget=globalThis.Widgets[slug]
+                        return Widget && <Widget/>
+                    })} 
+                />
             </Route>
             <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
         </Routes>

@@ -25,3 +25,7 @@ Features
 > Settings [1.0]
     > Policy: Shadowing, Dictating, Retelling
     > Language: En - Zh
+
+command
+=======
+> update native code generation : 

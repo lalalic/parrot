@@ -270,14 +270,16 @@ export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=
 
 export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
-    const {thumb,duration,title, slug}=item
+    const {thumb,duration,title, slug, isMedia}=item
     const navigate=useNavigate()
     const location=useLocation()
     return (
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
                 <Pressable onPress={e=>{
-                    if(!getLinkUri){
+                    if(isMedia==false){
+                        navigate(`/widget/${slug}`)
+                    }else if(!getLinkUri){
                         navigate(location.pathname,{replace:true, state:{id:item.id}})
                         navigate(`/talk/${slug}`)
                     }else{
