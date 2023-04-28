@@ -38,8 +38,6 @@ export default class NumberPractice extends ListMedia {
 
     createTranscript(){
         const [min = 0, max = 10000000, amount = 20] = this.props.source?.split(",").map(a=>parseInt(a))
-        this.params=Object.assign(this.params,{ min, max, amount})
-    
         for(let i=0;i<amount;i++){
             this.cues.push({text:`${Math.floor(min+Math.random()*(max-min))}`})
         }
@@ -80,8 +78,7 @@ export default class NumberPractice extends ListMedia {
                         alert(`You already have the same one.`)
                         return 
                     }
-                    const id=`${id}_${min}_${max}_${count}`
-                    dispatch({type:"talk/toggle", talk:{id, slug, title, thumb}, payload:{source, shadowing}})
+                    dispatch({type:"talk/toggle", talk:{id:`${id}_${min}_${max}_${count}`, slug, title, thumb}, payload:{source, shadowing}})
                 }}
                 renderItemText={({source})=>source}/>
         )

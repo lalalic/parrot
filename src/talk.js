@@ -39,7 +39,7 @@ export default function Talk({autoplay}){
 
     const props=React.useMemo(()=>{
         if(Widget){
-            const media=<Widget shouldPlay={autoplay} id={id}/>
+            const media=<Widget shouldPlay={autoplay} id={id} {...talk}/>
             const {controls}=media.props
             return {media,  controls}
         }else{

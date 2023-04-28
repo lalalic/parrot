@@ -6,7 +6,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { ColorScheme } from '../components/default-style';
 
-export class Media extends React.Component {
+import { selectBook } from "../store"
+
+
+class Media extends React.Component {
     static Actions=false
     static Tags=false
 
@@ -18,44 +21,37 @@ export class Media extends React.Component {
 
     static contextType=ReactReduxContext
 
-    constructor({ rate = 1, volume, positionMillis = 0 }) {
+    constructor() {
         super(...arguments)
-        let shouldPlay=false
-        const self=this
-        this.status = {
-            isLoaded: true,
-            didJustFinish: false,
-            durationMillis: 0,
-            rate,
-            volume,
-            isLoading: false,
-            set shouldPlay(v){
-                shouldPlay=v
-            },
-            get shouldPlay(){
-                return shouldPlay
-            },
-
-            get isPlaying(){
-                return shouldPlay
-            }
-        }
-        this.params={}
-        
         this.progress = new Animated.Value(0);
-        this.progress.current = 0
-        this.progress.last = 0
-
-        this.state = {
-            isPlaying:shouldPlay,
-            _status:this.status,
-            _params:this.params,
-            _progress:this.progress
-        }
+        this.state = {}
+        this.reset()
     }
 
     get slug(){
         return this.constructor.defaultProps.slug
+    }
+
+    reset(){
+        const {rate=1, volume=1}=this.props
+        this.progressing?.stop()
+        this.status = {
+            isLoaded: false, //it can be true when transcript is prepared
+            didJustFinish: false,
+            shouldPlay:false,
+            durationMillis: 0,
+            rate,
+            volume,
+            get isLoading(){
+                return !this.isLoaded
+            },
+            get isPlaying(){
+                return this.shouldPlay
+            }
+        }
+        
+        this.progress.current = 0
+        this.progress.last = 0
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -70,7 +66,6 @@ export class Media extends React.Component {
             ...this.status,
             ...particular,
             positionMillis: this.progress.current,
-            ...this.onPlaybackStatusUpdateMore?.()
         }
         console.debug(status)
         this.props.onPlaybackStatusUpdate?.(status);
@@ -101,7 +96,7 @@ export class Media extends React.Component {
     }
 
     setStatusSync({ shouldPlay, positionMillis }, shouldTriggerUpdate=true) {
-        console.debug(arguments[0])
+        shouldTriggerUpdate && console.debug(arguments[0])
         if (positionMillis != undefined) {
             const lastShouldPlay=this.status.shouldPlay
             this.setStatusSync({shouldPlay:false}, false)//stop to reset
@@ -171,30 +166,19 @@ export class Media extends React.Component {
                 {!!posterSource && (<Image source={posterSource}
                     style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
                 <Text style={{paddingTop:50, fontSize:20,height:50}}>{this.title()}</Text>
-                {this.doRenderAt()}
             </View>
         )
-    }
-
-    doRenderAt(){
-        const {i=-1}=this.state
-        if(i==-1)
-            return
-        const cue=this.cues[Math.floor(i)]
-        if(!cue)
-            return 
-        return this.renderAt(cue, Math.floor(i))
-    }
-
-    renderAt(cue,i){
-        return null
     }
 
     measureTime(a){
         return a.text.length*500
     }
 
-
+    /**
+     * List of tags
+     * @param {*} param0 
+     * @returns 
+     */
     static List=({data, onEndEditing, navigate=useNavigate(), children,
             renderItemText=a=>a.id, dispatch=useDispatch(),
             renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
@@ -222,9 +206,13 @@ export class Media extends React.Component {
         )
     }
 
+    /**
+     * List of tags
+     * @param {*} param0 
+     * @returns 
+     */
     static Tags=({talk, placeholder})=>{
         const slug=talk.slug
-        const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         React.useEffect(()=>{
@@ -255,6 +243,11 @@ export class Media extends React.Component {
         )
     }
 
+    /**
+     * To show a shortcut icon on thumb picture in home page
+     * @param {*} param0 
+     * @returns 
+     */
     static TagShortcut=({slug, style={left:10}})=>{
         const color=React.useContext(ColorScheme)
         return (
@@ -265,11 +258,18 @@ export class Media extends React.Component {
     }
 }
 
+/**
+ * create a list of transcripts, and render state.i cue
+ */
 export class ListMedia extends Media{
-    constructor(){
-        super(...arguments)
-        this.state.i=-1
-        this.cues=this.state.cues=[]
+    reset(){
+        super.reset()
+        if(this.cues){
+            this.setState({i:-1, cues:this.cues=[]})
+        }else{
+            this.state.i=-1
+            this.state.cues=this.cues=[]
+        }
     }
 
     /**
@@ -280,7 +280,6 @@ export class ListMedia extends Media{
     }
 
     doCreateTranscript(){
-        this.cues.splice(0,this.cues.length)
         const cues=this.createTranscript()
         if(cues){
             this.cues.splice(0,0,...cues)
@@ -295,13 +294,10 @@ export class ListMedia extends Media{
             }
             this.status.durationMillis=this.cues[this.cues.length-1].end+delta
         }
+        this.status.isLoaded=true
         this.onPlaybackStatusUpdate({
             transcript:[{cues:this.cues}]
         })
-    }
-
-    onPlaybackStatusUpdateMore(){
-        return {}
     }
 
     onPositionMillis(positionMillis){
@@ -328,6 +324,52 @@ export class ListMedia extends Media{
     //same logic as player calculate i
     i(positionMillis){
         return positionMillis<this.cues[0]?.time ? -1 : this.cues.findIndex(a=>a.end>=positionMillis)
+    }
+
+
+    render() {
+        const { thumb, posterSource = thumb, source, title, ...props } = this.props
+        return (
+            <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
+                {!!posterSource && (<Image source={posterSource}
+                    style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
+                {this.doRenderAt()}
+            </View>
+        )
+    }
+
+    doRenderAt(){
+        const {i=-1}=this.state
+        if(i==-1)
+            return
+        const cue=this.cues[Math.floor(i)]
+        if(!cue)
+            return 
+        return this.renderAt(cue, Math.floor(i))
+    }
+
+    renderAt(cue,i){
+        return null
+    }
+}
+
+export class TaggedListMedia extends ListMedia{
+    createTranscript(){
+        const state=this.context.store.getState()
+        this.tag=state.talks[this.props.id]?.tag
+        return selectBook(state, this.slug, this.tag)
+    }
+
+    componentDidUpdate(props, state){
+        if(this.state.tag!=state.tag){
+            this.reset()
+            this.onPlaybackStatusUpdate()
+            this.doCreateTranscript()
+        }
+    }
+
+    title(){
+        return this.tag
     }
 }
 

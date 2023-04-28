@@ -5,7 +5,6 @@ import { Audio } from 'expo-av'
 import { produce } from "immer"
 import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
-import { MaterialIcons } from '@expo/vector-icons';
 import * as Sharing from "expo-sharing"
 import * as ImagePicker from "expo-image-picker"
 
@@ -14,11 +13,7 @@ import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIco
 import { ColorScheme } from './default-style';
 import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
-const asyncCall=fn=>{
-    setTimeout(()=>{
-        fn()
-    }, 0)
-}
+const asyncCall=fn=>setTimeout(fn, 0)
 /**
  * 2 models: with or without transcript
 @TODO: 
@@ -113,6 +108,7 @@ export default function Player({
 
     const stopOnMediaStatus=React.useRef(false)
     const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
+        console.debug(status)
         stopOnMediaStatus.current=true
         const done = await video.current?.setStatusAsync(status)
         stopOnMediaStatus.current=false
@@ -141,8 +137,6 @@ export default function Player({
         }
 
         const CurrentChunkPositionMillis=(I=i)=>chunks[I]?.time ?? chunks[0]?.time
-        const PrevChunkPositionMillis=(I=i)=>chunks[I-1]?.time ?? chunks[0]?.time
-        const NextChunkPositionMillis=(I=i)=>chunks[I+1]?.time
         const nextState=(()=>{
             switch(action.type){
                 case "nav/replaySlow":
@@ -258,13 +252,9 @@ export default function Player({
         const {i, whitespacing}=state
         const nextState=(()=>{
             if(action.status.transcript){
-                console.debug("setting transcript")
-                debugger
                 setTranscript(action.status.transcript)
-                return {...state,durationMillis:action.status.durationMillis}
             }
     
-            
             if(stopOnMediaStatus.current // setting status async
                 || action.status.shouldPlay!=action.status.isPlaying // player is ajusting play status 
                 || action.status.positionMillis<=state.minPositionMillis //player offset ajustment
@@ -276,30 +266,32 @@ export default function Player({
             const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis=0,didJustFinish, 
                 i:_i=positionMillis<chunks[0]?.time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
             
+            const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
+
             if(!isLoaded){//init video pitch, props can't work
                 setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
-                return state
+                return current
             }
-
-            const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
 
             //copy temp keys from state
             ;["lastRate"].forEach(k=>k in state && (current[k]=state[k]))
 
+            const isLast=chunks.length>0 && _i==-1 && i==chunks.length-1
+
             if(positionMillis>=chunks[i]?.end && //current poisiton must be later than last's end
                 (i+1==_i //normally next
-                    || (i==chunks.length-1 && _i==-1))//last 
+                    || isLast)//last 
                     ){//current is over
                 if(policy.whitespace){
                     console.debug('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
                     setVideoStatusAsync({shouldPlay:false})
-                    const whitespacing=setTimeout(()=>dispatch({type:"whitespace/end"}),whitespace+1000)
+                    const whitespacing=setTimeout(()=>dispatch({type:!isLast ? "whitespace/end" : "media/finished"}),whitespace+1000)
                     return {...state, whitespace, whitespacing}
                 }
             }
 
-            if(didJustFinish || (chunks.length>0 && _i==-1 && i>=chunks.length-1)){
+            if(didJustFinish || isLast){
                 asyncCall(()=>dispatch({type:"media/finished"}))
             }
 

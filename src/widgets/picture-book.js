@@ -4,8 +4,7 @@ import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
 
-import { ListMedia } from "./media"
-import { selectBook } from "../store"
+import { TaggedListMedia } from "./media"
 import { PlaySound, Recorder, PressableIcon } from "../components"
 import { ManageList } from "./manage-list"
 import { useDispatch } from "react-redux"
@@ -13,7 +12,7 @@ import { useDispatch } from "react-redux"
 /**
  * some may not have audio, but the image is able to be shown
  */
-export default class PictureBook extends ListMedia {
+export default class PictureBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
         id: "picturebook",
@@ -22,6 +21,7 @@ export default class PictureBook extends ListMedia {
         thumb: require("../../assets/widget-picture-book.jpeg"),
         description: "Recognize everything in your world",
         tags:["kitchen","food"],
+        /*
         onRecordChunk({chunk, recognized}){
             if(chunk.text==recognized){
                 dispatch({type:"challenge/remove", chunk})
@@ -29,27 +29,7 @@ export default class PictureBook extends ListMedia {
                 dispatch({type:"challenge/add", chunk})
             }
         },
-    }
-
-    createTranscript(){
-        const state=this.context.store.getState()
-        this.tag=state.talks[this.props.id].tag
-        const book=selectBook(state, this.slug, this.tag)
-        book.reduce((cues,{duration=2000, ...cue},i)=>{
-            const time=i==0 ? 0 : cues[i-1].end
-            cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
-            return cues
-        },this.cues)
-    }
-
-    componentDidUpdate(props, state){
-        if(this.state.tag!=state.tag){
-            this.doCreateTranscript()
-        }
-    }
-
-    title(){
-        return this.props.tag
+        */
     }
 
     render() {
@@ -61,18 +41,13 @@ export default class PictureBook extends ListMedia {
         )
     }
 
-    renderAt({uri, audio}, i){ 
-        const {rate, volume}=this.status
-        return (
-            <PlaySound {...{key:i, audio, rate, volume}}>
-                <Image source={{uri}} style={{flex:1}}/>
-            </PlaySound>
-        )
+    renderAt({uri}){ 
+        return <Image source={{uri}} style={{flex:1}}/>
     }
 
     static Shortcut=()=><PictureBook.TagShortcut slug={PictureBook.defaultProps.slug}/>
 
-    static Tags=props=><ListMedia.Tags talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
+    static Tags=props=><TaggedListMedia.Tags talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
     static ManageList=({slug="picturebook"})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()

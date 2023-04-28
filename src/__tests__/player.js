@@ -8,12 +8,11 @@ import {act} from "react-test-renderer"
 import Player, {NavBar, Subtitle} from "../components/player"
 import {PlaySound} from "../components"
 import {Policy, selectBook} from "../store"
-import { ListMedia, Media } from "../widgets/media"
+import { ListMedia } from "../widgets/media"
 import NumberMedia from "../widgets/number"
 import AudioBook from "../widgets/audio-book"
 import PictureBook from "../widgets/picture-book"
-import { TextInput } from "react-native"
-import { current } from "@reduxjs/toolkit"
+import { Image, TextInput, ActivityIndicator } from "react-native"
 
 describe("play features",()=>{
     class TestMedia extends React.Component{
@@ -67,7 +66,6 @@ describe("play features",()=>{
     describe("without transcript",()=>{
         describe.each([
             ["Arbiteral Media", <Player media={<TestMedia/>}/>],
-            ["Empty Media", <Player media={React.createElement(class extends Media{},{shouldPlay:true})}/>],
             ["List Media", <Player media={React.createElement(class extends ListMedia{}, {shouldPlay:true})}/>]
         ])("%s", (name, element)=>{
             let player, updateStatus
@@ -80,11 +78,14 @@ describe("play features",()=>{
             it("should not change state when isPlaying!=shouldPlay, or positionMillis<minPositionMillis, or whitespacing",()=>{
                 const current=()=>player.root.findByType(NavBar).props.status
                 const status=current()
-                debugger
                 act(()=>updateStatus({isPlaying:false, shouldPlay:true}))
                 expect(status).toMatchObject(current())
                 act(()=>updateStatus({positionMillis:10, minPositionMillis:100}))
                 expect(status).toMatchObject(current())
+            })
+
+            fit("should not be loading",()=>{
+                expect(()=>player.root.findByType(ActivityIndicator)).toThrow()
             })
 
             it("should not show nav buttons, except play",()=>{
@@ -113,7 +114,7 @@ describe("play features",()=>{
             ["List Media", <Player media={React.createElement(
                 class extends ListMedia{
                     createTranscript(){
-                        return this.cues.splice(0,this.cues.length,...transcript[0].cues)
+                        return transcript[0].cues
                     }
                 },{shouldPlay:true, progressUpdateIntervalMillis}
             )}/>]
@@ -126,18 +127,18 @@ describe("play features",()=>{
                 onFinish: jest.fn(),
             }
             
-            let player, updateStatus, media;
+            let player, updateStatus, media, status;
             const durationMillis=16000
+            const [{cues}]=transcript
             
             const create0=(props,status)=>create(<Player {...{policy,...handlers,...element.props, ...props}}/>,{durationMillis,...status})
             const current=()=>player.root.findByType(Subtitle).props.i
             beforeEach(()=>{
-                ;({player, updateStatus,media}=create0());
+                ;({player, updateStatus,media, status}=create0());
                 expect(current()).toBe(-1)
             })
 
             it("should locate nth for positionMillis",()=>{
-                const [{cues}]=transcript
                 expect(cues[0].time>0).toBe(true)
                 expect(current()).toBe(-1)
 
@@ -149,19 +150,25 @@ describe("play features",()=>{
 
                 act(()=>updateStatus({positionMillis:cues[2].time+progressUpdateIntervalMillis}))
                 expect(current()).toBe(2)
+            })
+
+            it("should stop after the last",()=>{
+                act(()=>updateStatus({positionMillis:cues[2].time+progressUpdateIntervalMillis}))
+                expect(current()).toBe(2)
 
                 act(()=>updateStatus({positionMillis:cues[2].end}))
                 expect(current()).toBe(2)
-                
+
                 act(()=>{
                     updateStatus({positionMillis:cues[2].end+progressUpdateIntervalMillis})
                     jest.runOnlyPendingTimers()
                 })
                 expect(current()).toBe(0)
+                expect(status().isPlaying).toBe(false)//and stopped
             })
 
             describe("whitespace=2",()=>{
-                let player, updateStatus, media;
+                let player, updateStatus, status;
                 const current=()=>player.root.findByType(Subtitle).props.i
                 const isWhitespacing=()=>{
                     try{
@@ -173,7 +180,7 @@ describe("play features",()=>{
                 }
                 beforeEach(()=>{
                     handlers.onRecordChunkUri=()=>"/var/app/hello.wav"
-                    ;({player, updateStatus, media}=create0({policy:{...policy,whitespace:2}}));
+                    ;({player, updateStatus, status}=create0({policy:{...policy,whitespace:2}}));
                     expect(current()).toBe(-1)
                     act(()=>{
                         debugger
@@ -208,6 +215,8 @@ describe("play features",()=>{
                     act(()=>jest.runOnlyPendingTimers())//whitespacing/end
                     expect(isWhitespacing()).toBe(false)
                     expect(current()).toBe(0)
+
+                    expect(status().isPlaying).toBe(false)
                 })   
             })
 
@@ -307,7 +316,7 @@ describe("play features",()=>{
                 const source="1,10,5"
                 act(()=>input.props.onEndEditing({nativeEvent:{text:source}}))
                 const lastCall=(a=>a[a.length-1][0])(global.dispatch.mock.calls)
-                expect(lastCall).toMatchObject({type:"talk/toggle",talk:{}, payload:{source, shadowing:{}}})
+                expect(lastCall).toMatchObject({type:"talk/toggle",talk:{id:"number_1_10_5"}, payload:{source, shadowing:{}}})
             })
 
             it("source(5,1,5) should be alerted",()=>{
@@ -321,11 +330,11 @@ describe("play features",()=>{
             })
         })
         
-        it("should generate 4 numbers for (0,10,4)",()=>{
+        fit("should generate 4 numbers for (0,10,4)",()=>{
             const {media}=create(<Player media={<NumberMedia shouldPlay={true} source="0,10,4"/>}/>)
             const {cues}=media.instance
             expect(cues.length).toBe(4)
-            expect(cues.findIndex(a=>parseInt(a)<0 || parseInt(a)>10)).toBe(-1)
+            expect(cues.findIndex(a=>parseInt(a.text)<0 || parseInt(a.text)>10)).toBe(-1)
         })
     })
 
@@ -351,17 +360,15 @@ describe("play features",()=>{
         })
     })
 
-    fdescribe("picturebook: a list of pictures for english words",()=>{
-        
-        it("<Player media={<PictureBook/>}> with book",()=>{
-            selectBook.mockReturnValue([
-                {uri:"1",text:"hello"},
-                {uri:"2",text:"hello"}
-            ])
-            const {player,media, updateStatus}=create(<Player media={<PictureBook/>}/>)
-            act(()=>jest.runOnlyPendingTimers())
-            expect(player.root.findByProps({testID:"next"}).props.disabled).not.toBe(true)
-        })
+    it("PictureBook should show picture for a while",()=>{
+        selectBook.mockReturnValue([
+            {uri:"1",text:"hello"},
+            {uri:"2",text:"hello"}
+        ])
+        const {media, updateStatus}=create(<Player media={<PictureBook shouldPlay={true}/>}/>)
+        act(()=>updateStatus({positionMillis:media.instance.cues[1].time}))
+        expect(media.instance.state.i).toBe(1)
+        expect(()=>media.findByType(Image)).not.toThrow()
     })
 })
 

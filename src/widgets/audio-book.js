@@ -1,12 +1,11 @@
 import * as FileSystem from "expo-file-system"
-import { selectBook } from "../store"
-import { ListMedia } from "./media"
+import { TaggedListMedia } from "./media"
 import { PlaySound, Recognizer, Recorder } from "../components"
 import { ManageList } from "./manage-list"
 import { useDispatch } from "react-redux"
 
 
-export default class AudioBook extends ListMedia {
+export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
         id: "audiobook",
@@ -15,27 +14,6 @@ export default class AudioBook extends ListMedia {
         thumb: require("../../assets/widget-audio-book.jpeg"),
         description: "A list of audios: manage audio book with tags and practise them",
         tags:["Vocabulary","Speak","Grammar", "Talk"],
-    }
-
-    createTranscript(){
-        const state=this.context.store.getState()
-        this.tag=state.talks[this.props.id]?.tag
-        const book=selectBook(state, this.slug, this.tag)
-        book.reduce((cues,{duration, ...cue},i)=>{
-            const time=(i==0 ? 0 : cues[i-1].end)+100
-            cues.push({time, end:time+duration+this.offsetTolerance, ...cue})
-            return cues
-        },this.cues)
-    }
-
-    componentDidUpdate(props, state){
-        if(this.state.tag!=state.tag){
-            this.doCreateTranscript()
-        }
-    }
-
-    title(){
-        return this.tag
     }
 
     renderAt({text, uri}, i){ 
@@ -50,7 +28,7 @@ export default class AudioBook extends ListMedia {
 
     static Shortcut=()=><AudioBook.TagShortcut slug={AudioBook.defaultProps.slug}/>
 
-    static Tags=props=><ListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
+    static Tags=props=><TaggedListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
     static ManageList=({slug="audiobook"})=>{
         const dispatch=useDispatch()
         return (
