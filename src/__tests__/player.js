@@ -329,7 +329,7 @@ describe("play features",()=>{
         })
     })
 
-    fdescribe("audiobook: a list of audio clips",()=>{
+    describe("audiobook: a list of audio clips recorded",()=>{
         let player, updateStatus, testID, media
         const audios=[
             {uri:"1",text:"hello",duration:1000},
@@ -351,16 +351,13 @@ describe("play features",()=>{
         })
     })
 
-    describe("picturebook",()=>{
-        it("<Player media={<AudioBook/>}> without book",()=>{
-            selectBook.mockReturnValue([])
-            const {player,media, updateStatus}=create(<Player media={<PictureBook/>}/>)
-            act(()=>jest.runOnlyPendingTimers())
-            expect(player.root.findByProps({testID:"next"}).props.disabled).toBe(true)
-        })
-
-        it("<Player media={<AudioBook/>}> with book",()=>{
-            selectBook.mockReturnValue([{uri:"1",text:"hello",duration:1000},{uri:"2",text:"hello",duration:2000}])
+    fdescribe("picturebook: a list of pictures for english words",()=>{
+        
+        it("<Player media={<PictureBook/>}> with book",()=>{
+            selectBook.mockReturnValue([
+                {uri:"1",text:"hello"},
+                {uri:"2",text:"hello"}
+            ])
             const {player,media, updateStatus}=create(<Player media={<PictureBook/>}/>)
             act(()=>jest.runOnlyPendingTimers())
             expect(player.root.findByProps({testID:"next"}).props.disabled).not.toBe(true)
