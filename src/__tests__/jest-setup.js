@@ -13,6 +13,7 @@ jest.mock("../components", () => ({
 jest.mock('react-router-native', () => ({
     ...jest.requireActual('react-router-native'),
    useNavigate: () => jest.fn(),
+   Link: jest.fn(),
  }));
 
  jest.mock("react-redux",()=>({

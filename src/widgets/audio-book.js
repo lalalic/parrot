@@ -27,17 +27,16 @@ export default class AudioBook extends TaggedListMedia {
     }
 
     static Shortcut=()=><TagShortcut slug={AudioBook.defaultProps.slug}/>
-
-    static TagManagement=props=><TagManagement talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
-    static TaggedTranscript=({slug="audiobook"})=>{
+    static TagManagement=props=><TagManagement talk={AudioBook.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
+    static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         return (
             <TaggedTranscript slug={slug}
                 audioUri={item=>item.uri}
-                actions={
+                actions={tag=>
                     <Recorder size={32}
                         onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, ...record})}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, tags:[tag],...record})}
                         children={<Recognizer.Text style={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}/>}
                     />
                 }

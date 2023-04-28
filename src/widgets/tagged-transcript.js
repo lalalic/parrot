@@ -1,9 +1,10 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { FlatList, Pressable, TextInput, View, Text} from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useParams } from "react-router-native"
 import { PressableIcon, PlaySound } from "../components"
 import { ColorScheme } from "../components/default-style"
+import { selectBook } from "../store"
 
 export default Wrapper=({slug=useParams().slug})=>{
     if(Widgets[slug]?.TaggedTranscript){
@@ -42,8 +43,12 @@ export const TaggedTranscript=(()=>{
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})
-        const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
-        const data=useSelector(state=>state[slug])
+        const tagTalks=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+        if(tagTalks.length>0 && !state.tag){
+            setState({tag:tagTalks[0].tag})
+        }
+        const talks=useSelector(state=>state[slug])
+        const data=useMemo(()=>selectBook({[slug]:talks},slug, state.tag),[state.tag, talks])
         const inputStyle={fontSize:20,height:30,color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10,marginRight:10}
         const {renderItem:WidgetItem=defaultItem}=listProps
         return (
@@ -61,19 +66,16 @@ export const TaggedTranscript=(()=>{
                         />
                 </View>
                 <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
-                    {actions}
+                    {actions(state.tag)}
                     <PressableIcon name="edit" label={state.tag}
-                        onLongPress={e=>setState({tag:null})}
                         onPress={e=>setState({listing:!state.listing})}/>
-                    {state.listing && <FlatList data={tags} keyExtractor={a=>a.tag}
+                    {state.listing && <FlatList data={tagTalks} keyExtractor={a=>a.tag}
                         style={{position:"absolute",right:40,bottom:50, backgroundColor:color.inactive,padding:10}}
-                        renderItem={({item,index})=>(
-                            <>  
-                                <Pressable style={{height:40, justifyContent:"center"}}
-                                    onPress={e=>setState({listing:false, tag:item.tag})}>
-                                    <Text style={{fontSize:16}}>{item.tag}</Text>
-                                </Pressable>
-                            </>
+                        renderItem={({item: talk})=>(
+                            <Pressable style={{height:40, justifyContent:"center"}}
+                                onPress={e=>setState({listing:false, tag:talk.tag})}>
+                                <Text style={{fontSize:16}}>{talk.tag}</Text>
+                            </Pressable>
                         )}/>}
                 </View>
             </View>

@@ -480,6 +480,22 @@ export function createStore(needPersistor){
 								})
 							case "talk/clear/all":
 								return {}
+							case "audiobook/clear":
+								return produce(talks, $talks=>{
+									Object.values($talks).forEach(a=>{
+										if(a.slug=="audiobook"){
+											delete $talks[a.id]
+										}
+									})
+								})
+							case "picturebook/clear":
+								return produce(talks, $talks=>{
+									Object.values($talks).forEach(a=>{
+										if(a.slug=="picturebook"){
+											delete $talks[a.id]
+										}
+									})
+								})
 							default:
 								return talks
 						}
@@ -664,8 +680,11 @@ export function selectPolicy(state,policyName,id){
 
 export function selectBook(state, slug, tag){
 	const {[slug]:data}=state
-	if(!tag){
-		return data
-	}
-	return data.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
+	const selected=(()=>{
+		if(!tag){
+			return data
+		}
+		return data.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
+	})();
+	return selected.map(a=>({...a}))
 }

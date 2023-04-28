@@ -82,7 +82,7 @@ export default function Talk({autoplay}){
 
     const style=React.useMemo(()=>policy.visible ? {flex:1}: {height:150} ,[policy.visible])
     return (
-        <Player 
+        <Player
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>toggleTalk("challenging",!challenging ? true : undefined)}
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
@@ -91,7 +91,7 @@ export default function Talk({autoplay}){
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             onRecordChunk={({chunk:{time,end},recognized, score})=>dispatch({type:"talk/recording",talk, policy: policyName,score, record:{[`${time}-${end}`]:recognized}})}
             onRecordAudioMiss={({record:{time,end}})=>dispatch({type:"talk/recording/miss", talk, policy: policyName, record:`${time}-${end}` })}
-            {...{id:talk.id, challenging, key:policyName, policyName, policy, 
+            {...{id:talk.id, challenging, key:`${policyName}-${talk.id}`, policyName, policy, 
                 style,
                 title:talk.title,
                 ...props

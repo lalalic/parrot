@@ -83,10 +83,6 @@ export default class NumberPractice extends ListMedia {
                 renderItemText={({source})=>source}/>
         )
     }
-
-    static Actions=()=>{
-        return null
-    }
 }
 
 export class PhoneNumber extends NumberPractice{

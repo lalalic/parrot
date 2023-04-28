@@ -46,9 +46,8 @@ export default class PictureBook extends TaggedListMedia {
     }
 
     static Shortcut=()=><TagShortcut slug={PictureBook.defaultProps.slug}/>
-
     static TagManagement=props=><TagManagement talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
-    static TaggedTranscript=({slug="picturebook"})=>{
+    static TaggedTranscript=({slug=PictureBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()
         const thumbStyle={flex:1,height:width/2, padding:10}
@@ -68,29 +67,30 @@ export default class PictureBook extends TaggedListMedia {
         return (
             <TaggedTranscript 
                 slug={slug}
-                actions={<PressableIcon name="add-a-photo" 
-                    onPress={e=>{
-                        (async()=>{
-                            const select=await ImagePicker.launchCameraAsync({...options,allowsEditing:true})
-                            if(select.cancelled)
-                                return 
-                            const result=await resize(select)
-                            dispatch({type:"picturebook/record", uri:result.uri})
-                        })()
-                    }}
-                    onLongPress={e=>{
-                        (async ()=>{
-                            const select = await ImagePicker.launchImageLibraryAsync({...options,allowsMultipleSelection:true})
-                            if(select.cancelled)
-                                return 
-                            select.selected.forEach(a=>{
-                                (async ()=>{
-                                    const result=await resize(a)
-                                    dispatch({type:"picturebook/record", uri:result.uri})
-                                })()
-                            })
-                        })();
-                    }}/>}
+                actions={tag=>
+                    <PressableIcon name="add-a-photo" 
+                        onPress={e=>{
+                            (async()=>{
+                                const select=await ImagePicker.launchCameraAsync({...options,allowsEditing:true})
+                                if(select.cancelled)
+                                    return 
+                                const result=await resize(select)
+                                dispatch({type:"picturebook/record", uri:result.uri, tags:[tag]})
+                            })()
+                        }}
+                        onLongPress={e=>{
+                            (async ()=>{
+                                const select = await ImagePicker.launchImageLibraryAsync({...options,allowsMultipleSelection:true})
+                                if(select.cancelled)
+                                    return 
+                                select.selected.forEach(a=>{
+                                    (async ()=>{
+                                        const result=await resize(a)
+                                        dispatch({type:"picturebook/record", uri:result.uri, tags:[tag]})
+                                    })()
+                                })
+                            })();
+                        }}/>}
                 listProps={{
                     numColumns:2,
                     renderItem:({item,tag})=>(

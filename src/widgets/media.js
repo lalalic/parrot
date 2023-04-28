@@ -183,7 +183,7 @@ class Media extends React.Component {
     }
 
     measureTime(a){
-        return a.text.length*500
+        return (a.text?.length||1)*500
     }
 }
 
@@ -215,7 +215,7 @@ export class ListMedia extends Media{
         }
         if(this.cues.length>0){
             const delta=2*this.props.progressUpdateIntervalMillis
-            if(!this.cues[0].end){
+            if(!this.cues[this.cues.length-1].end){
                 this.cues.forEach((a,i)=>{
                     a.time=(i>0 ? this.cues[i-1].end : 0)+delta
                     a.end=a.time+(a.duration||this.measureTime(a))
@@ -366,7 +366,7 @@ export const TagManagement=({talk, placeholder})=>{
             }}
             renderItemText={item=>item.tag}
         >
-            <TagShortcut slug={slug} style={{right:10}}/>
+            {!!tags.length && <TagShortcut slug={slug} style={{right:10}}/>}
         </TagList>
     )
 }

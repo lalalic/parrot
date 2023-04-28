@@ -216,6 +216,7 @@ export default function Player({
                     if(!policy.fullscreen){
                         asyncCall(()=>onFinish?.())
                     }
+                    asyncCall(()=>onProgress.current?.(0))
                     return terminateWhitespace(
                         {shouldPlay:false, positionMillis:chunks[0]?.time},
                         {i:0}
