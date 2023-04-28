@@ -73,7 +73,7 @@ const Ted=createApi({
 				const Widget=globalThis.Widgets[slug]
 				if(Widget){
 					const {defaultProps:{id:_id, slug, title, description, thumb}}=Widget
-					if(!!id){
+					if(!!!id){
 						return {data:{id, slug, title, description, thumb}}
 					}else{
 						return {data:{id:_id, slug, title, description, thumb, ...getState().talks[id]}}

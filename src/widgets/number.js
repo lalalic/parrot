@@ -1,6 +1,6 @@
 import React from "react"
 import { useDispatch, useSelector } from "react-redux"
-import { ListMedia } from "./media";
+import { ListMedia, TagList } from "./media";
 import * as Speech from "../components/speech"
 import { Speak } from "../components";
 
@@ -58,12 +58,12 @@ export default class NumberPractice extends ListMedia {
         )
     }
 
-    static Tags=()=>{
+    static TagManagement=()=>{
         const {id, slug, title, thumb, shadowing}=this.defaultProps
         const dispatch=useDispatch()
         const list=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         return (
-            <ListMedia.List data={list} 
+            <TagList data={list} 
                 placeholder="min,max,count, such as 100,200,5"
                 onEndEditing={({nativeEvent:{text:param}})=>{
                     if(!param.trim())
@@ -104,5 +104,5 @@ export class PhoneNumber extends NumberPractice{
         this.cues.forEach(a=>a.text=a.text.replace(/./g,m=>m+" ").trim())    
     }
 
-    static Tags=props=><NumberPractice.Tags talk={this.defaultProps} {...props}/>
+    static TagManagement=props=><NumberPractice.TagManagement talk={this.defaultProps} {...props}/>
 }

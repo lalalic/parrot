@@ -36,7 +36,7 @@ describe("talk",()=>{
             let top
             const widget={slug:"Hello"}
             const Widget=Widgets[widget.slug]=React.forwardRef((props, ref)=><div ref={ref}/>)
-            Widget.Tags=jest.fn()
+            Widget.TagManagement=jest.fn()
             beforeEach(()=>{
                 useParams.mockReturnValue(widget)
                 Ted.useTalkQuery=jest.fn().mockReturnValue({data:widget})
@@ -47,8 +47,8 @@ describe("talk",()=>{
                 expect(()=>top.root.findByType(Widget)).not.toThrow()
             })
 
-            it("should create <slug.Tags/> ",()=>{
-                expect(()=>top.root.findByType(Widget.Tags)).not.toThrow()
+            it("should create <slug.TagManagement/> ",()=>{
+                expect(()=>top.root.findByType(Widget.TagManagement)).not.toThrow()
             })
         })
         

@@ -84,7 +84,7 @@ describe("play features",()=>{
                 expect(status).toMatchObject(current())
             })
 
-            fit("should not be loading",()=>{
+            it("should not be loading",()=>{
                 expect(()=>player.root.findByType(ActivityIndicator)).toThrow()
             })
 
@@ -308,7 +308,7 @@ describe("play features",()=>{
             let man, input
             beforeEach(()=>{
                 global.alert.mockClear()
-                man=render(<NumberMedia.Tags/>)
+                man=render(<NumberMedia.TagManagement/>)
                 input=man.root.findByType(TextInput)
             })
 
@@ -330,7 +330,7 @@ describe("play features",()=>{
             })
         })
         
-        fit("should generate 4 numbers for (0,10,4)",()=>{
+        it("should generate 4 numbers for (0,10,4)",()=>{
             const {media}=create(<Player media={<NumberMedia shouldPlay={true} source="0,10,4"/>}/>)
             const {cues}=media.instance
             expect(cues.length).toBe(4)

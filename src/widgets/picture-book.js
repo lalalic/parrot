@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
 
-import { TaggedListMedia } from "./media"
+import { TaggedListMedia, TagShortcut, TagManagement } from "./media"
 import { PlaySound, Recorder, PressableIcon } from "../components"
 import { ManageList } from "./manage-list"
 import { useDispatch } from "react-redux"
@@ -45,9 +45,9 @@ export default class PictureBook extends TaggedListMedia {
         return <Image source={{uri}} style={{flex:1}}/>
     }
 
-    static Shortcut=()=><PictureBook.TagShortcut slug={PictureBook.defaultProps.slug}/>
+    static Shortcut=()=><TagShortcut slug={PictureBook.defaultProps.slug}/>
 
-    static Tags=props=><TaggedListMedia.Tags talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
+    static TagManagement=props=><TagManagement talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
     static ManageList=({slug="picturebook"})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()

@@ -1,5 +1,5 @@
 import * as FileSystem from "expo-file-system"
-import { TaggedListMedia } from "./media"
+import { TaggedListMedia, TagShortcut, TagManagement } from "./media"
 import { PlaySound, Recognizer, Recorder } from "../components"
 import { ManageList } from "./manage-list"
 import { useDispatch } from "react-redux"
@@ -26,9 +26,9 @@ export default class AudioBook extends TaggedListMedia {
         )
     }
 
-    static Shortcut=()=><AudioBook.TagShortcut slug={AudioBook.defaultProps.slug}/>
+    static Shortcut=()=><TagShortcut slug={AudioBook.defaultProps.slug}/>
 
-    static Tags=props=><TaggedListMedia.Tags talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
+    static TagManagement=props=><TagManagement talk={this.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
     static ManageList=({slug="audiobook"})=>{
         const dispatch=useDispatch()
         return (

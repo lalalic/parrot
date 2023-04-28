@@ -28,7 +28,7 @@ export default function Talk({autoplay}){
             case "general":
                 return (
                     <Info {...{style, talk, toggleTalk,dispatch, favoritable:!Widget}}>
-                        {!!Widget?.Tags && <Widget.Tags/>}
+                        {!!Widget?.TagManagement && <Widget.TagManagement/>}
                     </Info>
                 )
             default:{

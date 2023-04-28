@@ -10,8 +10,20 @@ import { selectBook } from "../store"
 
 
 class Media extends React.Component {
-    static Actions=false
-    static Tags=false
+    /**
+     * protocol: supported actions
+     */
+     static Actions=false
+    /**
+     * protocol: Tags Management Component
+     */
+     static TagManagement=false
+
+     /**protocol: Shortcut thumbnail */
+     static Shortcut=false
+ 
+     /**protocol: a tagged transcripts management component */
+     static ManageList=false
 
     static defaultProps = {
         isWidget: true,
@@ -173,89 +185,6 @@ class Media extends React.Component {
     measureTime(a){
         return a.text.length*500
     }
-
-    /**
-     * List of tags
-     * @param {*} param0 
-     * @returns 
-     */
-    static List=({data, onEndEditing, navigate=useNavigate(), children,
-            renderItemText=a=>a.id, dispatch=useDispatch(),
-            renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
-                <Pressable key={id} 
-                    onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
-                    onLongPress={e=>dispatch({type:"talk/clear", id})}
-                    style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}>
-                    <Text style={{fontSize:16}}>{renderItemText(item)}</Text>
-                </Pressable>
-            ),
-            placeholder, 
-            inputProps:{style:inputStyle,...inputProps}={}, 
-            listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
-            style, ...props})=>{
-        const color=React.useContext(ColorScheme)
-        return (
-            <View style={[{marginTop:10, minHeight:200},style]} {...props}>
-                <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
-                    style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
-                    {...inputProps}
-                    />
-                {data.map(item=>renderItem({item}))}
-                {children}
-            </View>
-        )
-    }
-
-    /**
-     * List of tags
-     * @param {*} param0 
-     * @returns 
-     */
-    static Tags=({talk, placeholder})=>{
-        const slug=talk.slug
-        const dispatch=useDispatch()
-        const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
-        React.useEffect(()=>{
-            if(tags.length==0){
-                talk.tags.forEach(tag=>{
-                    const id=`${talk.id}_${tag}`
-                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
-                })
-            }
-        },[tags])
-
-        return (
-            <Media.List data={tags} 
-                placeholder={placeholder}
-                onEndEditing={({nativeEvent:{text:tag}})=>{
-                    tag=tag.trim()
-                    if(!tag)
-                        return 
-                   if(-1!==tags.findIndex(a=>a.tag==tag))
-                        return 
-                    const id=`${talk.id}_${tag}`
-                    dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
-                }}
-                renderItemText={item=>item.tag}
-            >
-                <Media.TagShortcut slug={slug} style={{right:10}}/>
-            </Media.List>
-        )
-    }
-
-    /**
-     * To show a shortcut icon on thumb picture in home page
-     * @param {*} param0 
-     * @returns 
-     */
-    static TagShortcut=({slug, style={left:10}})=>{
-        const color=React.useContext(ColorScheme)
-        return (
-            <Link to={`/talk/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
-                <MaterialIcons name="category" size={32} color={color.text}/>
-            </Link>
-        )
-    }
 }
 
 /**
@@ -373,3 +302,71 @@ export class TaggedListMedia extends ListMedia{
     }
 }
 
+
+export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
+    renderItemText=a=>a.id, dispatch=useDispatch(),
+    renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
+        <Pressable key={id} 
+            onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
+            onLongPress={e=>dispatch({type:"talk/clear", id})}
+            style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}>
+            <Text style={{fontSize:16}}>{renderItemText(item)}</Text>
+        </Pressable>
+    ),
+    placeholder, 
+    inputProps:{style:inputStyle,...inputProps}={}, 
+    listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
+    style, ...props})=>{
+    const color=React.useContext(ColorScheme)
+    return (
+        <View style={[{marginTop:10, minHeight:200},style]} {...props}>
+            <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
+                style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
+                {...inputProps}
+                />
+            {data.map(item=>renderItem({item}))}
+            {children}
+        </View>
+    )
+}
+
+export const TagShortcut=({slug, style={left:10}})=>{
+    const color=React.useContext(ColorScheme)
+    return (
+        <Link to={`/talk/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
+            <MaterialIcons name="category" size={32} color={color.text}/>
+        </Link>
+    )
+}
+
+export const TagManagement=({talk, placeholder})=>{
+    const slug=talk.slug
+    const dispatch=useDispatch()
+    const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+    React.useEffect(()=>{
+        if(tags.length==0){
+            talk.tags.forEach(tag=>{
+                const id=`${talk.id}_${tag}`
+                dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+            })
+        }
+    },[tags])
+
+    return (
+        <TagList data={tags} 
+            placeholder={placeholder}
+            onEndEditing={({nativeEvent:{text:tag}})=>{
+                tag=tag.trim()
+                if(!tag)
+                    return 
+               if(-1!==tags.findIndex(a=>a.tag==tag))
+                    return 
+                const id=`${talk.id}_${tag}`
+                dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+            }}
+            renderItemText={item=>item.tag}
+        >
+            <TagShortcut slug={slug} style={{right:10}}/>
+        </TagList>
+    )
+}
