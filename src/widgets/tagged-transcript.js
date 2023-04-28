@@ -6,16 +6,16 @@ import { PressableIcon, PlaySound } from "../components"
 import { ColorScheme } from "../components/default-style"
 
 export default Wrapper=({slug=useParams().slug})=>{
-    if(Widgets[slug]?.ManageList){
-        const MyManageList=Widgets[slug].ManageList
-        return <MyManageList slug={slug}/>
+    if(Widgets[slug]?.TaggedTranscript){
+        const MyTaggedTranscript=Widgets[slug].TaggedTranscript
+        return <MyTaggedTranscript slug={slug}/>
     }
-    return <ManageList slug={slug}/>
+    return <TaggedTranscript slug={slug}/>
 }
 
 
 
-export const ManageList=(()=>{
+export const TaggedTranscript=(()=>{
     function defaultItem({ item, tag , audioUri, dispatch, slug}){
         const color=React.useContext(ColorScheme)
         const [playing, setPlaying] = React.useState(false)
@@ -38,7 +38,7 @@ export const ManageList=(()=>{
         )
     }
 
-    function ManageList({slug, actions, listProps={}, audioUri=item=>item.uri}){
+    function TaggedTranscript({slug, actions, listProps={}, audioUri=item=>item.uri}){
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})
@@ -79,6 +79,6 @@ export const ManageList=(()=>{
             </View>
         )
     }
-    return ManageList
+    return TaggedTranscript
 })();
 

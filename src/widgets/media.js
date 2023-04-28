@@ -23,7 +23,7 @@ class Media extends React.Component {
      static Shortcut=false
  
      /**protocol: a tagged transcripts management component */
-     static ManageList=false
+     static TaggedTranscript=false
 
     static defaultProps = {
         isWidget: true,

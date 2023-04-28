@@ -14,7 +14,7 @@ import Favorites from "./account/favorites"
 
 import { ColorScheme } from "./components/default-style"
 import Home from "./home"
-import ManageList from "./widgets/manage-list"
+import TaggedTranscript from "./widgets/tagged-transcript"
 import ARTest from "./experiment/ar-test"
 import TTS from "./experiment/tts"
 
@@ -60,7 +60,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 <Route path=":slug" element={<Talk/>} />
                 <Route path=":slug/:policy" element={<Talk/>} />
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
-                <Route path="manage/:slug" element={<ManageList/>} />
+                <Route path="manage/:slug" element={<TaggedTranscript/>} />
             </Route>
             <Route path="/widget" element={<WithBackButton/>}>
                 <Route path=":slug" element={React.createElement(()=>{

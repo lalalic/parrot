@@ -6,7 +6,7 @@ import * as FileSystem from "expo-file-system"
 
 import { TaggedListMedia, TagShortcut, TagManagement } from "./media"
 import { PlaySound, Recorder, PressableIcon } from "../components"
-import { ManageList } from "./manage-list"
+import { TaggedTranscript } from "./tagged-transcript"
 import { useDispatch } from "react-redux"
 
 /**
@@ -48,7 +48,7 @@ export default class PictureBook extends TaggedListMedia {
     static Shortcut=()=><TagShortcut slug={PictureBook.defaultProps.slug}/>
 
     static TagManagement=props=><TagManagement talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
-    static ManageList=({slug="picturebook"})=>{
+    static TaggedTranscript=({slug="picturebook"})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()
         const thumbStyle={flex:1,height:width/2, padding:10}
@@ -66,7 +66,7 @@ export default class PictureBook extends TaggedListMedia {
         },[])
         
         return (
-            <ManageList 
+            <TaggedTranscript 
                 slug={slug}
                 actions={<PressableIcon name="add-a-photo" 
                     onPress={e=>{
