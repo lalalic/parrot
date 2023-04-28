@@ -69,7 +69,7 @@ export default function AR(){
                     }}/>
                 <PressableIcon name="airplay" label="Face"
                     onPress={async e=>{
-                        setSource({...Image.resolveAssetSource(require("../../assets/face.scn")), type:"model"})
+                        setSource({...Image.resolveAssetSource(require("../../assets/vr/face.scn")), type:"model"})
                     }}/>
                 <PressableIcon name="airplay" label="Background"
                     onPress={async e=>{

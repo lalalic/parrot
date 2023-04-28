@@ -491,7 +491,8 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
                 {playing && <PlaySound audio={audio} destroy={setPlaying}/>}
             </>
         )
-    }
+    },
+    displayName: "PlaySound"
 })
 
 export function Recorder({style, recordingStyle, children, onStart=callback=>callback(),

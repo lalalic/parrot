@@ -14,7 +14,13 @@ import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIco
 import { ColorScheme } from './default-style';
 import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
+const asyncCall=fn=>{
+    setTimeout(()=>{
+        fn()
+    }, 0)
+}
 /**
+ * 2 models: with or without transcript
 @TODO: 
 1. why is it constantly rerendered although status is not changed 
  */
@@ -37,6 +43,7 @@ export default function Player({
     const video=React.useRef()
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
+
     const autoHideActions=React.useRef()
     const autoHideProgress=React.useRef()
     const setAutoHide=React.useCallback((time)=>{
@@ -48,15 +55,8 @@ export default function Player({
         onPolicyChange?.({[key]:value})
         setAutoHide(Date.now())
     }
-    
-    React.useEffect(()=>{
-        setAutoHide(Date.now())
-    },[policy.autoHide])
 
     const [transcript, setTranscript]=React.useState(_transcript)
-    React.useEffect(()=>{
-        setTranscript(_transcript)
-    },[_transcript])
     
     /**
      * why not in Talk?
@@ -138,10 +138,6 @@ export default function Player({
                     $state[key]=newState[key]
                 }
             })
-        }
-
-        function asyncCall(fn){
-           return setTimeout(fn, 0)
         }
 
         const CurrentChunkPositionMillis=(I=i)=>chunks[I]?.time ?? chunks[0]?.time
@@ -257,14 +253,18 @@ export default function Player({
     const onProgress=React.useRef()
 
     const onMediaStatus=React.useCallback((state, action)=>{
-        setTimeout(()=>onProgress.current?.(action.status.positionMillis),0)
+        asyncCall(()=>onProgress.current?.(action.status.positionMillis))
         
-        if(action.status.transcript){
-            setTimeout(()=>setTranscript(action.status.transcript))
-        }
-
         const {i, whitespacing}=state
         const nextState=(()=>{
+            if(action.status.transcript){
+                console.debug("setting transcript")
+                debugger
+                setTranscript(action.status.transcript)
+                return {...state,durationMillis:action.status.durationMillis}
+            }
+    
+            
             if(stopOnMediaStatus.current // setting status async
                 || action.status.shouldPlay!=action.status.isPlaying // player is ajusting play status 
                 || action.status.positionMillis<=state.minPositionMillis //player offset ajustment
@@ -274,7 +274,7 @@ export default function Player({
             }
             
             const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis=0,didJustFinish, 
-                i:_i=positionMillis<=chunks[0]?.time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
+                i:_i=positionMillis<chunks[0]?.time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
             
             if(!isLoaded){//init video pitch, props can't work
                 setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
@@ -286,7 +286,10 @@ export default function Player({
             //copy temp keys from state
             ;["lastRate"].forEach(k=>k in state && (current[k]=state[k]))
 
-            if(positionMillis>=chunks[i]?.end && i+1==_i){//current is over
+            if(positionMillis>=chunks[i]?.end && //current poisiton must be later than last's end
+                (i+1==_i //normally next
+                    || (i==chunks.length-1 && _i==-1))//last 
+                    ){//current is over
                 if(policy.whitespace){
                     console.debug('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
@@ -296,15 +299,14 @@ export default function Player({
                 }
             }
 
-            if(didJustFinish || (_i==-1 && i>=chunks.length-1)){
-                setTimeout(()=>dispatch({type:"media/finished"}),0)
+            if(didJustFinish || (chunks.length>0 && _i==-1 && i>=chunks.length-1)){
+                asyncCall(()=>dispatch({type:"media/finished"}))
             }
 
             return current
         })();
 
         if(state!=nextState && !shallowEqual(state,nextState)){
-            console.debug(`video positionMillis:  ${action.status.positionMillis}`)
             dispatch({type:"media/status/changed", state:nextState})
         }
     },[policy,chunks, challenges, challenging])
@@ -324,7 +326,7 @@ export default function Player({
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
-    
+    console.debug({chunks, status})
     return (
         <>
         <SliderIcon.Container 
@@ -344,6 +346,7 @@ export default function Player({
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
                 {false!=controls.nav && <NavBar {...{
+                        testID: "navBar",
                         controls,isChallenged,
                         dispatch,status,
                         navable:chunks?.length>=2,
@@ -410,6 +413,7 @@ export default function Player({
                 </AutoHide>
 
                 <Subtitle 
+                    testID="subtitle"
                     i={status.i} 
                     selectRecognized={state=>{
                         const a=chunks?.[status.i];
@@ -533,7 +537,7 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
 
             <PlayButton size={size}  testID="play"
                 whitespacing={status.whitespace} 
-                disabled={status.whitespacing}
+                disabled={status.whitespacing || controls.play===false}
                 color={status.whitespacing ? color.warn : undefined}
                 name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
                 onPress={e=>dispatch({type:"nav/play"})}/>

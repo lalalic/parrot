@@ -13,13 +13,13 @@ export default class AudioBook extends ListMedia {
         slug: "audiobook",
         title: "Record audio as practice material",
         thumb: require("../../assets/widget-audio-book.jpeg"),
-        description: "manage audio book with tags and practise them",
+        description: "A list of audios: manage audio book with tags and practise them",
         tags:["Vocabulary","Speak","Grammar", "Talk"],
     }
 
     createTranscript(){
         const state=this.context.store.getState()
-        this.tag=state.talks[this.props.id].tag
+        this.tag=state.talks[this.props.id]?.tag
         const book=selectBook(state, this.slug, this.tag)
         book.reduce((cues,{duration, ...cue},i)=>{
             const time=(i==0 ? 0 : cues[i-1].end)+100

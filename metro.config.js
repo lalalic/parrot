@@ -3,6 +3,6 @@ const { getDefaultConfig } = require('expo/metro-config');
 
 const config = getDefaultConfig(__dirname);
 
-config.resolver.assetExts.splice(0,0,"scn","usdz","obj","mtl","fbx","bin")
+config.resolver.assetExts.splice(0,0,"scn","usdz","obj","mtl","fbx","bin","tflite","txt","wav")
 
 module.exports = config

@@ -28,4 +28,5 @@ Features
 
 command
 =======
-> update native code generation : 
+> update native code generation : expo prebuild
+> ios>pod install : to refresh xcode project files, such as source, podfile, and etc. it should run after every change of new native file, pod spec file

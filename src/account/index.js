@@ -30,6 +30,8 @@ export default ()=>{
                     {title:"Settings", data:[
                         {name:"Policy", icon:"policy"},
                         {name:"Favorites", icon:"favorite"},
+                        {name:"tts", icon:"favorite"},
+                        {name:"files", icon:"favorite"},
                     ]}
                 ]} /> 
         </View>

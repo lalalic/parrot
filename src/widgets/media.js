@@ -54,10 +54,6 @@ export class Media extends React.Component {
         }
     }
 
-    get offsetTolerance(){
-        return this.props.progressUpdateIntervalMillis*1.5
-    }
-
     get slug(){
         return this.constructor.defaultProps.slug
     }
@@ -70,12 +66,14 @@ export class Media extends React.Component {
     }
 
     onPlaybackStatusUpdate(particular) {
-        this.props.onPlaybackStatusUpdate?.({
+        const status={
             ...this.status,
             ...particular,
             positionMillis: this.progress.current,
             ...this.onPlaybackStatusUpdateMore?.()
-        });
+        }
+        console.debug(status)
+        this.props.onPlaybackStatusUpdate?.(status);
     }
 
     onPositionMillis(positionMillis){
@@ -85,8 +83,7 @@ export class Media extends React.Component {
     componentDidMount() {
         const { progressUpdateIntervalMillis, positionMillis = 0, shouldPlay } = this.props;
         this.progress.addListener(({ value }) => {
-            if (value == 0)
-                return;
+            console.debug(`setting progress.value =${value}`)
             value = Math.floor(value)
             this.onPositionMillis(this.progress.current = value)
             if (this.progress.current - this.progress.last >= progressUpdateIntervalMillis) {
@@ -96,7 +93,6 @@ export class Media extends React.Component {
         })
 
         this.setStatusAsync({ shouldPlay, positionMillis });
-        this.onPlaybackStatusUpdate();
     }
 
     componentWillUnmount() {
@@ -104,16 +100,16 @@ export class Media extends React.Component {
         this.progressing?.stop()
     }
 
-    setStatusSync({ shouldPlay, positionMillis }) {
-        console.log(JSON.stringify(arguments[0]))
+    setStatusSync({ shouldPlay, positionMillis }, shouldTriggerUpdate=true) {
+        console.debug(arguments[0])
         if (positionMillis != undefined) {
             const lastShouldPlay=this.status.shouldPlay
-            this.setStatusSync({shouldPlay:false})//stop to reset
+            this.setStatusSync({shouldPlay:false}, false)//stop to reset
 
-            this.progress.last = Math.max(0, positionMillis - (this.progress.current - this.progress.last));
+            this.progress.last = Math.max(0, positionMillis - this.props.progressUpdateIntervalMillis);
             this.progress.current = positionMillis
             
-            this.setStatusSync({shouldPlay:lastShouldPlay})//recover
+            this.setStatusSync({shouldPlay:lastShouldPlay}, false)//recover
         }
 
         if (shouldPlay != undefined) {
@@ -141,11 +137,11 @@ export class Media extends React.Component {
                         this.progress.last = 0
                     })
                     this.setState({isPlaying:true})
-                    this.onPlaybackStatusUpdate()
+                    shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
                     this.status.shouldPlay = false
-                    this.onPlaybackStatusUpdate()
+                    shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 }
             }
         }
@@ -182,11 +178,22 @@ export class Media extends React.Component {
 
     doRenderAt(){
         const {i=-1}=this.state
+        if(i==-1)
+            return
         const cue=this.cues[Math.floor(i)]
         if(!cue)
             return 
         return this.renderAt(cue, Math.floor(i))
     }
+
+    renderAt(cue,i){
+        return null
+    }
+
+    measureTime(a){
+        return a.text.length*500
+    }
+
 
     static List=({data, onEndEditing, navigate=useNavigate(), children,
             renderItemText=a=>a.id, dispatch=useDispatch(),
@@ -273,22 +280,32 @@ export class ListMedia extends Media{
     }
 
     doCreateTranscript(){
-        this.createTranscript()
+        this.cues.splice(0,this.cues.length)
+        const cues=this.createTranscript()
+        if(cues){
+            this.cues.splice(0,0,...cues)
+        }
         if(this.cues.length>0){
-            this.status.durationMillis=this.cues[this.cues.length-1].time+100
+            const delta=2*this.props.progressUpdateIntervalMillis
+            if(!this.cues[0].end){
+                this.cues.forEach((a,i)=>{
+                    a.time=(i>0 ? this.cues[i-1].end : 0)+delta
+                    a.end=a.time+(a.duration||this.measureTime(a))
+                })
+            }
+            this.status.durationMillis=this.cues[this.cues.length-1].end+delta
         }
         this.onPlaybackStatusUpdate({
-            transcript:[{cues:this.cues}], 
-            durationMillis:this.status.durationMillis
+            transcript:[{cues:this.cues}]
         })
     }
 
     onPlaybackStatusUpdateMore(){
-        return {i:this.state.i}
+        return {}
     }
 
     onPositionMillis(positionMillis){
-        const i =this.cues?.findIndex(a=>a.end>=(positionMillis-this.offsetTolerance))
+        const i =this.i(...arguments)
         if(this.state.i!=i){
             this.setState({i})
         }
@@ -303,10 +320,14 @@ export class ListMedia extends Media{
         if(typeof(positionMillis)==`undefined`){
             return super.setStatusSync(...arguments)
         }
-        const i=this.cues.findIndex(a=>a.end>=positionMillis)
-        if(i!=-1){
-            return super.setStatusSync({...arguments[0],positionMillis:this.cues[i].time})
-        }
+        const i=this.i(positionMillis)
+        positionMillis = i!=-1 ? this.cues[i]?.time : positionMillis
+        return super.setStatusSync({...arguments[0],positionMillis})
+    }
+
+    //same logic as player calculate i
+    i(positionMillis){
+        return positionMillis<this.cues[0]?.time ? -1 : this.cues.findIndex(a=>a.end>=positionMillis)
     }
 }
 

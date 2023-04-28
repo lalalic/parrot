@@ -36,20 +36,12 @@ export default class NumberPractice extends ListMedia {
         return this.props.source
     }
 
-    measureTime(text){
-        return text.length*450
-    }
-
     createTranscript(){
         const [min = 0, max = 10000000, amount = 20] = this.props.source?.split(",").map(a=>parseInt(a))
         this.params=Object.assign(this.params,{ min, max, amount})
-        let time=500
+    
         for(let i=0;i<amount;i++){
-            const text=`${Math.floor(min+Math.random()*(max-min))}`
-            const dur=this.measureTime(text)
-            const end=time+dur
-            this.cues[i]={text,time,end}
-            time=end+200
+            this.cues.push({text:`${Math.floor(min+Math.random()*(max-min))}`})
         }
     }
 

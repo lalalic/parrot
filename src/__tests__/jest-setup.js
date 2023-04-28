@@ -23,6 +23,7 @@ jest.mock('react-router-native', () => ({
  jest.mock("../components",()=>({
     ...jest.requireActual('../components'),
     Recorder:jest.fn(),
+    PlaySound: jest.fn(),
  }))
 
  jest.mock('@expo/vector-icons',()=>({
