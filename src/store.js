@@ -312,22 +312,25 @@ export function createStore(needPersistor){
 				})
 				
 			}
-			case `${book}/tag`:{
-				return produce(items,items=>{
-					checkAction(action, ["tag","uri"])
-					const {tag, uri}=action
-					if(!tag)
-						return items
-					const item=items.find(a=>a.uri==uri)
-					const i=(item.tags=item.tags||[]).indexOf(tag)
-					if(i==-1){
-						item.tags.push(tag)
-					}else{
-						item.tags.splice(i,1)
-					}
-					return items
-				})
+			case "talk/clear":{
+				if(action.slug!==book){
+					break
+				}else if(action.id!==book){//clear a tagged book
+					return items.filter(a=>{
+						if(a.tags?.indexOf(action.tag)>-1){
+							try{
+								a.uri && FileSystem.deleteAsync(a.uri,{idempotent:true})
+								a.audio && FileSystem.deleteAsync(a.audio,{idempotent:true})
+							}catch{}
+							return false
+						}
+						return true
+					})
+				}else if(action.id==book){
+					//same as book/clear, continue 
+				}
 			}
+			case "talk/clear/all":
 			case `${book}/clear`:{
 				items.forEach(a=>{
 					try{
@@ -466,36 +469,44 @@ export function createStore(needPersistor){
 								return produce(talks, $talks=>{
 									checkAction(action, ["id"])
 									const talk=$talks[action.id]
+									
 									if(talk){ 
+										const Widget=globalThis.Widgets[talk.slug]
 										Object.keys(Policy).forEach(policy=>{
 											FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
-											talk[policy]=!talk.isWidget ? undefined : globalThis.Widgets[talk.id].defaultProps[policy]
+											talk[policy]= Widget?.defaultProps[policy]
 										})
 									}
 								})
 							case "talk/clear":
 								return produce(talks, $talks=>{
-									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${action.id}`,{idempotent:true})
-									delete $talks[action.id]
-								})
-							case "talk/clear/all":
-								return {}
-							case "audiobook/clear":
-								return produce(talks, $talks=>{
-									Object.values($talks).forEach(a=>{
-										if(a.slug=="audiobook"){
+									const talk=$talks[action.id]
+									if(talk){
+										const clear=a=>{
+											FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
 											delete $talks[a.id]
 										}
-									})
-								})
-							case "picturebook/clear":
-								return produce(talks, $talks=>{
-									Object.values($talks).forEach(a=>{
-										if(a.slug=="picturebook"){
-											delete $talks[a.id]
+										clear(talk)
+										const Widget=globalThis.Widgets[talk.slug]
+										
+										if(Widget && talk.id==talk.slug){
+											Object.values($talks).forEach(a=>{
+												if(a.slug==talk.slug){
+													clear(a)
+												}
+											})
 										}
-									})
+									}
 								})
+							case "talk/clear/all":{
+								return produce(talks, $talks=>{
+									const clear=a=>{
+										FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
+										delete $talks[a.id]
+									}
+									Object.values($talks).forEach(clear)
+								})
+							}
 							default:
 								return talks
 						}

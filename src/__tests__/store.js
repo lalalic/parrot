@@ -2,6 +2,7 @@ import React from "react"
 import renderer from "react-test-renderer"
 import {Provider, createStore} from "../store"
 import "../components/default-style"
+import "../widgets"
 
 describe("store",()=>{
     it("<Provider/>=render()",()=>{
@@ -11,6 +12,8 @@ describe("store",()=>{
     })
     let store
     beforeEach(()=>store=createStore(false).store)
+
+    const addTalk=talk=>store.dispatch({type:"talk/toggle",key:"favorite", talk})
 
     describe("talk",()=>{
         const talk={id:"hello",slug:"1",title:"hello",thumb:1}
@@ -43,9 +46,10 @@ describe("store",()=>{
 
             it("talk/clear: to clear one talk",()=>{
                 store.dispatch({type:"talk/clear", id:talks[0].id})
+                expect(store.getState().talks[talks[0].id]).toBe(undefined)
+                
                 store.dispatch({type:"talk/clear", id:"not exist"})
                 store.dispatch({type:"talk/clear", id:1})
-                expect(store.getState().talks[talks[0].id]).toBe(undefined)
                 expect(store.getState().talks[talks[1].id]).toMatchObject(talks[1])
             })
     
@@ -189,14 +193,14 @@ describe("store",()=>{
 
     describe("policy",()=>{
         it("should have default polices",()=>{
-            expect(Object.keys(store.getState().policy)).toMatchObject(["general","shadowing","dictating","retelling"])
+            expect(Object.keys(store.getState().my.policy)).toMatchObject(["general","shadowing","dictating","retelling"])
         })
 
         it("should change policy partially",()=>{
-            const {shadowing}=store.getState().policy
+            const {shadowing}=store.getState().my.policy
             store.dispatch({type:"policy",target:"shadowing", payload:{chunk:5}})
-            expect(store.getState().policy.shadowing).not.toMatchObject(shadowing)
-            expect(store.getState().policy.shadowing).toMatchObject({...shadowing,chunk:5})
+            expect(store.getState().my.policy.shadowing).not.toMatchObject(shadowing)
+            expect(store.getState().my.policy.shadowing).toMatchObject({...shadowing,chunk:5})
         })
     })
 
@@ -208,6 +212,9 @@ describe("store",()=>{
         const record={uri:"xxx",duration:500, text:"good"}
             
         beforeEach(()=>{
+            addTalk({id:book, slug:book})
+            expect(!!store.getState().talks[book]).toBe(true)
+            
             expect(store.getState()[book].length).toBe(0)
             store.dispatch({type:book+"/record",...record})
             expect(store.getState()[book].length).toBe(1)
@@ -223,18 +230,6 @@ describe("store",()=>{
             expect(store.getState()[book].length).toBe(0)
         })
 
-        it(book+"/tag",()=>{
-            expect((store.getState()[book][0].tags||[]).length).toBe(0)
-            store.dispatch({type:book+"/tag", uri:record.uri, tag:"word"})
-            expect(store.getState()[book][0].tags[0]).toBe("word")
-            store.dispatch({type:book+"/tag", uri:record.uri, tag:"hello"})
-            expect(store.getState()[book][0].tags).toMatchObject(["word","hello"])
-            //toggle
-            store.dispatch({type:book+"/tag", uri:record.uri, tag:"hello"})
-            expect(store.getState()[book][0].tags.includes("hello")).toBe(false)
-            
-        })
-
         it(book+"/clear",()=>{
             store.dispatch({type:book+"/clear"})
             expect(store.getState()[book].length).toBe(0)
@@ -243,6 +238,30 @@ describe("store",()=>{
         it(book+"/set",()=>{
             store.dispatch({type:book+"/set", uri:record.uri, text:"changed"})
             expect(store.getState()[book][0]).toMatchObject({...record, text:"changed"})
+        })
+
+        describe("clear",()=>{
+            beforeEach(()=>{
+                addTalk({id:`${book}_hello`, slug:book, tag:"hello"})
+                expect(Object.values(store.getState().talks).length).toBe(2)
+
+                store.dispatch({type:book+"/record",uri:"test", text:"test", tags:["hello"]})
+                expect(store.getState()[book].length).toBe(2)
+            })
+
+            it(`{talk/clear id:"${book}", slug:"${book}"} should clear all books`,()=>{
+                store.dispatch({type:"talk/clear", id:book, slug:book})
+                expect(store.getState()[book].length).toBe(0)
+                expect(!!store.getState().talks[book]).toBe(false)
+            })
+
+            it(`{talk/clear id:"${book}", slug:"${book}", tag} should only clear tagged books`,()=>{
+                
+                store.dispatch({type:"talk/clear", id:book+"_hello", slug:book, tag:"hello"})
+                expect(!!store.getState().talks[book]).toBe(true)
+                expect(!!store.getState().talks[book+"_hello"]).toBe(false)
+                expect(store.getState()[book].length).toBe(1)
+            })
         })
     })
 

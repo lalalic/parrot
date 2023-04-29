@@ -37,8 +37,8 @@ export default function Talk({autoplay}){
                 ...Media.mediaProps({autoplay, talk, dispatch, policyName})
             }}
             >
-            <Media.Info {...{talk, policyName, toggleTalk, dispatch,navigate, Media}}/>
-            <Media.Actions {...{talk, policyName, navigate, Media}}/>
+            <Media.Info {...{talk, policyName, toggleTalk, dispatch,navigate, Media, style:{flex: 1, padding: 5, flexGrow: 1 }}}/>
+            <Media.Actions {...{talk, policyName, toggleTalk, dispatch,navigate, Media}}/>
         </Player>
     )
 }

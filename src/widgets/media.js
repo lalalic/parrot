@@ -1,22 +1,45 @@
 import React from 'react'
-import { View, Animated, Easing, Image, Text, FlatList , TextInput, Pressable, ImageBackground} from "react-native";
+import { View, Animated, Easing, Image, Text , TextInput, Pressable, ScrollView} from "react-native";
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Subtitles } from "../components/player"
+import { PressableIcon, PolicyChoice, html } from '../components';
 import { ColorScheme } from '../components/default-style';
 
 import { selectBook } from "../store"
-import { Subtitles } from "../components/player"
-
 
 class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions({talk, policyName, navigate, slug=talk.slug, Media}){
-        return null
-     }
+     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug}){
+        const { favorited, hasHistory } = useSelector(state => ({
+            favorited: state.talks[talk.id]?.favorited,
+            hasHistory: !!state.talks[talk.id]
+        }));
+        const hasTranscript = !!talk.languages?.mine?.transcript;
+        const margins = { right: 100, left: 20, top: 20, bottom: 20 };
+        return (
+            <PolicyChoice label={true} labelFade={true} value={policyName}
+                onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
+                    
+                {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
+                    onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
+                    onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
+                />}
+
+                {hasHistory && <PressableIcon name={hasHistory ? "delete" : ""}
+                    onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
+                    onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
+                />}
+
+                <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
+                    onPress={async()=> toggleTalk("favorited")}/>
+            </PolicyChoice>
+        )
+    }
     /**
      * protocol: Tags Management Component
      */
@@ -28,11 +51,15 @@ class Media extends React.Component {
      /**protocol: a tagged transcripts management component */
      static TaggedTranscript=false
 
-     static Info({talk, policyName, toggleTalk, dispatch, navigate, Media}){
-        const style = { flex: 1, padding: 5, flexGrow: 1 };
+     static Info({talk, policyName, toggleTalk, dispatch, navigate, style, Media}){
         switch (policyName) {
             case "general":
-                return ( <Media.TagManagement />)
+                return ( 
+                    <ScrollView style={style}>
+                        <Text>{talk.description}</Text>
+                        <Media.TagManagement />
+                    </ScrollView>
+                )
             default: 
                 return <Subtitles {...{ policy: policyName, style }} />;
         }

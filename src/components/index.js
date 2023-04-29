@@ -95,7 +95,7 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade, excludes=[]})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade,children, excludes=[]})=>{
     const color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
@@ -103,7 +103,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
     },[defaultValue])
     const change=k=>(setValue(k),onValueChange?.(k));
     return (
-        <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
+        <AutoShrinkNavBar style={style} label={label && "  "}>
             {"shadowing,dictating,retelling".split(",")
                 .filter(a=>excludes.indexOf(a)==-1).map(k=>(
                 <PressableIcon key={k} 
@@ -112,6 +112,27 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
                     label={!!label && k.toUpperCase()}
                     onPress={e=>change(value==k ? "general" : k)}/>
             ))}
+            {children}
+        </AutoShrinkNavBar>
+    )
+}
+
+export function AutoShrinkNavBar({children, label, style, size=4}){
+    children=React.Children.toArray(children).flat().filter(a=>!!a)
+    const popup=(()=>{
+        if(children.length<=size){
+            return null
+        }
+        return (
+            <PopMenu {...{label}}>
+                {children.splice(size-1)}
+            </PopMenu>
+        )
+    })();
+    return (
+        <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
+            {children}
+            {popup}
         </View>
     )
 }
@@ -609,5 +630,48 @@ export const Recognizer=(()=>{
 
     return Recognizer
 })();
+
+export function PopMenu({style, triggerIconName="more-vert", label, children, height=50}){
+    const color=React.useContext(ColorScheme)
+    const [listing, setListing]=React.useState(false)
+    return (
+        <View>
+            <PressableIcon name={triggerIconName} label={label} onPress={e=>setListing(!listing)}/>
+            {listing && <View pointerEvents="box-none"
+                onTouchEnd={e=>setListing(false)}
+                style={[
+                    {position:"absolute",right:0,bottom:50, backgroundColor:color.backgroundColor,padding:10, width:50},
+                    {flexDirection:"column", justifyContent:"space-around", height:height*React.Children.toArray(children).length},
+                    style
+                ]}>
+                {children}
+            </View>}
+        </View>
+    )
+}
+
+export const html = (talk, lineHeight, margins, needMy) => `
+    <html>
+        <style>
+            p{line-height:${lineHeight}%;margin:0;text-align:justify}
+            @page{
+                ${Object.keys(margins).map(k => `margin-${k}:${margins[k]}`).join(";")}
+            }
+        </style>
+        <body>
+            <h2>
+                <span>${talk.title}</span>
+                <span style="font-size:12pt;float:right;padding-right:10mm">${talk.speaker} ${new Date().asDateString()}</span>
+            </h2>
+            ${talk.languages?.mine?.transcript?.map(a => {
+    const content = a.cues.map(b => b.text).join("");
+    const my = needMy && a.cues.map(b => b.my ?? "").join("");
+    const time = ((m = 0, b = m / 1000, a = v => String(Math.floor(v)).padStart(2, '0')) => `${a(b / 60)}:${a(b % 60)}`)(a.cues[0].time);
+    return `<p><i>${time}</i> ${content}</p>${my ? `<p>${my}</p>` : ""}`;
+}).join("\n")}
+        </body>
+    </html>
+
+`;
 
                     

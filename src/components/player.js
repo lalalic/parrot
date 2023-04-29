@@ -469,14 +469,14 @@ export default function Player({
         {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
-        {!policy.fullscreen && <Recorder 
+        {/*!policy.fullscreen && <Recorder 
             style={{position:"absolute", right:20, bottom:100, flexDirection:"row", width:40}} 
             recordingStyle={{width:"100%"}}
             onStart={callback=>dispatch({type:"nav/pause",callback})}>
                 <View style={{alignContent:"center",backgroundColor:"lightgray", flex:1, flexGrow:1}}>
                     <Recognizer.Text style={{fontSize:20,color:"yellow",paddingLeft:20}}/>
                 </View>
-        </Recorder>}
+                </Recorder>*/}
         </>
     )
 }
