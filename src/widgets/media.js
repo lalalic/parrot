@@ -183,7 +183,7 @@ class Media extends React.Component {
     }
 
     measureTime(a){
-        return (a.text?.length||1)*500
+        return a.duration || (a.text?.length||1)*5*100
     }
 }
 
@@ -218,7 +218,7 @@ export class ListMedia extends Media{
             if(!this.cues[this.cues.length-1].end){
                 this.cues.forEach((a,i)=>{
                     a.time=(i>0 ? this.cues[i-1].end : 0)+delta
-                    a.end=a.time+(a.duration||this.measureTime(a))
+                    a.end=a.time+this.measureTime(a)
                 })
             }
             this.status.durationMillis=this.cues[this.cues.length-1].end+delta

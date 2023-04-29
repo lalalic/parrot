@@ -25,12 +25,7 @@ export const TaggedTranscript=(()=>{
                 onPress={e => audioUri?.(item) && setPlaying(true)}
                 onLongPress={e => dispatch({ type: `${slug}/remove`, uri: item.uri })}
                 style={{ flexDirection: "row", height: 50 }}>
-                <PressableIcon name={item.tags?.includes(tag) ? "check-circle-outline" : "radio-button-unchecked"}
-                    onPress={e => {
-                        if (tag) {
-                            dispatch({ type: `${slug}/tag`, uri: item.uri, tag })
-                        }
-                    } } />
+                <PressableIcon name={"radio-button-unchecked"}/>
                 <View style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                     <Text style={{color: playing ? color.primary : color.text}}>{item.text}</Text>
                     {playing && <PlaySound audio={audioUri(item)} destroy={setPlaying}/>}

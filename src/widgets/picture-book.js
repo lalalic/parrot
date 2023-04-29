@@ -1,5 +1,5 @@
 import React from "react"
-import { Pressable, View, Image, ImageBackground, useWindowDimensions} from "react-native"
+import { Pressable, View, Image, ImageBackground, useWindowDimensions, TextInput} from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
@@ -63,34 +63,32 @@ export default class PictureBook extends TaggedListMedia {
             FileSystem.deleteAsync(select.uri,{idempotent:true})
             return result
         },[])
-        
         return (
             <TaggedTranscript 
                 slug={slug}
-                actions={tag=>
-                    <PressableIcon name="add-a-photo" 
+                actions={tag=>{
+                    const save=async select=>{
+                        const result=await resize(select)
+                        dispatch({type:"picturebook/record", uri:result.uri, tags:[tag], text:"Name"})
+                    }
+                    return <PressableIcon name="add-a-photo" 
                         onPress={e=>{
                             (async()=>{
                                 const select=await ImagePicker.launchCameraAsync({...options,allowsEditing:true})
-                                if(select.cancelled)
-                                    return 
-                                const result=await resize(select)
-                                dispatch({type:"picturebook/record", uri:result.uri, tags:[tag]})
+                                if(!select.cancelled){
+                                    await save(select)
+                                }
                             })()
                         }}
                         onLongPress={e=>{
                             (async ()=>{
                                 const select = await ImagePicker.launchImageLibraryAsync({...options,allowsMultipleSelection:true})
-                                if(select.cancelled)
-                                    return 
-                                select.selected.forEach(a=>{
-                                    (async ()=>{
-                                        const result=await resize(a)
-                                        dispatch({type:"picturebook/record", uri:result.uri, tags:[tag]})
-                                    })()
-                                })
+                                if(!select.cancelled){ 
+                                    select.selected.forEach(save)
+                                }
                             })();
-                        }}/>}
+                        }}/>
+                }}
                 listProps={{
                     numColumns:2,
                     renderItem:({item,tag})=>(
@@ -99,20 +97,16 @@ export default class PictureBook extends TaggedListMedia {
                                 dispatch({type:`${slug}/remove`, uri:item.uri})
                             }}>
                             <ImageBackground source={item} style={{flex:1}}>
-                                <PressableIcon name={item.tags?.includes(tag) ? "check-circle-outline" : "radio-button-unchecked"} 
-                                    size={24} style={{position:"absolute",backgroundColor:"black",opacity:0.5}} color="white"
-                                    onPress={e=>{
-                                        if(tag){
-                                            dispatch({type:`${slug}/tag`, uri:item.uri, tag})
+                                <TextInput defaultValue={item.text} selectTextOnFocus={true}
+                                    style={{position:"absolute",left:5, top: 5, 
+                                        backgroundColor:"black",opacity:0.5,width:"80%",
+                                        padding:2,color:"yellow",fontSize:20
+                                    }}
+                                    onEndEditing={({nativeEvent:{text}})=>{
+                                        if(text!=item.text){
+                                            dispatch({type:"picturebook/set",uri:item.uri, text})
                                         }
                                     }}/>
-                                
-                                <Recorder text={item.text} audio={item.audio} color="white"
-                                    textStyle={{position:"absolute", bottom:-20, width:"100%", textAlign:"center"}}
-                                    style={{position:"absolute",right:0,backgroundColor:"black",opacity:0.5}} size={40}
-                                    onRecordUri={()=>`${FileSystem.documentDirectory}picturebook/${Date.now()}.wav`}
-                                    onRecord={record=>dispatch({type:"picturebook/set",uri:item.uri, ...record})}
-                                    />
                             </ImageBackground>
                         </Pressable>
                     ),
