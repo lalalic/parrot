@@ -92,10 +92,8 @@ export default class PictureBook extends TaggedListMedia {
                 listProps={{
                     numColumns:2,
                     renderItem:({item,tag})=>(
-                        <Pressable style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
-                            onLongPress={e=>{
-                                dispatch({type:`${slug}/remove`, uri:item.uri})
-                            }}>
+                        <Pressable key={item.id} style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
+                            onLongPress={e=>dispatch({type:`${slug}/remove`, uri:item.uri})}>
                             <ImageBackground source={item} style={{flex:1}}>
                                 <TextInput defaultValue={item.text} selectTextOnFocus={true}
                                     style={{position:"absolute",left:5, top: 5, 

@@ -66,7 +66,7 @@ export default function Player({
                 case 0:
                 case 1:{
                     if(policy.fullscreen){
-                        const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1].end*2.5>=5*60*1000)
+                        const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1]?.end*2.5>=5*60*1000)
                         if(i!=-1){
                             return paragraphs.slice(0,i).map(p=>p.cues).flat()
                         }
@@ -77,7 +77,7 @@ export default function Player({
                     return (paragraphs.map(p=>{
                         const text=p.cues.map(a=>a.text).join("")
                         const time=p.cues[0].time
-                        const end=p.cues[p.cues.length-1].end
+                        const end=p.cues[p.cues.length-1]?.end
                         return {text,time,end}
                     }))
                 case 10:
@@ -231,7 +231,7 @@ export default function Player({
             console.debug(`${action.type}: ${chunks[nextState.i]?.time}-${chunks[nextState.i]?.end}\n${JSON.stringify(nextState)}`)
         }
         return nextState
-    },{isLoaded:false, i:-1});
+    },{isLoaded:false, i:-1, durationMillis:0});
 
     const controls=React.useMemo(()=>{
         return {
@@ -458,7 +458,7 @@ export default function Player({
                 <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
                         onProgress,
-                        duration:policy.fullscreen ? chunks[chunks.length-1].end+1000 : status.durationMillis,
+                        duration:status.durationMillis,
                         onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
                         onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                         onSlidingComplete:e=>setAutoHide(Date.now())

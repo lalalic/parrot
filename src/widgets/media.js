@@ -7,13 +7,16 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { ColorScheme } from '../components/default-style';
 
 import { selectBook } from "../store"
+import { Subtitles } from "../components/player"
 
 
 class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions=false
+     static Actions({talk, policyName, navigate, slug=talk.slug, Media}){
+        return null
+     }
     /**
      * protocol: Tags Management Component
      */
@@ -24,6 +27,22 @@ class Media extends React.Component {
  
      /**protocol: a tagged transcripts management component */
      static TaggedTranscript=false
+
+     static Info({talk, policyName, toggleTalk, dispatch, navigate, Media}){
+        const style = { flex: 1, padding: 5, flexGrow: 1 };
+        switch (policyName) {
+            case "general":
+                return ( <Media.TagManagement />)
+            default: 
+                return <Subtitles {...{ policy: policyName, style }} />;
+        }
+     }
+
+     static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
+        const Widget=this
+        const media = <Widget shouldPlay={autoplay} {...talk} />
+        return { media, controls: media.props };
+     }
 
     static defaultProps = {
         isWidget: true,
@@ -90,7 +109,6 @@ class Media extends React.Component {
     componentDidMount() {
         const { progressUpdateIntervalMillis, positionMillis = 0, shouldPlay } = this.props;
         this.progress.addListener(({ value }) => {
-            console.debug(`setting progress.value =${value}`)
             value = Math.floor(value)
             this.onPositionMillis(this.progress.current = value)
             if (this.progress.current - this.progress.last >= progressUpdateIntervalMillis) {
@@ -317,17 +335,17 @@ export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
     inputProps:{style:inputStyle,...inputProps}={}, 
     listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
     style, ...props})=>{
-    const color=React.useContext(ColorScheme)
-    return (
-        <View style={[{marginTop:10, minHeight:200},style]} {...props}>
-            <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
-                style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
-                {...inputProps}
-                />
-            {data.map(item=>renderItem({item}))}
-            {children}
-        </View>
-    )
+        const color=React.useContext(ColorScheme)
+        return (
+            <View style={[{marginTop:10, minHeight:200},style]} {...props}>
+                <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
+                    style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
+                    {...inputProps}
+                    />
+                {data.map(item=>renderItem({item}))}
+                {children}
+            </View>
+        )
 }
 
 export const TagShortcut=({slug, style={left:10}})=>{
@@ -366,7 +384,7 @@ export const TagManagement=({talk, placeholder})=>{
             }}
             renderItemText={item=>item.tag}
         >
-            {!!tags.length && <TagShortcut slug={slug} style={{right:10}}/>}
+            {!!tags.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
 }

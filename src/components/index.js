@@ -610,19 +610,4 @@ export const Recognizer=(()=>{
     return Recognizer
 })();
 
-export const Video=(()=>{
-    return React.forwardRef(({onPlaybackStatusUpdate,...props},ref)=>{
-        return <ExpoVideo 
-            shouldCorrectPitch={true}
-            pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
-            progressUpdateIntervalMillis={100}
-            onPlaybackStatusUpdate={status=>{
-                onPlaybackStatusUpdate?.(status)
-            }}
-            {...props} 
-            ref={ref}/>
-    })
-})();
-
-
                     
