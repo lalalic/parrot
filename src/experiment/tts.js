@@ -9,8 +9,8 @@ const TensorFlowLiteTTS = NativeModules.TensorFlowLiteTTSBridge;
 export default function TTS(){
     const [audio, setAudio]=React.useState("")
     const [[tts, melgan]=[]]=useAssets([
-        require('../../assets/models/fastspeech2_quan.tflite'),
-        require('../../assets/models/mb_melgan.tflite')
+        require('../../assets/models/fastspeech2_quant.tflite'),
+        require('../../assets/models/mb_melgan_quant.tflite')
     ])
     React.useEffect(()=>{
         if(tts && melgan){
@@ -25,6 +25,7 @@ export default function TTS(){
                     tts.localUri.replace("file://",""),
                     melgan.localUri.replace("file://","")
                 )
+                console.log({audio})
                 setAudio(audio)
             })();
         }

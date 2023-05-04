@@ -3,7 +3,6 @@ import {Recognizer} from "../components"
 import { MaterialIcons } from '@expo/vector-icons';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView } from "react-native";
 
-
 const PROMPT=
     `You are an english teacher to help me practise  my speaking english.your`
     /*
@@ -12,7 +11,7 @@ const PROMPT=
         suggestion: your suggestion to improve or fix my words, 
         response: your response to my message
     }`*/
-export default class Chat extends Component{
+export class Chat extends Component{
     static defaultProps = {
         isMedia:false,
         id: "chat",
@@ -98,7 +97,6 @@ export default class Chat extends Component{
         )
     }
 }
-
 
 const InputAudio=({toggle, submit, textStyle})=>{
     const [talking,setTalking]=useState(false)

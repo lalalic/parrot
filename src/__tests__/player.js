@@ -284,6 +284,10 @@ describe("play features",()=>{
             })
 
         })
+
+        it("should support runtime duration ",()=>{
+            
+        })
     })
 
     describe("list media",()=>{

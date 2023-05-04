@@ -1,5 +1,5 @@
 import tts from "react-native-tts"
-export  function speak(text, {onStart, onDone, ...options}={}){
+export  function speak(text, {onStart, onDone, onCancel, ...options}={}){
         let a, b, c
         try{
             tts.stop()
@@ -22,7 +22,7 @@ export  function speak(text, {onStart, onDone, ...options}={}){
             b && b.remove();
             c && c.remove();
         }
-    }
+}
 
 export function stop(){
     tts.stop()

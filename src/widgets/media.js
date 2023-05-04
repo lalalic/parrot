@@ -37,6 +37,8 @@ class Media extends React.Component {
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async()=> toggleTalk("favorited")}/>
+                
+                {this.ExtendActions?.(...arguments)}
             </PolicyChoice>
         )
     }
@@ -51,13 +53,13 @@ class Media extends React.Component {
      /**protocol: a tagged transcripts management component */
      static TaggedTranscript=false
 
-     static Info({talk, policyName, toggleTalk, dispatch, navigate, style, Media}){
+     static Info({talk, policyName, toggleTalk, dispatch, navigate, style}){
         switch (policyName) {
             case "general":
                 return ( 
                     <ScrollView style={style}>
                         <Text>{talk.description}</Text>
-                        <Media.TagManagement />
+                        <this.TagManagement/>
                     </ScrollView>
                 )
             default: 
@@ -230,6 +232,24 @@ class Media extends React.Component {
     measureTime(a){
         return a.duration || (a.text?.length||1)*5*100
     }
+
+    stopTimer(){
+        this.stopAt=Date.now()
+        this.setStatusSync({shouldPlay:false},false)
+    }
+
+    resumeTimer(i){
+        extended=Date.now()-this.stopAt
+        this.cues[i].end+=extended
+        for(i=+1;i<this.cues.length;i++){
+            this.cues[i].time+=extended
+            this.cues[i].end+=extended
+        }
+        this.status.durationMillis+=extended
+        this.progress.current+=extended
+        this.setStatusSync({shouldPlay:true},false)
+        delete this.stopAt
+    }
 }
 
 /**
@@ -347,8 +367,7 @@ export class TaggedListMedia extends ListMedia{
     }
 }
 
-
-export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
+export const TagList=({data, onEndEditing, navigate=useNavigate(), children, appendable=true,
     renderItemText=a=>a.id, dispatch=useDispatch(),
     renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
         <Pressable key={id} 
@@ -365,10 +384,10 @@ export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
         const color=React.useContext(ColorScheme)
         return (
             <View style={[{marginTop:10, minHeight:200},style]} {...props}>
-                <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
+                {appendable && <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
                     style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
                     {...inputProps}
-                    />
+                    />}
                 {data.map(item=>renderItem({item}))}
                 {children}
             </View>
@@ -384,7 +403,7 @@ export const TagShortcut=({slug, style={left:10}})=>{
     )
 }
 
-export const TagManagement=({talk, placeholder})=>{
+export const TagManagement=({talk, placeholder, appendable=true})=>{
     const slug=talk.slug
     const dispatch=useDispatch()
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
@@ -400,6 +419,7 @@ export const TagManagement=({talk, placeholder})=>{
     return (
         <TagList data={tags} 
             placeholder={placeholder}
+            appendable={appendable}
             onEndEditing={({nativeEvent:{text:tag}})=>{
                 tag=tag.trim()
                 if(!tag)
@@ -411,7 +431,7 @@ export const TagManagement=({talk, placeholder})=>{
             }}
             renderItemText={item=>item.tag}
         >
-            {!!tags.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
+            {!!tags.length && appendable && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
 }

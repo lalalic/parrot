@@ -3,6 +3,7 @@ import { View } from "react-native"
 import { NativeRouter, Route, Routes, Link, Outlet, useLocation, useParams} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 
+import Home from "./home"
 import Talks from "./talks"
 import Talk from "./talk"
 import Scheduler from "./plan"
@@ -11,12 +12,10 @@ import Account from "./account"
 import Explorer from "./account/file-explorer"
 import Policy from "./account/policy"
 import Favorites from "./account/favorites"
+import Speech from "./account/speech"
 
 import { ColorScheme } from "./components/default-style"
-import Home from "./home"
 import TaggedTranscript from "./widgets/tagged-transcript"
-import ARTest from "./experiment/ar-test"
-import TTS from "./experiment/tts"
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>
@@ -48,9 +47,8 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     <Route element={<WithBackButton/>}>
                         <Route path="policy" element={<Policy/>}/>
                         <Route path="favorites" element={<Favorites/>}/>
+                        <Route path="speech" element={<Speech/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
-                        <Route path="artest" element={<ARTest/>}/>
-                        <Route path="tts" element={<TTS/>}/>
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>

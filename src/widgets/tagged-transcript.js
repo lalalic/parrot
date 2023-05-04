@@ -17,7 +17,7 @@ export default Wrapper=({slug=useParams().slug})=>{
 
 
 export const TaggedTranscript=(()=>{
-    function defaultItem({ item, tag , audioUri, dispatch, slug}){
+    function defaultItem({ item, tag , audioUri, dispatch, slug, onTextChange}){
         const color=React.useContext(ColorScheme)
         const [playing, setPlaying] = React.useState(false)
         return (
@@ -27,14 +27,15 @@ export const TaggedTranscript=(()=>{
                 style={{ flexDirection: "row", height: 50 }}>
                 <PressableIcon name={"radio-button-unchecked"}/>
                 <View style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                    <Text style={{color: playing ? color.primary : color.text}}>{item.text}</Text>
+                    <TextInput style={{color: playing ? color.primary : color.text}} value={item.text} 
+                        onEndEditing={({nativeEvent:{text}})=>text!=item.text && onTextChange?.(audioUri, text)}/>
                     {playing && <PlaySound audio={audioUri(item)} destroy={setPlaying}/>}
                 </View>
             </Pressable>
         )
     }
 
-    function TaggedTranscript({slug, actions, listProps={}, audioUri=item=>item.uri}){
+    function TaggedTranscript({slug, actions, listProps={}, audioUri=item=>item.uri, onTextChange}){
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})
@@ -56,7 +57,7 @@ export const TaggedTranscript=(()=>{
                         keyExtractor={a=>a.uri}
                         {...listProps}
                         renderItem={props=>{
-                            return <WidgetItem {...{...props,tag:state.tag, slug, dispatch, audioUri}}/>
+                            return <WidgetItem {...{...props,tag:state.tag, slug, dispatch, audioUri,onTextChange}}/>
                         }}
                         />
                 </View>

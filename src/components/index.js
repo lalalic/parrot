@@ -433,13 +433,14 @@ const lock=new (class extends Mutex{
     }
     */
 })();
-export const Speak=({text,children=null})=>{
+export const Speak=Object.assign(({text,children=null, onStart, onEnd:onDone})=>{
     React.useEffect(()=>{
         if(text){
             let releaseLock
             (async()=>{
+                onStart?.()
                 releaseLock = await lock.acquire()
-                await Speech.speak(text)
+                await Speech.speak(text, {onDone})
             })();
             return ()=>{
                 try{
@@ -451,7 +452,21 @@ export const Speak=({text,children=null})=>{
         }
     },[text])
     return children
-}
+},{
+    async prepare(text){
+        let releaseLock = await lock.acquire()
+        return [
+            async(text)=>await Speech.speak(text),
+            ()=>{
+                try{
+                    Speech.stop()
+                }finally{
+                    releaseLock?.()
+                }
+            }
+        ]
+    }
+})
 
 export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     React.useEffect(()=>{
@@ -517,8 +532,10 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
 })
 
 export function Recorder({style, recordingStyle, children, onStart=callback=>callback(),
-    name=ControlIcons.record, size=40,color:_color, onRecordUri, ...props}){
-    const [recording, $setRecording]=React.useState(false)
+    name=ControlIcons.record, size=40,color:_color, onRecordUri, recording:_initRecording=false, 
+    trigger=<PressableIcon size={size} name={name} color={_color}/>,
+    ...props}){
+    const [recording, $setRecording]=React.useState(_initRecording)
     const setRecording=React.useCallback((value)=>{
         if(value){
             return onStart(()=>$setRecording(value))
@@ -528,10 +545,11 @@ export function Recorder({style, recordingStyle, children, onStart=callback=>cal
     const content=(
         <>
             {recording && children}
-            <PressableIcon size={size} name={name} color={_color}
-                onPressIn={e=>{setRecording(true)}} 
-                onPressOut={e=>{setRecording(false)}}
-                /> 
+            {React.cloneElement(trigger,{
+                recording,
+                onPressIn:e=>setRecording(true),
+                onPressOut:e=>setRecording(false),
+            })}
             {recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}}/>}
         </>
     )

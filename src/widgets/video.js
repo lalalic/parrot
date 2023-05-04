@@ -8,28 +8,29 @@ import * as FileSystem from 'expo-file-system';
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
 
+const Clear=({talk, ...props})=>{
+    const hasHistory=useSelector(state=>!!state.talks[talks.id])
+    if(!hasHistory)
+        return null
+    return <PressableIcon {...props}/>
+}
 export default class extends React.Component{
-    static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug}){
-        const { favorited, hasHistory } = useSelector(state => ({
-            favorited: state.talks[talk.id]?.favorited,
-            hasHistory: !!state.talks[talk.id]
-        }));
+    static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
                 onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
 
-                {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
-                    disabled={!hasTranscript}
+                {hasTranscript && <PressableIcon name="print"
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name={hasHistory ? "delete" : ""}
+                <Clear name="clear" talk={talk}
                     onLongPress={e => dispatch({ type: "talk/clear", id: talk.id })}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
-                />}
+                />
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async (e) => {

@@ -21,6 +21,12 @@ export default function Talk({autoplay}){
     const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
 
     const style=policy.visible ? {flex:1}: {height:150}
+
+    const [info, actions]=React.useMemo(()=>([
+        Media.Info({talk, policyName, toggleTalk, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
+        Media.Actions({talk, policyName, toggleTalk, dispatch,navigate,})
+    ]),[talk, policyName, toggleTalk, dispatch,navigate])
+
     return (
         <Player
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
@@ -37,8 +43,8 @@ export default function Talk({autoplay}){
                 ...Media.mediaProps({autoplay, talk, dispatch, policyName})
             }}
             >
-            <Media.Info {...{talk, policyName, toggleTalk, dispatch,navigate, Media, style:{flex: 1, padding: 5, flexGrow: 1 }}}/>
-            <Media.Actions {...{talk, policyName, toggleTalk, dispatch,navigate, Media}}/>
+            {info}
+            {actions}
         </Player>
     )
 }

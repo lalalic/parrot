@@ -30,7 +30,7 @@ export default ()=>{
                     {title:"Settings", data:[
                         {name:"Policy", icon:"policy"},
                         {name:"Favorites", icon:"favorite"},
-                        {name:"tts", icon:"favorite"},
+                        {name:"Speech", icon:"compass-calibration"},
                         {name:"files", icon:"favorite"},
                     ]},
                     {title:"Developer", data:[

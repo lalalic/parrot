@@ -370,6 +370,10 @@ export function createStore(needPersistor){
 									checkAction(action,["target","payload"])
 									Object.assign($state.policy[action.target], action.payload)
 								})
+							case "tts":
+								return produce(state, $state=>{
+									$state.tts=action.tts
+								})
 						}
 						return state
 					},
