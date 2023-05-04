@@ -15,6 +15,7 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     static ExtendActions({policyName, talk}){
+        return null
         return policyName=="general" ? <Paste talk={talk}/> : null
     }
 

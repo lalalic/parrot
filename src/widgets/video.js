@@ -2,18 +2,13 @@ import React from "react"
 import { Audio , Video as ExpoVideo} from "expo-av"
 import { View, Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
-import { useSelector } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
+import { Clear } from "./media"
 
-const Clear=({talk, ...props})=>{
-    const hasHistory=useSelector(state=>!!state.talks[talks.id])
-    if(!hasHistory)
-        return null
-    return <PressableIcon {...props}/>
-}
+
 export default class extends React.Component{
     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;

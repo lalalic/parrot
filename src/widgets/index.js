@@ -7,6 +7,7 @@ import AudioBook from "./audio-book"
 import PictureBook from "./picture-book"
 import Chat from "./chat"
 import DialogBook from "./dialog-book"
+import VocabularyBook from "./vocabulary-book"
 
 export default (props)=>{
     const color=React.useContext(ColorScheme)
@@ -40,6 +41,7 @@ export const Widgets=globalThis.Widgets=[
     DialogBook,
     PictureBook,
     AudioBook,
+    VocabularyBook,
     NumberPractice, 
 ].reduce(((widgets,A)=>{
     widgets[A.defaultProps.slug]=A

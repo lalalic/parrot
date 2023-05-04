@@ -14,11 +14,7 @@ class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug}){
-        const { favorited, hasHistory } = useSelector(state => ({
-            favorited: state.talks[talk.id]?.favorited,
-            hasHistory: !!state.talks[talk.id]
-        }));
+     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -30,10 +26,10 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name={hasHistory ? "delete" : ""}
+                <Clear name="delete"
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
-                />}
+                />
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async()=> toggleTalk("favorited")}/>
@@ -409,7 +405,7 @@ export const TagManagement=({talk, placeholder, appendable=true})=>{
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
     React.useEffect(()=>{
         if(tags.length==0){
-            talk.tags.forEach(tag=>{
+            talk.tags?.forEach(tag=>{
                 const id=`${talk.id}_${tag}`
                 dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
             })
@@ -434,4 +430,11 @@ export const TagManagement=({talk, placeholder, appendable=true})=>{
             {!!tags.length && appendable && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
+}
+
+export const Clear=({talk, ...props})=>{
+    const hasHistory=useSelector(state=>!!state.talks[talks.id])
+    if(!hasHistory)
+        return null
+    return <PressableIcon {...props}/>
 }
