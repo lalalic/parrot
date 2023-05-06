@@ -10,6 +10,7 @@ import * as DocumentPicker from 'expo-document-picker'
 export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
+        cueHasDuration:true,
         id: "audiobook",
         slug: "audiobook",
         title: "Record audio as practice material",
@@ -19,12 +20,9 @@ export default class AudioBook extends TaggedListMedia {
     }
 
     renderAt({text, uri}, i){ 
-        const {debug}=this.props
         const {rate, volume}=this.status
         return (
-            <PlaySound {...{key:i, audio:uri, rate, volume}}>
-                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
-            </PlaySound>
+            <PlaySound {...{key:i, audio:uri, rate, volume}}/>
         )
     }
 

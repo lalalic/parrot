@@ -4,6 +4,7 @@ import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Speak } from "../components"
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { ColorScheme } from '../components/default-style';
@@ -73,6 +74,7 @@ class Media extends React.Component {
         isWidget: true,
         progressUpdateIntervalMillis: 100,
         positionMillis: 0,
+        cueHasDuration:false,
     }
 
     static contextType=ReactReduxContext
@@ -86,6 +88,10 @@ class Media extends React.Component {
 
     get slug(){
         return this.constructor.defaultProps.slug
+    }
+
+    get cueHasDuration(){
+        return this.constructor.defaultProps.cueHasDuration
     }
 
     reset(){
@@ -228,26 +234,6 @@ class Media extends React.Component {
     measureTime(a){
         return a.duration || 5*this.props.progressUpdateIntervalMillis
     }
-
-    stopTimer(){
-        this.stopAt=Date.now()
-        this.setStatusSync({shouldPlay:false},false)
-    }
-
-    resumeTimer(i){
-        const extended=Date.now()-this.stopAt
-        console.assert(extended)
-        delete this.stopAt
-        this.cues[i].end+=extended
-        for(i=+1;i<this.cues.length;i++){
-            this.cues[i].time+=extended
-            this.cues[i].end+=extended
-        }
-        this.status.durationMillis+=extended
-        this.progress.current+=extended
-        this.setStatusSync({shouldPlay:true},false)
-        
-    }
 }
 
 /**
@@ -337,7 +323,19 @@ export class ListMedia extends Media{
         const cue=this.cues[Math.floor(i)]
         if(!cue)
             return 
+
         return this.renderAt(cue, Math.floor(i))
+    }
+
+    speak(props){
+        if(this.cueHasDuration){
+            props={
+                ...props,
+                onStart:()=>this.setStatusSync({shouldPlay:false},false),
+                onEnd:()=>this.setStatusSync({shouldPlay:true},false)
+            }
+        }
+        return <Speak {...props} key={this.state.i}/>
     }
 
     renderAt(cue,i){
@@ -346,8 +344,10 @@ export class ListMedia extends Media{
 }
 
 export class TaggedListMedia extends ListMedia{
-    static create(talk, dispatch){
-        dispatch({type:"talk/toggle",talk:{...this.defaultProps,tag:talk.id,...talk}})
+    static create({title,tag,id, ...talk}, dispatch){
+        id=id||`${this.defaultProps.slug}${Date.now()}`
+        tag=tag||`${title}-${new Date().asDateTimeString()}`
+        dispatch({type:"talk/toggle",talk:{...this.defaultProps,id,tag,title,...talk}})
     }
 
     createTranscript(){

@@ -42,8 +42,7 @@ export default class DialogBook extends TaggedListMedia{
                 const {"Your Name":yourName, "My Name":myName, "Your Role":yourRole, "My Role":myRole}=this.params
                 const dialog=response.split("\n").filter(a=>a.startsWith(yourName) || a.startsWith(myName))
                 const title=`Role Play(${yourName}[${yourRole}], ${myName}[${myRole}])`
-                const id=`RolePlay-${yourName}-${myName}-${new Date()}`
-                DialogBook.create({id,dialog,title}, dispatch)
+                DialogBook.create({dialog,title}, dispatch)
                 return `save to @#dialog:${id}`
             }
         },
@@ -69,7 +68,7 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     renderAt({ask},i){
-        return <Speak onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)} text={ask}/>
+        return this.speak({text:ask})
     }
 }
 
@@ -78,6 +77,6 @@ const Paste=({talk})=>{
     return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
         const [title,lines]=text.split("\n").filter(a=>!!a)
         const dialog=lines.filter(a=>a.indexOf(":")!=-1)
-        DialogBook.create({id:title,title, tag:title,dialog}, dispatch)
+        DialogBook.create({title,dialog}, dispatch)
     })}/>
 }

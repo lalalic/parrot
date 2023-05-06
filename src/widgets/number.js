@@ -49,13 +49,7 @@ export default class NumberPractice extends ListMedia {
     }
 
     renderAt({text}, i){ 
-        const {debug}=this.props
-        const {rate, volume}=this.status
-        return (
-            <Speak {...{text, key:i, rate, volume}}>
-                {debug && <Text style={{fontSize:20, color:"red"}}>{i}: {text}</Text>}
-            </Speak>
-        )
+        return this.speak({text})
     }
 
     static TagManagement=()=>{

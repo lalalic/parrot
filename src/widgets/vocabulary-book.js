@@ -34,8 +34,7 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {category}=this.params
                 const words=response.split("\n").filter(a=>!!a)
                 const title=`vocabulary(${category})`
-                const id=`${category}-${new Date()}`
-                VocabularyBook.create({id,words,title}, dispatch)
+                VocabularyBook.create({words,title}, dispatch)
                 return `save to @#vocabulary:${id}`
             }
         },
@@ -64,7 +63,7 @@ export default class VocabularyBook extends TaggedListMedia{
 
     renderAt({ask},i){
         const {reverse}=this.props
-        return <Speak onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)} reverse={reverse} text={ask}/>
+        return this.speak({reverse, test:ask})
     }
 
     componentDidUpdate(props, state){
@@ -100,7 +99,7 @@ const Paste=talk=>{
     return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
         const [title,...lines]=text.split(/[\n;]/).filter(a=>!!a)
         const words=lines.filter(a=>a.indexOf(":")!=-1)
-        VocalularyBook.create({id:title,title, tag:title, words, }, dispatch)
+        VocalularyBook.create({title, words}, dispatch)
     })}/>
 }
 
