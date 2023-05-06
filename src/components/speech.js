@@ -31,3 +31,6 @@ export function stop(){
 export function setIgnoreSilentSwitch(){
     tts.setIgnoreSilentSwitch("ignore")
 }
+
+export const setDefaultLanguage=tts.setDefaultLanguage
+export const setDefaultVoice=tts.setDefaultVoice

@@ -26,7 +26,7 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                <Clear name="delete"
+                <Clear name="delete" talk={talk}
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />
@@ -226,7 +226,7 @@ class Media extends React.Component {
     }
 
     measureTime(a){
-        return a.duration || (a.text?.length||1)*5*100
+        return a.duration || 5*this.props.progressUpdateIntervalMillis
     }
 
     stopTimer(){
@@ -235,7 +235,9 @@ class Media extends React.Component {
     }
 
     resumeTimer(i){
-        extended=Date.now()-this.stopAt
+        const extended=Date.now()-this.stopAt
+        console.assert(extended)
+        delete this.stopAt
         this.cues[i].end+=extended
         for(i=+1;i<this.cues.length;i++){
             this.cues[i].time+=extended
@@ -244,7 +246,7 @@ class Media extends React.Component {
         this.status.durationMillis+=extended
         this.progress.current+=extended
         this.setStatusSync({shouldPlay:true},false)
-        delete this.stopAt
+        
     }
 }
 
@@ -272,7 +274,7 @@ export class ListMedia extends Media{
     doCreateTranscript(){
         const cues=this.createTranscript()
         if(cues){
-            this.cues.splice(0,0,...cues)
+            this.cues.splice(0,this.cues.length,...cues)
         }
         if(this.cues.length>0){
             const delta=2*this.props.progressUpdateIntervalMillis
@@ -344,6 +346,10 @@ export class ListMedia extends Media{
 }
 
 export class TaggedListMedia extends ListMedia{
+    static create(talk, dispatch){
+        dispatch({type:"talk/toggle",talk:{...this.defaultProps,tag:talk.id,...talk}})
+    }
+
     createTranscript(){
         const state=this.context.store.getState()
         this.tag=state.talks[this.props.id]?.tag
@@ -433,7 +439,7 @@ export const TagManagement=({talk, placeholder, appendable=true})=>{
 }
 
 export const Clear=({talk, ...props})=>{
-    const hasHistory=useSelector(state=>!!state.talks[talks.id])
+    const hasHistory=useSelector(state=>!!state.talks[talk.id])
     if(!hasHistory)
         return null
     return <PressableIcon {...props}/>

@@ -1,12 +1,12 @@
 import React from "react"
 import { TaggedListMedia, TagManagement } from "./media"
-import { Link } from "react-router-native"
 import { PressableIcon } from "../components"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
 export default class DialogBook extends TaggedListMedia{
     static defaultProps={
+        ...super.defaultProps,
         id:"dialog",
         slug:"dialog",
         description:"dialogs",
@@ -15,7 +15,6 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     static ExtendActions({policyName, talk}){
-        return null
         return policyName=="general" ? <Paste talk={talk}/> : null
     }
 
@@ -44,8 +43,8 @@ export default class DialogBook extends TaggedListMedia{
                 const dialog=response.split("\n").filter(a=>a.startsWith(yourName) || a.startsWith(myName))
                 const title=`Role Play(${yourName}[${yourRole}], ${myName}[${myRole}])`
                 const id=`RolePlay-${yourName}-${myName}-${new Date()}`
-                create({id,dialog,title}, dispatch)
-                return <Link to={`/talk/dialog/${id}`}>Click here to practise</Link>
+                DialogBook.create({id,dialog,title}, dispatch)
+                return `save to @#dialog:${id}`
             }
         },
     ]
@@ -70,18 +69,15 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     renderAt({ask},i){
-        return <Speak onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)}>{ask}</Speak>
+        return <Speak onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)} text={ask}/>
     }
 }
 
 const Paste=({talk})=>{
     const dispatch=useDispatch()
-    return <PressableIcon name="paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
-        const lines=text.split("\n").filter(a=>!!a)
+    return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
+        const [title,lines]=text.split("\n").filter(a=>!!a)
         const dialog=lines.filter(a=>a.indexOf(":")!=-1)
-        create({id:lines[0],dialog}, dispatch)
+        DialogBook.create({id:title,title, tag:title,dialog}, dispatch)
     })}/>
-}
-function create(talk, dispatch){
-    dispatch({type:"talk/toggle",id:talk.id, talk:{...DialogBook.defaultProps,...talk, tag:talk.id}})
 }

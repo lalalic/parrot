@@ -14,10 +14,11 @@ export const Permissions = () => {
     const [, requestReminderPermission] = Calendar.useRemindersPermissions()
 
     const calendarID=useSelector(state=>state.plan.calendar)
-    const {tts={}}=useSelector(state=>state.my)
-    if(tts.voice){
-        TTS.setDefaultVoice(tts.voice)
-    }
+    const {lang, mylang, tts={}}=useSelector(state=>state.my)
+    React.useEffect(()=>{
+        TTS.setDefaultLanguage(lang)
+        tts[lang] && TTS.setDefaultVoice(tts[lang])
+    },[lang, mylang, tts[lang], tts[mylang]])
 
     React.useEffect(() => {
         if (requestCameraPermission) {

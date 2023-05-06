@@ -6,6 +6,7 @@ import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Speak, Recognizer, PressableIcon, Recorder } from "../components"
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-native';
 
 
 export default Object.assign(
@@ -90,28 +91,33 @@ const Chat = () => {
 			const speak=async text=>{
 				if(!speak.run){
 					const [run, stop]=await Speak.prepare()
+					speak.current=0
 					speak.run=run
-					speak.stop=stop
-				}
-				if(speak.run){
-					const speaking=text.substring((speak.last||"").length).trim()
-					if(speaking.length>0){
-						await speak.run(speaking)
+					speak.stop=(finalText)=>{
+						speak.done=true
+						speak(finalText)
 					}
-					speak.last=text
+					speak.doStop=stop
+				}
+				speak.queue=text.split(/[\n\r\.\!]/g).filter(a=>!!a).slice(speak.current)
+				if(!speak.running){
+					speak.running=true
+					while(speak.queue.length>1){
+						await speak.run((speak.current++, speak.queue.pop()))
+					}
+					speak.running=false
+					if(speak.done){
+						await speak.run((speak.current++, speak.queue.pop()))
+						speak.doStop()
+					}
 				}
 			}
 			const current=messages[1]
-			const message=typeof(current?.text)=='object' ? current.text.prompt(current.text.params) : current?.text
+			const message=typeof(current?.text)=='object' ? current.text.prompt(current.text.params).replace(/\s+/g," ") : current?.text
+			const options= messageId.current && conversationId.current && {messageId: messageId.current,conversationId: conversationId.current} || undefined
 			sendMessage({
 				message,
-				options:
-					messageId.current && conversationId.current
-						? {
-								messageId: messageId.current,
-								conversationId: conversationId.current,
-							}
-						: undefined,
+				options,
 				onAccumulatedResponse: (accumulatedResponse) => {
 					messageId.current = accumulatedResponse.messageId;
 					conversationId.current = accumulatedResponse.conversationId;
@@ -127,7 +133,7 @@ const Chat = () => {
 						}
 
 						if(accumulatedResponse.isDone){
-							speak.stop()
+							speak.stop(accumulatedResponse.message)
 							if(current?.text.onSuccess){
 								newMessages[0].text=current.text.onSuccess({...current.text, response:accumulatedResponse.message, dispatch})
 							}
@@ -153,6 +159,8 @@ const Chat = () => {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [messages]);
 
+	const navigate=useNavigate()
+
 	const onSend = useCallback((msgs = []) => {
 		setMessages((previousMessages) =>GiftedChat.append(previousMessages, msgs))
 	}, []);
@@ -163,18 +171,25 @@ const Chat = () => {
 				messages={messages}
 				onSend={onSend}
 				user={{_id: "user"}}
+				parsePatterns={linkStyle=>[{
+					style:linkStyle, 
+					pattern:/@#(\w+)\:(.*)/,
+					onPress(text){
+						const [,slug,id]=this.pattern.exec(text)
+						navigate(`/talk/${slug}/${id}`)
+					}
+				}]}
 				showUserAvatar={true}
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
 				renderComposer={({onSend})=><MessageComposer submit={text=>text && onSend({text})}/>}
 				renderMessageText={props=><MessageTextEx {...props} submit={(params)=>{
 					setMessages(([current, ...prevMessages]) =>{
-						current.text.params=params
-						current.text.settled=true
+						current.text={...current.text, params, settled:true}
 						return [createBotMessage('...'), current, ...prevMessages]
 					})
 				}}/>}
-				renderSend={()=>null}
+
 			/>
 			<Text>{errorMessage}</Text>
 		</View>
@@ -263,15 +278,16 @@ const InputAudio=({submit, textStyle})=>{
 }
 
 const InputText=({submit, textStyle})=>{
-	const [value, setValue]=useState("")
+	const [value, setValue]=useState("Hello")
 	return (
-			<TextInput autoFocus={true} value={value}
-					onChangeText={text=>setValue(text)}
-					onSubmitEditing={e=>{
-							submit(value)
-							setValue("")
-					}} 
-					style={{...textStyle,padding:5,fontSize:16}}/>
+			<TextInput 
+				value={value}
+				onChangeText={text=>setValue(text)}
+				onSubmitEditing={e=>{
+					submit(value)
+					setValue("")
+				}} 
+				style={{...textStyle,padding:5,fontSize:16}}/>
 	)
 }
 
@@ -288,49 +304,48 @@ const Actions=({submit, prompts})=>{
 }
 
 const MessageTextEx=({submit, ...props})=>{
-	if(typeof props.currentMessage.text == "object"){
-		const {text:{params, label, settled}}=props.currentMessage
-		const [values, setValues]=useState(params)
-		const inputStyle={borderBottom:"1px dotted lightgray",margin:5,paddingLeft:5,flex:1}
-		const paramsUI=React.useMemo(()=>{
-			const ui=[]
-			for (const key in params) {
-				if (Object.hasOwnProperty.call(params, key)) {
-					const value = params[key];
-					ui.push(
-						<View style={{flex:1, flexDirection:"row", margin:5, borderBottomWidth:1, borderBottomColor:"gray",alignItems: 'baseline'}} key={key}>
-							<Text style={{width:100, color:"yellow"}} textAlign="right">{key.toUpperCase()}</Text>
-							{(()=>{
-								if(typeof(value)!="object"){
-									return <TextInput name={key} 
-											disabled={settled}
-											style={inputStyle}
-											placeholder={key} 
-											defaultValue={value}
-											onEndEditing={({nativeEvent:{text}})=>setValues({...values, [key]:text})}/>
-								}else{
-									return React.cloneElement(value,{disabled:settled,setValue:value=>setValues({...values, [key]:value})})
-								}
-							})()}
-						</View>
-					)
-				}
-			}
-			return ui
-		},[settled])
-		return (
-			<View style={{width:250, border:"1px solid", borderRadius:5,padding:5}}>
-					<View style={{flex:1, alignItems:"center"}}><Text style={{color:"white"}}>{label.toUpperCase()}</Text></View>
-					<View style={{flex:1}}>
-						{paramsUI}
-						{!settled && <Pressable onPress={()=>submit(values)} style={{alignItems:"center"}}>
-							<Text  style={{color:"yellow",margin:5}}>SEND</Text>
-						</Pressable>}
+	if(typeof props.currentMessage.text !== "object")
+		return <MessageText {...props}/>
+	const {text:{params, label, settled}}=props.currentMessage
+	const [values, setValues]=useState(params)
+	const inputStyle={borderBottom:"1px dotted lightgray",margin:5,paddingLeft:5,flex:1}
+	const paramsUI=React.useMemo(()=>{
+		const ui=[]
+		for (const key in params) {
+			if (Object.hasOwnProperty.call(params, key)) {
+				const value = params[key];
+				ui.push(
+					<View style={{flex:1, flexDirection:"row", margin:5, borderBottomWidth:1, borderBottomColor:"gray",alignItems: 'baseline'}} key={key}>
+						<Text style={{width:100, color:"yellow"}} textAlign="right">{key.toUpperCase()}</Text>
+						{(()=>{
+							if(typeof(value)!="object"){
+								return <TextInput name={key} 
+										disabled={settled}
+										style={inputStyle}
+										placeholder={key} 
+										defaultValue={value}
+										onEndEditing={({nativeEvent:{text}})=>setValues({...values, [key]:text})}/>
+							}else{
+								return React.cloneElement(value,{disabled:settled,setValue:value=>setValues({...values, [key]:value})})
+							}
+						})()}
 					</View>
+				)
+			}
+		}
+		return ui
+	},[settled])
+	return (
+		<View style={{width:250, border:"1px solid", borderRadius:5,padding:5}}>
+			<View style={{flex:1, alignItems:"center"}}><Text style={{color:"white"}}>{label.toUpperCase()}</Text></View>
+			<View style={{flex:1}}>
+				{paramsUI}
+				{!settled && <Pressable onPress={()=>submit(values)} style={{alignItems:"center"}}>
+					<Text  style={{color:"yellow",margin:5}}>SEND</Text>
+				</Pressable>}
 			</View>
-		)
-	}
-	return <MessageText {...props}/>
+		</View>
+	)
 }
 
 export function Speaking(){

@@ -228,7 +228,7 @@ export default function Player({
             return state
         })();
         if(!shallowEqual(nextState, state)){
-            console.debug(`${action.type}: ${chunks[nextState.i]?.time}-${chunks[nextState.i]?.end}\n${JSON.stringify(nextState)}`)
+            console.debug(`${action.type}: ${chunks[nextState.i]?.time||""}-${chunks[nextState.i]?.end||""}\n${JSON.stringify(nextState)}`)
         }
         return nextState
     },{isLoaded:false, i:-1, durationMillis:0});

@@ -1,10 +1,11 @@
-import React from "react"
-import { useSelector } from "react-redux"
-import { PressableIcon } from "../components"
+import React, { useEffect } from "react"
+import { connect, useDispatch, useSelector } from "react-redux"
+import { PressableIcon, Speak } from "../components"
 import { TaggedListMedia, TagManagement } from "./media"
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
+        ...super.defaultProps,
         id:"vocabulary",
         slug:"vocabulary",
         title:"remember words",
@@ -18,29 +19,33 @@ export default class VocabularyBook extends TaggedListMedia{
     }
 
     static prompts=[
-        {label:"vocabulary", name:"vocabulary",
+        {label:"vocabulary", name:"menu-book",
             params:{
-                "category":"",
+                "category":"Kitchen",
                 "amount": "10",
             }, 
             speakable:false,
             prompt:a=>`You are english teacher. 
-                I'm an english learner from China.  
+                I am an english learner from China.  
                 Please list ${a.amount} words of ${a.category} with Chinese translation.
-                Your response format is like "hand: n, 你好; good: adj, 很好"`,
+                Your response format is like 'hand: n, 你好; good: adj, 很好' without pinyin.`,
 
             onSuccess({response,dispatch}){
-                const {category, amount}=this.params
-                const words=response.split("\n")
+                const {category}=this.params
+                const words=response.split("\n").filter(a=>!!a)
                 const title=`vocabulary(${category})`
                 const id=`${category}-${new Date()}`
-                create({id,words,title}, dispatch)
-                return <Link to={`/talk/vocabulary/${id}`}>Click here to practise</Link>
+                VocabularyBook.create({id,words,title}, dispatch)
+                return `save to @#vocabulary:${id}`
             }
         },
     ]
 
     static TagManagement=props=><TagManagement appendable={false} talk={VocabularyBook.defaultProps} placeholder="Tag: to categorize your vocabulary book" {...props}/>
+    constructor({reverse}){
+        super(...arguments)
+        this.state.reverse=reverse
+    }
     /**
      * A:B
      * lang:mylang
@@ -52,32 +57,55 @@ export default class VocabularyBook extends TaggedListMedia{
             
         return words.reduce((cues,a)=>{
             const [ask, text]=parse(a)
-            cues.push(!this.props.reverse ? {ask, text} : {ask:text, text:ask})
+            cues.push(!this.state.reverse ? {ask, text} : {ask:text, text:ask})
             return cues
         },[])
     }
 
     renderAt({ask},i){
         const {reverse}=this.props
-        const {voice, lang=voice, mylang}=useSelector(state=>state.my.tts||{})
-        return <Speak voice={!reverse ? lang : mylang} onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)}>{ask}</Speak>
+        return <Speak onStart={()=>this.stopTimer()} onEnd={()=>this.resumeTimer(i)} reverse={reverse} text={ask}/>
     }
+
+    componentDidUpdate(props, state){
+        if(this.state.reverse!=state.reverse){
+            this.reset()
+            this.onPlaybackStatusUpdate()
+            this.doCreateTranscript()
+        }
+    }
+
+    render(){
+        return (
+            <>
+                {super.render()}
+                <ReverseWatcher id={this.props.id} onChange={reverse=>this.setState({reverse})}/>
+            </>
+        )
+    }
+}
+
+const ReverseWatcher=({id, onChange})=>{
+    const {reverse}=useSelector(state=>state.talks[id]||{})
+    useEffect(()=>{
+        if(id){
+            onChange(reverse)
+        }
+    },[reverse])
+    return null
 }
 
 const Paste=talk=>{
     const dispatch=useDispatch()
-    return <PressableIcon name="paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
-        const lines=text.split(/[\n;]/).filter(a=>!!a)
+    return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
+        const [title,...lines]=text.split(/[\n;]/).filter(a=>!!a)
         const words=lines.filter(a=>a.indexOf(":")!=-1)
-        create({id:lines[0],words}, dispatch)
+        VocalularyBook.create({id:title,title, tag:title, words, }, dispatch)
     })}/>
 }
 
-const Reverse=({talk})=>{
+const Reverse=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
-    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",id:talk.id, reverse:!talk.reverse})}/>
-}
-
-function create(talk, dispatch){
-    dispatch({type:"talk/toggle",id:talk.id, talk:{...VocabularyBook.defaultProps,...talk, tag:talk.id}})
+    const {reverse}=useSelector(state=>state.talks[id]||{})
+    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",talk, payload:{reverse:!reverse}})}/>
 }

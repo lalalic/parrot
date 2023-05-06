@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
-import { Audio, Video as ExpoVideo } from "expo-av"
+import { Audio} from "expo-av"
 import Voice from "@react-native-voice/voice"
 import * as FileSystem from "expo-file-system"
 import { useSelector } from "react-redux"
@@ -433,9 +433,14 @@ const lock=new (class extends Mutex{
     }
     */
 })();
-export const Speak=Object.assign(({text,children=null, onStart, onEnd:onDone})=>{
+export const Speak=Object.assign(({text,children=null, onStart, onEnd:onDone, reverse})=>{
+    const {lang, mylang, tts={}}=useSelector(state=>state.my)
     React.useEffect(()=>{
-        if(text){
+        if(text && lang){
+            if(reverse){
+                Speech.setDefaultLanguage(mylang)
+                tts[mylang] && Speech.setDefaultVoice(tts[mylang])
+            }
             let releaseLock
             (async()=>{
                 onStart?.()
@@ -444,13 +449,17 @@ export const Speak=Object.assign(({text,children=null, onStart, onEnd:onDone})=>
             })();
             return ()=>{
                 try{
+                    if(reverse){
+                        Speech.setDefaultLanguage(lang)
+                        tts[lang] && Speech.setDefaultVoice(tts[lang])
+                    }
                     Speech.stop()
                 }finally{
                     releaseLock?.()
                 }
             }
         }
-    },[text])
+    },[text, lang])
     return children
 },{
     async prepare(text){

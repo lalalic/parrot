@@ -74,7 +74,7 @@ const Ted=createApi({
 				if(Widget){
 					const {defaultProps:{id:_id, slug, title, description, thumb}}=Widget
 					if(!!!id){
-						return {data:{id, slug, title, description, thumb}}
+						return {data:{id:_id, slug, title, description, thumb}}
 					}else{
 						return {data:{id:_id, slug, title, description, thumb, ...getState().talks[id]}}
 					}
@@ -370,19 +370,19 @@ export function createStore(needPersistor){
 									checkAction(action,["target","payload"])
 									Object.assign($state.policy[action.target], action.payload)
 								})
-							case "tts":
-								return produce(state, $state=>{
-									$state.tts=action.tts
-								})
+							case "my/tts":
+								return {...state, tts:{...state.tts, ...action.payload}}
+							case "my":
+								return {...state, ...action.payload}
 						}
 						return state
 					},
 					talks(talks={},action){
 						switch(action.type){
 							case "talk/toggle":
-								return produce(talks, talks=>{
-									const {key,value, policy,payload={[key]:value}, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=talks[id]||(talks[id]={slug, title, thumb,duration,link,id})
+								return produce(talks, $talks=>{
+									const {talk:{slug, title, thumb,duration,link,id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, }=action
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
 									checkAction(action, ["talk"])
 									Object.keys(payload).forEach(key=>{
 										let value=payload[key]

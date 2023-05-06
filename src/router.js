@@ -12,7 +12,7 @@ import Account from "./account"
 import Explorer from "./account/file-explorer"
 import Policy from "./account/policy"
 import Favorites from "./account/favorites"
-import Speech from "./account/speech"
+import Lang from "./account/lang"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -47,7 +47,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                     <Route element={<WithBackButton/>}>
                         <Route path="policy" element={<Policy/>}/>
                         <Route path="favorites" element={<Favorites/>}/>
-                        <Route path="speech" element={<Speech/>}/>
+                        <Route path="language" element={<Lang/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                     </Route>
                 </Route>
