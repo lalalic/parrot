@@ -433,19 +433,22 @@ const lock=new (class extends Mutex{
     }
     */
 })();
-export const Speak=Object.assign(({text,children=null, onStart, onEnd:onDone, reverse})=>{
+export const Speak=Object.assign(({text,children=null, onStart, onEnd, reverse})=>{
     const {lang, mylang, tts={}}=useSelector(state=>state.my)
     React.useEffect(()=>{
         if(text && lang){
+            const startAt=Date.now()
             if(reverse){
                 Speech.setDefaultLanguage(mylang)
                 tts[mylang] && Speech.setDefaultVoice(tts[mylang])
             }
             let releaseLock
-            (async()=>{
-                onStart?.()
+            ;(async()=>{
                 releaseLock = await lock.acquire()
-                await Speech.speak(text, {onDone})
+                await Speech.speak(text)
+                onEnd?.(Date.now()-startAt)
+                releaseLock()
+                releaseLock=null
             })();
             return ()=>{
                 try{

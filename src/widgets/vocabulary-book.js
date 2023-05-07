@@ -34,16 +34,35 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {category}=this.params
                 const words=response.split("\n").filter(a=>!!a)
                 const title=`vocabulary(${category})`
-                VocabularyBook.create({words,title}, dispatch)
-                return `save to @#vocabulary:${id}`
+                const id=VocabularyBook.create({words,title}, dispatch)
+                return `save to @#${id}`
             }
-        },
+        },{
+            label:"voca cluster", name:"menu-book",
+            params:{
+                "category":"Kitchen",
+                "amount": "30",
+            }, 
+            speakable:false,
+            prompt:a=>`You are english teacher. 
+                I am an english learner from China.  
+                Please list ${a.amount} words of ${a.category} with Chinese translation.
+                Your response format is like 'hand: n, 你好; good: adj, 很好' without pinyin.`,
+
+            onSuccess({response,dispatch}){
+                const {category}=this.params
+                const words=response.split("\n").filter(a=>!!a)
+                const title=`vocabulary(${category})`
+                const id=VocabularyBook.create({words,title}, dispatch)
+                return `save to @#${id}`
+            }
+        }
     ]
 
     static TagManagement=props=><TagManagement appendable={false} talk={VocabularyBook.defaultProps} placeholder="Tag: to categorize your vocabulary book" {...props}/>
-    constructor({reverse}){
+    constructor(){
         super(...arguments)
-        this.state.reverse=reverse
+        this.state.reverse=this.props.reverse
     }
     /**
      * A:B
@@ -63,11 +82,11 @@ export default class VocabularyBook extends TaggedListMedia{
 
     renderAt({ask},i){
         const {reverse}=this.props
-        return this.speak({reverse, test:ask})
+        return this.speak({reverse, text:ask})
     }
 
     componentDidUpdate(props, state){
-        if(this.state.reverse!=state.reverse){
+        if((!!this.state.reverse)!=(!!state.reverse)){
             this.reset()
             this.onPlaybackStatusUpdate()
             this.doCreateTranscript()
@@ -78,17 +97,20 @@ export default class VocabularyBook extends TaggedListMedia{
         return (
             <>
                 {super.render()}
-                <ReverseWatcher id={this.props.id} onChange={reverse=>this.setState({reverse})}/>
+                <ReverseLangWatcher id={this.props.id} onChange={reverse=>this.setState({reverse})}/>
             </>
         )
     }
 }
 
-const ReverseWatcher=({id, onChange})=>{
+const ReverseLangWatcher=({id, onChange})=>{
     const {reverse}=useSelector(state=>state.talks[id]||{})
+    const {lang, mylang, tts={}}=useSelector(state=>state.my)
     useEffect(()=>{
         if(id){
             onChange(reverse)
+            Speech.setDefaults(reverse ? {lang:mylang, voice: tts[mylang]} : {lang, voice:tts[lang]})
+            return ()=>Speech.setDefaults({lang, voice:tts[lang]})
         }
     },[reverse])
     return null

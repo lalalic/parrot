@@ -286,8 +286,8 @@ export class ListMedia extends Media{
     }
 
     componentDidMount(){
-        this.doCreateTranscript()
         super.componentDidMount(...arguments)
+        this.doCreateTranscript()
     }
 
     setStatusSync({positionMillis}){
@@ -328,11 +328,19 @@ export class ListMedia extends Media{
     }
 
     speak(props){
-        if(this.cueHasDuration){
+        if(!this.cueHasDuration){
+            const cue=this.cues[this.state.i]
             props={
                 ...props,
-                onStart:()=>this.setStatusSync({shouldPlay:false},false),
-                onEnd:()=>this.setStatusSync({shouldPlay:true},false)
+                onStart:()=>{
+                    console.debug("start speak "+this.state.i)
+                    this.setStatusSync({shouldPlay:false},false)
+                },
+                onEnd:(duration)=>{
+                    console.debug("end speak "+this.state.i)
+                    cue.duration=duration
+                    this.setStatusSync({shouldPlay:true},false)
+                }
             }
         }
         return <Speak {...props} key={this.state.i}/>
@@ -344,24 +352,18 @@ export class ListMedia extends Media{
 }
 
 export class TaggedListMedia extends ListMedia{
+    //@NOTE: chat.js use this id pattern
     static create({title,tag,id, ...talk}, dispatch){
         id=id||`${this.defaultProps.slug}${Date.now()}`
         tag=tag||`${title}-${new Date().asDateTimeString()}`
         dispatch({type:"talk/toggle",talk:{...this.defaultProps,id,tag,title,...talk}})
+        return id
     }
 
     createTranscript(){
         const state=this.context.store.getState()
         this.tag=state.talks[this.props.id]?.tag
         return selectBook(state, this.slug, this.tag)
-    }
-
-    componentDidUpdate(props, state){
-        if(this.state.tag!=state.tag){
-            this.reset()
-            this.onPlaybackStatusUpdate()
-            this.doCreateTranscript()
-        }
     }
 
     title(){

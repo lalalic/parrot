@@ -42,8 +42,8 @@ export default class DialogBook extends TaggedListMedia{
                 const {"Your Name":yourName, "My Name":myName, "Your Role":yourRole, "My Role":myRole}=this.params
                 const dialog=response.split("\n").filter(a=>a.startsWith(yourName) || a.startsWith(myName))
                 const title=`Role Play(${yourName}[${yourRole}], ${myName}[${myRole}])`
-                DialogBook.create({dialog,title}, dispatch)
-                return `save to @#dialog:${id}`
+                const id=DialogBook.create({dialog,title}, dispatch)
+                return `save to @#${id}`
             }
         },
     ]

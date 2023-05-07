@@ -173,10 +173,11 @@ const Chat = () => {
 				user={{_id: "user"}}
 				parsePatterns={linkStyle=>[{
 					style:linkStyle, 
-					pattern:/@#(\w+)\:(.*)/,
-					onPress(text){
-						const [,slug,id]=this.pattern.exec(text)
-						navigate(`/talk/${slug}/${id}`)
+					pattern:/@#(\w+)/,
+					onPress(text){//check id patter in Media.create
+						const [id]=/\d+/.exec(text)
+						const slug=text.substring(2).replace(id,"")
+						navigate(`/talk/${slug}/shadowing/${slug}${id}`)
 					}
 				}]}
 				showUserAvatar={true}
@@ -253,7 +254,7 @@ const InputAudio=({submit, textStyle})=>{
 	},[])
 	return (
 		<Recorder 
-			recording={true}
+			recording={false}
 			style={{...textStyle, justifyContent: 'center'}}
 			onRecordUri={()=>""}
 			onRecord={record=>setRecord(record)}

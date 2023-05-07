@@ -285,7 +285,7 @@ export default function Player({
                     ){//current is over
                 if(policy.whitespace){
                     console.debug('whitespace/start')
-                    const whitespace=policy.whitespace*(chunks[i].end-chunks[i].time)
+                    const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
                     setVideoStatusAsync({shouldPlay:false})
                     const whitespacing=setTimeout(()=>dispatch({type:!isLast ? "whitespace/end" : "media/finished"}),whitespace+1000)
                     return {...state, whitespace, whitespacing}
