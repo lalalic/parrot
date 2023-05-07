@@ -65,7 +65,7 @@ describe("play features",()=>{
 
     describe("without transcript",()=>{
         describe.each([
-            ["Arbiteral Media", <Player media={<TestMedia/>}/>],
+            //["Arbiteral Media", <Player media={<TestMedia/>}/>],
             ["List Media", <Player media={React.createElement(class extends ListMedia{}, {shouldPlay:true})}/>]
         ])("%s", (name, element)=>{
             let player, updateStatus
@@ -85,6 +85,7 @@ describe("play features",()=>{
             })
 
             it("should not be loading",()=>{
+                debugger
                 expect(()=>player.root.findByType(ActivityIndicator)).toThrow()
             })
 

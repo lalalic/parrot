@@ -4,10 +4,10 @@ import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Speak } from "../components"
 import { Subtitles } from "../components/player"
-import { PressableIcon, PolicyChoice, html } from '../components';
+import { PressableIcon, PolicyChoice, html, Speak } from '../components';
 import { ColorScheme } from '../components/default-style';
+import * as Speech from "../components/speech"
 
 import { selectBook } from "../store"
 
@@ -280,14 +280,14 @@ export class ListMedia extends Media{
 
     onPositionMillis(positionMillis){
         const i =this.i(...arguments)
-        if(this.state.i!=i){
+        if(this.state.i!=i ){//&& positionMillis>=this.cues[i].time+this.props.progressUpdateIntervalMillis){
             this.setState({i})
         }
     }
 
     componentDidMount(){
-        super.componentDidMount(...arguments)
         this.doCreateTranscript()
+        super.componentDidMount(...arguments)
     }
 
     setStatusSync({positionMillis}){
@@ -301,6 +301,7 @@ export class ListMedia extends Media{
 
     //same logic as player calculate i
     i(positionMillis){
+        //return this.cues.findLastIndex(a=>a.time>=positionMillis)
         return positionMillis<this.cues[0]?.time ? -1 : this.cues.findIndex(a=>a.end>=positionMillis)
     }
 
@@ -445,4 +446,21 @@ export const Clear=({talk, ...props})=>{
     if(!hasHistory)
         return null
     return <PressableIcon {...props}/>
+}
+
+export const ReverseLangWatcher=({id, onChange})=>{
+    const {reverse}=useSelector(state=>state.talks[id]||{})
+    const {lang, mylang, tts={}}=useSelector(state=>state.my)
+    React.useEffect(()=>{
+        if(id){
+            onChange(reverse)
+            if(reverse){
+                Speech.setDefaults({lang:mylang, voice: tts[mylang]})
+                return ()=>Speech.setDefaults({lang, voice:tts[lang]})
+            }else{
+                Speech.setDefaults({lang, voice: tts[lang]})
+            }
+        }
+    },[reverse])
+    return null
 }

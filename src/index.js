@@ -1,5 +1,5 @@
 import React from "react"
-import { SafeAreaView} from "react-native"
+import { SafeAreaView, LogBox} from "react-native"
 import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
 
@@ -8,7 +8,7 @@ import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
 
-
+LogBox.ignoreAllLogs()
 ExpoSplashScreen.preventAutoHideAsync()
 
 export default ()=>{

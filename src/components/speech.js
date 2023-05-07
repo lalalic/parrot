@@ -14,6 +14,7 @@ export  async function speak(text, {onStart, onDone, onCancel, ...options}={}){
                         if(id==utterance){
                             onDone?.()
                             b.remove()
+                            c.remove()
                             resolve()
                         }
                     })

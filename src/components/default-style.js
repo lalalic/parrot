@@ -116,3 +116,14 @@ if(!Date.prototype.getWeek){
         return firstDay.nextDay(week*7+day-firstDay.getDay())
     }
 }
+
+if(!Array.prototype.findLastIndex){
+    Array.prototype.findLastIndex=function(evaluator){
+        for(let i=this.length-1;i>-1;i--){
+            if(!!evaluator(this[i],i,this)){
+                return i
+            }
+        }
+        return -1
+    }
+}

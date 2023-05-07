@@ -1,7 +1,7 @@
-import React, { useEffect } from "react"
-import { connect, useDispatch, useSelector } from "react-redux"
-import { PressableIcon, Speak } from "../components"
-import { TaggedListMedia, TagManagement } from "./media"
+import React from "react"
+import { useDispatch, useSelector } from "react-redux"
+import { PressableIcon } from "../components"
+import { TaggedListMedia, TagManagement, ReverseLangWatcher } from "./media"
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
@@ -25,14 +25,16 @@ export default class VocabularyBook extends TaggedListMedia{
                 "amount": "10",
             }, 
             speakable:false,
-            prompt:a=>`You are english teacher. 
-                I am an english learner from China.  
+            prompt:a=>`You are english teacher. I am an english learner from China.  
                 Please list ${a.amount} words of ${a.category} with Chinese translation.
-                Your response format is like 'hand: n, 你好; good: adj, 很好' without pinyin.`,
+                Your response format is like 'hand: 手;good: 很好' without pinyin, and put all words in one paragraph, instead of a list. each word is seperated with ';'.`,
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
-                const words=response.split("\n").filter(a=>!!a)
+                const words=response.split(";").filter(a=>!!a).map(a=>{
+                    const [lang, mylang]=a.split(":")
+                    return {lang:lang.trim(), mylang:mylang.trim()}
+                })
                 const title=`vocabulary(${category})`
                 const id=VocabularyBook.create({words,title}, dispatch)
                 return `save to @#${id}`
@@ -44,10 +46,8 @@ export default class VocabularyBook extends TaggedListMedia{
                 "amount": "30",
             }, 
             speakable:false,
-            prompt:a=>`You are english teacher. 
-                I am an english learner from China.  
-                Please list ${a.amount} words of ${a.category} with Chinese translation.
-                Your response format is like 'hand: n, 你好; good: adj, 很好' without pinyin.`,
+            prompt:a=>`You are english teacher. I am an english learner from China.  
+                Please use the following words to make a sentence to help me remember them.`,
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
@@ -71,11 +71,9 @@ export default class VocabularyBook extends TaggedListMedia{
     createTranscript(){
         const state=this.context.store.getState()
         const {words=[]}=state.talks[this.props.id]||{}
-        const parse = (a,i=a.indexOf(":"))=>[a.substring(0, i), a.substring(i+1)]
             
-        return words.reduce((cues,a)=>{
-            const [ask, text]=parse(a)
-            cues.push(!this.state.reverse ? {ask, text} : {ask:text, text:ask})
+        return words.reduce((cues,{lang, mylang})=>{
+            cues.push(!this.state.reverse ? {ask:lang, text:mylang} : {ask:mylang, text:lang})
             return cues
         },[])
     }
@@ -101,19 +99,6 @@ export default class VocabularyBook extends TaggedListMedia{
             </>
         )
     }
-}
-
-const ReverseLangWatcher=({id, onChange})=>{
-    const {reverse}=useSelector(state=>state.talks[id]||{})
-    const {lang, mylang, tts={}}=useSelector(state=>state.my)
-    useEffect(()=>{
-        if(id){
-            onChange(reverse)
-            Speech.setDefaults(reverse ? {lang:mylang, voice: tts[mylang]} : {lang, voice:tts[lang]})
-            return ()=>Speech.setDefaults({lang, voice:tts[lang]})
-        }
-    },[reverse])
-    return null
 }
 
 const Paste=talk=>{

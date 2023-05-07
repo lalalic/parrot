@@ -406,63 +406,22 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
 
 // Speak, PlaySound, Recognizer, and Video share mutex lock
 const lock=new (class extends Mutex{
-    async acquire(){
-        if(this.isLocked()){
-            //await this.cancel()
-        }
-        return super.acquire()
+    runExclusive(){
+        this.cancel()
+        return super.runExclusive(...arguments)
     }
-    /*
-    constructor(){
-        this.lock=this.createPromise()
-        this.lock.resolve()
-    }
-    createPromise(cancel, placeholder){
-        return Object.assign(new Promise((resolve,reject)=>placeholder={resolve, reject}), {...placeholder, cancel})
-    }
-
-    async acquire(cancel){
-        if(cancel){
-            this.lock.cancel?.()
-            this.lock.resolve()
-            const lock=this.lock=this.createPromise(cancel)
-            return Promise.resolve(()=>lock.resolve())
-        }else{
-            return Promise.resolve(()=>void 0)
-        }
-    }
-    */
 })();
-export const Speak=Object.assign(({text,children=null, onStart, onEnd, reverse})=>{
-    const {lang, mylang, tts={}}=useSelector(state=>state.my)
+export const Speak=Object.assign(({text,children=null, onStart, onEnd})=>{
     React.useEffect(()=>{
-        if(text && lang){
-            const startAt=Date.now()
-            if(reverse){
-                Speech.setDefaultLanguage(mylang)
-                tts[mylang] && Speech.setDefaultVoice(tts[mylang])
-            }
-            let releaseLock
-            ;(async()=>{
-                releaseLock = await lock.acquire()
+        (async(startAt)=>{
+            await lock.runExclusive(async ()=>{
+                onStart?.()
                 await Speech.speak(text)
                 onEnd?.(Date.now()-startAt)
-                releaseLock()
-                releaseLock=null
-            })();
-            return ()=>{
-                try{
-                    if(reverse){
-                        Speech.setDefaultLanguage(lang)
-                        tts[lang] && Speech.setDefaultVoice(tts[lang])
-                    }
-                    Speech.stop()
-                }finally{
-                    releaseLock?.()
-                }
-            }
-        }
-    },[text, lang])
+            })
+        })(Date.now());
+        return ()=>Speech.stop()
+    },[])
     return children
 },{
     async prepare(text){
@@ -484,6 +443,7 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     React.useEffect(()=>{
         if(audio){
             let sound,status,releaseLock
+
             ;(async ()=>{
                 try{
                     const info=await FileSystem.getInfoAsync(audio)
@@ -558,9 +518,10 @@ export function Recorder({style, recordingStyle, children, onStart=callback=>cal
         <>
             {recording && children}
             {React.cloneElement(trigger,{
-                recording,
                 onPressIn:e=>setRecording(true),
                 onPressOut:e=>setRecording(false),
+                ...trigger.props,
+                recording,
             })}
             {recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}}/>}
         </>

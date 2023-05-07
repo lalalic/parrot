@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } from 'react-native';
+import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal, TouchableWithoutFeedback } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
@@ -184,12 +184,19 @@ const Chat = () => {
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
 				renderComposer={({onSend})=><MessageComposer submit={text=>text && onSend({text})}/>}
-				renderMessageText={props=><MessageTextEx {...props} submit={(params)=>{
-					setMessages(([current, ...prevMessages]) =>{
-						current.text={...current.text, params, settled:true}
-						return [createBotMessage('...'), current, ...prevMessages]
-					})
-				}}/>}
+				renderMessageText={props=><MessageTextEx {...props} 
+					submit={(params)=>{
+						setMessages(([current, ...prevMessages]) =>{
+							current.text={...current.text, params, settled:true}
+							return [createBotMessage('...'), current, ...prevMessages]
+						})
+					}}
+					cancel={()=>{
+						setMessages(([current, ...prevMessages]) =>{
+							return [...prevMessages]
+						})
+					}}
+				/>}
 
 			/>
 			<Text>{errorMessage}</Text>
@@ -236,8 +243,9 @@ function MessageComposer({submit}){
 const InputAudio=({submit, textStyle})=>{
 	const trigger=useRef()
 	const [record, setRecord]=useState(null)
+	const [status, setStatus]=useState("")
 	const action=useCallback(type=>{
-		trigger.current?.props.onPressOut()
+		trigger.current && trigger.current.props.onPressOut()
 		if(record){
 			switch(type){
 				case "cancel":
@@ -250,6 +258,7 @@ const InputAudio=({submit, textStyle})=>{
 					break
 			}
 			setRecord(null)
+			setStatus("")
 		}
 	},[])
 	return (
@@ -258,8 +267,12 @@ const InputAudio=({submit, textStyle})=>{
 			style={{...textStyle, justifyContent: 'center'}}
 			onRecordUri={()=>""}
 			onRecord={record=>setRecord(record)}
-			trigger={<Pressable ref={trigger} style={{flex:1,alignItems:"center"}}><Text style={{flex:1,textAlign:"center",fontSize:16,color:"white"}}>Hold To Talk</Text></Pressable>}
-			>
+			trigger={
+				<TouchableWithoutFeedback ref={trigger} style={{flex:1,alignItems:"center"}}
+					>
+					<Text style={{flex:1,textAlign:"center",fontSize:16,color:"white"}}>Hold To Talk</Text>
+				</TouchableWithoutFeedback>
+			}>
 			<Modal transparent={true}>
 				<View style={{flex:1, flexDirection:"column", backgroundColor:"rgba(128,128,128,0.8)"}}>
 					<View style={{flex:1}}/>
@@ -267,8 +280,17 @@ const InputAudio=({submit, textStyle})=>{
 						<Recognizer.Text style={{flex:1, backgroundColor:"green", minWidth:200, borderRadius:5}} children="..."/>
 					</View>
 					<View style={{height:100, flexDirection:"row"}}>
-						<PressableIcon onPressOut={()=>action("cancel")} name="cancel"   color="white" size={40} style={{flex:1}}/>
-						<PressableIcon onPressOut={()=>action("text")} name="textsms"  color="white" size={40} style={{flex:1}}/>
+						<PressableIcon name="cancel"  size={40} style={{flex:1}}
+							color={status=="cancel" ? "red" : "white"}
+							onPressIn={()=>setStatus("cancel")}
+							onPressOut={()=>action("cancel")}  />
+						
+						<TouchableWithoutFeedback style={{flex:1}} onPressIn={()=>setStatus("text")}>
+							<MaterialIcons name="textsms"  size={40} style={{flex:1}}
+								color={status=="text" ? "red" : "white"}
+								onPressIn={()=>setStatus("text")}
+								onPressOut={()=>action("text")} />
+						</TouchableWithoutFeedback>
 					</View>
 					
 					<PressableIcon onPressOut={()=>action("")} name="multitrack-audio" size={40} style={{height:100}}/>
@@ -294,9 +316,8 @@ const InputText=({submit, textStyle})=>{
 
 const Actions=({submit, prompts})=>{
 	return (
-			<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap"}}>
-				{prompts.map((a,i)=><PressableIcon key={i} {...a} 
-					size={50} style={{margin:10,}} 
+			<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
+				{prompts.map((a,i)=><PressableIcon key={i} {...a} size={50} 
 					labelStyle={{color:"black"}}
 					onPress={()=>!!a.params ? submit(a) : submit(a.prompt)}
 					/>)}
@@ -304,7 +325,7 @@ const Actions=({submit, prompts})=>{
 	)
 }
 
-const MessageTextEx=({submit, ...props})=>{
+const MessageTextEx=({submit, cancel, ...props})=>{
 	if(typeof props.currentMessage.text !== "object")
 		return <MessageText {...props}/>
 	const {text:{params, label, settled}}=props.currentMessage
@@ -341,9 +362,14 @@ const MessageTextEx=({submit, ...props})=>{
 			<View style={{flex:1, alignItems:"center"}}><Text style={{color:"white"}}>{label.toUpperCase()}</Text></View>
 			<View style={{flex:1}}>
 				{paramsUI}
-				{!settled && <Pressable onPress={()=>submit(values)} style={{alignItems:"center"}}>
-					<Text  style={{color:"yellow",margin:5}}>SEND</Text>
-				</Pressable>}
+				{!settled && <View style={{flex:1, flexDirection:"row"}}>
+					<Pressable onPress={()=>submit(values)} style={{flex:1, alignItems:"center"}}>
+						<Text  style={{color:"yellow",margin:5}}>SEND</Text>
+					</Pressable>
+					<Pressable onPress={()=>cancel(values)} style={{flex:1, alignItems:"center"}}>
+						<Text  style={{color:"yellow",margin:5}}>CANCEL</Text>
+					</Pressable>
+				</View>}
 			</View>
 		</View>
 	)

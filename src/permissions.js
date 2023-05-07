@@ -3,7 +3,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Audio } from 'expo-av';
 import * as Calendar from 'expo-calendar';
 import { useDispatch, useSelector } from "react-redux";
-import TTS from "react-native-tts"
+import * as Speech from "./components/speech"
 
 export const Permissions = () => {
     const dispatch=useDispatch()
@@ -14,11 +14,10 @@ export const Permissions = () => {
     const [, requestReminderPermission] = Calendar.useRemindersPermissions()
 
     const calendarID=useSelector(state=>state.plan.calendar)
-    const {lang, mylang, tts={}}=useSelector(state=>state.my)
+    const {lang, tts={}}=useSelector(state=>state.my)
     React.useEffect(()=>{
-        TTS.setDefaultLanguage(lang)
-        tts[lang] && TTS.setDefaultVoice(tts[lang])
-    },[lang, mylang, tts[lang], tts[mylang]])
+        Speech.setDefaults({lang,voice:tts[lang]})
+    },[lang, tts[lang]])
 
     React.useEffect(() => {
         if (requestCameraPermission) {
