@@ -34,19 +34,19 @@ export default class AudioBook extends TaggedListMedia {
             <TaggedTranscript slug={slug}
                 audioUri={item=>item.uri}
                 actions={tag=>[
-                    <Recorder size={32}
-                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && create({uri,text, tags:[tag],...record},dispatch)}
-                        children={<Recognizer.Text style={{position:"absolute", left:0, top:-20, width:"100%", textAlign:"center"}}/>}
-                    />,
-                    <PressableIcon name="upload" size={32}
+                    <PressableIcon name="file-upload"
                         onPress={e=>DocumentPicker.getDocumentAsync({type:"audio/*",multiple:true}).then((res,files)=>{
                             if(res.type=="cancel")
                                 return
                             files.forEach(file=>{
                                 create({uri:file.uri, tag, text:"placeholder"},dispatch)
                             })
-                        })}/>
+                        })}/>,
+                    <Recorder
+                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && create({uri,text, tags:[tag],...record},dispatch)}
+                        />,
+                    
                 ]}
                 onTextChange={(uri, text)=>dispatch({type:"audiobook/set",uri,text})}
             />

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter} from "react-native";
+import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
@@ -505,38 +505,70 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
     displayName: "PlaySound"
 })
 
-export function Recorder({style, recordingStyle, children, onStart=callback=>callback(),
-    name=ControlIcons.record, size=40,color:_color, onRecordUri, recording:_initRecording=false, 
-    trigger=<PressableIcon size={size} name={name} color={_color}/>,
-    ...props}){
-    const [recording, $setRecording]=React.useState(_initRecording)
-    const setRecording=React.useCallback((value)=>{
-        if(value){
-            return onStart(()=>$setRecording(value))
-        }
-        $setRecording(value)
-    },[$setRecording, onStart])
-    const content=(
-        <>
-            {recording && children}
-            {React.cloneElement(trigger,{
-                onPressIn:e=>setRecording(true),
-                onPressOut:e=>setRecording(false),
-                ...trigger.props,
-                recording,
-            })}
-            {recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}}/>}
-        </>
-    )
-    if(style || recordingStyle){
-        return (
-            <View style={[style, recording ? recordingStyle : undefined]}>
-                {content}
-            </View>
-        )
-    }
 
-    return content
+export function Recorder({style, 
+    name=ControlIcons.record, size=40,color:_color, 
+    children=<PressableIcon size={size} name={name} color={_color}/>,
+    onRecordUri, onRecord, onText, onCancel,
+    ...props}){
+    const [state, setState]=React.useState({recording:false, record:null, active:"audio"})
+	const {width, height}=useWindowDimensions()
+
+	const action=()=>{
+		if(state.record){
+			switch(state.active){
+				case "text":
+					onText?.(state.record)
+					break
+				case "audio":
+					onRecord?.(state.record)
+					break
+                default:
+                    onCancel?.(state.record)
+			}
+		}
+		setState(state=>({recording:false, record:null, active:"audio"}))
+	}
+    return (
+        <View style={[{alignItems:"center", justifyContent:"center", flexDirection:"column"},style]}
+            pointerEvents="box-only"
+            onStartShouldSetResponder={e=>{
+                setState(state=>({...state, recording:true}))
+                return true
+            }}
+            onMoveShouldSetResponder={e=>true}
+            onResponderMove={e=>{
+                const {pageX:x, pageY:y}=e.nativeEvent
+                setState(state=>({...state,active:y>height-50 ? "audio" : (x<=width/2 ? "cancel" : "text")}))
+            }}
+            onResponderRelease={e=>action()}
+            {...props}
+            >
+            {children}
+            <Modal visible={state.recording} transparent={true}>
+                <View style={{flex:1, flexDirection:"column", backgroundColor:"rgba(128,128,128,0.8)"}}>
+                    <View style={{flex:1}}/>
+                    <View style={{height:50, margin:10, alignItems:"center", flexDirection:"column"}}>
+                        <Recognizer.Text style={{flex:1, backgroundColor:"green", minWidth:200, borderRadius:5}} children="..."/>
+                    </View>
+                    <View style={{height:100, flexDirection:"row"}}>
+                        
+                        <PressableIcon style={{flex:1}} name="cancel"  
+                            size={state.active=="cancel" ? 60 : 40} 
+                            color={state.active=="cancel" ? "red" : "white"}/>
+                        
+                        <PressableIcon style={{flex:1}} name="textsms"  
+                                size={state.active=="text" ? 60 : 40}
+                                color={state.active=="text" ? "red" : "white"}/>
+                    </View>
+                    <PressableIcon name="multitrack-audio" size={40} 
+                        style={{height:100, backgroundColor:state.active=="audio" ? "lightgray" : "transparent"}}/>
+                </View>
+            </Modal>
+            {state.recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}} 
+                onRecord={record=>setState(state=>({...state, record}))}/>}
+        </View> 
+    )
 }
 
 export const Recognizer=(()=>{

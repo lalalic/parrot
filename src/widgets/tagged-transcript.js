@@ -2,6 +2,7 @@ import React, { useMemo } from "react"
 import { FlatList, Pressable, TextInput, View, Text} from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
+import Select from "react-native-select-dropdown"
 import { PressableIcon, PlaySound } from "../components"
 import { ColorScheme } from "../components/default-style"
 import { selectBook } from "../store"
@@ -44,14 +45,26 @@ export const TaggedTranscript=(()=>{
         if(tagTalks.length>0 && !state.tag){
             setState({tag:tagTalks[0].tag})
         }
+        const tags=React.useMemo(()=>tagTalks.map(a=>a.tag),[tagTalks])
+
         const talks=useSelector(state=>state[slug])
         const data=useMemo(()=>selectBook({[slug]:talks},slug, state.tag),[state.tag, talks])
-        const inputStyle={fontSize:20,height:30,color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10,marginRight:10}
+        const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10}
         const {renderItem:WidgetItem=defaultItem}=listProps
+
         return (
             <View style={{flex:1,marginTop:20}}>
                 <Text style={{textAlign:"center", height:20}}>{slug.toUpperCase()}</Text>
-                <TextInput style={inputStyle} onChangeText={q=>setState({q})}/>
+                <View style={{flexDirection:"row"}}>
+                    <TextInput style={inputStyle} onChangeText={q=>setState({q})}/>
+                    <Select style={{flex:1}} data={tags}
+                        defaultValueByIndex={tags.indexOf(state.tag)}
+                        onSelect={value=>{
+                            const talk=tagTalks.find(a=>a.tag==value)
+                            setState(()=>({listing:false, tag:talk.tag, id: talk.id}))
+                        }}
+                        />
+                </View>
                 <View style={{flexGrow:1,flex:1}}>
                     <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
                         extraData={`${state.q}-${state.tag}-${data.length}`}
@@ -66,16 +79,6 @@ export const TaggedTranscript=(()=>{
                     {actions(state.tag)}
                     <PressableIcon name="read-more"
                         onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
-                    <PressableIcon name="edit" label={state.tag}
-                        onPress={e=>setState({listing:!state.listing})}/>
-                    {state.listing && <FlatList data={tagTalks} keyExtractor={a=>a.tag}
-                        style={{position:"absolute",right:40,bottom:50, backgroundColor:color.inactive,padding:10}}
-                        renderItem={({item: talk})=>(
-                            <Pressable style={{height:40, justifyContent:"center"}}
-                                onPress={e=>setState({listing:false, tag:talk.tag, id: talk.id})}>
-                                <Text style={{fontSize:16}}>{talk.tag}</Text>
-                            </Pressable>
-                        )}/>}
                 </View>
             </View>
         )

@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal, TouchableWithoutFeedback } from 'react-native';
+import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
@@ -241,61 +241,13 @@ function MessageComposer({submit}){
 }
 
 const InputAudio=({submit, textStyle})=>{
-	const trigger=useRef()
-	const [record, setRecord]=useState(null)
-	const [status, setStatus]=useState("")
-	const action=useCallback(type=>{
-		trigger.current && trigger.current.props.onPressOut()
-		if(record){
-			switch(type){
-				case "cancel":
-					break
-				case "text":
-					submit(record.recognized)
-					break
-				case "audio":
-					submit(record.recognized)
-					break
-			}
-			setRecord(null)
-			setStatus("")
-		}
-	},[])
 	return (
 		<Recorder 
-			recording={false}
 			style={{...textStyle, justifyContent: 'center'}}
-			onRecordUri={()=>""}
-			onRecord={record=>setRecord(record)}
-			trigger={
-				<TouchableWithoutFeedback ref={trigger} style={{flex:1,alignItems:"center"}}
-					>
-					<Text style={{flex:1,textAlign:"center",fontSize:16,color:"white"}}>Hold To Talk</Text>
-				</TouchableWithoutFeedback>
-			}>
-			<Modal transparent={true}>
-				<View style={{flex:1, flexDirection:"column", backgroundColor:"rgba(128,128,128,0.8)"}}>
-					<View style={{flex:1}}/>
-					<View style={{height:50, margin:10, alignItems:"center", flexDirection:"column"}}>
-						<Recognizer.Text style={{flex:1, backgroundColor:"green", minWidth:200, borderRadius:5}} children="..."/>
-					</View>
-					<View style={{height:100, flexDirection:"row"}}>
-						<PressableIcon name="cancel"  size={40} style={{flex:1}}
-							color={status=="cancel" ? "red" : "white"}
-							onPressIn={()=>setStatus("cancel")}
-							onPressOut={()=>action("cancel")}  />
-						
-						<TouchableWithoutFeedback style={{flex:1}} onPressIn={()=>setStatus("text")}>
-							<MaterialIcons name="textsms"  size={40} style={{flex:1}}
-								color={status=="text" ? "red" : "white"}
-								onPressIn={()=>setStatus("text")}
-								onPressOut={()=>action("text")} />
-						</TouchableWithoutFeedback>
-					</View>
-					
-					<PressableIcon onPressOut={()=>action("")} name="multitrack-audio" size={40} style={{height:100}}/>
-				</View>
-			</Modal>
+			onText={record=>submit(record.recognized)}
+			onRecord={record=>submit(record.recognized)}
+			>
+			<Text style={{fontSize:16,color:"white"}}>Hold To Talk</Text>
 		</Recorder>
 	)
 }
