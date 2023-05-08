@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Animated, Easing, Image, Text , TextInput, Pressable, ScrollView} from "react-native";
+import { View, Animated, Easing, Image, Text , TextInput, Pressable, ScrollView, ImageBackground} from "react-native";
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -170,6 +170,7 @@ class Media extends React.Component {
             this.progress.current = positionMillis
             
             this.setStatusSync({shouldPlay:lastShouldPlay}, false)//recover
+            this.progress.setValue(this.progress.current);
         }
 
         if (shouldPlay != undefined) {
@@ -318,9 +319,9 @@ export class ListMedia extends Media{
         const { thumb, posterSource = thumb, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
-                {!!posterSource && (<Image source={posterSource}
-                    style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
-                {this.doRenderAt()}
+                <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
+                    {this.doRenderAt()}
+                </ImageBackground>
             </View>
         )
     }
@@ -371,12 +372,12 @@ export class TaggedListMedia extends ListMedia{
 
     createTranscript(){
         const state=this.context.store.getState()
-        this.tag=state.talks[this.props.id]?.tag
-        return selectBook(state, this.slug, this.tag)
+        const {slug, tag}=this.props
+        return selectBook(state, slug, tag).map(({tags, ...a})=>a)
     }
 
     title(){
-        return this.tag
+        return this.props.tag
     }
 }
 

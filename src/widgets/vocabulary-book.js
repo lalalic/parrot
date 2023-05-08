@@ -1,7 +1,7 @@
 import React from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { PressableIcon } from "../components"
-import { TaggedListMedia, TagManagement, ReverseLangWatcher } from "./media"
+import { TaggedListMedia, TagManagement } from "./media"
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={

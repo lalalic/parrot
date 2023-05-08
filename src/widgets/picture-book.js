@@ -21,24 +21,9 @@ export default class PictureBook extends TaggedListMedia {
         thumb: require("../../assets/widget-picture-book.jpeg"),
         description: "Recognize everything in your world",
         tags:["kitchen","food"],
-        /*
-        onRecordChunk({chunk, recognized}){
-            if(chunk.text==recognized){
-                dispatch({type:"challenge/remove", chunk})
-            }else{
-                dispatch({type:"challenge/add", chunk})
-            }
-        },
-        */
-    }
-
-    render() {
-        const { thumb, posterSource = thumb, source, title, ...props } = this.props
-        return (
-            <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
-                {this.doRenderAt()}
-            </View>
-        )
+        shadowing:{visible:true},
+        dictating:{visible:true},
+        retelling:{visible:true}
     }
 
     renderAt({uri}){ 

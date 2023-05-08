@@ -57,7 +57,7 @@ function useTalkQuery({slug, id=slug}){
         if(!talk){
             talk=globalThis.Widgets[slug].defaultProps
         }
-        const {general, shadowing, dictating, retelling, ...data}=talk
+        const {general, shadowing, dictating, retelling, tags, ...data}=talk
         return {data}
     }else{
         return Ted.useTalkQuery({slug,id})
