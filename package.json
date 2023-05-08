@@ -9,7 +9,7 @@
     "ios:my": "expo run:ios --no-bundler -d 00008101-001609640C22001E",
     "ios:release": "expo run:ios -d 00008101-001609640C22001E --configuration release --no-bundler",
     "web": "expo start --web",
-    "test": "yarn node --inspect node_modules/jest/bin/jest.js",
+    "test": "yarn jest",
     "postinstall": "patch-package"
   },
   "jest": {

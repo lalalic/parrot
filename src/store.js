@@ -68,18 +68,8 @@ const Ted=createApi({
 	})({baseUrl:"https://www.ted.com"}),
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug, id},{getState})=>{
+			queryFn: async ({slug},{getState})=>{
 				const {lang="en", mylang="zh-cn"}=getState().my
-				const Widget=globalThis.Widgets[slug]
-				if(Widget){
-					const {defaultProps:{id:_id, slug, title, description, thumb}}=Widget
-					if(!!!id){
-						return {data:{id:_id, slug, title, description, thumb}}
-					}else{
-						return {data:{id:_id, slug, title, description, thumb, ...getState().talks[id]}}
-					}
-				}
-				
 				const res=await fetch("https://www.ted.com/graphql",{
 					method:"POST",
 					headers:{

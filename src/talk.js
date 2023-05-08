@@ -11,9 +11,11 @@ export default function Talk({autoplay}){
     const navigate= useNavigate()
     const dispatch=useDispatch()
     const {slug,policy: policyName="general", id}=useParams()
-    const {data:talk={}}=Ted.useTalkQuery({slug, id})
+    
     const Media=globalThis.Widgets[slug]||Video
 
+    const {data:talk={}}=useTalkQuery({slug, id})
+    
     const policy=useSelector(state=>selectPolicy(state,policyName,talk.id))
 
     const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
@@ -47,4 +49,17 @@ export default function Talk({autoplay}){
             {actions}
         </Player>
     )
+}
+
+function useTalkQuery({slug, id=slug}){
+    if(!!globalThis.Widgets[slug]){
+        let talk=useSelector(state=>state.talks[id])
+        if(!talk){
+            talk=globalThis.Widgets[slug].defaultProps
+        }
+        const {general, shadowing, dictating, retelling, ...data}=talk
+        return {data}
+    }else{
+        return Ted.useTalkQuery({slug,id})
+    }
 }

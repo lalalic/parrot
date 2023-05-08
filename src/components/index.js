@@ -411,12 +411,14 @@ const lock=new (class extends Mutex{
         return super.runExclusive(...arguments)
     }
 })();
-export const Speak=Object.assign(({text,children=null, onStart, onEnd})=>{
+export const Speak=Object.assign(({text,children=null, reverse, onStart, onEnd})=>{
+    const {mylang, tts={}}=useSelector(state=>state.my)
     React.useEffect(()=>{
         (async(startAt)=>{
+            console.debug("begin to speak "+text)
             await lock.runExclusive(async ()=>{
                 onStart?.()
-                await Speech.speak(text)
+                await Speech.speak(text, reverse&&tts[mylang] ? {iosVoiceId:tts[mylang]} : {})
                 onEnd?.(Date.now()-startAt)
             })
         })(Date.now());
@@ -538,7 +540,14 @@ export function Recorder({style, recordingStyle, children, onStart=callback=>cal
 }
 
 export const Recognizer=(()=>{
-    function Recognizer({i, uri, text="", onRecord, destroy, locale="en_US", style, ...props}){
+    function Recognizer({i,uri, text="", onRecord, destroy, locale, style, ...props}){
+        const {lang, mylang}=useSelector(state=>state.my)
+        if(locale===true){
+            locale=mylang||"zh-CN"
+        }else{
+            locale=locale||lang||"en-US"
+        }
+
         const [recognized, setRecognizedText]=React.useState(text)
         const scheme=React.useContext(ColorScheme)
         React.useEffect(()=>{

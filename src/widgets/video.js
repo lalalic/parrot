@@ -8,7 +8,6 @@ import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
 import { Clear } from "./media"
 
-
 export default class extends React.Component{
     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;

@@ -420,7 +420,7 @@ export default function Player({
                     adjustsFontSizeToFit={true}
                     delay={policy.captionDelay} 
                     show={policy.caption}>
-                    {status.whitespacing && <Recognizer key={status.i} i={status.i}
+                    {status.whitespacing && <Recognizer key={status.i} i={status.i} locale={chunks[status.i]?.recogLocale}
                         onRecord={props=>{
                                 const {i, chunk=chunks[i], recognized=props.recognized}=status
                                 const score=diffScore(chunk.text,recognized)

@@ -70,6 +70,10 @@ class Media extends React.Component {
         return { media, controls: media.props };
      }
 
+     static get isWidget(){
+        return true
+     }
+
     static defaultProps = {
         isWidget: true,
         progressUpdateIntervalMillis: 100,
@@ -230,10 +234,6 @@ class Media extends React.Component {
             </View>
         )
     }
-
-    measureTime(a){
-        return a.duration || 5*this.props.progressUpdateIntervalMillis
-    }
 }
 
 /**
@@ -250,6 +250,10 @@ export class ListMedia extends Media{
         }
     }
 
+    measureTime(a){
+        return a.duration || 5*this.props.progressUpdateIntervalMillis
+    }
+
     /**
      * create this.cues=[{time,end,text}]
      */
@@ -263,7 +267,7 @@ export class ListMedia extends Media{
             this.cues.splice(0,this.cues.length,...cues)
         }
         if(this.cues.length>0){
-            const delta=2*this.props.progressUpdateIntervalMillis
+            const delta=3*this.props.progressUpdateIntervalMillis
             if(!this.cues[this.cues.length-1].end){
                 this.cues.forEach((a,i)=>{
                     a.time=(i>0 ? this.cues[i-1].end : 0)+delta
@@ -280,7 +284,7 @@ export class ListMedia extends Media{
 
     onPositionMillis(positionMillis){
         const i =this.i(...arguments)
-        if(this.state.i!=i ){//&& positionMillis>=this.cues[i].time+this.props.progressUpdateIntervalMillis){
+        if(this.state.i!=i){
             this.setState({i})
         }
     }
@@ -299,10 +303,14 @@ export class ListMedia extends Media{
         return super.setStatusSync({...arguments[0],positionMillis})
     }
 
-    //same logic as player calculate i
+    /**
+     * it's different from i logic of player, since it's hoped to wait for signal from player
+     * so it's delayed as late as possible
+     * @param {*} positionMillis 
+     * @returns 
+     */
     i(positionMillis){
-        //return this.cues.findLastIndex(a=>a.time>=positionMillis)
-        return positionMillis<this.cues[0]?.time ? -1 : this.cues.findIndex(a=>a.end>=positionMillis)
+        return this.cues.findLastIndex(a=>positionMillis>=a.time)
     }
 
 

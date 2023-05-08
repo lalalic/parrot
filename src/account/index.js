@@ -35,7 +35,7 @@ export default ()=>{
                     ]},
                     {title:"Developer", data:[
                         {name:"Files", icon:"file-present"},
-                        {name:"Artest", icon:"person-pin-circle"},
+                        {name:"recognizer", icon:"person-pin-circle"},
                         {name:"Clear Ted", icon: "cleaning-services", onPress:e=>dispatch(Ted.util.resetApiState())},
                         {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
                         {name:"Clear Audio Book", icon: "cleaning-services", onPress:e=>dispatch({type:"audiobook/clear"})},

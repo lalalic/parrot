@@ -3,11 +3,13 @@ import { Text } from "react-native";
 
 import WordDiff from "word-diff";
 
-const trim=text=>text.replace(/\n/, " ")
-    .replace(/(\(.*\))|([^\w\s\n\'])/g, (a, $0, $1, i, src) => $1 == "." && /[0-9]/.test(src[i + 1]) ? $1 : "")
-    .replace(/\s+/g, " ")
-    .toLowerCase()
-    .trim()
+const trim=text=>{
+    text=text.replace(/\n/g, " ")
+    
+    text=text.replace(/(\(.*\))/g, "")
+
+    return text.replace(/\s+/g, " ").toLowerCase().trim()
+}
 
 export function diffScore(text, recognized, data) {
     text = trim(text)

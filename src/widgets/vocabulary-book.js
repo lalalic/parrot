@@ -69,35 +69,28 @@ export default class VocabularyBook extends TaggedListMedia{
      * lang:mylang
      */
     createTranscript(){
-        const state=this.context.store.getState()
-        const {words=[]}=state.talks[this.props.id]||{}
+        const {words=[]}=this.props
+        const {reverse}=this.state
             
         return words.reduce((cues,{lang, mylang})=>{
-            cues.push(!this.state.reverse ? {ask:lang, text:mylang} : {ask:mylang, text:lang})
+            cues.push(!reverse ? {ask:lang, text:mylang, recogLocale:true} : {ask:mylang, text:lang})
             return cues
         },[])
     }
 
     renderAt({ask},i){
-        const {reverse}=this.props
+        const {reverse}=this.state
         return this.speak({reverse, text:ask})
     }
 
-    componentDidUpdate(props, state){
-        if((!!this.state.reverse)!=(!!state.reverse)){
-            this.reset()
-            this.onPlaybackStatusUpdate()
-            this.doCreateTranscript()
+    shouldComponentUpdate(props, state){
+        if((!!this.props.reverse)!=(!!props.reverse)){
+            this.setState({reverse:props.reverse},()=>{
+                this.reset()
+                this.doCreateTranscript()
+            })
         }
-    }
-
-    render(){
-        return (
-            <>
-                {super.render()}
-                <ReverseLangWatcher id={this.props.id} onChange={reverse=>this.setState({reverse})}/>
-            </>
-        )
+        return super.shouldComponentUpdate(...arguments)
     }
 }
 
