@@ -455,20 +455,3 @@ export const Clear=({talk, ...props})=>{
         return null
     return <PressableIcon {...props}/>
 }
-
-export const ReverseLangWatcher=({id, onChange})=>{
-    const {reverse}=useSelector(state=>state.talks[id]||{})
-    const {lang, mylang, tts={}}=useSelector(state=>state.my)
-    React.useEffect(()=>{
-        if(id){
-            onChange(reverse)
-            if(reverse){
-                Speech.setDefaults({lang:mylang, voice: tts[mylang]})
-                return ()=>Speech.setDefaults({lang, voice:tts[lang]})
-            }else{
-                Speech.setDefaults({lang, voice: tts[lang]})
-            }
-        }
-    },[reverse])
-    return null
-}

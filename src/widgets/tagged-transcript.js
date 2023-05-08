@@ -1,7 +1,7 @@
 import React, { useMemo } from "react"
 import { FlatList, Pressable, TextInput, View, Text} from "react-native"
 import { useDispatch, useSelector } from "react-redux"
-import { useParams } from "react-router-native"
+import { useNavigate, useParams } from "react-router-native"
 import { PressableIcon, PlaySound } from "../components"
 import { ColorScheme } from "../components/default-style"
 import { selectBook } from "../store"
@@ -38,6 +38,7 @@ export const TaggedTranscript=(()=>{
     function TaggedTranscript({slug, actions, listProps={}, audioUri=item=>item.uri, onTextChange}){
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
+        const navigate=useNavigate()
         const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})
         const tagTalks=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         if(tagTalks.length>0 && !state.tag){
@@ -63,13 +64,15 @@ export const TaggedTranscript=(()=>{
                 </View>
                 <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                     {actions(state.tag)}
+                    <PressableIcon name="read-more"
+                        onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
                     <PressableIcon name="edit" label={state.tag}
                         onPress={e=>setState({listing:!state.listing})}/>
                     {state.listing && <FlatList data={tagTalks} keyExtractor={a=>a.tag}
                         style={{position:"absolute",right:40,bottom:50, backgroundColor:color.inactive,padding:10}}
                         renderItem={({item: talk})=>(
                             <Pressable style={{height:40, justifyContent:"center"}}
-                                onPress={e=>setState({listing:false, tag:talk.tag})}>
+                                onPress={e=>setState({listing:false, tag:talk.tag, id: talk.id})}>
                                 <Text style={{fontSize:16}}>{talk.tag}</Text>
                             </Pressable>
                         )}/>}
