@@ -13,6 +13,7 @@ import Explorer from "./account/file-explorer"
 import Policy from "./account/policy"
 import Favorites from "./account/favorites"
 import Lang from "./account/lang"
+import Test from "./account/test"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -49,6 +50,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="favorites" element={<Favorites/>}/>
                         <Route path="language" element={<Lang/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
+                        <Route path="test" element={<Test/>}/>
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>

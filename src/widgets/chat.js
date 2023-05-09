@@ -187,7 +187,7 @@ const Chat = () => {
 				renderMessageText={props=><MessageTextEx {...props} 
 					submit={(params)=>{
 						setMessages(([current, ...prevMessages]) =>{
-							current.text={...current.text, params, settled:true}
+							current.text=typeof(params)=="object" ? {...current.text, params, settled:true} : params
 							return [createBotMessage('...'), current, ...prevMessages]
 						})
 					}}
@@ -212,8 +212,8 @@ function MessageComposer({submit}){
 	const [audioInput, setAudioInput]=useState(false)
 	const [actions, setActions]=useState(false)
 	const props={
-			submit,
-			textStyle:{borderRadius:2, flex:1,backgroundColor:"darkgray",height:"100%",color:"black"},
+		submit,
+		textStyle:{borderRadius:2, flex:1,backgroundColor:"darkgray",height:"100%",color:"black"},
 	}
 
 	const prompts=React.useMemo(()=>{
@@ -226,10 +226,13 @@ function MessageComposer({submit}){
 					flex:1, height:50, flexDirection:"row", padding:4,
 					alignItems: 'center', justifyContent: 'center'
 			}}>
-					<Pressable onPress={()=>setAudioInput(!audioInput)}>
-						<MaterialIcons name={audioInput ? "mic" : "keyboard"} style={{width:50}} color="black" size={36}/>
-					</Pressable>
-					{audioInput ? <InputAudio {...props}/> : <InputText {...props}/> }
+					<PressableIcon name={audioInput ? "mic" : "keyboard"} 
+						style={{width:50}} color="black" size={36}
+						onPress={()=>setAudioInput(!audioInput)}
+						onLongPress={()=>audioInput && setAudioInput(2)}
+						/>
+
+					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2}/> : <InputText {...props}/> }
 
 					{!!prompts.length && <Pressable onPress={()=>setActions(!actions)}>
 						<MaterialIcons name="add-circle-outline" size={32}/>
@@ -240,12 +243,13 @@ function MessageComposer({submit}){
 	)
 }
 
-const InputAudio=({submit, textStyle})=>{
+const InputAudio=({submit, autoSubmit, textStyle})=>{
 	return (
 		<Recorder 
 			style={{...textStyle, justifyContent: 'center'}}
 			onText={record=>submit(record.recognized)}
 			onRecord={record=>submit(record.recognized)}
+			onAutoSubmit={autoSubmit && (record=>submit(<Recognizer.Text/>)) }
 			>
 			<Text style={{fontSize:16,color:"white"}}>Hold To Talk</Text>
 		</Recorder>
@@ -280,6 +284,11 @@ const Actions=({submit, prompts})=>{
 const MessageTextEx=({submit, cancel, ...props})=>{
 	if(typeof props.currentMessage.text !== "object")
 		return <MessageText {...props}/>
+	
+	if(React.isValidElement(props.currentMessage.text)){
+		return React.cloneElement(props.currentMessage.text,{onRecognizeEnd:submit})
+	}
+
 	const {text:{params, label, settled}}=props.currentMessage
 	const [values, setValues]=useState(params)
 	const inputStyle={borderBottom:"1px dotted lightgray",margin:5,paddingLeft:5,flex:1}

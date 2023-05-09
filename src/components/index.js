@@ -508,10 +508,10 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
 
 export function Recorder({style, 
     name=ControlIcons.record, size=40,color:_color, 
+    onRecordUri, onRecord, onText, onCancel, onAutoRecord,
     children=<PressableIcon size={size} name={name} color={_color}/>,
-    onRecordUri, onRecord, onText, onCancel,
     ...props}){
-    const [state, setState]=React.useState({recording:false, record:null, active:"audio"})
+    const [state, setState]=React.useState({recording:!!onAutoRecord, record:null, active:"audio"})
 	const {width, height}=useWindowDimensions()
 
 	const action=()=>{
@@ -529,6 +529,7 @@ export function Recorder({style,
 		}
 		setState(state=>({recording:false, record:null, active:"audio"}))
 	}
+
     return (
         <View style={[{alignItems:"center", justifyContent:"center", flexDirection:"column"},style]}
             pointerEvents="box-only"
@@ -542,10 +543,9 @@ export function Recorder({style,
                 setState(state=>({...state,active:y>height-50 ? "audio" : (x<=width/2 ? "cancel" : "text")}))
             }}
             onResponderRelease={e=>action()}
-            {...props}
             >
             {children}
-            <Modal visible={state.recording} transparent={true}>
+            {!onAutoRecord && <Modal visible={state.recording} transparent={true}>
                 <View style={{flex:1, flexDirection:"column", backgroundColor:"rgba(128,128,128,0.8)"}}>
                     <View style={{flex:1}}/>
                     <View style={{height:50, margin:10, alignItems:"center", flexDirection:"column"}}>
@@ -564,7 +564,7 @@ export function Recorder({style,
                     <PressableIcon name="multitrack-audio" size={40} 
                         style={{height:100, backgroundColor:state.active=="audio" ? "lightgray" : "transparent"}}/>
                 </View>
-            </Modal>
+            </Modal>}
             {state.recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}} 
                 onRecord={record=>setState(state=>({...state, record}))}/>}
         </View> 
@@ -572,7 +572,7 @@ export function Recorder({style,
 }
 
 export const Recognizer=(()=>{
-    function Recognizer({i,uri, text="", onRecord, destroy, locale, style, ...props}){
+    function Recognizer({i,uri, text="", onRecord, locale, style, ...props}){
         const {lang, mylang}=useSelector(state=>state.my)
         if(locale===true){
             locale=mylang||"zh-CN"
@@ -594,7 +594,9 @@ export const Recognizer=(()=>{
             Voice.onSpeechEnd=e=>{
                 end=Date.now()
             }
-            Voice.onSpeechVolumeChanged=e=>{};
+            Voice.onSpeechVolumeChanged=e=>{
+
+            }
             Voice.onSpeechError=e=>{
                 console.error(e)
             }
@@ -610,17 +612,22 @@ export const Recognizer=(()=>{
                 releaseLock=await lock.acquire()
                 Voice.start(locale,{audioUri})  
             })();
+
+            const submit=()=>{
+                DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
+                onRecord?.({
+                    recognized:recognized4Cleanup, 
+                    uri:`file://${audioUri}`, 
+                    duration:(end||Date.now())-start
+                })
+            }
+
             return async ()=>{
                 try{
                     await Voice.stop()
                     await Voice.destroy()
                     if(recognized4Cleanup){
-                        DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
-                        onRecord?.({
-                            recognized:recognized4Cleanup, 
-                            uri:`file://${audioUri}`, 
-                            duration:(end||Date.now())-start
-                        })
+                        submit() 
                     }else{
                         onRecord?.({})
                     }
