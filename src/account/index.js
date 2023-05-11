@@ -34,6 +34,7 @@ export default ()=>{
                         
                     ]},
                     {title:"Developer", data:[
+                        {name:"Test", icon:"file-present"},
                         {name:"Files", icon:"file-present"},
                         {name:"recognizer", icon:"person-pin-circle"},
                         {name:"Clear Ted", icon: "cleaning-services", onPress:e=>dispatch(Ted.util.resetApiState())},

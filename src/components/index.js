@@ -411,14 +411,14 @@ const lock=new (class extends Mutex{
         return super.runExclusive(...arguments)
     }
 })();
-export const Speak=Object.assign(({text,children=null, reverse, onStart, onEnd})=>{
+export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=>{
     const {mylang, tts={}}=useSelector(state=>state.my)
     React.useEffect(()=>{
         (async(startAt)=>{
             console.debug("begin to speak "+text)
             await lock.runExclusive(async ()=>{
                 onStart?.()
-                await Speech.speak(text, reverse&&tts[mylang] ? {iosVoiceId:tts[mylang]} : {})
+                await Speech.speak(text, locale&&tts[mylang] ? {iosVoiceId:tts[mylang]} : {})
                 onEnd?.(Date.now()-startAt)
             })
         })(Date.now());
@@ -426,18 +426,59 @@ export const Speak=Object.assign(({text,children=null, reverse, onStart, onEnd})
     },[])
     return children
 },{
-    async prepare(text){
-        let releaseLock = await lock.acquire()
+    async prepare(options){
+        const releaseLock = await lock.acquire()
         return [
-            async(text)=>await Speech.speak(text),
-            ()=>{
+            async(text)=>await Speech.speak(text,options),
+            done=>{
                 try{
                     Speech.stop()
+                    done?.()
                 }finally{
                     releaseLock?.()
                 }
             }
         ]
+    },
+    session(voice){
+        const options=voice ? {iosVoiceId:voice} : undefined
+        const speak=async text=>{
+            if(speak.cancelled)
+                return 
+            if(!speak.run){
+                const [run, stop]=await Speak.prepare(options)
+                speak.current=0
+                speak.run=run
+                speak.stop=(finalText, done=()=>null)=>{
+                    if(speak.canncelled)
+                        return done()
+                    speak.done=done
+                    speak(finalText)
+                }
+                speak.doStop=stop
+                speak.cancel=()=>{
+                    speak.cancelled=true
+                    speak.doStop()
+                }
+            }
+            speak.queue=text.split(/[\n\r\.\!]/g).filter(a=>!!a).slice(speak.current)
+            if(!speak.running){
+                speak.running=true
+                while(speak.queue.length>1){
+                    await speak.run((speak.current++, speak.queue.pop()))
+                }
+                speak.running=false
+                if(speak.done){
+                    await speak.run((speak.current++, speak.queue.pop()))
+                    speak.doStop()
+                    speak.done()
+                }
+            }
+        }
+        return speak
+    },
+    setDefaults(){
+        Speech.setDefaults(...arguments)
     }
 })
 
@@ -502,33 +543,39 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
             </>
         )
     },
-    displayName: "PlaySound"
+    displayName: "PlaySound",
+    play(audio){
+
+    }
 })
 
 
 export function Recorder({style, 
     name=ControlIcons.record, size=40,color:_color, 
-    onRecordUri, onRecord, onText, onCancel, onAutoRecord,
+    onRecordUri, onRecord, onText, onCancel, recording=false, 
+    _initState={recording, active:"audio"},
     children=<PressableIcon size={size} name={name} color={_color}/>,
     ...props}){
-    const [state, setState]=React.useState({recording:!!onAutoRecord, record:null, active:"audio"})
+    
+    const [state, setState]=React.useState(_initState)
 	const {width, height}=useWindowDimensions()
 
-	const action=()=>{
-		if(state.record){
-			switch(state.active){
-				case "text":
-					onText?.(state.record)
-					break
-				case "audio":
-					onRecord?.(state.record)
-					break
+    const onRecognizedRef=React.useRef()
+    onRecognizedRef.current=React.useCallback(record=>{
+        if(record.recognized){
+            switch(state.active){
+                case "text":
+                    onText?.(record)
+                    break
+                case "audio":
+                    onRecord?.(record)
+                    break
                 default:
-                    onCancel?.(state.record)
-			}
-		}
-		setState(state=>({recording:false, record:null, active:"audio"}))
-	}
+                    onCancel?.(record)
+            }
+        }
+        setState(_initState)
+    },[state])
 
     return (
         <View style={[{alignItems:"center", justifyContent:"center", flexDirection:"column"},style]}
@@ -542,14 +589,15 @@ export function Recorder({style,
                 const {pageX:x, pageY:y}=e.nativeEvent
                 setState(state=>({...state,active:y>height-50 ? "audio" : (x<=width/2 ? "cancel" : "text")}))
             }}
-            onResponderRelease={e=>action()}
+            onResponderRelease={e=>setState(state=>({...state, recording:false}))}
             >
             {children}
-            {!onAutoRecord && <Modal visible={state.recording} transparent={true}>
+            <Modal visible={state.recording} transparent={true}>
                 <View style={{flex:1, flexDirection:"column", backgroundColor:"rgba(128,128,128,0.8)"}}>
                     <View style={{flex:1}}/>
                     <View style={{height:50, margin:10, alignItems:"center", flexDirection:"column"}}>
-                        <Recognizer.Text style={{flex:1, backgroundColor:"green", minWidth:200, borderRadius:5}} children="..."/>
+                        <Recognizer.Text style={{textAlign:"center",backgroundColor:"green", padding:2, borderRadius:5, width:200, height: state.active=="text" ? 50 : 0}}/>
+                        {state.active!=="text" && <Recognizer.Wave barWidth={3} style={{flex:1, borderRadius:5}}/>}
                     </View>
                     <View style={{height:100, flexDirection:"row"}}>
                         
@@ -564,15 +612,14 @@ export function Recorder({style,
                     <PressableIcon name="multitrack-audio" size={40} 
                         style={{height:100, backgroundColor:state.active=="audio" ? "lightgray" : "transparent"}}/>
                 </View>
-            </Modal>}
-            {state.recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}} 
-                onRecord={record=>setState(state=>({...state, record}))}/>}
+            </Modal>
+            {state.recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}} onRecord={record=>onRecognizedRef.current?.(record)}/>}
         </View> 
     )
 }
 
 export const Recognizer=(()=>{
-    function Recognizer({i,uri, text="", onRecord, locale, style, ...props}){
+    function Recognizer({i,uri, text="", onRecord, locale, style, autoSubmit, onAutoSubmit,onWave, ...props}){
         const {lang, mylang}=useSelector(state=>state.my)
         if(locale===true){
             locale=mylang||"zh-CN"
@@ -580,23 +627,34 @@ export const Recognizer=(()=>{
             locale=locale||lang||"en-US"
         }
 
+        const autoSubmitHolder=React.useRef(null)
         const [recognized, setRecognizedText]=React.useState(text)
         const scheme=React.useContext(ColorScheme)
+
         React.useEffect(()=>{
-            let recognized4Cleanup, start, end, releaseLock
+            let recognized, start, releaseLock
             Voice.onSpeechResults=e=>{
-                setRecognizedText(recognized4Cleanup=e?.value.join(""))
-                DeviceEventEmitter.emit("recognized",[recognized4Cleanup,i])
+                clearTimeout(autoSubmitHolder.current)
+                setRecognizedText(recognized=e?.value.join(""))
+                DeviceEventEmitter.emit("recognized",[recognized,i])
+                autoSubmitHolder.current=setTimeout(()=>{
+                    onAutoSubmit?.({
+                        recognized, 
+                        uri:`file://${audioUri}`, 
+                        duration:Date.now()-start
+                    })
+                },autoSubmit)
             }
             Voice.onSpeechStart=e=>{
                 start=Date.now()
             }
             Voice.onSpeechEnd=e=>{
-                end=Date.now()
+                
             }
             Voice.onSpeechVolumeChanged=e=>{
-
+                DeviceEventEmitter.emit("wave",e.value,locale)
             }
+
             Voice.onSpeechError=e=>{
                 console.error(e)
             }
@@ -613,21 +671,17 @@ export const Recognizer=(()=>{
                 Voice.start(locale,{audioUri})  
             })();
 
-            const submit=()=>{
-                DeviceEventEmitter.emit("recognized.done",[recognized4Cleanup,i])
-                onRecord?.({
-                    recognized:recognized4Cleanup, 
-                    uri:`file://${audioUri}`, 
-                    duration:(end||Date.now())-start
-                })
-            }
-
             return async ()=>{
                 try{
                     await Voice.stop()
                     await Voice.destroy()
-                    if(recognized4Cleanup){
-                        submit() 
+                    if(recognized){
+                        DeviceEventEmitter.emit("recognized.done",[recognized,i])
+                        onRecord?.({
+                            recognized, 
+                            uri:`file://${audioUri}`, 
+                            duration:Date.now()-start
+                        })
                     }else{
                         onRecord?.({})
                     }
@@ -639,9 +693,27 @@ export const Recognizer=(()=>{
 
         return !DeviceEventEmitter.listenerCount('recognized') && (
             <Text style={{color:scheme.primary, ...style}} {...props}>
-                {recognized}
+                {recognized||"..."}
             </Text>
         )
+    }
+
+    Recognizer.Wave=({ style, sampleAmount=10, backgroundColor="green", color="black", barWidth=2, barHeight=a=>parseInt((a*10+10)*4/5)})=>{
+        const [data]=React.useState((a=barHeight(0))=>new Array(sampleAmount).fill(a))
+        const [changed, setChanged]=React.useState()
+        React.useEffect(()=>{
+            DeviceEventEmitter.addListener('wave',value=>{
+                data.unshift(value)
+                data.pop()
+                setChanged(Date.now())
+            })
+        },[])
+        return (
+            <View style={{width:200, paddingLeft:50, paddingRight:50, ...style,justifyContent:"space-around", backgroundColor, flexDirection:"row", alignItems:"center"}}>
+                {data.map(barHeight).map((a,i)=><View key={i} style={{backgroundColor:color, width:barWidth, height:`${a}%`}}/>)}
+            </View>
+        )
+        
     }
 
     Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{

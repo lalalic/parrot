@@ -4,10 +4,10 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } f
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder } from "../components"
-import { useDispatch } from 'react-redux';
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound } from "../components"
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-native';
-
+import { data } from 'cheerio/lib/api/attributes';
 
 export default Object.assign(
 		({})=><ChatGptProvider><Navigator/></ChatGptProvider>,
@@ -16,7 +16,7 @@ export default Object.assign(
 						isMedia:false,
 						id: "chat",
 						slug: "chat",
-						title: "Make a conversation",
+						title: "Chat Bot",
 						thumb: require("../../assets/widget-picture-book.jpeg"),
 						description: "Make a conversation with bot",
 				}
@@ -46,107 +46,119 @@ function Navigator({}){
 
 const CHAT_GPT_ID = 'system';
 const Icons={system:"adb", assistant:"ac-unit", user:"emoji-people"}
+const user=Object.freeze({_id: "user", name:"You"})
 
-const createBotMessage = (text) => {
+const createBotMessage = Object.assign((text) => {
 	return {
 		_id: String(Date.now()),
 		text,
 		createdAt: new Date(),
 		user: {
-			_id: "system",
+			_id: CHAT_GPT_ID,
 			name: 'react-native-chatgpt',
 		}
 	};
-};
+},{
+	is(message, expectedText){
+		if(message && message.user._id === CHAT_GPT_ID){
+			if(expectedText){
+				return message.text === expectedText
+			}
+			return true
+		}
+		return false
+	}
+})
 
+const createDialogMessage=Object.assign(props=>{
+	return {
+		...createBotMessage(<Recognizer {...props}/>),
+		user
+	}
+},{
+	is:message=>message && !createBotMessage.is(message) && React.isValidElement(message.text) && message.text.type==Recognizer,
+	changeLocale({locale, message,setMessages}){
+		if(createDialogMessage.is(message)){
+			message.text=React.cloneElement(message.text,{locale, key:locale})
+			setMessages(prevs=>prevs[0]==message ? [...prevs] : prevs)
+		}
+	}
+})
+
+const createPromptMessage=Object.assign(props=>{
+		return {
+			...createBotMessage(<PromptMessage {...props}/>),
+			user
+		}
+	},{
+	is(message){
+		if(message && React.isValidElement(message.text) && message.text.type==PromptMessage)
+			return message.text.props.prompt
+	},
+	submitParams({message, params, setMessages}){
+		message.text=React.cloneElement(message.text, {prompt:{...message.text.props.prompt,params, settled:true}})
+		setMessages(prevs=>prevs[0]==message ? [createBotMessage("..."),...prevs] : prevs)
+	}
+})
+
+function isTextMessage(message){
+	return typeof(message.text)!=="object"
+}
+
+/**
+ * 1. auto append (...) only when last message is text
+ * 2. 
+ * @returns 
+ */
 const Chat = () => {
 	const { sendMessage } = useChatGpt();
 	const [messages, setMessages] = useState([]);
 	const [errorMessage, setErrorMessage] = useState('');
 	const dispatch = useDispatch()
-	const messageId = useRef('');
-	const conversationId = useRef('');
+	const navigate=useNavigate()
+	const onSend = useCallback((msgs = []) =>setMessages((previousMessages) =>GiftedChat.append(previousMessages, msgs)), [])
 
+	const options=useRef()
+	
 	useEffect(() => {
-		setMessages([createBotMessage('Ask me anything :)')]);
-	}, []);
-
-	useEffect(() => {
-		if (messages.length) {
-			const lastMessage = messages[0];
-			if (!lastMessage || lastMessage.user._id === CHAT_GPT_ID) return;
-			if(typeof lastMessage.text=="object") return 
-
-			setMessages((prevMessages) => [createBotMessage('...'), ...prevMessages]);
-		}
-	}, [messages]);
-
-	useEffect(() => {
-		const lastMessage = messages[0];
-		if (
-			lastMessage &&
-			lastMessage.user._id === CHAT_GPT_ID &&
-			lastMessage.text === '...'
-		) {
-			const speak=async text=>{
-				if(!speak.run){
-					const [run, stop]=await Speak.prepare()
-					speak.current=0
-					speak.run=run
-					speak.stop=(finalText)=>{
-						speak.done=true
-						speak(finalText)
-					}
-					speak.doStop=stop
-				}
-				speak.queue=text.split(/[\n\r\.\!]/g).filter(a=>!!a).slice(speak.current)
-				if(!speak.running){
-					speak.running=true
-					while(speak.queue.length>1){
-						await speak.run((speak.current++, speak.queue.pop()))
-					}
-					speak.running=false
-					if(speak.done){
-						await speak.run((speak.current++, speak.queue.pop()))
-						speak.doStop()
-					}
-				}
-			}
-			const current=messages[1]
-			const message=typeof(current?.text)=='object' ? current.text.prompt(current.text.params).replace(/\s+/g," ") : current?.text
-			const options= messageId.current && conversationId.current && {messageId: messageId.current,conversationId: conversationId.current} || undefined
+		const lastMessage = messages[0]
+		if(!lastMessage){
+			setMessages([createBotMessage('Ask me anything :)')]);
+		}else if (createBotMessage.is(lastMessage, "...")) {
+			const current=messages[1], isPrompt=createPromptMessage.is(current)
+			const speak=(!isPrompt || isPrompt.speakable!==false) ? Speak.session(voice) : null
 			sendMessage({
-				message,
-				options,
-				onAccumulatedResponse: (accumulatedResponse) => {
-					messageId.current = accumulatedResponse.messageId;
-					conversationId.current = accumulatedResponse.conversationId;
+				options:options.current,
+				message:isPrompt?.prompt(isPrompt?.params).replace(/\s+/g," ") || current.text,
+				onAccumulatedResponse: ({messageId, conversationId, message,isDone}) => {
+					options.current={messageId, conversationId}
 					// Attach to last message
-					setMessages((previousMessages) => {
-						const newMessages = [...previousMessages];
-						newMessages[0] = {
-							...previousMessages[0],
-							text: current.speakable!==false ? accumulatedResponse.message : (previousMessages[0].text||"receiving data ")+".",
-						};
-						if(current.speakable!==false){
-							speak(accumulatedResponse.message)
+					setMessages(([placeholder, ...prevs]) => {
+						placeholder = {
+							...placeholder,
+							text: speak ? message : (placeholder.text||"receiving data ")+".",
+							...(dialog ? {audio:true, speak} : {})
 						}
 
-						if(accumulatedResponse.isDone){
-							speak.stop(accumulatedResponse.message)
-							if(current?.text.onSuccess){
-								newMessages[0].text=current.text.onSuccess({...current.text, response:accumulatedResponse.message, dispatch})
+						if(isDone){
+							speak?.stop?.(message,()=>{
+								delete placeholder?.speak
+								dialog && listenDialog()
+							})
+							if(isPrompt?.onSuccess){
+								placeholder.text=isPrompt.onSuccess({...isPrompt, response:message, dispatch})
 							}
+						}else{
+							speak?.(message)
 						}
 						
-						return newMessages;
+						return [placeholder, ...prevs]
 					});
 				},
 				onError: (e) => {
 					setErrorMessage(`${e.statusCode} ${e.message}`);
 					setMessages((previousMessages) => {
 						const newMessages = [...previousMessages];
-						// @ts-ignore
 						newMessages[0] = {
 							...previousMessages[0],
 							text: "Sorry, I couldn't process your request",
@@ -155,22 +167,53 @@ const Chat = () => {
 					});
 				},
 			});
+		}else if(!createBotMessage.is(lastMessage) && typeof(lastMessage.text)!="object"){
+			setMessages((prevMessages) => [createBotMessage('...'), ...prevMessages]);
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [messages]);
 
-	const navigate=useNavigate()
+	const {lang,mylang=lang, tts={}}=useSelector(state=>state.my)
+	const [locale, setLocale]=React.useState(false)
+	React.useEffect(()=>{
+		Speak.setDefaults({lang: locale ? mylang : lang})
+		createDialogMessage.changeLocale({locale, setMessages, message:messages[0]})
+		return ()=>Speak.setDefaults({lang})
+	},[locale])
+	const voice=tts[locale ? mylang : lang]
 
-	const onSend = useCallback((msgs = []) => {
-		setMessages((previousMessages) =>GiftedChat.append(previousMessages, msgs))
-	}, []);
+	const [dialog, isDialog]=React.useState(false)
+	const listenDialog=React.useCallback(()=>{
+		onSend([
+			createDialogMessage({
+				autoSubmit:3000,
+				locale,
+				style:{color:undefined,padding:4},
+				onAutoSubmit:record=>{
+					setMessages(([last, ...prevs]) =>{
+						last.text=record.recognized
+						last.audio=record.uri
+						return [last, ...prevs]
+					})
+				}
+			})
+		])
+	},[onSend,locale])
 
+	useEffect(()=>{
+		if(dialog){
+			listenDialog()
+		}else if(createDialogMessage.is(messages[0])){
+			setMessages(([listening, ...prevs])=>prevs)
+		}
+	},[dialog])
 	return (
 		<View style={{flex:1}}>
 			<GiftedChat
+				user={user}
 				messages={messages}
 				onSend={onSend}
-				user={{_id: "user"}}
+				alignTop={true}
+				renderAvatarOnTop={true}
 				parsePatterns={linkStyle=>[{
 					style:linkStyle, 
 					pattern:/@#(\w+)/,
@@ -183,20 +226,27 @@ const Chat = () => {
 				showUserAvatar={true}
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
-				renderComposer={({onSend})=><MessageComposer submit={text=>text && onSend({text})}/>}
-				renderMessageText={props=><MessageTextEx {...props} 
-					submit={(params)=>{
-						setMessages(([current, ...prevMessages]) =>{
-							current.text=typeof(params)=="object" ? {...current.text, params, settled:true} : params
-							return [createBotMessage('...'), current, ...prevMessages]
-						})
-					}}
-					cancel={()=>{
-						setMessages(([current, ...prevMessages]) =>{
-							return [...prevMessages]
-						})
-					}}
-				/>}
+				renderComposer={({onSend,...data})=><MessageComposer isDialog={isDialog} 
+						locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
+						submit={message=>message && onSend(message)}
+						ask={params=>createPromptMessage.submitParams({params, message: messages[0], setMessages})}	
+						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
+					/>
+				}
+				renderMessageText={props=>{
+					const {currentMessage:{text,audio}}=props
+					if(React.isValidElement(text)){
+						return text
+					}
+					
+					if(isTextMessage(props.currentMessage) && audio==true){
+						return null
+					}
+
+					return <MessageText {...props}/>
+				}}
+
+				renderMessageAudio={props=><PlayAudioMessage {...props} setMessages={setMessages}/>}
 
 			/>
 			<Text>{errorMessage}</Text>
@@ -204,17 +254,36 @@ const Chat = () => {
 	);
 }
 
+function PlayAudioMessage({currentMessage, setMessages}){
+	const [playing, setPlaying]=React.useState(false)
+	return <PressableIcon name={playing ? "stop" : "multitrack-audio"}
+		onPress={e=>{
+			if(currentMessage.audio===true){
+				currentMessage?.speak?.cancel()
+				delete currentMessage.audio
+				delete currentMessage.speak
+				setMessages(prev=>[...prev])
+			}else{
+				setPlaying(true)
+				PlaySound.play(currentMessage.audio,()=>setPlaying(false))
+			}
+		}}/>
+}
+
 function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit}){
+function MessageComposer({submit, ask, forget, isDialog, locale}){
 	const [audioInput, setAudioInput]=useState(false)
 	const [actions, setActions]=useState(false)
 	const props={
 		submit,
 		textStyle:{borderRadius:2, flex:1,backgroundColor:"darkgray",height:"100%",color:"black"},
 	}
+
+	const askRef=React.useRef(ask)
+	askRef.current=ask
 
 	const prompts=React.useMemo(()=>{
 		return Object.values(globalThis.Widgets).map(A=>A.prompts).filter(a=>!!a).flat().filter(a=>!!a && !!a.prompt)
@@ -228,28 +297,61 @@ function MessageComposer({submit}){
 			}}>
 					<PressableIcon name={audioInput ? "mic" : "keyboard"} 
 						style={{width:50}} color="black" size={36}
-						onPress={()=>setAudioInput(!audioInput)}
-						onLongPress={()=>audioInput && setAudioInput(2)}
+						onPress={()=>{
+							setAudioInput(!audioInput)
+							isDialog(false)
+						}}
+						onLongPress={()=>{
+							if(audioInput){
+								isDialog(true)
+								setAudioInput(2)
+							}
+						}}
 						/>
+					{audioInput && (
+						<Pressable style={{width:50, flexDirection:"column",alignItems:"center", justifyContent:"center"}}  
+							onPress={locale.toggle}>
+							<Text style={{color:"black"}}>{locale.lang.split("-")[0]}</Text>
+						</Pressable>
+					)}
 
-					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2}/> : <InputText {...props}/> }
+					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
 
 					{!!prompts.length && <Pressable onPress={()=>setActions(!actions)}>
 						<MaterialIcons name="add-circle-outline" size={32}/>
 					</Pressable>}
 			</View>
-			{actions && <Actions {...{submit:text=>{submit(text);setActions(false)}, prompts}} />}
+			{actions && (
+				<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
+					{prompts.map((prompt,i)=><PressableIcon key={i} {...prompt} size={50} labelStyle={{color:"black"}}
+						onPress={()=>{
+							submit(createPromptMessage({prompt,ask:params=>askRef.current?.(params),forget}))
+							setActions(false)
+						}}
+					/>)}
+				</View>
+			)}
 		</View>
 	)
 }
 
-const InputAudio=({submit, autoSubmit, textStyle})=>{
+const InputAudio=({submit, autoSubmit, textStyle, locale})=>{
+	if(autoSubmit){
+		return (
+			<View style={{flex:1,alignItems:"center",justifyContent:"center", backgroundColor:"green"}}>
+				<Recognizer.Wave style={{flex:1}}/>
+			</View>
+		)
+	}
 	return (
-		<Recorder 
+		<Recorder locale={locale}
 			style={{...textStyle, justifyContent: 'center'}}
-			onText={record=>submit(record.recognized)}
-			onRecord={record=>submit(record.recognized)}
-			onAutoSubmit={autoSubmit && (record=>submit(<Recognizer.Text/>)) }
+			onText={record=>{
+				submit({text:record.recognized})
+			}}
+			onRecord={record=>{
+				submit({text:record.recognized})
+			}}
 			>
 			<Text style={{fontSize:16,color:"white"}}>Hold To Talk</Text>
 		</Recorder>
@@ -257,39 +359,20 @@ const InputAudio=({submit, autoSubmit, textStyle})=>{
 }
 
 const InputText=({submit, textStyle})=>{
-	const [value, setValue]=useState("Hello")
+	const [value, setValue]=useState("")
 	return (
 			<TextInput 
 				value={value}
 				onChangeText={text=>setValue(text)}
 				onSubmitEditing={e=>{
-					submit(value)
+					submit({text:value})
 					setValue("")
 				}} 
 				style={{...textStyle,padding:5,fontSize:16}}/>
 	)
 }
 
-const Actions=({submit, prompts})=>{
-	return (
-			<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
-				{prompts.map((a,i)=><PressableIcon key={i} {...a} size={50} 
-					labelStyle={{color:"black"}}
-					onPress={()=>!!a.params ? submit(a) : submit(a.prompt)}
-					/>)}
-			</View>
-	)
-}
-
-const MessageTextEx=({submit, cancel, ...props})=>{
-	if(typeof props.currentMessage.text !== "object")
-		return <MessageText {...props}/>
-	
-	if(React.isValidElement(props.currentMessage.text)){
-		return React.cloneElement(props.currentMessage.text,{onRecognizeEnd:submit})
-	}
-
-	const {text:{params, label, settled}}=props.currentMessage
+const PromptMessage=({ask, forget, prompt:{params, label, settled}})=>{
 	const [values, setValues]=useState(params)
 	const inputStyle={borderBottom:"1px dotted lightgray",margin:5,paddingLeft:5,flex:1}
 	const paramsUI=React.useMemo(()=>{
@@ -324,18 +407,14 @@ const MessageTextEx=({submit, cancel, ...props})=>{
 			<View style={{flex:1}}>
 				{paramsUI}
 				{!settled && <View style={{flex:1, flexDirection:"row"}}>
-					<Pressable onPress={()=>submit(values)} style={{flex:1, alignItems:"center"}}>
+					<Pressable onPress={()=>ask(values)} style={{flex:1, alignItems:"center"}}>
 						<Text  style={{color:"yellow",margin:5}}>SEND</Text>
 					</Pressable>
-					<Pressable onPress={()=>cancel(values)} style={{flex:1, alignItems:"center"}}>
+					<Pressable onPress={()=>forget(values)} style={{flex:1, alignItems:"center"}}>
 						<Text  style={{color:"yellow",margin:5}}>CANCEL</Text>
 					</Pressable>
 				</View>}
 			</View>
 		</View>
 	)
-}
-
-export function Speaking(){
-
 }

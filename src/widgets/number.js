@@ -9,7 +9,7 @@ export default class NumberPractice extends ListMedia {
         ...super.defaultProps,
         id: "number",
         slug: "number",
-        title: "Practice Number Sensitivity",
+        title: "Number Sense",
         thumb: require("../../assets/widget-number.png"),
         description: "This widget will speak numbers ramdomly, and you have to repeat it and recognized",
         source:"100,999999,3",

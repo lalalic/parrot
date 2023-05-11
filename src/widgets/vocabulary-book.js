@@ -8,14 +8,14 @@ export default class VocabularyBook extends TaggedListMedia{
         ...super.defaultProps,
         id:"vocabulary",
         slug:"vocabulary",
-        title:"remember words",
+        title:"Vocabulary Book",
         description:"",
         thumb:require("../../assets/widget-picture-book.jpeg"),
-        reverse:false,
+        locale:false,
     }
 
     static ExtendActions({policyName, talk}){
-        return policyName=="general" ? <Paste talk={talk}/> : <Reverse talk={talk}/>
+        return policyName=="general" ? <Paste talk={talk}/> : <Locale talk={talk}/>
     }
 
     static prompts=[
@@ -62,7 +62,7 @@ export default class VocabularyBook extends TaggedListMedia{
     static TagManagement=props=><TagManagement appendable={false} talk={VocabularyBook.defaultProps} placeholder="Tag: to categorize your vocabulary book" {...props}/>
     constructor(){
         super(...arguments)
-        this.state.reverse=this.props.reverse
+        this.state.locale=this.props.locale
     }
     /**
      * A:B
@@ -70,22 +70,22 @@ export default class VocabularyBook extends TaggedListMedia{
      */
     createTranscript(){
         const {words=[]}=this.props
-        const {reverse}=this.state
+        const {locale}=this.state
             
         return words.reduce((cues,{lang, mylang})=>{
-            cues.push(!reverse ? {ask:lang, text:mylang, recogLocale:true} : {ask:mylang, text:lang})
+            cues.push(!locale ? {ask:lang, text:mylang, recogLocale:true} : {ask:mylang, text:lang})
             return cues
         },[])
     }
 
     renderAt({ask},i){
-        const {reverse}=this.state
-        return this.speak({reverse, text:ask})
+        const {locale}=this.state
+        return this.speak({locale, text:ask})
     }
 
     shouldComponentUpdate(props, state){
-        if((!!this.props.reverse)!=(!!props.reverse)){
-            this.setState({reverse:props.reverse},()=>{
+        if((!!this.props.locale)!=(!!props.locale)){
+            this.setState({locale:props.locale},()=>{
                 this.reset()
                 this.doCreateTranscript()
             })
@@ -103,8 +103,8 @@ const Paste=talk=>{
     })}/>
 }
 
-const Reverse=({talk, id=talk?.id})=>{
+const Locale=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
-    const {reverse}=useSelector(state=>state.talks[id]||{})
-    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",talk, payload:{reverse:!reverse}})}/>
+    const {locale}=useSelector(state=>state.talks[id]||{})
+    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",talk, payload:{locale:!locale}})}/>
 }

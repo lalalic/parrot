@@ -13,7 +13,7 @@ export default class AudioBook extends TaggedListMedia {
         cueHasDuration:true,
         id: "audiobook",
         slug: "audiobook",
-        title: "Record audio as practice material",
+        title: "Audio Book",
         thumb: require("../../assets/widget-audio-book.jpeg"),
         description: "A list of audios: manage audio book with tags and practise them",
         tags:["Vocabulary","Speak","Grammar", "Talk"],

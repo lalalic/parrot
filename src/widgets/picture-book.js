@@ -17,7 +17,7 @@ export default class PictureBook extends TaggedListMedia {
         ...super.defaultProps,
         id: "picturebook",
         slug: "picturebook",
-        title: "Recognize your world",
+        title: "Picture Book",
         thumb: require("../../assets/widget-picture-book.jpeg"),
         description: "Recognize everything in your world",
         tags:["kitchen","food"],
