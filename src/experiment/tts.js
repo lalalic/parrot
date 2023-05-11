@@ -35,7 +35,7 @@ export default function TTS(){
     return (
         <>
             <Text style={{color:"red"}}>{audio.length}</Text>
-            {audio && <PlaySound audio={audio} destroy={()=>setAudio("")}/>}
+            {audio && <PlaySound audio={audio} onEnd={()=>setAudio("")}/>}
         </>
     )
 }

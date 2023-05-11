@@ -54,11 +54,7 @@ export default class AudioBook extends TaggedListMedia {
     }
 
     static prompts=[
-        {name:"sports-kabaddi", label:"sport", 
-            params:{type:"kitchen"},
-            prompt:({type})=>`you are english tuitor, please give some words about ${type}`},
-        {name:"post-add", label:"dialog",
-            prompt:"give some numbers for me to practise english numbers"}
+        
     ]
 }
 

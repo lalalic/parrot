@@ -30,7 +30,7 @@ export const TaggedTranscript=(()=>{
                 <View style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                     <TextInput style={{color: playing ? color.primary : color.text}} value={item.text} 
                         onEndEditing={({nativeEvent:{text}})=>text!=item.text && onTextChange?.(audioUri, text)}/>
-                    {playing && <PlaySound audio={audioUri(item)} destroy={setPlaying}/>}
+                    {playing && <PlaySound audio={audioUri(item)} onEnd={setPlaying}/>}
                 </View>
             </Pressable>
         )

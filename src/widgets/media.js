@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Subtitles } from "../components/player"
-import { PressableIcon, PolicyChoice, html, Speak } from '../components';
+import { PressableIcon, PolicyChoice, html, Speak, PlaySound } from '../components';
 import { ColorScheme } from '../components/default-style';
 import * as Speech from "../components/speech"
 
@@ -353,7 +353,11 @@ export class ListMedia extends Media{
                 }
             }
         }
-        return <Speak {...props} key={this.state.i}/>
+        if(props.text.audio){
+            const {audio}=props.text
+            return <PlaySound key={this.state.i} {...{...props, audio, text:undefined}}/>
+        }
+        return <Speak key={this.state.i} {...props}/>
     }
 
     renderAt(cue,i){

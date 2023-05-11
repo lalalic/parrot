@@ -1,6 +1,6 @@
 import React from "react"
 import { TaggedListMedia, TagManagement } from "./media"
-import { PressableIcon } from "../components"
+import { PlaySound, PressableIcon } from "../components"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
@@ -56,7 +56,12 @@ export default class DialogBook extends TaggedListMedia{
     createTranscript(){
         const state=this.context.store.getState()
         const {dialog=[]}=state.talks[this.props.id]||{}
-        const parse = (a,i=a.indexOf(":"))=>[a.substring(0, i), a.substring(i+1)]
+        const parse = a=>{
+            if(typeof(a)=="object")
+                return a
+            const i=a.indexOf(":")
+            return [a.substring(0, i), a.substring(i+1)]
+        }
             
         return dialog.reduce((cues,a, k)=>{
             if(k % 2==0){

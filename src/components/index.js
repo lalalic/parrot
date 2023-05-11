@@ -417,9 +417,14 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
         (async(startAt)=>{
             console.debug("begin to speak "+text)
             await lock.runExclusive(async ()=>{
-                onStart?.()
-                await Speech.speak(text, locale&&tts[mylang] ? {iosVoiceId:tts[mylang]} : {})
-                onEnd?.(Date.now()-startAt)
+                try{
+                    onStart?.()
+                    await Speech.speak(text, locale&&tts[mylang] ? {iosVoiceId:tts[mylang]} : {})
+                }catch(e){
+                    console.error(e)
+                }finally{
+                    onEnd?.(Date.now()-startAt)
+                }
             })
         })(Date.now());
         return ()=>Speech.stop()
@@ -482,52 +487,27 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     }
 })
 
-export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
+export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
     React.useEffect(()=>{
-        if(audio){
-            let sound,status,releaseLock
-
-            ;(async ()=>{
+        if(!audio)
+            return 
+        
+        let sound
+        ;(async (startAt)=>{
+            await lock.runExclusive(async ()=>{
                 try{
-                    const info=await FileSystem.getInfoAsync(audio)
-                    if(!info.exists){
-                        destroy?.()
-                        return
-                    }
-                    releaseLock=await lock.acquire(destroy)
-                    await new Promise((resolve,reject)=>{
-                        let resolved=false
-                        setTimeout(()=>{
-                            if(!resolved){
-                                FileSystem.deleteAsync(audio, {idempotent:true})
-                                return reject(new Error("bad audio file, discard it!"))
-                            }
-                        },1000)
-                        ;(async()=>{
-                            ({sound,status}=await Audio.Sound.createAsync({uri:audio}));
-                            resolved=true
-                            resolve()
-                        })();
-                    })
+                    onStart?.()  
+                    ({sound}=await Audio.Sound.createAsync({uri:audio}))
                     await sound.playAsync()
-                    setTimeout(()=>{
-                        sound?.unloadAsync()
-                        destroy?.()
-                    },status.durationMillis)
                 }catch(e){
-                    destroy?.()
-                    console.info(e.message)
-                }
-            })();
-
-            return ()=>{
-                try{
-                    sound?.unloadAsync()
+                    console.error(e)
                 }finally{
-                    releaseLock?.()
+                    onEnd?.(Date.now()-startAt)
                 }
-            }
-        }
+            })
+        })(Date.now());
+
+        return ()=>sound?.unloadAsync()
     },[audio])
     return children
 },{
@@ -539,7 +519,7 @@ export const PlaySound=Object.assign(({audio, children=null, destroy})=>{
                 <PressableIcon name={name} 
                     onPress={e=>setPlaying(true)} 
                     color={playing ? color.primary : undefined}/>
-                {playing && <PlaySound audio={audio} destroy={setPlaying}/>}
+                {playing && <PlaySound audio={audio} onEnd={setPlaying}/>}
             </>
         )
     },
