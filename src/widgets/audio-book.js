@@ -5,8 +5,6 @@ import { TaggedTranscript } from "./tagged-transcript"
 import { useDispatch } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
-
-
 export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
@@ -26,8 +24,6 @@ export default class AudioBook extends TaggedListMedia {
         )
     }
 
-    static Shortcut=()=><TagShortcut slug={AudioBook.defaultProps.slug}/>
-    static TagManagement=props=><TagManagement talk={AudioBook.defaultProps} placeholder="Tag: to categorize your audio book" {...props}/>
     static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         return (
@@ -39,12 +35,12 @@ export default class AudioBook extends TaggedListMedia {
                             if(res.type=="cancel")
                                 return
                             files.forEach(file=>{
-                                create({uri:file.uri, tag, text:"placeholder"},dispatch)
+                                this.create({uri:file.uri, tag, text:"placeholder"},dispatch)
                             })
                         })}/>,
                     <Recorder
                         onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && create({uri,text, tags:[tag],...record},dispatch)}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && this.create({uri,text, tags:[tag],...record},dispatch)}
                         />,
                     
                 ]}
@@ -56,8 +52,4 @@ export default class AudioBook extends TaggedListMedia {
     static prompts=[
         
     ]
-}
-
-function create(talk, dispatch){
-    dispatch({type:"audiobook/record", id:talk.id, talk:{...AudioBook.defaultProps, ...talk}})
 }

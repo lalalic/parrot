@@ -453,6 +453,7 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
             if(!speak.run){
                 const [run, stop]=await Speak.prepare(options)
                 speak.current=0
+                speak.queue=[]
                 speak.run=run
                 speak.stop=(finalText, done=()=>null)=>{
                     if(speak.canncelled)
@@ -463,21 +464,24 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 speak.doStop=stop
                 speak.cancel=()=>{
                     speak.cancelled=true
+                    speak.queue=Object.freeze([])
                     speak.doStop()
                 }
             }
-            speak.queue=text.split(/[\n\r\.\!]/g).filter(a=>!!a).slice(speak.current)
+            if(/[\.\!\?]$/g.test(text)){
+                speak.queue=text.replace(/\s+/g," ").split(/[\.\!\?]/g).filter(a=>!!a).slice(speak.current)
+            }
             if(!speak.running){
                 speak.running=true
-                while(speak.queue.length>1){
-                    await speak.run((speak.current++, speak.queue.pop()))
+                const next=()=>(speak.current++, speak.queue.shift())
+                while(speak.queue.length){
+                    await speak.run(next())
                 }
-                speak.running=false
                 if(speak.done){
-                    await speak.run((speak.current++, speak.queue.pop()))
                     speak.doStop()
                     speak.done()
                 }
+                speak.running=false
             }
         }
         return speak
@@ -489,25 +493,12 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
 
 export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
     React.useEffect(()=>{
-        if(!audio)
-            return 
-        
-        let sound
-        ;(async (startAt)=>{
-            await lock.runExclusive(async ()=>{
-                try{
-                    onStart?.()  
-                    ({sound}=await Audio.Sound.createAsync({uri:audio}))
-                    await sound.playAsync()
-                }catch(e){
-                    console.error(e)
-                }finally{
-                    onEnd?.(Date.now()-startAt)
-                }
-            })
-        })(Date.now());
-
-        return ()=>sound?.unloadAsync()
+        if(audio){
+            (async (startAt)=>{
+                onStart?.()
+                await PlaySound.play(audio,()=>onEnd?.(Date.now()-startAt))
+            })(Date.now());
+        }
     },[audio])
     return children
 },{
@@ -524,8 +515,39 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
         )
     },
     displayName: "PlaySound",
-    play(audio){
-
+    async play(audio,done){
+        await lock.runExclusive(async()=>{
+            let sound, check
+            try{
+                await new Promise(async $resolve=>{
+                    const resolve=e=>{
+                        clearInterval(check)
+                        $resolve()
+                    }
+                    ({sound}=await Audio.Sound.createAsync(
+                        {uri:audio},
+                        {shouldPlay:true},
+                        status=>{//expo-audio bug: this function is not called at expected time 
+                            const {error, didJustFinish}=status
+                            error && console.error(error)
+                            if(error || didJustFinish){
+                                resolve()
+                            }
+                        }
+                    ));
+                    //a hack for bug 
+                    check=setInterval(async ()=>{
+                        const status=await sound.getStatusAsync()
+                        if(status.didJustFinish || (status.isLoaded && !status.isPlaying)){
+                            resolve()
+                        }
+                    },300)
+                })
+            }finally{
+                await sound?.unloadAsync()
+                done?.()
+            }
+        })
     }
 })
 

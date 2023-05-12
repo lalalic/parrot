@@ -7,7 +7,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound } from '../components';
 import { ColorScheme } from '../components/default-style';
-import * as Speech from "../components/speech"
 
 import { selectBook } from "../store"
 
@@ -19,7 +18,7 @@ class Media extends React.Component {
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
-            <PolicyChoice label={true} labelFade={true} value={policyName}
+            <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]}
                 onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
                     
                 {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
@@ -27,7 +26,7 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                <Clear name="delete" talk={talk}
+                <PressableIcon name="delete" talk={talk} 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />
@@ -42,13 +41,13 @@ class Media extends React.Component {
     /**
      * protocol: Tags Management Component
      */
-     static TagManagement=false
+     static TagManagement=null
 
      /**protocol: Shortcut thumbnail */
-     static Shortcut=false
+     static Shortcut=undefined
  
      /**protocol: a tagged transcripts management component */
-     static TaggedTranscript=false
+     static TaggedTranscript=null
 
      static Info({talk, policyName, toggleTalk, dispatch, navigate, style}){
         switch (policyName) {
@@ -56,7 +55,7 @@ class Media extends React.Component {
                 return ( 
                     <ScrollView style={style}>
                         <Text>{talk.description}</Text>
-                        <this.TagManagement/>
+                        {this.TagManagement()}
                     </ScrollView>
                 )
             default: 
@@ -374,6 +373,15 @@ export class TaggedListMedia extends ListMedia{
         return id
     }
 
+    static Shortcut(props){
+        return <TagShortcut slug={this.defaultProps.slug}/>
+    }
+
+    static TagManagement(props){
+        return <TagManagement talk={this.defaultProps} placeholder={`Tag: to categorize ${this.defaultProps.title}`} {...props}/>
+    }
+
+
     createTranscript(){
         const state=this.context.store.getState()
         const {slug, tag}=this.props
@@ -421,15 +429,14 @@ export const TagShortcut=({slug, style={left:10}})=>{
     )
 }
 
-export const TagManagement=({talk, placeholder, appendable=true})=>{
+export const TagManagement=({talk, placeholder, appendable=true, onCreate})=>{
     const slug=talk.slug
     const dispatch=useDispatch()
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
     React.useEffect(()=>{
         if(tags.length==0){
             talk.tags?.forEach(tag=>{
-                const id=`${talk.id}_${tag}`
-                dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+                dispatch({type:"talk/toggle", talk:{...talk,id:`${talk.id}_${tag}`, tag}})
             })
         }
     },[tags])
@@ -440,12 +447,14 @@ export const TagManagement=({talk, placeholder, appendable=true})=>{
             appendable={appendable}
             onEndEditing={({nativeEvent:{text:tag}})=>{
                 tag=tag.trim()
-                if(!tag)
+                if(!tag || -1!==tags.findIndex(a=>a.tag==tag)){
                     return 
-               if(-1!==tags.findIndex(a=>a.tag==tag))
-                    return 
-                const id=`${talk.id}_${tag}`
-                dispatch({type:"talk/toggle", talk:{...talk,id}, key:"tag", value:tag})
+                }
+                if(onCreate){
+                    return onCreate({...talk, tag}, dispatch)
+                }else{
+                    dispatch({type:"talk/toggle", talk:{...talk,id:`${talk.id}_${tag}`, tag}})
+                }
             }}
             renderItemText={item=>item.tag}
         >

@@ -59,7 +59,8 @@ export default class VocabularyBook extends TaggedListMedia{
         }
     ]
 
-    static TagManagement=props=><TagManagement appendable={false} talk={VocabularyBook.defaultProps} placeholder="Tag: to categorize your vocabulary book" {...props}/>
+    static Shortcut=undefined
+    static TagManagement=props=>super.TagManagement({...props, appendable:false})
     constructor(){
         super(...arguments)
         this.state.locale=this.props.locale

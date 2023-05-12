@@ -102,6 +102,12 @@ function isTextMessage(message){
 	return typeof(message.text)!=="object"
 }
 
+function useLatest(value){
+	const a=React.useRef()
+	a.current=value
+	return a
+}
+
 /**
  * 1. auto append (...) only when last message is text
  * 2. 
@@ -117,6 +123,23 @@ const Chat = () => {
 	const onSend = useCallback((msgs = []) =>setMessages((previousMessages) =>GiftedChat.append(previousMessages, msgs)), [])
 
 	const options=useRef()
+
+	const $messages=useLatest(messages)
+	useEffect(()=>()=>{
+		dispatch({type:"talk/toggle", talk:{
+			...defaultProps, 
+			messages:$messages.current.map(a=>{
+				if(typeof(a.text)!="object"){
+					return a
+				}
+
+				if(createDialogMessage.is(a))
+					return 
+				
+				return {...a, text:`#${createPromptMessage.is(a)?.label}(...)`}
+			}).filter(a=>!!a)
+		}})
+	},[])
 
 	useEffect(() => {
 		const lastMessage = messages[0]
@@ -172,18 +195,6 @@ const Chat = () => {
 		}else if(!createBotMessage.is(lastMessage) && typeof(lastMessage.text)!="object"){
 			setMessages((prevMessages) => [createBotMessage('...'), ...prevMessages]);
 		}
-
-		return ()=>{
-			dispatch({type:"talk/toggle", talk:{
-				...defaultProps, 
-				messages:messages.map(a=>{
-					if(typeof(a.text)!="object")
-						return a
-					
-					return {...a, text:`#${createPromptMessage.is(a)?.label}(...)`}
-				})
-			}})
-		}
 	}, [messages]);
 
 	const {lang,mylang=lang, tts={}}=useSelector(state=>state.my)
@@ -223,22 +234,28 @@ const Chat = () => {
 	},[dialog])
 
 	const saveDialog=React.useCallback((needSaveToDialog)=>{
-		if(messages.length<2){
+		if($messages.current.length<2){
 			return 
 		}
-		setMessages(()=>[],()=>{
-			if(needSaveToDialog){
-				globalThis.Widgets.dialog.create({
-					title:`chat on ${new Date().asDateTimeString()}`,
-					dialog:messages.map(message=>{
-						let {text, audio, user:{id}}=message
-						text=createPromptMessage.is(message)?.settled||text
-						return !audio ? `${id}:${text}` : {user:id, text, audio}
-					}),
-				}, dispatch)
-			}
-		})
-	},[messages])
+		setMessages(()=>[])
+		if(!needSaveToDialog){
+			return
+		}
+		const messages=$messages.current.map((message,i)=>{
+			if(createDialogMessage.is(message))
+				return 
+			let {text, audio, user:{_id}}=message
+			text=createPromptMessage.is(message)?.settled||text
+			return typeof(audio)=="string" ? {user:_id, text, audio} : `${_id}:${text}`
+		}).filter(a=>!!a).reverse()
+		if(messages.length % 2){
+			messages.shift()
+		}
+		globalThis.Widgets.dialog.create({
+			title:`chat on ${new Date().asDateTimeString()}`,
+			dialog:messages,
+		}, dispatch)
+	},[])
 	return (
 		<View style={{flex:1}}>
 			<GiftedChat
@@ -294,9 +311,16 @@ function PlayAudioMessage({currentMessage, setMessages}){
 		onPress={e=>{
 			if(currentMessage.audio===true){
 				currentMessage?.speak?.cancel()
-				delete currentMessage.audio
-				delete currentMessage.speak
-				setMessages(prev=>[...prev])
+				setMessages(prev=>{
+					const i=prev.indexOf(currentMessage)
+					if(i!=-1){
+						const newMessages=[...prev]
+						const current=newMessages[i]={...newMessages[i]}
+						delete current.audio
+						delete current.speak
+						return newMessages
+					}
+				})
 			}else{
 				setPlaying(true)
 				PlaySound.play(currentMessage.audio,()=>setPlaying(false))

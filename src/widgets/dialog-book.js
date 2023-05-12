@@ -9,7 +9,7 @@ export default class DialogBook extends TaggedListMedia{
         ...super.defaultProps,
         id:"dialog",
         slug:"dialog",
-        description:"dialogs",
+        description:"Dialog Practice",
         title: "Dialog Book",
         thumb: require("../../assets/widget-picture-book.jpeg")
     }
@@ -48,17 +48,20 @@ export default class DialogBook extends TaggedListMedia{
         },
     ]
 
-    static TagManagement=props=><TagManagement appendable={false} talk={DialogBook.defaultProps} placeholder="Tag: to categorize your dialog book" {...props}/>
+    static Shortcut=undefined
+    static TagManagement=props=>super.TagManagement({...props,appendable:false})
     /**
      * A:...
      * B:...
      */
     createTranscript(){
-        const state=this.context.store.getState()
-        const {dialog=[]}=state.talks[this.props.id]||{}
+        const {dialog=[]}=this.props
         const parse = a=>{
+            if(!a){
+                return ["error",""]
+            }
             if(typeof(a)=="object")
-                return a
+                return [a.user,a]
             const i=a.indexOf(":")
             return [a.substring(0, i), a.substring(i+1)]
         }

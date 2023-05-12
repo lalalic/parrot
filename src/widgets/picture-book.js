@@ -30,8 +30,6 @@ export default class PictureBook extends TaggedListMedia {
         return <Image source={{uri}} style={{flex:1}}/>
     }
 
-    static Shortcut=()=><TagShortcut slug={PictureBook.defaultProps.slug}/>
-    static TagManagement=props=><TagManagement talk={PictureBook.defaultProps} placeholder="Tag: to categorize your picture book" {...props}/>
     static TaggedTranscript=({slug=PictureBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()

@@ -24,9 +24,9 @@ export default (props)=>{
             </Text>
             <FlatList
                 data={Object.values(Widgets)}
-                renderItem={({item:{defaultProps, Shortcut},index})=>(
-                    <TalkThumb item={defaultProps} {...{thumbStyle, imageStyle,durationStyle,titleStyle}}>
-                        {!!Shortcut && <Shortcut/>}
+                renderItem={({item:Widget,index})=>(
+                    <TalkThumb item={Widget.defaultProps} {...{thumbStyle, imageStyle,durationStyle,titleStyle}}>
+                        {Widget.Shortcut?.()}
                     </TalkThumb>
                 )}
                 keyExtractor={item=>item.defaultProps.slug}
