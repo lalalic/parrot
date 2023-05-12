@@ -1,8 +1,10 @@
 import React from "react"
-import { Text } from "react-native"
+import { Text, View, Image } from "react-native"
 import Voice from "@react-native-voice/voice"
 
-export default ({style, uri, locale="en-US", ...props})=>{
+
+
+export  function TestVoice({style, uri, locale="en-US", ...props}){
     const [recognized, setRecognizedText]=React.useState("...")
     React.useEffect(()=>{
         let recognized4Cleanup, start, end
@@ -62,3 +64,30 @@ export default ({style, uri, locale="en-US", ...props})=>{
         </Text>
     )
 }
+
+/*
+import { useAssets} from "expo-asset"
+import CoreMLImage from "react-native-core-ml-image"
+export default function TestCoreMLImage({}){
+    const [[modelAsset]=[]]=useAssets([require("../../assets/models/image.mlmodel")])
+    const [objects, setObjects]=React.useState([])
+    const [model, setModel]=React.useState()
+    React.useEffect(()=>{
+        if(modelAsset){
+            (async()=>{
+                await modelAsset.downloadAsync()
+                setModel(modelAsset.localUri)
+            })()
+        }
+    },[modelAsset])
+    if(!model)
+        return <Text style={{color:"white"}}>loading....</Text>
+    return (
+        <CoreMLImage modelFile={model} onClassification={found=>setObjects(found)}>
+            <View style={{flex:1}}>
+                <Text style={{color:"white"}}>{objects.map(a=>a.identifier).join(",")}</Text>
+            </View>
+        </CoreMLImage>
+    )
+}
+*/

@@ -52,14 +52,19 @@ export default function Talk({autoplay}){
 }
 
 function useTalkQuery({slug, id=slug}){
+    let talk
     if(!!globalThis.Widgets[slug]){
-        let talk=useSelector(state=>state.talks[id])
+        talk=useSelector(state=>state.talks[id])
         if(!talk){
             talk=globalThis.Widgets[slug].defaultProps
+        }else{
+            talk.hasHistory=true
         }
-        const {general, shadowing, dictating, retelling, tags, ...data}=talk
-        return {data}
     }else{
-        return Ted.useTalkQuery({slug,id})
+        const {data={}}=Ted.useTalkQuery({slug})
+        const talkLocal=useSelector(state=>state.talks[data.id])
+        talk=React.useMemo(()=>({...talkLocal, ...data, hasHistory:!!talkLocal}),[data, talkLocal])
     }
+    const {general, shadowing, dictating, retelling, tags, ...data}=talk
+    return {data}
 }

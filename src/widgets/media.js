@@ -14,7 +14,7 @@ class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
+     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -26,10 +26,10 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                <PressableIcon name="delete" talk={talk} 
+                {hasHistory && <PressableIcon name="clear" 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
-                />
+                />}
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async()=> toggleTalk("favorited")}/>
@@ -461,11 +461,4 @@ export const TagManagement=({talk, placeholder, appendable=true, onCreate})=>{
             {!!tags.length && appendable && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
-}
-
-export const Clear=({talk, ...props})=>{
-    const hasHistory=useSelector(state=>!!state.talks[talk.id])
-    if(!hasHistory)
-        return null
-    return <PressableIcon {...props}/>
 }

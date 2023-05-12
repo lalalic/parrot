@@ -6,10 +6,9 @@ import * as FileSystem from 'expo-file-system';
 
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
-import { Clear } from "./media"
 
 export default class extends React.Component{
-    static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
+    static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -21,10 +20,10 @@ export default class extends React.Component{
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                <Clear name="clear" talk={talk}
+                {hasHistory && <PressableIcon name="clear" 
                     onLongPress={e => dispatch({ type: "talk/clear", id: talk.id })}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
-                />
+                />}
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async (e) => {
