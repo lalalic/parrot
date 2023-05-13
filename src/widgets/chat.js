@@ -126,10 +126,11 @@ const Chat = () => {
 
 	const $messages=useLatest(messages)
 	useEffect(()=>()=>{
-		Speak.stop()
 		dispatch({type:"talk/toggle", talk:{
 			...defaultProps, 
 			messages:$messages.current.map(a=>{
+				a.speak?.cancel()
+				delete a.speak
 				if(typeof(a.text)!="object"){
 					return a
 				}

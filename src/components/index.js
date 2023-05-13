@@ -456,7 +456,6 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 speak.queue=[]
                 speak.run=run
                 speak.stop=(finalText, done=()=>null)=>{
-                    this.stop.session=null
                     if(speak.canncelled)
                         return done()
                     speak.done=done
@@ -464,12 +463,10 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 }
                 speak.doStop=stop
                 speak.cancel=()=>{
-                    this.stop.session=null
                     speak.cancelled=true
                     speak.queue=Object.freeze([])
                     speak.doStop()
                 }
-                this.stop.session=speak
             }
             if(/[\.\!\?]$/g.test(text)){
                 speak.queue=text.replace(/\s+/g," ").split(/[\.\!\?]/g).filter(a=>!!a).slice(speak.current)
@@ -491,9 +488,6 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     },
     setDefaults(){
         Speech.setDefaults(...arguments)
-    },
-    stop(){
-        this.stop.session?.cancel()
     }
 })
 
