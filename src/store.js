@@ -94,8 +94,9 @@ const Ted=createApi({
 								description
 								playerData
 								nativeDownloads{
-								medium
+									medium
 								}
+								audioDownload
 							}
 						}`,
 					}),
@@ -153,7 +154,7 @@ const Ted=createApi({
 					cue.time+=offset
 					cue.end=talk.duration*1000+offset
 					if(lastCue){
-						lastCue.end=cue.time-500
+						lastCue.end=cue.time-200
 					}
 					//cue.time=start
 					//cue.end=end

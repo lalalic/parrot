@@ -4,7 +4,7 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } f
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound } from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage } from "../components"
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -126,6 +126,7 @@ const Chat = () => {
 
 	const $messages=useLatest(messages)
 	useEffect(()=>()=>{
+		Speak.stop()
 		dispatch({type:"talk/toggle", talk:{
 			...defaultProps, 
 			messages:$messages.current.map(a=>{
@@ -215,9 +216,11 @@ const Chat = () => {
 				style:{color:undefined,padding:4},
 				onAutoSubmit:record=>{
 					setMessages(([last, ...prevs]) =>{
-						last.text=record.recognized
-						last.audio=record.uri
-						return [last, ...prevs]
+						if(createDialogMessage.is(last)){
+							last.text=record.recognized
+							last.audio=record.uri
+							return [last, ...prevs]
+						}
 					})
 				},
 				uri:`${FileSystem.documentDirectory}chat/${Date.now()}.wav`
@@ -233,7 +236,7 @@ const Chat = () => {
 		}
 	},[dialog])
 
-	const saveDialog=React.useCallback((needSaveToDialog)=>{
+	const clearDialog=React.useCallback((needSaveToDialog)=>{
 		if($messages.current.length<2){
 			return 
 		}
@@ -255,6 +258,7 @@ const Chat = () => {
 			title:`chat on ${new Date().asDateTimeString()}`,
 			dialog:messages,
 		}, dispatch)
+		FlyMessage.show("saved to dialog book!")
 	},[])
 	return (
 		<View style={{flex:1}}>
@@ -281,7 +285,7 @@ const Chat = () => {
 						submit={message=>message && onSend(message)}
 						ask={params=>createPromptMessage.submitParams({params, message: messages[0], setMessages})}	
 						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
-						saveDialog={saveDialog}
+						clearDialog={clearDialog}
 					/>
 				}
 				renderMessageText={props=>{
@@ -332,7 +336,7 @@ function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit, ask, forget, isDialog, locale, saveDialog}){
+function MessageComposer({submit, ask, forget, isDialog, locale, clearDialog}){
 	const [audioInput, setAudioInput]=useState(false)
 	const [actions, setActions]=useState(false)
 	const props={
@@ -376,7 +380,7 @@ function MessageComposer({submit, ask, forget, isDialog, locale, saveDialog}){
 					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
 
 					<PressableIcon name="add-circle-outline" size={36} onPress={()=>setActions(!actions)}/>
-					<PressableIcon name="save" size={36} onPress={saveDialog} onLongPress={e=>saveDialog(true)}/>
+					<PressableIcon name="delete-outline" size={36} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
 			</View>
 			{actions && (
 				<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
@@ -423,8 +427,10 @@ const InputText=({submit, textStyle})=>{
 				value={value}
 				onChangeText={text=>setValue(text)}
 				onSubmitEditing={e=>{
-					submit({text:value})
-					setValue("")
+					if(value.trim().length){
+						submit({text:value})
+						setValue("")
+					}
 				}} 
 				style={{...textStyle,padding:5,fontSize:16}}/>
 	)

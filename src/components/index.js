@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
@@ -456,6 +456,7 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 speak.queue=[]
                 speak.run=run
                 speak.stop=(finalText, done=()=>null)=>{
+                    this.stop.session=null
                     if(speak.canncelled)
                         return done()
                     speak.done=done
@@ -463,10 +464,12 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 }
                 speak.doStop=stop
                 speak.cancel=()=>{
+                    this.stop.session=null
                     speak.cancelled=true
                     speak.queue=Object.freeze([])
                     speak.doStop()
                 }
+                this.stop.session=speak
             }
             if(/[\.\!\?]$/g.test(text)){
                 speak.queue=text.replace(/\s+/g," ").split(/[\.\!\?]/g).filter(a=>!!a).slice(speak.current)
@@ -488,6 +491,9 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     },
     setDefaults(){
         Speech.setDefaults(...arguments)
+    },
+    stop(){
+        this.stop.session?.cancel()
     }
 })
 
@@ -762,6 +768,26 @@ export function PopMenu({style, triggerIconName="more-vert", label, children, he
         </View>
     )
 }
+
+export const FlyMessage=Object.assign(()=>{
+    const [message, setMessage]=React.useState("")
+    useEffect(()=>{
+        FlyMessage.setMessage=setMessage
+        return ()=>FlyMessage.setMessage=()=>null
+    },[])
+    if(message){
+        return (
+            <View style={{position:"absolute", bottom:0,width:"100%", color:"yellow", justifyContent:"center", alignItems:"center"}}>
+                <Text>{message}</Text>
+            </View>
+        )
+    }
+},{
+    show(message){
+        this.setMessage(message)
+        setTimeout(()=>this.setMessage(""),3000)
+    }
+})
 
 export const html = (talk, lineHeight, margins, needMy) => `
     <html>

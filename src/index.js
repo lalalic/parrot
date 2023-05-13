@@ -7,6 +7,7 @@ import Router from "./router"
 import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
+import { FlyMessage } from "./components"
 
 LogBox.ignoreAllLogs()
 ExpoSplashScreen.preventAutoHideAsync()
@@ -53,6 +54,7 @@ export default ()=>{
                 <StatusBar style="light"/>
                 <Permissions/>
             </SafeAreaView>}
+            <FlyMessage/>
         </Provider>
     )
 }
