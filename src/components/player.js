@@ -27,7 +27,7 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,onChallengePass,
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,onChallengePass,onFixChunk,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -202,8 +202,11 @@ export default function Player({
                 case "record/miss":
                     asyncCall(()=>onRecordAudioMiss?.(action))
                 break
-                case "record/chunk":
+                case "record/chunk"://not implemented
                     asyncCall(()=>onLongtermChallenge?.(action.chunk))
+                break
+                case "fix/chunk":
+                    policy.chunk<2 && asyncCall(()=>onFixChunk?.(action.chunk.time))
                 break
                 case "media/time":{
                     const i=chunks.findIndex(a=>a.time>=action.time)
@@ -249,7 +252,7 @@ export default function Player({
 
     const onMediaStatus=React.useCallback((state, action)=>{
         asyncCall(()=>onProgress.current?.(action.status.positionMillis))
-        
+        console.debug(`position: ${action.status.positionMillis}`)
         const {i, whitespacing}=state
         const nextState=(()=>{
             if(action.status.transcript){
@@ -672,9 +675,9 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                     onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
                     <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
                 </Pressable>
-                <Pressable style={{ flex:1, justifyContent:"flex-end" }}
+                <Pressable style={{ flex:1, justifyContent:"flex-end", }}
                     onLongPress={e=>{
-                        dispatch({type:"record/chunk", chunk:item})
+                        dispatch({type:"fix/chunk", chunk:item})
                     }}
                     onPress={e => {
                         if(audioExists){

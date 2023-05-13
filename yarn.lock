@@ -8029,6 +8029,10 @@ tslib@^2.4.0:
   version "2.4.1"
   resolved "https://registry.npmmirror.com/tslib/-/tslib-2.4.1.tgz#0d0bfbaac2880b91e22df0768e55be9753a5b17e"
 
+tts@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/tts/-/tts-0.1.0.tgz#10685054dac7775e97d2271a7e7d1eca4bb1f6c0"
+
 type-check@~0.3.2:
   version "0.3.2"
   resolved "https://registry.npmmirror.com/type-check/-/type-check-0.3.2.tgz#5884cab512cf1d355e3fb784f30804b2b520db72"

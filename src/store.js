@@ -120,7 +120,9 @@ const Ted=createApi({
 				
 				const resHlsMeta=await fetch(talk.resources.hls.metadata)
 				const hlsMeta=await resHlsMeta.json()
+				let offset=0
 				const resVtt=await fetch((()=>{
+					offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
 					const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang) ?? hlsMeta.subtitles[0]
 					isSameLang=target.code.toLowerCase()==lang
 					return target
@@ -145,13 +147,20 @@ const Ted=createApi({
 						last=i+1
 					}
 				}
+				let lastCue
 				paragraphs.forEach(p=>p.cues.forEach(cue=>{
 					const [start=cue.time, end=talk.duration*1000, text]=nextCue()
-					cue.time=start
-					cue.end=end
+					cue.time+=offset
+					cue.end=talk.duration*1000+offset
+					if(lastCue){
+						lastCue.end=cue.time-500
+					}
+					//cue.time=start
+					//cue.end=end
 					if(text){
 						cue.my=text
 					}
+					lastCue=cue
 				}))
 				return {data:talk}
 			},
@@ -405,6 +414,17 @@ export function createStore(needPersistor){
 										delete payload.chunk
 									}
 									talk[target]={...talk[target], ...payload}
+								})
+							case "talk/fix/chunk":
+								return produce(talks, $talks=>{
+									const {time, talk:{slug, title, thumb,duration,link,id}}=action
+									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
+									if(talk.fixes){
+										if(talk.fixes.indexOf(time)==-1)
+											talk.fixes=[time, ...talk.fixes]
+									}else{
+										talk.fixes=[time]
+									}
 								})
 							case "talk/challenge":{
 								return produce(talks, $talks=>{

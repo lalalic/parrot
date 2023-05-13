@@ -14,15 +14,15 @@ Pod::Spec.new do |s|
   
   s.source_files = "ios/**/*.{h,m,mm,swift}"
 
-  s.dependency "React-Core"
-  s.dependency "TensorFlowLiteSwift"  
-  s.dependency "TensorFlowLiteSelectTfOps", "~> 0.0.1-nightly"
+  s.dependency "React"
+  #s.dependency "TensorFlowLiteSwift"  
+  #s.dependency "TensorFlowLiteSelectTfOps", "~> 0.0.1-nightly"
 
   # Link TensorFlowLiteSelectTfOps framework
-  s.pod_target_xcconfig = {
-    'OTHER_LDFLAGS' => [
-      "$(inherited)",
-        "-force_load $(PODS_ROOT)/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.xcframework/ios-arm64/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps -u _TF_AcquireFlexDelegate"
-    ].join(" ")
-  }
+  #s.pod_target_xcconfig = {
+  #  'OTHER_LDFLAGS' => [
+  #    "$(inherited)",
+  #      "-force_load $(PODS_ROOT)/TensorFlowLiteSelectTfOps/Frameworks/TensorFlowLiteSelectTfOps.xcframework/ios-arm64/TensorFlowLiteSelectTfOps.framework/TensorFlowLiteSelectTfOps -u _TF_AcquireFlexDelegate"
+  #  ].join(" ") 
+  #}
 end
