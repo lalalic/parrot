@@ -116,7 +116,7 @@ function useLatest(value){
 const Chat = () => {
 	const { sendMessage } = useChatGpt();
 	const talk=useSelector(state=>state.talks.chat)
-	const [messages, setMessages] = useState(()=>talk?.messages||[]);
+	const [messages=[], setMessages] = useState(()=>talk?.messages);
 	const [errorMessage, setErrorMessage] = useState('');
 	const dispatch = useDispatch()
 	const navigate=useNavigate()
@@ -208,7 +208,7 @@ const Chat = () => {
 	},[locale])
 	const voice=tts[locale ? mylang : lang]
 
-	const [dialog, isDialog]=React.useState(false)
+	const [dialog, setDialog]=React.useState(false)
 	const listenDialog=React.useCallback(()=>{
 		onSend([
 			createDialogMessage({
@@ -231,7 +231,9 @@ const Chat = () => {
 
 	useEffect(()=>{
 		if(dialog){
-			listenDialog()
+			if(createBotMessage.is(messages[0])){
+				listenDialog()
+			}
 		}else if(createDialogMessage.is(messages[0])){
 			setMessages(([listening, ...prevs])=>prevs)
 		}
@@ -281,10 +283,12 @@ const Chat = () => {
 				showUserAvatar={true}
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
-				renderComposer={({onSend,...data})=><MessageComposer isDialog={isDialog} 
+				renderComposer={({onSend,...data})=><MessageComposer setDialog={setDialog} 
 						locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
 						submit={message=>message && onSend(message)}
-						ask={params=>createPromptMessage.submitParams({params, message: messages[0], setMessages})}	
+						ask={params=>{
+							createPromptMessage.submitParams({params, message: messages[0], setMessages})
+						}}	
 						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
 						clearDialog={clearDialog}
 					/>
@@ -337,7 +341,7 @@ function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit, ask, forget, isDialog, locale, clearDialog}){
+function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog}){
 	const [audioInput, setAudioInput]=useState(false)
 	const [actions, setActions]=useState(false)
 	const props={
@@ -362,11 +366,11 @@ function MessageComposer({submit, ask, forget, isDialog, locale, clearDialog}){
 						style={{width:50}} color={audioInput==2 ? "green" : "black"} size={36}
 						onPress={()=>{
 							setAudioInput(!audioInput)
-							isDialog(false)
+							setDialog(false)
 						}}
 						onLongPress={()=>{
 							if(audioInput){
-								isDialog(true)
+								setDialog(true)
 								setAudioInput(2)
 							}
 						}}
@@ -380,14 +384,30 @@ function MessageComposer({submit, ask, forget, isDialog, locale, clearDialog}){
 
 					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
 
-					<PressableIcon name="add-circle-outline" size={36} onPress={()=>setActions(!actions)}/>
-					<PressableIcon name="delete-outline" size={36} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
+					<PressableIcon name="add-circle-outline" size={36} style={{marginLeft:10}} onPress={()=>setActions(!actions)}/>
+					<PressableIcon name="delete-outline" size={36}  style={{}} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
 			</View>
 			{actions && (
 				<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
 					{prompts.map((prompt,i)=><PressableIcon key={i} {...prompt} size={50} labelStyle={{color:"black"}}
 						onPress={()=>{
-							submit(createPromptMessage({prompt,ask:params=>askRef.current?.(params),forget}))
+							submit(createPromptMessage({
+								prompt,forget, 
+								ask:params=>{
+									if(prompt.settings?.dialog){
+										setDialog(true)
+										setAudioInput(2)
+									}else if(prompt.settings?.dialog===false){
+										setDialog(false)
+										if(prompt.settings.audio){
+											setAudioInput(true)
+										}else if(prompt.settings.audio===false){
+											setAudioInput(false)
+										}
+									}
+									setTimeout(()=>askRef.current?.(params), 1000)	
+								},
+							}))
 							setActions(false)
 						}}
 					/>)}

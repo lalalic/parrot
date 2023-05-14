@@ -488,6 +488,9 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     },
     setDefaults(){
         Speech.setDefaults(...arguments)
+    },
+    stop(){
+        Speech.stop()
     }
 })
 

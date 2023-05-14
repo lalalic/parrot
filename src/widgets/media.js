@@ -157,6 +157,7 @@ class Media extends React.Component {
     componentWillUnmount() {
         this.progress.removeAllListeners()
         this.progressing?.stop()
+        Speak.stop()
     }
 
     setStatusSync({ shouldPlay, positionMillis }, shouldTriggerUpdate=true) {
