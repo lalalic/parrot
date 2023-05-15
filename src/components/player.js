@@ -1,5 +1,5 @@
 import React, {} from 'react';
-import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
+import {View, Text, ActivityIndicator, Pressable, FlatList, AppState} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
 import { produce } from "immer"
@@ -309,10 +309,25 @@ export default function Player({
     
     const saveHistory=React.useRef(0)
     saveHistory.current=chunks[status.i]?.time
+    const appState=React.useRef(AppState.currentState)
     React.useEffect(()=>{
-        //@Hack: to play sound to speaker, otherwise always to earpod
-        Audio.setAudioModeAsync({ playsInSilentModeIOS: true })
+        /*
+        const subscription=AppState.addEventListener('change',next=>{
+            if(next.match(/inactive|background/) && appState.current === 'active'){
+                appState.current='background'
+                console.debug("player in background mode")
+                if(status.isPlaying||status.whitespacing){
+                    video.current?.backgroundPlay?.(chunks, policy.whitespace)
+                }
+            }else if(next === 'active' && appState.current.match(/inactive|background/)){
+                appState.current='active'
+                console.debug("player in foreground mode")
+                video.current?.backgroundStop?.()
+            }
+        })
+        */
         return ()=>{
+            //subscription?.remove()
             if(saveHistory.current && !policy.fullscreen){
                 onQuit?.({time:saveHistory.current})
             }
@@ -322,7 +337,9 @@ export default function Player({
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
-    console.debug({chunks, status})
+    
+    
+
     return (
         <>
         <SliderIcon.Container 

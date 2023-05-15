@@ -6913,6 +6913,10 @@ react-native-swipe-gestures@^1.0.5:
   version "1.0.5"
   resolved "https://registry.npmmirror.com/react-native-swipe-gestures/-/react-native-swipe-gestures-1.0.5.tgz#a172cb0f3e7478ccd681fd36b8bfbcdd098bde7c"
 
+react-native-today-widget@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/react-native-today-widget/-/react-native-today-widget-1.0.0.tgz#2547494c497aa7163b3a40a66937879be4b5412c"
+
 react-native-tts@^4.1.0:
   version "4.1.0"
   resolved "https://registry.npmmirror.com/react-native-tts/-/react-native-tts-4.1.0.tgz#05fa34492bec234bcd64f6ed2bf122c4667d141a"

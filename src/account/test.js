@@ -1,10 +1,58 @@
 import React from "react"
-import { Text } from "react-native"
+import { Text , AppState} from "react-native"
+import { useAssets} from "expo-asset"
+
+import { TrainPlayer } from "tts"
+
+export default function TestTrainPlayer({}){
+    React.useEffect(()=>{
+        TrainPlayer.playItems(["hello world", "play sound for me today", "good morning for today and tomorrow"])
+    },[])
+
+    return <Text>playing...</Text>
+}
+
+/*
+import { PlaySound, Speak } from "../components"
+export default function TestBackground({}){
+    const [[musicAsset]=[]]=useAssets([require("../../assets/sample.mp3")])
+    const [a, setA]=React.useState()
+    const music=React.useRef(0)
+    React.useEffect(()=>{
+        setInterval(e=>{
+            Speak.speak((music.current++)+"")
+        }, 3000)
+    },[])
+
+    const appState=React.useRef(AppState.currentState)
+    const musicRef=React.useRef(music)
+    musicRef.current=music
+    React.useEffect(()=>{
+        const subscription=AppState.addEventListener('change',next=>{
+            if(next.match(/inactive|background/) && appState.current === 'active'){
+                appState.current='background'
+                setInterval(e=>{
+                    Speak.speak(i++)
+                }, 3000)
+            }else if(next === 'active' && appState.current.match(/inactive|background/)){
+                appState.current='active'
+            }
+        })
+        return ()=>{
+            subscription?.remove()
+        }
+    },[])
+    if(music.current){
+        return <Text>Playing...</Text>
+        return <Speak text={music.current+""} key={music.current}/>
+    }
+    return <Text>loading....</Text>
+}
+*/
+
+/*
 import Voice from "@react-native-voice/voice"
-
-
-
-export  function TestVoice({style, uri, locale="en-US", ...props}){
+export  default function TestVoice({style, uri, locale="en-US", ...props}){
     const [recognized, setRecognizedText]=React.useState("...")
     React.useEffect(()=>{
         let recognized4Cleanup, start, end
@@ -64,9 +112,10 @@ export  function TestVoice({style, uri, locale="en-US", ...props}){
         </Text>
     )
 }
+*/
 
 
-import { useAssets} from "expo-asset"
+/*
 import { CoreMLImage } from "../../tts"
 export default function TestCoreMLImage({}){
     const [[modelAsset]=[]]=useAssets([require("../../assets/models/image.mlmodelc")])
@@ -90,3 +139,4 @@ export default function TestCoreMLImage({}){
             }}/>
     )
 }
+*/

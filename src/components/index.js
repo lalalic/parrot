@@ -491,6 +491,9 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     },
     stop(){
         Speech.stop()
+    },
+    speak(){
+        return Speech.speak(...arguments)
     }
 })
 
@@ -501,6 +504,8 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
                 onStart?.()
                 await PlaySound.play(audio,()=>onEnd?.(Date.now()-startAt))
             })(Date.now());
+
+            return ()=>PlaySound.stop?.()
         }
     },[audio])
     return children
@@ -538,6 +543,11 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
                             }
                         }
                     ));
+                    this.stop=()=>{
+                        resolve()
+                        sound.unloadAsync()
+                        done?.()
+                    }
                     //a hack for bug 
                     check=setInterval(async ()=>{
                         const status=await sound.getStatusAsync()
@@ -546,12 +556,14 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
                         }
                     },300)
                 })
+            }catch(e){
             }finally{
                 await sound?.unloadAsync()
                 done?.()
             }
         })
     }
+
 })
 
 

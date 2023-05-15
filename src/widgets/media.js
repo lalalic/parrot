@@ -355,9 +355,22 @@ export class ListMedia extends Media{
         }
         if(props.text.audio){
             const {audio}=props.text
+            return <Speak key={this.state.i} {...props} text={props.text.text}/>
             return <PlaySound key={this.state.i} {...{...props, audio, text:undefined}}/>
         }
         return <Speak key={this.state.i} {...props}/>
+    }
+
+    backgroundPlay(chunks, whitespace){
+        const speak=Speak.session()
+        chunks.slice(this.state.i).forEach(async chunk=>{
+            const start=Date.now()
+            await speak.run(chunk.text)
+            return new Promise(resolve=>{
+                setTimeout(resolve,whitespace*(Date.now()-start)*1000)
+            })
+        })
+        speak.stop()
     }
 
     renderAt(cue,i){

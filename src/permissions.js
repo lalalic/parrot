@@ -68,5 +68,16 @@ export const Permissions = () => {
         }
     },[calendarID])
 
+
+    React.useEffect(()=>{
+        Audio.setAudioModeAsync({
+            allowsRecordingIOS: false,
+            staysActiveInBackground: true,
+            playsInSilentModeIOS: true,
+            shouldDuckAndroid: false,
+            playThroughEarpieceAndroid: true
+        })
+    },[])
+
     return null;
 };

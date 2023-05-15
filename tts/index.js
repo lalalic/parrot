@@ -1,3 +1,4 @@
-import { requireNativeComponent } from "react-native";
+import { requireNativeComponent, NativeModules } from "react-native";
 
 export const CoreMLImage = requireNativeComponent("CoreMLImage")
+export const { TrainPlayer } = NativeModules
