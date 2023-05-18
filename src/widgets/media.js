@@ -353,6 +353,14 @@ export class ListMedia extends Media{
                 }
             }
         }
+
+        if(this.state.background){
+            props.onStart=(_onStart=>(...args)=>{
+                NowPlaying.info(this.props.tag||this.props.title, "Parrot", 1000.0, props.text?.text||props.text)
+                _onStart(...args)
+            })(props.onStart);
+        }
+
         if(props.text.audio){
             const {audio}=props.text
             return <Speak key={this.state.i} {...props} text={props.text.text}/>

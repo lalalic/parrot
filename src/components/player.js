@@ -309,30 +309,36 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
-    const saveHistory=React.useRef(0)
-    saveHistory.current=chunks[status.i]?.time
-
+    /*
     const appState=React.useRef({state:AppState.currentState, handler:null})
     appState.current.handler=React.useCallback(next=>{
         if(next.match(/inactive|background/) && appState.current.state === 'active'){
             appState.current.state='background'
             console.debug("player in background mode")
             if(status.isPlaying||status.whitespacing){
-                //NowPlaying.start(action=>dispatch({type:`nav/${action}`}))
-                //video.current?.backgroundPlay?.(chunks.slice(status.i), policy.whitespace, action=>dispatch({type:`nav/${action}`}))
+                NowPlaying.start(action=>dispatch({type:`nav/${action}`}))
+                video.current?.setState?.({background:true})
             }
         }else if(next === 'active' && appState.current.state.match(/inactive|background/)){
             appState.current.state='active'
             console.debug("player in foreground mode")
-            //NowPlaying.stop()
-            //video.current?.backgroundStop?.(playedAmount=>playedAmount)
+            video.current?.setState?.({background:true})
+            NowPlaying.stop()
         }
     },[chunks, status.i, status.isPlaying||status.whitespacing, policy.whitespace])
-
     React.useEffect(()=>{
         const subscription=AppState.addEventListener('change',next=>{appState.current.handler(next)})
         return ()=>{
+            NowPlaying.stop()
             subscription?.remove()
+        }
+    },[])
+    */
+
+    const saveHistory=React.useRef(0)
+    saveHistory.current=chunks[status.i]?.time
+    React.useEffect(()=>{
+        return ()=>{
             if(saveHistory.current && !policy.fullscreen){
                 onQuit?.({time:saveHistory.current})
             }

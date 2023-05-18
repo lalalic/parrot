@@ -1,6 +1,6 @@
 import React from "react"
 import { combineReducers } from "redux"
-import { configureStore, createSelector, isPlain } from "@reduxjs/toolkit";
+import { configureStore, isPlain } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
@@ -78,17 +78,17 @@ const Ted=createApi({
 					},
 					body:JSON.stringify({
 						query: `query {
-							translation(
+						translation(
 							videoId: "${slug}"
 							language: "${lang}"
-							) {
+						) {
 							paragraphs {
 								cues {
-								text
-								time
+									text
+									time
 								}
 							}
-							}
+						}
 							
 						video(slug:"${slug}"){
 								description

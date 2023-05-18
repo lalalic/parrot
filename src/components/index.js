@@ -673,7 +673,7 @@ export const Recognizer=(()=>{
             }
 
             Voice.onSpeechError=e=>{
-                console.error(e)
+                console.warn(e)
             }
             const audioUri=uri?.replace("file://","")
             ;(async()=>{
@@ -822,4 +822,8 @@ export const html = (talk, lineHeight, margins, needMy) => `
 
 `;
 
-                    
+export function useLatest(value){
+	const a=React.useRef(value)
+	a.current=value
+	return a
+}

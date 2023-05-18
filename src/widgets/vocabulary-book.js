@@ -1,8 +1,7 @@
 import React from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { PressableIcon } from "../components"
-import { TaggedListMedia, TagManagement } from "./media"
-import { TrainPlayer, NowPlaying } from "tts"
+import { TaggedListMedia } from "./media"
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
@@ -95,13 +94,6 @@ export default class VocabularyBook extends TaggedListMedia{
         return this.speak({locale, text:ask})
     }
 
-    componentDidUpdate(){
-        super.componentDidUpdate?.(...arguments)
-        if(this.state.i!=-1){
-            NowPlaying.info(this.props.tag, "Parrot", 1000.0, this.cues[this.state.i].ask)
-        }
-    }
-
     shouldComponentUpdate(props, state){
         if((!!this.props.locale)!=(!!props.locale)){
             this.setState({locale:props.locale},()=>{
@@ -110,15 +102,6 @@ export default class VocabularyBook extends TaggedListMedia{
             })
         }
         return super.shouldComponentUpdate(...arguments)
-    }
-
-    backgroundPlay(chunks, whitespace, dispatch){
-        TrainPlayer.alive({title:this.props.tag, duration:1000}, dispatch)
-        //TrainPlayer.playItems(chunks.map(a=>a.ask), {title:this.props.tag, duration:1000}, whitespace)
-    }
-
-    backgroundStop(done){
-        TrainPlayer.stop(done)
     }
 }
 

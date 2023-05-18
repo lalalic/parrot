@@ -4,7 +4,7 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } f
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage } from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useLatest } from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -100,12 +100,6 @@ const createPromptMessage=Object.assign(props=>{
 
 function isTextMessage(message){
 	return typeof(message.text)!=="object"
-}
-
-function useLatest(value){
-	const a=React.useRef()
-	a.current=value
-	return a
 }
 
 /**
