@@ -5,7 +5,7 @@ import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage } from "../components"
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
 
@@ -91,9 +91,9 @@ const createPromptMessage=Object.assign(props=>{
 		if(message && React.isValidElement(message.text) && message.text.type==PromptMessage)
 			return message.text.props.prompt
 	},
-	submitParams({message, params, setMessages}){
+	submitParams({message, params, setMessages,store}){
 		const {prompt}=message.text.props
-		message.text=React.cloneElement(message.text, {prompt:{...prompt,params, settled:prompt.prompt(params)}})
+		message.text=React.cloneElement(message.text, {prompt:{...prompt,params, settled:prompt.prompt(params,store)}})
 		setMessages(prevs=>prevs[0]==message ? [createBotMessage("..."),...prevs] : prevs)
 	}
 })
@@ -118,6 +118,7 @@ const Chat = () => {
 	const talk=useSelector(state=>state.talks.chat)
 	const [messages=[], setMessages] = useState(()=>talk?.messages);
 	const [errorMessage, setErrorMessage] = useState('');
+	const store=useStore()
 	const dispatch = useDispatch()
 	const navigate=useNavigate()
 	const onSend = useCallback((msgs = []) =>setMessages((previousMessages) =>GiftedChat.append(previousMessages, msgs)), [])
@@ -287,7 +288,7 @@ const Chat = () => {
 						locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
 						submit={message=>message && onSend(message)}
 						ask={params=>{
-							createPromptMessage.submitParams({params, message: messages[0], setMessages})
+							createPromptMessage.submitParams({params, message: messages[0], setMessages, store})
 						}}	
 						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
 						clearDialog={clearDialog}

@@ -6,7 +6,6 @@ import { Ted } from "./store"
 import { Picker } from "@react-native-picker/picker"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
-import { createSelector } from "@reduxjs/toolkit";
 import { defaultMemoize } from "reselect";
 
 export default function Talks(props){

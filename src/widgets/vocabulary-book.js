@@ -2,6 +2,7 @@ import React from "react"
 import { useDispatch, useSelector } from "react-redux"
 import { PressableIcon } from "../components"
 import { TaggedListMedia, TagManagement } from "./media"
+import { TrainPlayer, NowPlaying } from "tts"
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
@@ -22,12 +23,22 @@ export default class VocabularyBook extends TaggedListMedia{
         {label:"vocabulary", name:"menu-book",
             params:{
                 "category":"Kitchen",
-                "amount": "10",
+                "amount": "50",
             }, 
             speakable:false,
-            prompt:a=>`You are english teacher. I am an english learner from China.  
-                Please list ${a.amount} words of ${a.category} with Chinese translation.
-                Your response format is like 'hand: 手;good: 很好' without pinyin, and put all words in one paragraph, instead of a list. each word is seperated with ';'.`,
+            prompt:(a,store)=>{
+                const state=store.getState()
+                const existings=Object.values(state.talks)
+                    .filter(b=>b.slug=="vocabulary" && b.category==a.category)
+                    .map(b=>b.words.map(b=>b.lang).join(","))
+                    .join(",")
+
+                return `I'm an English learner from zh-CN. You are an english tutor. 
+                    Please give ${a.amount} vocabulary of ${a.category}.
+                    Each must format like spoon: zh-CN translated, and You must put all words in one paragraph using ; to seperate.
+                    You can't respond anything else.
+                    I already know these words: ${existings}`
+            },
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
@@ -36,7 +47,7 @@ export default class VocabularyBook extends TaggedListMedia{
                     return {lang:lang.trim(), mylang:mylang.trim()}
                 })
                 const title=`vocabulary(${category})`
-                const id=VocabularyBook.create({words,title}, dispatch)
+                const id=VocabularyBook.create({words,title, category}, dispatch)
                 return `save to @#${id}`
             }
         },{
@@ -84,6 +95,13 @@ export default class VocabularyBook extends TaggedListMedia{
         return this.speak({locale, text:ask})
     }
 
+    componentDidUpdate(){
+        super.componentDidUpdate?.(...arguments)
+        if(this.state.i!=-1){
+            NowPlaying.info(this.props.tag, "Parrot", 1000.0, this.cues[this.state.i].ask)
+        }
+    }
+
     shouldComponentUpdate(props, state){
         if((!!this.props.locale)!=(!!props.locale)){
             this.setState({locale:props.locale},()=>{
@@ -92,6 +110,15 @@ export default class VocabularyBook extends TaggedListMedia{
             })
         }
         return super.shouldComponentUpdate(...arguments)
+    }
+
+    backgroundPlay(chunks, whitespace, dispatch){
+        TrainPlayer.alive({title:this.props.tag, duration:1000}, dispatch)
+        //TrainPlayer.playItems(chunks.map(a=>a.ask), {title:this.props.tag, duration:1000}, whitespace)
+    }
+
+    backgroundStop(done){
+        TrainPlayer.stop(done)
     }
 }
 

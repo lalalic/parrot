@@ -7,6 +7,8 @@ import Slider from '@react-native-community/slider'
 import * as FileSystem from "expo-file-system"
 import * as Sharing from "expo-sharing"
 import * as ImagePicker from "expo-image-picker"
+import { useKeepAwake} from "expo-keep-awake"
+import { NowPlaying } from 'tts'; 
 
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
@@ -309,25 +311,28 @@ export default function Player({
     
     const saveHistory=React.useRef(0)
     saveHistory.current=chunks[status.i]?.time
-    const appState=React.useRef(AppState.currentState)
-    React.useEffect(()=>{
-        /*
-        const subscription=AppState.addEventListener('change',next=>{
-            if(next.match(/inactive|background/) && appState.current === 'active'){
-                appState.current='background'
-                console.debug("player in background mode")
-                if(status.isPlaying||status.whitespacing){
-                    video.current?.backgroundPlay?.(chunks, policy.whitespace)
-                }
-            }else if(next === 'active' && appState.current.match(/inactive|background/)){
-                appState.current='active'
-                console.debug("player in foreground mode")
-                video.current?.backgroundStop?.()
+
+    const appState=React.useRef({state:AppState.currentState, handler:null})
+    appState.current.handler=React.useCallback(next=>{
+        if(next.match(/inactive|background/) && appState.current.state === 'active'){
+            appState.current.state='background'
+            console.debug("player in background mode")
+            if(status.isPlaying||status.whitespacing){
+                //NowPlaying.start(action=>dispatch({type:`nav/${action}`}))
+                //video.current?.backgroundPlay?.(chunks.slice(status.i), policy.whitespace, action=>dispatch({type:`nav/${action}`}))
             }
-        })
-        */
+        }else if(next === 'active' && appState.current.state.match(/inactive|background/)){
+            appState.current.state='active'
+            console.debug("player in foreground mode")
+            //NowPlaying.stop()
+            //video.current?.backgroundStop?.(playedAmount=>playedAmount)
+        }
+    },[chunks, status.i, status.isPlaying||status.whitespacing, policy.whitespace])
+
+    React.useEffect(()=>{
+        const subscription=AppState.addEventListener('change',next=>{appState.current.handler(next)})
         return ()=>{
-            //subscription?.remove()
+            subscription?.remove()
             if(saveHistory.current && !policy.fullscreen){
                 onQuit?.({time:saveHistory.current})
             }
@@ -338,8 +343,8 @@ export default function Player({
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
     
+    useKeepAwake()
     
-
     return (
         <>
         <SliderIcon.Container 
