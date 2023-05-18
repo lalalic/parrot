@@ -25,7 +25,7 @@ export default function Policy(){
                 id={"example"}
                 media={<Video 
                     posterSource={{uri:talk.thumb}} 
-                    source={{uri:talk.resources?.hls.stream}} 
+                    source={{uri:talk.video}} 
                     useNativeControls={false}
                     shouldCorrectPitch={true}
                     style={{flex:1}}

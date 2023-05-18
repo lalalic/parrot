@@ -66,7 +66,7 @@ export default class extends React.Component{
         return {
             media: <Video
                 posterSource={{ uri: talk.thumb }}
-                source={{ uri: talk.audioDownload /*talk.resources?.hls.stream*/ }}
+                source={{ uri: talk.video }}
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,

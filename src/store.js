@@ -93,20 +93,17 @@ const Ted=createApi({
 						video(slug:"${slug}"){
 								description
 								playerData
-								nativeDownloads{
-									medium
-								}
-								audioDownload
 							}
 						}`,
 					}),
 				})
 				const {data}=await res.json()
 					
-				const {translation, video: { playerData, ...metadata },}=data
+				const {translation, video: { playerData, description },}=data
+				const {id, resources, title, thumb, languages, duration}=JSON.parse(playerData)
 				const talk={
-					...JSON.parse(playerData),
-					...metadata
+					id, title, thumb, languages, duration,description,
+					video: resources.hls.stream,
 				}
 				
 				talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
@@ -115,54 +112,39 @@ const Ted=createApi({
 					return {data:talk}
 
 				const {paragraphs}=translation
-				let isSameLang=true
-
 				talk.languages.mine={transcript:paragraphs}
 				
-				const resHlsMeta=await fetch(talk.resources.hls.metadata)
+				console.assert(resources.hls.metadata)
+				const resHlsMeta=await fetch(resources.hls.metadata)
 				const hlsMeta=await resHlsMeta.json()
-				let offset=0
-				const resVtt=await fetch((()=>{
-					offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
-					const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang) ?? hlsMeta.subtitles[0]
-					isSameLang=target.code.toLowerCase()==lang
-					return target
-				})().webvtt)
-				const vtt=await resVtt.text()
-
-				let last=0
-				const nextCue=()=>{
+				const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
+				const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
+				
+				const nextCue=((vtt,last=0)=>()=>{
+					if(!vtt)
+						return
 					const i0=vtt.indexOf("\n\n",last)
 					if(i0==-1)//The last may not have data
 						return []
 					const i=vtt.indexOf("\n",i0+2)
-					const duration=vtt.substring(i0+2,i)
 					try{
-						const [start, end]=duration.split("-->").map(a=>{
-							const [h,m,s]=a.split(":")
-							return parseInt(s.replace(".",""))+(h*60+m)*60*1000
-						})
-						const text= !isSameLang ? vtt.substring(i+1, vtt.indexOf("\n", i+1)) : undefined
+						const text= vtt.substring(i+1, vtt.indexOf("\n", i+1))
 						return [start, end, text]
 					}finally{
 						last=i+1
 					}
-				}
-				let lastCue
-				paragraphs.forEach(p=>p.cues.forEach(cue=>{
-					const [start=cue.time, end=talk.duration*1000, text]=nextCue()
+				})(target && await (await fetch(target.webvtt)).text());
+
+				(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
 					cue.time+=offset
 					cue.end=talk.duration*1000+offset
 					if(lastCue){
 						lastCue.end=cue.time-200
 					}
-					//cue.time=start
-					//cue.end=end
-					if(text){
-						cue.my=text
-					}
+					cue.my=nextCue()?.text
 					lastCue=cue
-				}))
+				})))();
+
 				return {data:talk}
 			},
 		}),
@@ -378,12 +360,18 @@ export function createStore(needPersistor){
 						return state
 					},
 					talks(talks={},action){
+						const getTalk=(action, $talks)=>{
+							checkAction(action, ["talk"])
+							const {talk:{slug, title, thumb,duration,link,id, video, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
+							return {
+								talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video}),
+								payload, policy, ...others
+							}
+						}
 						switch(action.type){
 							case "talk/toggle":
 								return produce(talks, $talks=>{
-									const {talk:{slug, title, thumb,duration,link,id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, }=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
-									checkAction(action, ["talk"])
+									const {talk, payload, policy}=getTalk(action, $talks)
 									Object.keys(payload).forEach(key=>{
 										let value=payload[key]
 										switch(key){
@@ -409,8 +397,7 @@ export function createStore(needPersistor){
 							case "talk/policy":
 								return produce(talks, $talks=>{
 									checkAction(action, ["payload","talk"])
-									const {target="general", payload, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
+									const {talk, payload, target="general",}=getTalk(action, $talks)
 									if(talk[target]?.challenging){
 										delete payload.chunk
 									}
@@ -418,8 +405,7 @@ export function createStore(needPersistor){
 								})
 							case "talk/fix/chunk":
 								return produce(talks, $talks=>{
-									const {time, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
+									const {talk, time}=getTalk(action, $talks)
 									if(talk.fixes){
 										if(talk.fixes.indexOf(time)==-1)
 											talk.fixes=[time, ...talk.fixes]
@@ -430,9 +416,8 @@ export function createStore(needPersistor){
 							case "talk/challenge":{
 								return produce(talks, $talks=>{
 									checkAction(action, ["chunk","talk","policy"])
-									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
-
+									const {talk, policy="general", chunk}=getTalk(action, $talks)
+									
 									const {challenges=[]}=talk[policy]||(talk[policy]={})
 									talk[policy].challenges=challenges
 									const i=challenges.findIndex(a=>a.time>=chunk.time)
@@ -451,8 +436,7 @@ export function createStore(needPersistor){
 							case "talk/challenge/remove":{
 								return produce(talks, $talks=>{
 									checkAction(action, ["chunk","talk","policy"])
-									const {policy="general",chunk, talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
+									const {talk, policy="general", chunk}=getTalk(action, $talks)
 
 									const {challenges=[]}=talk[policy]||(talk[policy]={})
 									talk[policy].challenges=challenges
@@ -468,8 +452,8 @@ export function createStore(needPersistor){
 							case "talk/recording":
 								return produce(talks, $talks=>{
 									checkAction(action, ["record","talk","policy"])
-									const {record, score, policy: policyName,talk:{slug, title, thumb,duration,link,id}}=action
-									const talk=$talks[id]||($talks[id]={slug, title, thumb,duration,link,id})
+									const {talk, policy:policyName, record, score}=getTalk(action, $talks)
+
 									const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
 									(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
 									records.changed=Date.now()
