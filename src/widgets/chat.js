@@ -310,7 +310,6 @@ const Chat = () => {
 				renderMessageAudio={props=><PlayAudioMessage {...props} setMessages={setMessages}/>}
 
 			/>
-			<Text>{errorMessage}</Text>
 		</View>
 	);
 }

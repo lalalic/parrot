@@ -40,7 +40,7 @@ export default class AudioBook extends TaggedListMedia {
                         })}/>,
                     <Recorder
                         onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && this.create({uri,text, tags:[tag],...record},dispatch)}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, tags:[tag],...record})}
                         />,
                     
                 ]}
