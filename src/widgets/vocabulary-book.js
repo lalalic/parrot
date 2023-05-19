@@ -10,7 +10,7 @@ export default class VocabularyBook extends TaggedListMedia{
         slug:"vocabulary",
         title:"Vocabulary Book",
         description:"",
-        thumb:require("../../assets/widget-picture-book.jpeg"),
+        thumb:require("../../assets/widget-vocabulary-book.png"),
         locale:false,
     }
 

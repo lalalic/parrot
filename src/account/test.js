@@ -5,13 +5,14 @@ import { useAssets} from "expo-asset"
 import { TrainPlayer } from "tts"
 
 export default function TestTrainPlayer({}){
+    /*
     React.useEffect(()=>{
         const {uri}=Image.resolveAssetSource(require("../../assets/sample.mp3"))
         const items=[uri,...new Array(10).fill("good morning for today and tomorrow")]
         TrainPlayer.playItems(items)
         return ()=>TrainPlayer.stop()
     },[])
-
+*/
     return <Text>playing...</Text>
 }
 

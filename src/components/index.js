@@ -307,7 +307,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
                         navigate(getLinkUri(item))
                     }
                 }}>
-                    <Image style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
+                    <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
                 </Pressable>
                 {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
                 {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
@@ -484,12 +484,14 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
                 speak.running=false
             }
         }
+        this._currentSession=speak
         return speak
     },
     setDefaults(){
         Speech.setDefaults(...arguments)
     },
     stop(){
+        this._currentSession?.cancel()
         Speech.stop()
     },
     speak(){
@@ -826,4 +828,11 @@ export function useLatest(value){
 	const a=React.useRef(value)
 	a.current=value
 	return a
+}
+
+export function useStateAndLatest(value){
+	const [a, setA]=React.useState(value)
+    const $a=React.useRef(a)
+    $a.current=a
+	return [a, setA, $a]
 }

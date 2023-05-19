@@ -10,7 +10,7 @@ export default class NumberPractice extends TaggedListMedia {
         id: "number",
         slug: "number",
         title: "Number Sense",
-        thumb: require("../../assets/widget-number.png"),
+        //thumb: require("../../assets/widget-number.png"),
         description: "This widget will speak numbers ramdomly, and you have to repeat it and recognized",
         tag:"100,999999,3",
         shadowing:{whitespace:1,autoHide:false,chunk:1},

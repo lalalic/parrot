@@ -22,7 +22,9 @@ export default function Talks(props){
 
     const initialScrollIndex=React.useMemo(()=>{
         if(!!history?.id && talks.length>2){
-            return talks.findIndex(a=>a.id==history.id)
+            const i= talks.findIndex(a=>a.id==history.id)
+            if(i!=-1)
+                return i
         }
     },[talks, history?.id])
 

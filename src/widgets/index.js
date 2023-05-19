@@ -42,7 +42,7 @@ export const Widgets=globalThis.Widgets=[
     PictureBook,
     AudioBook,
     VocabularyBook,
-    NumberPractice, 
+    //NumberPractice, 
 ].reduce(((widgets,A)=>{
     widgets[A.defaultProps.slug]=A
     return widgets

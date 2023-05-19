@@ -12,7 +12,7 @@ export default class DialogBook extends TaggedListMedia{
         slug:"dialog",
         description:"Dialog Practice",
         title: "Dialog Book",
-        thumb: require("../../assets/widget-picture-book.jpeg")
+        thumb: require("../../assets/widget-dialog-book.png")
     }
 
     static ExtendActions({policyName, talk}){

@@ -4,20 +4,25 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } f
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useLatest } from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useLatest, useStateAndLatest } from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
+import { useKeepAwake } from "expo-keep-awake"
 
 const defaultProps={
 	isMedia:false,
 	id: "chat",
 	slug: "chat",
 	title: "Chat Bot",
-	thumb: require("../../assets/widget-picture-book.jpeg"),
+	thumb: require("../../assets/widget-chat-bot.png"),
 	description: "Make a conversation with bot",
 }
-export default Object.assign(({})=><ChatGptProvider><Navigator/></ChatGptProvider>,{defaultProps})
+export default Object.assign(({})=>{
+	useKeepAwake()
+	React.useEffect(()=>()=>Speak.stop(),[])
+	return (<ChatGptProvider><Navigator/></ChatGptProvider>)
+},{defaultProps})
 
 function Navigator({}){
 		const {status, login}=useChatGpt()
@@ -111,7 +116,7 @@ const Chat = () => {
 	const { sendMessage } = useChatGpt();
 	const talk=useSelector(state=>state.talks.chat)
 	const [messages=[], setMessages] = useState(()=>talk?.messages);
-	const [errorMessage, setErrorMessage] = useState('');
+	const [audioInput, setAudioInput, $audioInput]=useStateAndLatest(false)
 	const store=useStore()
 	const dispatch = useDispatch()
 	const navigate=useNavigate()
@@ -144,7 +149,7 @@ const Chat = () => {
 			setMessages([createBotMessage('Ask me anything :)')]);
 		}else if (createBotMessage.is(lastMessage, "...")) {
 			const current=messages[1], isPrompt=createPromptMessage.is(current)
-			const speak=(!isPrompt || isPrompt.speakable!==false) ? Speak.session(voice) : null
+			const speak=(!!$audioInput.current && isPrompt?.speakable!==false) ? Speak.session(voice) : null
 			sendMessage({
 				options:options.current,
 				message:isPrompt?.settled.replace(/\s+/g," ") || current.text,
@@ -178,12 +183,12 @@ const Chat = () => {
 					});
 				},
 				onError: (e) => {
-					setErrorMessage(`${e.statusCode} ${e.message}`);
+					FlyMessage.show(`${e.statusCode} ${e.message}`);
 					setMessages((previousMessages) => {
 						const newMessages = [...previousMessages];
 						newMessages[0] = {
 							...previousMessages[0],
-							text: "Sorry, I couldn't process your request",
+							text: "Sorry, I couldn't process your request right now.",
 						};
 						return newMessages;
 					});
@@ -253,11 +258,12 @@ const Chat = () => {
 			messages.shift()
 		}
 		globalThis.Widgets.dialog.create({
-			title:`chat on ${new Date().asDateTimeString()}`,
+			title:`Chat`,
 			dialog:messages,
 		}, dispatch)
 		FlyMessage.show("saved to dialog book!")
 	},[])
+	
 	return (
 		<View style={{flex:1}}>
 			<GiftedChat
@@ -278,14 +284,14 @@ const Chat = () => {
 				showUserAvatar={true}
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
-				renderComposer={({onSend,...data})=><MessageComposer setDialog={setDialog} 
+				renderComposer={({onSend,...data})=><MessageComposer 
 						locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
 						submit={message=>message && onSend(message)}
 						ask={params=>{
 							createPromptMessage.submitParams({params, message: messages[0], setMessages, store})
 						}}	
 						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
-						clearDialog={clearDialog}
+						{...{setDialog, clearDialog, setAudioInput, audioInput}}
 					/>
 				}
 				renderMessageText={props=>{
@@ -336,8 +342,7 @@ function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog}){
-	const [audioInput, setAudioInput]=useState(false)
+function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog, audioInput, setAudioInput}){
 	const [actions, setActions]=useState(false)
 	const props={
 		submit,
@@ -360,7 +365,7 @@ function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog}){
 					<PressableIcon name={audioInput ? "mic" : "keyboard"} 
 						style={{width:50}} color={audioInput==2 ? "green" : "black"} size={36}
 						onPress={()=>{
-							setAudioInput(!audioInput)
+							setAudioInput(audioInput==2 ? true : !audioInput)
 							setDialog(false)
 						}}
 						onLongPress={()=>{
