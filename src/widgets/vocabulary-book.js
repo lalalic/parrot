@@ -75,12 +75,13 @@ export default class VocabularyBook extends TaggedListMedia{
         super(...arguments)
         this.state.locale=this.props.locale
     }
+
     /**
      * A:B
      * lang:mylang
      */
     createTranscript(){
-        const {words=[]}=this.props
+        const {words=this.isMaster ? Samples : []}=this.props
         const {locale}=this.state
             
         return words.reduce((cues,{lang, mylang})=>{
@@ -104,6 +105,8 @@ export default class VocabularyBook extends TaggedListMedia{
         return super.shouldComponentUpdate(...arguments)
     }
 }
+
+const Samples=[{lang:"bottle",mylang:"瓶子"},{lang:"Hello", mylang:"你好"}]
 
 const Paste=talk=>{
     const dispatch=useDispatch()

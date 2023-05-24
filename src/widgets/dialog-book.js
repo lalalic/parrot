@@ -1,7 +1,6 @@
 import React from "react"
 import { TaggedListMedia } from "./media"
 import { PressableIcon } from "../components"
-import TaggedTranscript from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
@@ -40,19 +39,12 @@ export default class DialogBook extends TaggedListMedia{
         },
     ]
 
-    //static TagManagement=props=>super.TagManagement({...props,appendable:false})
-
-    static TaggedTranscript=({slug=DialogBook.defaultProps.slug})=>{
-        return (
-            <TaggedTranscript slug={slug} />
-        )
-    }
     /**
      * A:...
      * B:...
      */
     createTranscript(){
-        const {dialog=[]}=this.props
+        const {dialog= this.isMaster ? Samples : []}=this.props
         const parse = a=>{
             if(!a){
                 return ["error",""]
@@ -87,3 +79,8 @@ const Paste=({talk})=>{
         DialogBook.create({title,dialog}, dispatch)
     })}/>
 }
+
+const Samples=[
+    "Joe: How are you doing?",
+    "David: Pretty Good. And you?"
+]

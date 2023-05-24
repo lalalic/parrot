@@ -16,63 +16,43 @@ export default Wrapper=({slug=useParams().slug})=>{
 }
 
 
-
-export const TaggedTranscript=(()=>{
-    function defaultItem({ item, tag , audioUri, dispatch, slug, onTextChange}){
+/**
+ * it's for audio item {text, uri}
+ */
+export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
         const color=React.useContext(ColorScheme)
-        const [playing, setPlaying] = React.useState(false)
-        return (
-            <Pressable
-                onPress={e => audioUri?.(item) && setPlaying(true)}
-                onLongPress={e => dispatch({ type: `${slug}/remove`, uri: item.uri })}
-                style={{ flexDirection: "row", height: 50 }}>
-                <PressableIcon name={"radio-button-unchecked"}/>
-                <View style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                    <TextInput style={{color: playing ? color.primary : color.text}} value={item.text} 
-                        onEndEditing={({nativeEvent:{text}})=>text!=item.text && onTextChange?.(audioUri, text)}/>
-                    {playing && <PlaySound audio={audioUri(item)} onEnd={setPlaying}/>}
-                </View>
-            </Pressable>
-        )
-    }
-
-    function TaggedTranscript({slug, actions, listProps={}, audioUri=item=>item.uri, onTextChange}){
-        const color=React.useContext(ColorScheme)
-        const dispatch=useDispatch()
         const navigate=useNavigate()
-        const [state, setState]=React.useReducer((state,action)=>({...state,...action}),{})
+        const [state, setState]=React.useState({})
         const tagTalks=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
         if(tagTalks.length>0 && !state.tag){
-            setState({tag:tagTalks[0].tag})
+            setState({...state, tag:tagTalks[0].tag})
         }
         const tags=React.useMemo(()=>tagTalks.map(a=>a.tag),[tagTalks])
 
         const talks=useSelector(state=>state[slug])
         const data=useMemo(()=>selectBook({[slug]:talks},slug, state.tag),[state.tag, talks])
         const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10}
-        const {renderItem:WidgetItem=defaultItem}=listProps
+        const {renderItem:WidgetItem=renderItem}=listProps
 
         return (
             <View style={{flex:1,marginTop:20}}>
                 <Text style={{textAlign:"center", height:20}}>{slug.toUpperCase()}</Text>
                 <View style={{flexDirection:"row"}}>
-                    <TextInput style={inputStyle} onChangeText={q=>setState({q})}/>
+                    <TextInput style={inputStyle} onChangeText={q=>setState({...state,q})}/>
                     <Select style={{flex:1}} data={tags}
                         defaultValueByIndex={tags.indexOf(state.tag)}
                         onSelect={value=>{
                             const talk=tagTalks.find(a=>a.tag==value)
-                            setState(()=>({listing:false, tag:talk.tag, id: talk.id}))
+                            setState({...state,listing:false, tag:talk.tag, id: talk.id})
                         }}
                         />
                 </View>
                 <View style={{flexGrow:1,flex:1}}>
                     <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
                         extraData={`${state.q}-${state.tag}-${data.length}`}
-                        keyExtractor={a=>a.uri}
+                        keyExtractor={a=>`${a.uri}-${a.text}`}
                         {...listProps}
-                        renderItem={props=>{
-                            return <WidgetItem {...{...props,tag:state.tag, slug, dispatch, audioUri,onTextChange}}/>
-                        }}
+                        renderItem={props=><WidgetItem {...{...props,tag:state.tag, slug}}/>}
                         />
                 </View>
                 <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
@@ -83,6 +63,4 @@ export const TaggedTranscript=(()=>{
             </View>
         )
     }
-    return TaggedTranscript
-})();
 

@@ -499,12 +499,12 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     }
 })
 
-export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
+export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart, onError})=>{
     React.useEffect(()=>{
         if(audio){
             (async (startAt)=>{
                 onStart?.()
-                await PlaySound.play(audio,()=>onEnd?.(Date.now()-startAt))
+                await PlaySound.play(audio,()=>onEnd?.(Date.now()-startAt), onError)
             })(Date.now());
 
             return ()=>PlaySound.stop?.()
@@ -525,16 +525,28 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
         )
     },
     displayName: "PlaySound",
-    async play(audio,done){
+    async play(audio,done, onError){
         await lock.runExclusive(async()=>{
             let sound, check
             try{
-                await new Promise(async $resolve=>{
+                const audioFile=await FileSystem.getInfoAsync(audio)
+                if(!audioFile.exists){
+                    return  
+                }
+                
+                await new Promise(($resolve, reject)=>{
                     const resolve=e=>{
                         clearInterval(check)
                         $resolve()
                     }
-                    ({sound}=await Audio.Sound.createAsync(
+
+                    this.stop=()=>{
+                        resolve()
+                        sound?.unloadAsync()
+                        done?.()
+                    }
+                    
+                    Audio.Sound.createAsync(
                         {uri:audio},
                         {shouldPlay:true},
                         status=>{//expo-audio bug: this function is not called at expected time 
@@ -544,23 +556,24 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart})=>{
                                 resolve()
                             }
                         }
-                    ));
-                    this.stop=()=>{
-                        resolve()
-                        sound.unloadAsync()
-                        done?.()
-                    }
-                    //a hack for bug 
-                    check=setInterval(async ()=>{
-                        const status=await sound.getStatusAsync()
-                        if(status.didJustFinish || (status.isLoaded && !status.isPlaying)){
-                            resolve()
-                        }
-                    },300)
+                    ).then(a=>{
+                        sound=a.sound
+                        //a hack for bug 
+                        check=setInterval(async ()=>{
+                            const status=await sound.getStatusAsync()
+                            if(status.didJustFinish || (status.isLoaded && !status.isPlaying)){
+                                resolve()
+                            }
+                        },300)
+                    }).catch(e=>{
+                        reject(e)
+                    })
                 })
             }catch(e){
+                FlyMessage.show(e.message)
+                onError?.(e)
             }finally{
-                await sound?.unloadAsync()
+                sound?.unloadAsync()
                 done?.()
             }
         })

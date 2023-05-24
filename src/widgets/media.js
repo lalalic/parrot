@@ -93,6 +93,10 @@ class Media extends React.Component {
         return this.constructor.defaultProps.slug
     }
 
+    get isMaster(){
+        return this.props.slug==this.props.id
+    }
+
     get cueHasDuration(){
         return this.constructor.defaultProps.cueHasDuration
     }
@@ -258,7 +262,7 @@ export class ListMedia extends Media{
     /**
      * create this.cues=[{time,end,text}]
      */
-     createTranscript(){
+    createTranscript(){
         
     }
 

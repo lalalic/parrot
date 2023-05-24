@@ -1,11 +1,11 @@
 import React from "react"
-import { Pressable, View, Image, ImageBackground, useWindowDimensions, TextInput} from "react-native"
+import { Pressable, Image, ImageBackground, useWindowDimensions, TextInput} from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
 
-import { TaggedListMedia, TagShortcut, TagManagement } from "./media"
-import { PlaySound, Recorder, PressableIcon } from "../components"
+import { TaggedListMedia } from "./media"
+import { PressableIcon } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"
 import { useDispatch } from "react-redux"
 
@@ -33,6 +33,26 @@ export default class PictureBook extends TaggedListMedia {
     static TaggedTranscript=({slug=PictureBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()
+
+        const PictureItem=React.useCallback(({item:{uri, text}})=>{
+            return (
+                <Pressable key={uri} style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
+                    onLongPress={e=>dispatch({type:`${slug}/remove`, uri})}>
+                    <ImageBackground source={{uri}} style={{flex:1}}>
+                        <TextInput defaultValue={text} selectTextOnFocus={true}
+                            style={{position:"absolute",left:5, top: 5, 
+                                backgroundColor:"black",opacity:0.5,width:"80%",
+                                padding:2,color:"yellow",fontSize:20
+                            }}
+                            onEndEditing={({nativeEvent:e})=>{
+                                if(text!=e.text){
+                                    dispatch({type:`${slug}/set`,uri, text:e.text})
+                                }
+                            }}/>
+                    </ImageBackground>
+                </Pressable>
+            )
+        },[])
         const thumbStyle={flex:1,height:width/2, padding:10}
         const options={
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -72,26 +92,8 @@ export default class PictureBook extends TaggedListMedia {
                             })();
                         }}/>
                 }}
-                listProps={{
-                    numColumns:2,
-                    renderItem:({item,tag})=>(
-                        <Pressable key={item.id} style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
-                            onLongPress={e=>dispatch({type:`${slug}/remove`, uri:item.uri})}>
-                            <ImageBackground source={item} style={{flex:1}}>
-                                <TextInput defaultValue={item.text} selectTextOnFocus={true}
-                                    style={{position:"absolute",left:5, top: 5, 
-                                        backgroundColor:"black",opacity:0.5,width:"80%",
-                                        padding:2,color:"yellow",fontSize:20
-                                    }}
-                                    onEndEditing={({nativeEvent:{text}})=>{
-                                        if(text!=item.text){
-                                            dispatch({type:"picturebook/set",uri:item.uri, text})
-                                        }
-                                    }}/>
-                            </ImageBackground>
-                        </Pressable>
-                    ),
-                }}
+                renderItem={PictureItem}
+                listProps={{numColumns:2}}
             />
         )
     }
