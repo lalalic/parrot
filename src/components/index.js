@@ -619,7 +619,7 @@ export function Recorder({style,
             onMoveShouldSetResponder={e=>true}
             onResponderMove={e=>{
                 const {pageX:x, pageY:y}=e.nativeEvent
-                setState(state=>({...state,active:y>height-50 ? "audio" : (x<=width/2 ? "cancel" : "text")}))
+                setState(state=>({...state,active:y>height-70 ? "audio" : (x<=width/2 ? "cancel" : "text")}))
             }}
             onResponderRelease={e=>setState(state=>({...state, recording:false}))}
             >
