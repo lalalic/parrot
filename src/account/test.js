@@ -3,8 +3,11 @@ import { Text , AppState, Image} from "react-native"
 import { useAssets} from "expo-asset"
 
 import { TrainPlayer } from "tts"
-
+import * as Clipboard from "expo-clipboard"
 export default function TestTrainPlayer({}){
+    React.useEffect(()=>{
+        Clipboard.setUrlAsync("https://www.youtube.com/watch?v=lUUte2o2Sn8")
+    },[])
     /*
     React.useEffect(()=>{
         const {uri}=Image.resolveAssetSource(require("../../assets/sample.mp3"))

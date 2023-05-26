@@ -1,11 +1,11 @@
 import React from "react"
 import * as FileSystem from "expo-file-system"
-import { View, TextInput,  } from "react-native" 
+import { View, TextInput, Linking, Pressable, Text } from "react-native" 
 import { TaggedListMedia,  } from "./media"
 import { PlaySound, PressableIcon, Recorder } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"
 import { ColorScheme } from "../components/default-style"
-import { useDispatch } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
 export default class AudioBook extends TaggedListMedia {
@@ -30,9 +30,12 @@ export default class AudioBook extends TaggedListMedia {
     static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
+        const {lang="en"}=useSelector(state=>state.my)
             
         const AudioItem=React.useCallback(({item:{text, uri}})=>{
             const [playing, setPlaying] = React.useState(false)
+            const [editing, setEditing] = React.useState(false)
+            const textStyle={color: playing ? color.primary : color.text}
             return (
                 <View
                     style={{ flexDirection: "row", height: 50 }}>
@@ -40,15 +43,22 @@ export default class AudioBook extends TaggedListMedia {
                         onPress={e=>uri && setPlaying(!playing)}
                         onLongPress={e=>dispatch({type:`${slug}/remove`, uri})}
                         />
-                    <View style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                        <TextInput style={{color: playing ? color.primary : color.text}} defaultValue={text} 
+                    <Pressable 
+                        onPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
+                        onLongPress={e=>setEditing(true)}
+                        style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                        {editing ? 
+                            (<TextInput style={textStyle} defaultValue={text} 
                             onEndEditing={({nativeEvent:e})=>{
                                 if(text!=e.text){
                                     dispatch({type:`${slug}/set`,text:e.text,uri})
                                 }
-                            }}/>
+                                setEditing(false)
+                            }}/>) :
+                            (<Text style={textStyle}>{text}</Text>)
+                        }
                         {playing && <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/>}
-                    </View>
+                    </Pressable>
                 </View>
             )
         },[])

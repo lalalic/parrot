@@ -18,6 +18,9 @@ export default class DialogBook extends TaggedListMedia{
         return policyName=="general" ? <Paste talk={talk}/> : null
     }
 
+    static Shortcut=undefined
+    static TagManagement=props=>super.TagManagement({...props, appendable:false})
+
     static prompts=[
         {label:"Role Play", name:"post-add",
             params:{

@@ -13,6 +13,10 @@ import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
 
+import { getYoutubeMeta } from "react-native-youtube-iframe"
+import { YoutubeTranscript } from "./experiment/youtube-transcript"
+
+
 import * as Calendar from "./experiment/calendar"
 
 export const Policy={
@@ -145,6 +149,8 @@ const Ted=createApi({
 					lastCue=cue
 				})))();
 
+				StoreProvider.store?.dispatch({type:"talk/create", talk})
+
 				return {data:talk}
 			},
 		}),
@@ -259,6 +265,38 @@ const Ted=createApi({
 	})
 })
 
+const Youtube=createApi({
+	reducerPath:"youtube",
+	endpoints:builder=>({
+		talk:builder.query({
+			queryFn: async ({id},{getState})=>{
+				try{
+					const {lang, mylang}=getState().my
+					const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
+					const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
+					const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
+					if(myTranscripts && transcripts.length==myTranscripts.length){
+						transcripts.forEach((cue,i)=>cue.my=myTranscripts[i].text)
+					}
+					if(transcripts){
+						transcripts.forEach(cue=>{
+							cue.time=cue.offset
+							delete cue.offset
+							cue.end=cue.time+cue.duration
+							delete cue.duration
+						})
+					}
+					const talk={title, id, slug:`youtube`, thumb, languages:{mine:[{cues:transcripts}]}, video:id, description:`by ${author}`}
+					StoreProvider.store?.dispatch({type:"talk/create", talk})
+					return {data:talk}
+				}catch(error){
+					return {error}
+				}
+			}
+		})
+	})
+})
+
 export function createStore(needPersistor){
 	const checkAction=(action,keys)=>{
 		const missing=keys.filter(a=>!(a in action))
@@ -335,6 +373,7 @@ export function createStore(needPersistor){
 				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 				combineReducers({
 					[Ted.reducerPath]: Ted.reducer,
+					[Youtube.reducerPath]: Youtube.reducer,
 					my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now()}, action) {
 						switch (action.type) {
 							case "persist/REHYDRATE":
@@ -369,6 +408,10 @@ export function createStore(needPersistor){
 							}
 						}
 						switch(action.type){
+							case "talk/create":
+								return produce(talks, $talks=>{
+									$talks[action.talk.id]={...action.talk}
+								})
 							case "talk/toggle":
 								return produce(talks, $talks=>{
 									const {talk, payload, policy}=getTalk(action, $talks)
@@ -613,7 +656,7 @@ export function createStore(needPersistor){
 				immutableCheck:{
 					warnAfter:100,
 				},
-			}).prepend(Ted.middleware),
+			}).prepend([Ted.middleware, Youtube.middleware]),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined
 	setupListeners(store)
@@ -632,6 +675,7 @@ const StoreProvider=({children, persistor:needPersistor=true, onReady})=>{
 		})
 		return data
 	},[])
+	StoreProvider.store=store
 	return (
 		<Provider store={store}>
 			{!!persistor && <PersistGate {...{loading:null, persistor}}>
@@ -659,7 +703,7 @@ function immutableSet(o, keys, value, returnEmpty=true){
 	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
 
-export {Ted, StoreProvider as Provider,}
+export {Ted, Youtube, StoreProvider as Provider,}
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];

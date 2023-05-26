@@ -383,7 +383,7 @@ export class TaggedListMedia extends ListMedia{
     static create({title,tag,id, ...talk}, dispatch){
         id=id||`${this.defaultProps.slug}${Date.now()}`
         tag=tag||`${title}-${new Date().asDateTimeString()}`
-        dispatch({type:"talk/toggle",talk:{...this.defaultProps,id,tag,title,...talk}})
+        dispatch({type:"talk/create",talk:{...this.defaultProps,id,tag,title,...talk}})
         return id
     }
 

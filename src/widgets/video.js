@@ -63,6 +63,7 @@ export default class extends React.Component{
     }
 
     static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
+        const Video=this.Video
         return {
             media: <Video
                 posterSource={{ uri: talk.thumb }}
@@ -87,19 +88,13 @@ export default class extends React.Component{
             }
         }
     }
-}
 
-
-const Video=(()=>{
-    return React.forwardRef(({onPlaybackStatusUpdate,...props},ref)=>{
+    static Video=React.forwardRef((props,ref)=>{
         return <ExpoVideo 
             shouldCorrectPitch={true}
             pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
             progressUpdateIntervalMillis={100}
-            onPlaybackStatusUpdate={status=>{
-                onPlaybackStatusUpdate?.(status)
-            }}
             {...props} 
             ref={ref}/>
     })
-})();
+}

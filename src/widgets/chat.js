@@ -126,7 +126,7 @@ const Chat = () => {
 
 	const $messages=useLatest(messages)
 	useEffect(()=>()=>{
-		dispatch({type:"talk/toggle", talk:{
+		dispatch({type:"talk/create", talk:{
 			...defaultProps, 
 			messages:$messages.current.map(a=>{
 				a.speak?.cancel()
@@ -160,7 +160,7 @@ const Chat = () => {
 						if(prevs[0]==current){
 							placeholder = {
 								...placeholder,
-								text: speak ? message : (placeholder.text||"receiving data ")+".",
+								text: speak||!isPrompt ? message : (placeholder.text||"receiving data ")+".",
 								...(dialog ? {audio:true, speak} : {})
 							}
 

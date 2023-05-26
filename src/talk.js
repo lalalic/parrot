@@ -5,7 +5,7 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import Video from './widgets/video';
 
-import { Ted, selectPolicy} from "./store"
+import { Ted, selectPolicy, Youtube} from "./store"
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -62,10 +62,17 @@ function useTalkQuery({slug, id=slug}){
             talk.hasHistory=true
         }
     }else{
-        const {data={}}=Ted.useTalkQuery({slug})
+        const {data={}}=(()=>{
+            if(slug=="youtubepotential"){
+                return Youtube.useTalkQuery({id})
+            }else{
+                return Ted.useTalkQuery({slug})
+            }
+        })();
         const talkLocal=useSelector(state=>state.talks[data.id])
         talk=React.useMemo(()=>{
             const talk={...talkLocal, ...data, hasHistory:!!talkLocal}
+            /*
             if(talkLocal?.fixes && data.languages?.mine?.transcript){
                 const fixes=[...talkLocal.fixes]
                 const transcript=[...data.languages.mine.transcript]
@@ -87,6 +94,7 @@ function useTalkQuery({slug, id=slug}){
                 delete talk.fixes
                 talk.languages={mine:{transcript}}
             }
+            */
             return talk
         },[data, talkLocal])
     }
