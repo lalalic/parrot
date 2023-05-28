@@ -5,7 +5,7 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import Video from './widgets/video';
 
-import { Ted, selectPolicy, Youtube} from "./store"
+import { Ted, selectPolicy} from "./store"
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -53,50 +53,18 @@ export default function Talk({autoplay}){
 }
 
 function useTalkQuery({slug, id=slug}){
-    let talk
-    if(!!globalThis.Widgets[slug]){
+    let talk, Widget
+    if(slug!="youtube" && !!(Widget=globalThis.Widgets[slug])){
         talk=useSelector(state=>state.talks[id])
         if(!talk){
-            talk=globalThis.Widgets[slug].defaultProps
+            talk=Widget.defaultProps
         }else{
             talk.hasHistory=true
         }
     }else{
-        const {data={}}=(()=>{
-            if(slug=="youtubepotential"){
-                return Youtube.useTalkQuery({id})
-            }else{
-                return Ted.useTalkQuery({slug})
-            }
-        })();
+        const {data={}}=Ted.useTalkQuery({slug,id})
         const talkLocal=useSelector(state=>state.talks[data.id])
-        talk=React.useMemo(()=>{
-            const talk={...talkLocal, ...data, hasHistory:!!talkLocal}
-            /*
-            if(talkLocal?.fixes && data.languages?.mine?.transcript){
-                const fixes=[...talkLocal.fixes]
-                const transcript=[...data.languages.mine.transcript]
-                fixes.sort((a,b)=>b-a).forEach(removing=>{
-                    const iP=transcript.findIndex(({cues})=>cues[cues.length-1].end>removing)
-                    if(iP!=-1){
-                        const i=transcript[iP].cues.findIndex(a=>a.time==removing)
-                        if(i>0){
-                            const p=transcript[iP]={...transcript[iP]}
-                            p.cues=[...p.cues]
-                            const [merged]=p.cues.splice(i,1)
-                            const merging=p.cues[i-1]={...p.cues[i-1]}
-                            merging.text+=" "+merged.text
-                            merging.my+=" "+merged.my
-                            merging.end=merged.end
-                        }
-                    }
-                })
-                delete talk.fixes
-                talk.languages={mine:{transcript}}
-            }
-            */
-            return talk
-        },[data, talkLocal])
+        talk=React.useMemo(()=>( {...talkLocal, ...data, hasHistory:!!talkLocal}),[data, talkLocal])
     }
     const {general, shadowing, dictating, retelling, tags, ...data}=talk
     return {data}

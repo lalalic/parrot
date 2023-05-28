@@ -1,3 +1,5 @@
+import {XMLParser} from 'fast-xml-parser'
+
 const RE_YOUTUBE =
   /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
 
@@ -10,12 +12,28 @@ export class YoutubeTranscriptError extends Error {
  * Class to retrieve transcript if exist
  */
 export class YoutubeTranscript {
+
+    static async fetchTranscript(videoId,{lang="en"}){
+        if(lang!=="en")
+          return 
+        const res=await fetch(`https://youtubetranscript.com/?server_vid=${videoId}`)
+        const text=await res.text()
+        const {transcript}=new XMLParser({
+          ignoreAttributes:false,
+					attributeNamePrefix:"",
+					removeNSPrefix:true,
+					textNodeName:"value",}).parse(text)
+        const cues=transcript.text.map(({start, dur, value,})=>{
+          return {text:value, offset: parseInt(parseFloat(start)*1000), duration: parseInt(parseFloat(dur)*1000)}
+        })
+        return cues
+    }
   /**
    * Fetch transcript from YTB Video
    * @param videoId Video url or video identifier
    * @param config Get transcript in another country and language ISO
    */
-    static async fetchTranscript(videoId,config){
+    static async fetchTranscript1(videoId,config){
         const identifier = this.retrieveVideoId(videoId);
         try {
             const videoPageBody = await fetch( `https://www.youtube.com/watch?v=${identifier}`).then(res=>res.text())

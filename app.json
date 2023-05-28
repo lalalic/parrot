@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "scheme":"parrot",
+    "scheme": "parrot",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -24,8 +24,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.lalalic.parrot",
-      "infoPlist":{
-        "UIBackgroundModes":["audio"]
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -55,9 +57,12 @@
       [
         "expo-build-properties",
         {
-          "ios":{"useFrameworks":"static"}
+          "ios": {
+            "useFrameworks": "static"
+          }
         }
-      ]
+      ],
+      "expo-config-plugin-ios-share-extension"
     ],
     "extra": {
       "eas": {

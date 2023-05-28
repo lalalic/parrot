@@ -1,6 +1,6 @@
 import React from "react"
 import { View } from "react-native"
-import { NativeRouter, Route, Routes, Link, Outlet, useLocation, useParams} from "react-router-native"
+import { NativeRouter, Route, Routes, Link, Outlet, useLocation, useParams, useNavigate} from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 
 import Home from "./home"
@@ -17,6 +17,7 @@ import Test from "./account/test"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
+import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
     <NativeRouter initialEntries={["/home"]}>
@@ -27,6 +28,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <View style={{flex:1}}>
                             <View style={{flexGrow: 1,flex:1}}>
                                 <Outlet/>
+                                <ShareMointor/>
                             </View>
                             <View style={{flexDirection: "row", justifyContent: "space-around",}}>
                                 {[["/home","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
@@ -83,3 +85,24 @@ const WithBackButton=()=>(
         </Link>
     </View>
 )
+
+const ShareMointor=()=>{
+    const url=Linking.useURL()//"parrot://share/?url=https://www.youtube.com/watch?v=gOqitVsRYRE"
+    const navigate=useNavigate()
+    const getVideoId=React.useCallback(url=>{
+        url=url.split("?url=")[1]
+        const parsed=Linking.parse(decodeURIComponent(url))
+        if(!["youtu.be","www.youtube.com","youtube.com"].includes(parsed.hostname))
+            return 
+        return parsed.queryParams.v || parsed.path
+    },[])
+    React.useEffect(()=>{
+        if(!url)
+            return
+        const videoId=getVideoId(url)
+        if(!videoId)
+            return 
+        navigate(`/talk/youtube/general/${videoId}`)
+    },[])
+    return null
+}

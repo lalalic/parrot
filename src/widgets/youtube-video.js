@@ -7,53 +7,80 @@ import Video from "./video"
 
 
 export default class YouTubeVideo extends Video{
-    
     static defaultProps={
         slug:"youtube",
         id:"youtube",
-        progressUpdateIntervalMillis:100,
+        progressUpdateIntervalMillis:500,
     }
 
     static Video=React.forwardRef(({onPlaybackStatusUpdate,progressUpdateIntervalMillis=100,shouldPlay, source, ...props},ref)=>{
         const [playing, setPlaying, $playing]=useStateAndLatest(shouldPlay)
+        const [ready, setReady]=React.useState(false)
+        const videoRef=React.useRef(null)
         
-        React.useEffect(async ()=>{
-            if(ref.current){
-                const durationMillis=parseInt(1000 * await ref.current.getDuration())
-                onPlaybackStatusUpdate?.({
-                    positionMillis: 0,  
-                    durationMillis, 
-                    isLoaded:false, 
-                    isLoading:true, 
-                    didJustFinish:false,
-                    isPlaying: false
-                })
-
-                ref.current.setStatusAsync=({positionMillis, shouldPlay})=>{
+        React.useImperativeHandle(ref, ()=>{
+            return {
+                setStatusAsync:({positionMillis, shouldPlay})=>{
                     if(shouldPlay!=undefined){
                         setPlaying(shouldPlay)
                     }
                     if(positionMillis!=undefined){
-                        ref.current.seekTo(positionMillis/1000,false)
+                        videoRef.current.seekTo(positionMillis/1000,false)
                     }
                 }
+            }
+        },[])
 
-                setInterval(async ()=>{
-                    const positionSeconds=await ref.current.getCurrentTime()
-                    onPlaybackStatusUpdate?.({
-                        positionMillis: parseInt(positionSeconds*1000),  
-                        durationMillis, 
-                        isLoaded:true, 
-                        isLoading:false, 
-                        didJustFinish:false,
-                        isPlaying:$playing.current
+        const updateRef=React.useRef(onPlaybackStatusUpdate)
+        updateRef.current=onPlaybackStatusUpdate
+        React.useEffect(()=>{
+            if(!ready)
+                return 
+
+            let timer;
+            videoRef.current?.getDuration().then(second=>{
+                let last={}
+                const durationMillis=parseInt(1000 * second)
+                updateRef.current?.(last={
+                    positionMillis: 0,  
+                    durationMillis, 
+                    isLoaded:true, 
+                    isLoading:false, 
+                    didJustFinish:false,
+                    isPlaying: $playing.current
+                })
+                
+                timer=setInterval(()=>{
+                    videoRef.current?.getCurrentTime().then(positionSeconds=>{
+                        const current={
+                            positionMillis: parseInt(positionSeconds*1000),  
+                            durationMillis, 
+                            isLoaded:true, 
+                            isLoading:false, 
+                            didJustFinish:false,
+                            isPlaying:$playing.current
+                        }
+                        if(last.positionMillis==current.positionMillis && last.isPlaying==current.isPlaying){
+                            return 
+                        }
+                        updateRef.current?.(current)
+                        last=current
                     })
                 },progressUpdateIntervalMillis)
-            }
-        },[ref.current])
+            })
+
+            return ()=>timer && clearInterval(timer)
+            
+        },[ready])
+        
         return (
-            <View style={style}>
-                <YoutubePlayer ref={ref} videoId={source.uri} play={playing}/>
+            <View {...props}>
+                <YoutubePlayer {...{ref:videoRef, videoId:source.uri, play:playing, 
+                    style:{flex:1}, height:300, initialPlayerParams:{controls:false,fs:0,preventFullScreen:true}}}
+                    onReady={React.useCallback(e=>{
+                        setReady(true)
+                    },[])}
+                />
             </View>
         )
     })

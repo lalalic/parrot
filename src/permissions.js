@@ -3,10 +3,8 @@ import * as ImagePicker from "expo-image-picker";
 import { Audio } from 'expo-av';
 import * as Calendar from 'expo-calendar';
 import { useDispatch, useSelector } from "react-redux";
-import * as Clipboard from "expo-clipboard"
 
 import * as Speech from "./components/speech"
-import { useNavigate } from "react-router-native";
 
 export const Permissions = () => {
     const dispatch=useDispatch()
@@ -80,25 +78,6 @@ export const Permissions = () => {
             shouldDuckAndroid: false,
             playThroughEarpieceAndroid: true
         })
-    },[])
-
-    React.useEffect(()=>{
-        let last=null
-        const timer=setInterval(async ()=>{
-            const url=await Clipboard.getUrlAsync()
-            if(url && url!=last){
-                const uri=new URL(url)
-                if(url.indexOf("youtu")!=-1){
-                    const id=(uri.searchParams.v || url.split("/").pop() || "")
-                    if(id){
-                        dispatch({type:"history", youtubetalk:id})
-                    }
-                }
-                last=url
-            }
-        },1000)
-
-        return ()=>clearInterval(timer)
     },[])
 
     return null;

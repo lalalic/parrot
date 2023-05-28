@@ -72,86 +72,111 @@ const Ted=createApi({
 	})({baseUrl:"https://www.ted.com"}),
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug},{getState})=>{
-				const {lang="en", mylang="zh-cn"}=getState().my
-				const res=await fetch("https://www.ted.com/graphql",{
-					method:"POST",
-					headers:{
-						'Content-Type': 'application/json',
-						'Accept': 'application/json',
-					},
-					body:JSON.stringify({
-						query: `query {
-						translation(
-							videoId: "${slug}"
-							language: "${lang}"
-						) {
-							paragraphs {
-								cues {
-									text
-									time
+			queryFn: async ({slug,id},{getState})=>{
+				const state=getState()
+				if(id && state.talks[id]){
+					return {data:state.talks[id]}
+				}
+				const {lang="en", mylang="zh-cn"}=state.my
+
+				if(slug=="youtube"){
+					const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
+					const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
+					const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
+					if(myTranscripts && transcripts.length==myTranscripts.length){
+						transcripts.forEach((cue,i)=>cue.my=myTranscripts[i].text)
+					}
+					if(transcripts){
+						transcripts.forEach(cue=>{
+							cue.time=cue.offset
+							delete cue.offset
+							cue.end=cue.time+cue.duration
+							delete cue.duration
+						})
+					}
+					const talk={title, id, slug:`youtube`, thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
+					StoreProvider.store?.dispatch({type:"talk/create", talk})
+					return {data:talk}
+				}else{
+					const res=await fetch("https://www.ted.com/graphql",{
+						method:"POST",
+						headers:{
+							'Content-Type': 'application/json',
+							'Accept': 'application/json',
+						},
+						body:JSON.stringify({
+							query: `query {
+							translation(
+								videoId: "${slug}"
+								language: "${lang}"
+							) {
+								paragraphs {
+									cues {
+										text
+										time
+									}
 								}
 							}
-						}
-							
-						video(slug:"${slug}"){
-								description
-								playerData
-							}
-						}`,
-					}),
-				})
-				const {data}=await res.json()
+								
+							video(slug:"${slug}"){
+									description
+									playerData
+								}
+							}`,
+						}),
+					})
+					const {data}=await res.json()
+						
+					const {translation, video: { playerData, description },}=data
+					const {id, resources, title, thumb, languages, duration}=JSON.parse(playerData)
+					const talk={
+						id, title, thumb, languages, duration,description,
+						video: resources.hls.stream,
+					}
 					
-				const {translation, video: { playerData, description },}=data
-				const {id, resources, title, thumb, languages, duration}=JSON.parse(playerData)
-				const talk={
-					id, title, thumb, languages, duration,description,
-					video: resources.hls.stream,
-				}
-				
-				talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
-				
-				if(!translation)
+					talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
+					
+					if(!translation)
+						return {data:talk}
+
+					const {paragraphs}=translation
+					talk.languages.mine={transcript:paragraphs}
+					
+					console.assert(resources.hls.metadata)
+					const resHlsMeta=await fetch(resources.hls.metadata)
+					const hlsMeta=await resHlsMeta.json()
+					const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
+					const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
+					
+					const nextCue=((vtt,last=0)=>()=>{
+						if(!vtt)
+							return
+						const i0=vtt.indexOf("\n\n",last)
+						if(i0==-1)//The last may not have data
+							return []
+						const i=vtt.indexOf("\n",i0+2)
+						try{
+							const text= vtt.substring(i+1, vtt.indexOf("\n", i+1))
+							return [start, end, text]
+						}finally{
+							last=i+1
+						}
+					})(target && await (await fetch(target.webvtt)).text());
+
+					(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
+						cue.time+=offset
+						cue.end=talk.duration*1000+offset
+						if(lastCue){
+							lastCue.end=cue.time-200
+						}
+						cue.my=nextCue()?.text
+						lastCue=cue
+					})))();
+
+					StoreProvider.store?.dispatch({type:"talk/create", talk})
+
 					return {data:talk}
-
-				const {paragraphs}=translation
-				talk.languages.mine={transcript:paragraphs}
-				
-				console.assert(resources.hls.metadata)
-				const resHlsMeta=await fetch(resources.hls.metadata)
-				const hlsMeta=await resHlsMeta.json()
-				const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
-				const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
-				
-				const nextCue=((vtt,last=0)=>()=>{
-					if(!vtt)
-						return
-					const i0=vtt.indexOf("\n\n",last)
-					if(i0==-1)//The last may not have data
-						return []
-					const i=vtt.indexOf("\n",i0+2)
-					try{
-						const text= vtt.substring(i+1, vtt.indexOf("\n", i+1))
-						return [start, end, text]
-					}finally{
-						last=i+1
-					}
-				})(target && await (await fetch(target.webvtt)).text());
-
-				(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
-					cue.time+=offset
-					cue.end=talk.duration*1000+offset
-					if(lastCue){
-						lastCue.end=cue.time-200
-					}
-					cue.my=nextCue()?.text
-					lastCue=cue
-				})))();
-
-				StoreProvider.store?.dispatch({type:"talk/create", talk})
-
-				return {data:talk}
+				}
 			},
 		}),
 		videos:builder.query({
@@ -265,38 +290,6 @@ const Ted=createApi({
 	})
 })
 
-const Youtube=createApi({
-	reducerPath:"youtube",
-	endpoints:builder=>({
-		talk:builder.query({
-			queryFn: async ({id},{getState})=>{
-				try{
-					const {lang, mylang}=getState().my
-					const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
-					const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
-					const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
-					if(myTranscripts && transcripts.length==myTranscripts.length){
-						transcripts.forEach((cue,i)=>cue.my=myTranscripts[i].text)
-					}
-					if(transcripts){
-						transcripts.forEach(cue=>{
-							cue.time=cue.offset
-							delete cue.offset
-							cue.end=cue.time+cue.duration
-							delete cue.duration
-						})
-					}
-					const talk={title, id, slug:`youtube`, thumb, languages:{mine:[{cues:transcripts}]}, video:id, description:`by ${author}`}
-					StoreProvider.store?.dispatch({type:"talk/create", talk})
-					return {data:talk}
-				}catch(error){
-					return {error}
-				}
-			}
-		})
-	})
-})
-
 export function createStore(needPersistor){
 	const checkAction=(action,keys)=>{
 		const missing=keys.filter(a=>!(a in action))
@@ -373,7 +366,6 @@ export function createStore(needPersistor){
 				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 				combineReducers({
 					[Ted.reducerPath]: Ted.reducer,
-					[Youtube.reducerPath]: Youtube.reducer,
 					my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now()}, action) {
 						switch (action.type) {
 							case "persist/REHYDRATE":
@@ -656,7 +648,7 @@ export function createStore(needPersistor){
 				immutableCheck:{
 					warnAfter:100,
 				},
-			}).prepend([Ted.middleware, Youtube.middleware]),
+			}).prepend(Ted.middleware),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined
 	setupListeners(store)
@@ -703,7 +695,7 @@ function immutableSet(o, keys, value, returnEmpty=true){
 	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
 
-export {Ted, Youtube, StoreProvider as Provider,}
+export {Ted, StoreProvider as Provider,}
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];
