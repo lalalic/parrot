@@ -801,7 +801,7 @@ export const FlyMessage=Object.assign(()=>{
     },[])
     if(message){
         return (
-            <View style={{position:"absolute", bottom:0,width:"100%", color:"yellow", justifyContent:"center", alignItems:"center"}}>
+            <View style={{position:"absolute", bottom:20,width:"100%", color:"yellow", justifyContent:"center", alignItems:"center"}}>
                 <Text>{message}</Text>
             </View>
         )
@@ -810,6 +810,9 @@ export const FlyMessage=Object.assign(()=>{
     show(message){
         this.setMessage(message)
         setTimeout(()=>this.setMessage(""),3000)
+    },
+    error(message){
+        this.setMessage(<Text style={{color:"red"}}>{message}</Text>)
     }
 })
 

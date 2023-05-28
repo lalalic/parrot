@@ -94,7 +94,7 @@ const Ted=createApi({
 							delete cue.duration
 						})
 					}
-					const talk={title, id, slug:`youtube`, thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
+					const talk={title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
 					StoreProvider.store?.dispatch({type:"talk/create", talk})
 					return {data:talk}
 				}else{
@@ -128,9 +128,9 @@ const Ted=createApi({
 					const {data}=await res.json()
 						
 					const {translation, video: { playerData, description },}=data
-					const {id, resources, title, thumb, languages, duration}=JSON.parse(playerData)
+					const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
 					const talk={
-						id, slug, title, thumb, languages, duration,description,
+						id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
 						video: resources.hls.stream,
 					}
 					

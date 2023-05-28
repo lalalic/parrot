@@ -64,7 +64,9 @@ function useTalkQuery({slug, id=slug}){
     }else{
         const {data={}}=Ted.useTalkQuery({slug,id})
         const talkLocal=useSelector(state=>state.talks[data.id])
-        talk=React.useMemo(()=>( {...talkLocal, ...data, hasHistory:!!talkLocal}),[data, talkLocal])
+        talk=React.useMemo(()=>{
+            return {...talkLocal, ...data, hasHistory:!!talkLocal, video: talkLocal?.favorited || talkLocal?.video || data.video}
+        },[data, talkLocal])
     }
     const {general, shadowing, dictating, retelling, tags, ...data}=talk
     return {data}

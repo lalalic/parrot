@@ -101,7 +101,7 @@ export function useTalksQuery(search){
     React.useEffect(()=>{
         try{
             if(!search.q){
-                const sub=dispatch(Ted.endpoints.today.initiate())
+                const sub=dispatch(Ted.endpoints.today.initiate({day:new Date().asDateString()}))
                 return ()=>sub.unsubscribe()
             }
 
@@ -116,7 +116,7 @@ export function useTalksQuery(search){
             select.current=defaultMemoize(
                 state=>{    
                     if(!search.q){
-                        return Ted.endpoints.today.select()(state)
+                        return Ted.endpoints.today.select({day:new Date().asDateString()})(state)
                     }
                 
                     if(search.people){
