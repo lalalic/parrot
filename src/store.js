@@ -130,7 +130,7 @@ const Ted=createApi({
 					const {translation, video: { playerData, description },}=data
 					const {id, resources, title, thumb, languages, duration}=JSON.parse(playerData)
 					const talk={
-						id, title, thumb, languages, duration,description,
+						id, slug, title, thumb, languages, duration,description,
 						video: resources.hls.stream,
 					}
 					
@@ -153,11 +153,10 @@ const Ted=createApi({
 							return
 						const i0=vtt.indexOf("\n\n",last)
 						if(i0==-1)//The last may not have data
-							return []
+							return 
 						const i=vtt.indexOf("\n",i0+2)
 						try{
-							const text= vtt.substring(i+1, vtt.indexOf("\n", i+1))
-							return [start, end, text]
+							return vtt.substring(i+1, vtt.indexOf("\n", i+1))
 						}finally{
 							last=i+1
 						}
@@ -169,7 +168,7 @@ const Ted=createApi({
 						if(lastCue){
 							lastCue.end=cue.time-200
 						}
-						cue.my=nextCue()?.text
+						cue.my=nextCue()
 						lastCue=cue
 					})))();
 

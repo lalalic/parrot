@@ -37,7 +37,7 @@ export default class extends React.Component{
                                 const info = await FileSystem.getInfoAsync(localUri);
                                 if (!info.exists) {
                                     await FileSystem.makeDirectoryAsync(localUri, { intermediates: true });
-                                    await FileSystem.downloadAsync(talk.nativeDownloads.medium, localUri);
+                                    await FileSystem.downloadAsync(talk.video, localUri);
                                     toggleTalk("favorited", localUri);
                                 }
                             }
@@ -76,7 +76,7 @@ export default class extends React.Component{
                 dispatch({ type: "talk/challenge/remove", talk, policy: policyName, chunk });
                 dispatch({
                     type: "talk/challenge", policy: policyName,
-                    chunk: { ...chunk, uri: talk.resources?.hls.stream },
+                    chunk: { ...chunk, uri: talk.video },
                     talk: {
                         slug: "long_term_challenge",
                         title: "challenges from talks",
