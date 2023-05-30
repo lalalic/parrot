@@ -2,7 +2,7 @@ import React from "react"
 import { useDispatch } from "react-redux"
 import { PressableIcon, TalkSelector } from "../components"
 
-export default function Favorites(){
+export default function Favorites({}){
     return (
         <TalkSelector horizontal={false} extraData={Date.now()}
             thumbStyle={{height:120,width:"48%"}}

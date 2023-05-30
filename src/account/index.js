@@ -18,6 +18,7 @@ export default ()=>{
     if(isAdmin){
         sections.push(
             {title:"Developer", data:[
+                {name:"Admin", icon:"person-pin-circle", href:"/admin"},
                 {name:"Test", icon:"file-present"},
                 {name:"Files", icon:"file-present"},
                 {name:"recognizer", icon:"person-pin-circle"},

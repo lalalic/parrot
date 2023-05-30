@@ -30,7 +30,7 @@ export default class extends React.Component{
                     onPress={async (e) => {
                         try {
                             const folder=`${FileSystem.documentDirectory}${talk.id}`
-                            const localUri = `${folder}/video.mp3`
+                            const localUri = `${folder}/video.mp4`
                             
                             if (favorited) {
                                 await FileSystem.deleteAsync(localUri, { idempotent: true })
@@ -42,12 +42,13 @@ export default class extends React.Component{
                                 }
 
                                 const session=await FFmpegKit.execute(`-i "${talk.video}" -vn "${localUri}"`)
-                                const returnCode = await session.getReturnCode();
-                                if (ReturnCode.isSuccess(returnCode)) {
+
+                                const localFileStat=await FileSystem.getInfoAsync(localUri)
+                                if(localFileStat.exists){
                                     toggleTalk("favorited", localUri);
                                 }else{
                                     const logs = await session.getLogs();
-                                    logs.forEach(log=>console.debug(log))
+                                    console.debug(logs.map(log=>log.getMessage()).join("\n")) 
                                     FlyMessage.error(`can't download audio`)
                                 }
                             }

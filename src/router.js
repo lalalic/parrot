@@ -14,6 +14,7 @@ import Policy from "./account/policy"
 import Favorites from "./account/favorites"
 import Lang from "./account/lang"
 import Test from "./account/test"
+import Admin from "./admin"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -53,6 +54,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="language" element={<Lang/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         <Route path="test" element={<Test/>}/>
+
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>
@@ -71,6 +73,9 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         return Widget && <Widget/>
                     })} 
                 />
+            </Route>
+            <Route path="/admin" element={<WithBackButton/>}>
+                <Route path="" element={<Admin/>}/>
             </Route>
             <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
         </Routes>
