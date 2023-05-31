@@ -52,7 +52,7 @@ export default function Talk({autoplay}){
     )
 }
 
-function useTalkQuery({slug, id=slug}){
+function useTalkQuery({slug, id}){
     let talk, Widget
     if(slug!="youtube" && !!(Widget=globalThis.Widgets[slug])){
         talk=useSelector(state=>state.talks[id])

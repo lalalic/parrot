@@ -3,10 +3,10 @@ import { Audio , Video as ExpoVideo} from "expo-av"
 import { View, Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
-import { FFmpegKit, ReturnCode } from 'ffmpeg-kit-react-native';
 
 import { PressableIcon, PolicyChoice, html, FlyMessage } from '../components';
 import { Subtitles } from "../components/player"
+import mpeg from "../experiment/mpeg";
 
 export default class extends React.Component{
     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
@@ -27,35 +27,7 @@ export default class extends React.Component{
                 />}
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
-                    onPress={async (e) => {
-                        try {
-                            const folder=`${FileSystem.documentDirectory}${talk.id}`
-                            const localUri = `${folder}/video.mp4`
-                            
-                            if (favorited) {
-                                await FileSystem.deleteAsync(localUri, { idempotent: true })
-                                toggleTalk("favorited")
-                            } else {
-                                const info = await FileSystem.getInfoAsync(folder)
-                                if (!info.exists) {
-                                    await FileSystem.makeDirectoryAsync(localUri, { intermediates: true })
-                                }
-
-                                const session=await FFmpegKit.execute(`-i "${talk.video}" -vn "${localUri}"`)
-
-                                const localFileStat=await FileSystem.getInfoAsync(localUri)
-                                if(localFileStat.exists){
-                                    toggleTalk("favorited", localUri);
-                                }else{
-                                    const logs = await session.getLogs();
-                                    console.debug(logs.map(log=>log.getMessage()).join("\n")) 
-                                    FlyMessage.error(`can't download audio`)
-                                }
-                            }
-                        } catch (e) {
-                            FlyMessage.error(`can't download audio: ${e.message}`)
-                        }
-                    }}/>
+                    onPress={async (e) =>toggleTalk("favorited")}/>
             </PolicyChoice>
         )
     }
@@ -85,26 +57,26 @@ export default class extends React.Component{
                 style={{ flex: 1 }} />,
             transcript: talk.languages?.mine?.transcript,
             onLongtermChallenge: async chunk => {
-                const root=`${FileSystem.documentDirectory}${talk.id}`
-                const localUri=`${root}/${chunk.time}.mp3`
-                const session=await FFmpegKit.execute(`-ss ${chunk.time/1000} -i "${talk.favorited||talk.video}" -t ${(chunk.end-chunk.time)/1000} -vn -c:a copy "${localUri}"`)
-                const returnCode = await session.getReturnCode();
-                if (ReturnCode.isSuccess(returnCode)) {
-                    dispatch({ type: "talk/challenge/remove", talk, policy: policyName, chunk });
-                    dispatch({
-                        type: "talk/challenge", policy: policyName,
-                        chunk: { ...chunk, audio: localUri, time:undefined, end:undefined },
-                        talk: {
-                            slug: "long_term_challenge",
-                            title: "challenges from talks",
-                            thumb: require("../../assets/challenge-book.jpeg"),
-                            id: "challenge",
-                            favorited: true,
-                        }
-                    })
-                }else{
-                    FlyMessage.error(`Can't crop, leave it as it is.`)
-                }
+                const localUri=`${FileSystem.documentDirectory}${talk.id}/${chunk.time}.mp4`
+
+                await mpeg.sliceAudio({
+                    source:talk.video,
+                    target: localUri,
+                    start:chunk.time/1000, duration:(chunk.end-chunk.time)/1000
+                })
+
+                dispatch({ type: "talk/challenge/remove", talk, policy: policyName, chunk });
+                dispatch({
+                    type: "talk/challenge", policy: policyName,
+                    chunk: { ...chunk, audio: localUri, time:undefined, end:undefined },
+                    talk: {
+                        slug: "long_term_challenge",
+                        title: "challenges from talks",
+                        thumb: require("../../assets/challenge-book.jpeg"),
+                        id: "challenge",
+                        favorited: true,
+                    }
+                })
             }
         }
     }

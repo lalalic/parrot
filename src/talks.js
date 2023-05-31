@@ -88,7 +88,7 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
                 style={{position:"absolute",width:"100%",
                     backgroundColor:color.inactive,top:35, 
                     height:200}} >
-                {people.map(a=><Picker.Item {...{key:a.slug, label:a.name, value:a.slug}}/>)}
+                {people.map(({name,slug=name})=><Picker.Item {...{key:slug, label:name, value:slug}}/>)}
             </Picker>}
         </>
     )

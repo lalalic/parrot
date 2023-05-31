@@ -19,7 +19,8 @@ import { YoutubeTranscript } from "./experiment/youtube-transcript"
 
 import * as Calendar from "./experiment/calendar"
 import Qili from "./experiment/qili"
-import { FlyMessage } from "./components";
+import { FlyMessage } from "./components"
+import mpegKit from "./experiment/mpeg"
 
 export const Policy={
 	general: {
@@ -58,20 +59,11 @@ export const Policy={
 	},
 }
 
+const TedHeader={
+	"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
+}
 const Ted=createApi({
 	reducerPath:"ted",
-	baseQuery:(({baseUrl})=>async({context, headers})=>{	
-		if(!context){
-			return {data:""}
-		}
-		const res=await fetch(`${baseUrl}${context}`,{
-			headers:{
-				"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
-				...headers,
-			},
-		})
-		return {data:await res.text()}
-	})({baseUrl:"https://www.ted.com"}),
 	endpoints:builder=>({
 		talk:builder.query({
 			queryFn: async ({slug,id},{getState, dispatch})=>{
@@ -79,130 +71,129 @@ const Ted=createApi({
 				if(id && state.talks[id]){
 					return {data:state.talks[id]}
 				}
-				const {lang="en", mylang="zh-cn"}=state.my
 
-				if(slug=="youtube"){
-					const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
-					const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
-					const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
-					if(myTranscripts && transcripts.length==myTranscripts.length){
-						transcripts.forEach((cue,i)=>cue.my=myTranscripts[i].text)
-					}
-					if(transcripts){
-						transcripts.forEach(cue=>{
-							cue.time=cue.offset
-							delete cue.offset
-							cue.end=cue.time+cue.duration
-							delete cue.duration
+				const talk=await (async ()=>{
+					if(Qili.isTedBanned({getState})){
+						const {talk}=await new Qili().fetch({
+							id:"talk",
+							variables:{slug, id}
 						})
+						return talk
 					}
-					const talk={title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
-					dispatch({type:"talk/create", talk})
-					return {data:talk}
-				}else{
-					const res=await fetch("https://www.ted.com/graphql",{
-						method:"POST",
-						headers:{
-							'Content-Type': 'application/json',
-							'Accept': 'application/json',
-						},
-						body:JSON.stringify({
-							query: `query {
-							translation(
-								videoId: "${slug}"
-								language: "${lang}"
-							) {
-								paragraphs {
-									cues {
-										text
-										time
+
+					const {lang="en", mylang="zh-cn"}=state.my
+
+					if(slug=="youtube"){
+						const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
+						const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
+						const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
+						if(myTranscripts && transcripts.length==myTranscripts.length){
+							transcripts.forEach((cue,i)=>cue.my=myTranscripts[i].text)
+						}
+						if(transcripts){
+							transcripts.forEach(cue=>{
+								cue.time=cue.offset
+								delete cue.offset
+								cue.end=cue.time+cue.duration
+								delete cue.duration
+							})
+						}
+						return {title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
+					}else{
+						const res=await fetch("https://www.ted.com/graphql",{
+							method:"POST",
+							headers:{
+								'Content-Type': 'application/json',
+								'Accept': 'application/json',
+							},
+							body:JSON.stringify({
+								query: `query {
+								translation(
+									videoId: "${slug}"
+									language: "${lang}"
+								) {
+									paragraphs {
+										cues {
+											text
+											time
+										}
 									}
 								}
-							}
-								
-							video(slug:"${slug}"){
-									description
-									playerData
-								}
-							}`,
-						}),
-					})
-					const {data}=await res.json()
+									
+								video(slug:"${slug}"){
+										description
+										playerData
+									}
+								}`,
+							}),
+						})
+						const {data}=await res.json()
+							
+						const {translation, video: { playerData, description },}=data
+						const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
+						const talk={
+							id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
+							video: resources.hls.stream,
+						}
 						
-					const {translation, video: { playerData, description },}=data
-					const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
-					const talk={
-						id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
-						video: resources.hls.stream,
+						talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
+						
+						if(!translation)
+							return {data:talk}
+
+						const {paragraphs}=translation
+						talk.languages.mine={transcript:paragraphs}
+						
+						console.assert(resources.hls.metadata)
+						const resHlsMeta=await fetch(resources.hls.metadata)
+						const hlsMeta=await resHlsMeta.json()
+						const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
+						const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
+						
+						const nextCue=((vtt,last=0)=>()=>{
+							if(!vtt)
+								return
+							const i0=vtt.indexOf("\n\n",last)
+							if(i0==-1)//The last may not have data
+								return 
+							const i=vtt.indexOf("\n",i0+2)
+							try{
+								return vtt.substring(i+1, vtt.indexOf("\n", i+1))
+							}finally{
+								last=i+1
+							}
+						})(target && await (await fetch(target.webvtt)).text());
+
+						(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
+							cue.time+=offset
+							cue.end=talk.duration*1000+offset
+							if(lastCue){
+								lastCue.end=cue.time-200
+							}
+							cue.my=nextCue()
+							lastCue=cue
+						})))();
+						return talk
 					}
-					
-					talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
-					
-					if(!translation)
-						return {data:talk}
+				})();
 
-					const {paragraphs}=translation
-					talk.languages.mine={transcript:paragraphs}
-					
-					console.assert(resources.hls.metadata)
-					const resHlsMeta=await fetch(resources.hls.metadata)
-					const hlsMeta=await resHlsMeta.json()
-					const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
-					const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
-					
-					const nextCue=((vtt,last=0)=>()=>{
-						if(!vtt)
-							return
-						const i0=vtt.indexOf("\n\n",last)
-						if(i0==-1)//The last may not have data
-							return 
-						const i=vtt.indexOf("\n",i0+2)
-						try{
-							return vtt.substring(i+1, vtt.indexOf("\n", i+1))
-						}finally{
-							last=i+1
-						}
-					})(target && await (await fetch(target.webvtt)).text());
-
-					(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
-						cue.time+=offset
-						cue.end=talk.duration*1000+offset
-						if(lastCue){
-							lastCue.end=cue.time-200
-						}
-						cue.my=nextCue()
-						lastCue=cue
-					})))();
-
-					dispatch({type:"talk/create", talk})
-
-					return {data:talk}
-				}
+				dispatch({type:"talk/create", talk})
+				return {data:talk}
 			},
 		}),
-		videos:builder.query({
-			query:({q, page})=>({context:!q ? null : `/search?cat=videos${q ? `&q=${encodeURI(q)}` :""}${page>1 ? `&page=${page}`:""}`}),
-			transformResponse(data, meta, {page}){
-				const $=cheerio.load(data)
-				const talks=$(".search-results .search__result").map((i,el)=>{
-					const $el=$(el)
-					const link=$el.find("h3>a.ga-link").first()
-					return {
-						title:link.text(),
-						slug:link.attr("href").split("/").pop(),
-						thumb:$el.find('img').attr('src'),
-						desc:$el.find('.search__result__description').text(),
-					}
-				}).toArray()
-				const pages=parseInt($(".search__pagination .pagination__item").last().text())||1
-				return {talks,page,pages}
-			},
-		}),
-
 		talks:builder.query({
-			query:({q, page})=>{
+			queryFn:async ({q, page}, api)=>{
 				let minutes=0
 				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
+				
+				if(Qili.isTedBanned(api)){
+					const data=new Qili().fetch({
+						id:"talks",
+						variables:{q}
+					})
+					return {data}
+				}
+
 				const query=[
 					minutes>0 && `duration=${(Math.ceil(minutes/6)-1)*6}-${Math.ceil(minutes/6)*6}`,
 					!!q ? "sort=relevance" : "sort=newest",
@@ -210,9 +201,8 @@ const Ted=createApi({
 					page>1 && `page=${page}`
 				].filter(a=>!!a).join("&")
 
-				return {context:`/talks${!!query ? `?${query}` :""}`}
-			},
-			transformResponse(data, meta, {page}){
+				const res=await fetch(`https://www.ted.com/talks${!!query ? `?${query}` :""}`,TedHeader)
+				const data=await res.text()
 				const $=cheerio.load(data)
 				const talks=$("#browse-results .media").map((i,el)=>{
 					const $el=$(el)
@@ -225,13 +215,22 @@ const Ted=createApi({
 					}
 				}).toArray()
 				const pages=parseInt($("#browse-results>.results__pagination .pagination__item").last().text())||1
-				return {talks,page,pages}
+				return {data:{talks,page,pages}}
 			},
 		}),
 
 		people:builder.query({
-			query:({q})=>({context:!q ? null : `/search?cat=people&q=${encodeURI(q)}`}),
-			transformResponse(data){
+			queryFn:async ({q}, api)=>{
+				if(Qili.isTedBanned(api)){
+					const {people}=await new Qili().fetch({
+						id:"people",
+						variables:{q}
+					})
+					return {data:people}
+				}
+				const res=await fetch(`https://www.ted.com/search?cat=people&q=${encodeURI(q)}`,TedHeader)
+				const data=await res.text()
+				
 				const $=cheerio.load(data)
 				const talks=$(".search-results .search__result").map((i,el)=>{
 					const $el=$(el)
@@ -243,12 +242,20 @@ const Ted=createApi({
 						desc:$el.find('.search__result__description').text(),
 					}
 				}).toArray()
-				return talks
+				return {data:talks}
 			}
 		}),
 		speakerTalks:builder.query({
-			query:({q})=>({context:!q ? null : `/speakers/${q}`}),
-			transformResponse(data){
+			queryFn:async ({q},api)=>{
+				if(Qili.isTedBanned(api)){
+					const data=new Qili.fetch({
+						id:"speakerTalks",
+						variables:{q}
+					})
+					return {data}
+				}
+				const res=await fetch(`https://www.ted.com/speakers/${q}`,TedHeader)
+				const data=await res.text()
 				const $=cheerio.load(data)
 				const talks=$("#talks .media").map((i,el)=>{
 					const $el=$(el)
@@ -260,7 +267,7 @@ const Ted=createApi({
 						duration:(([m,s])=>parseInt(m)*60+parseInt(s))($el.find('.thumb__duration').text().split(":"))
 					}
 				}).toArray()
-				return {talks}
+				return {data:{talks}}
 			}
 		}),
 		today:builder.query({
@@ -371,18 +378,33 @@ export function createStore(needPersistor){
 	listenerSave.startListening({
 		type:"talk/toggle",
 		async effect(action, {getOriginalState}){
-			if(!(action.key=="favorited" && !!action.value))
+			if(action.key!=="favorited")
 				return 
 			
 			const state=getOriginalState()
 			if(!state.my?.admin?.headers)
 				return 
 			
-			const {id, ...talk}=state.talks[action.talk.id]
+			const {id,favorited, ...talk}=state.talks[action.talk.id]
+			if(favorited)
+				return
 			
 			try{
+				const key=`Talk/${id}/video.mp4`
 				const qili=new Qili(state.my.admin)
-				const url=await qili.upload({file:action.value, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`})
+				const {uploaded}=await qili.fetch({
+					query:`query file_exists($key:String!){
+						uploaded:file_exists(key:$key)
+					}`,
+					variables:{key}
+				})
+				if(uploaded)
+					return 
+
+				const file=`${FileSystem.documentDirectory}${id}/video.mp4`
+				await mpegKit.generateAudio({source:talk.video, target:file})
+				
+				const url=await qili.upload({file, host:`Talk:${id}`, key})
 				
 				await qili.fetch({
 					id:"save",
