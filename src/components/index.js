@@ -813,6 +813,7 @@ export const FlyMessage=Object.assign(()=>{
     },
     error(message){
         this.setMessage(<Text style={{color:"red"}}>{message}</Text>)
+        setTimeout(()=>this.setMessage(""),3000)
     }
 })
 

@@ -14,8 +14,8 @@ export default ()=>{
             {name:"Language", icon:"compass-calibration"}, 
         ]},
     ]
-    const {isAdmin}=useSelector(state=>state.my)
-    if(isAdmin){
+    const {admin}=useSelector(state=>state.my)
+    if(!!admin){
         sections.push(
             {title:"Developer", data:[
                 {name:"Admin", icon:"person-pin-circle", href:"/admin"},
@@ -34,7 +34,7 @@ export default ()=>{
             <SectionList 
                 keyExtractor={a=>a.name}
                 renderSectionHeader={({ section: { title } }) => (
-                    <Pressable style={{flex:1}} onLongPress={e=>dispatch({type:"my",payload:{isAdmin:!isAdmin}})}>
+                    <Pressable style={{flex:1}} onLongPress={e=>dispatch({type:"my",payload:{admin: !admin ? {} : false}})}>
                         <Text style={{flex:1, fontSize:16, paddingTop:20, paddingLeft: 10}}>{title}</Text>
                     </Pressable>
                 )}

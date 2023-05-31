@@ -1,6 +1,6 @@
 import React from "react"
 import { combineReducers } from "redux"
-import { configureStore, isPlain } from "@reduxjs/toolkit";
+import { configureStore, isPlain, createListenerMiddleware } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
@@ -18,6 +18,8 @@ import { YoutubeTranscript } from "./experiment/youtube-transcript"
 
 
 import * as Calendar from "./experiment/calendar"
+import Qili from "./experiment/qili"
+import { FlyMessage } from "./components";
 
 export const Policy={
 	general: {
@@ -72,7 +74,7 @@ const Ted=createApi({
 	})({baseUrl:"https://www.ted.com"}),
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug,id},{getState})=>{
+			queryFn: async ({slug,id},{getState, dispatch})=>{
 				const state=getState()
 				if(id && state.talks[id]){
 					return {data:state.talks[id]}
@@ -95,7 +97,7 @@ const Ted=createApi({
 						})
 					}
 					const talk={title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
-					StoreProvider.store?.dispatch({type:"talk/create", talk})
+					dispatch({type:"talk/create", talk})
 					return {data:talk}
 				}else{
 					const res=await fetch("https://www.ted.com/graphql",{
@@ -172,7 +174,7 @@ const Ted=createApi({
 						lastCue=cue
 					})))();
 
-					StoreProvider.store?.dispatch({type:"talk/create", talk})
+					dispatch({type:"talk/create", talk})
 
 					return {data:talk}
 				}
@@ -262,7 +264,14 @@ const Ted=createApi({
 			}
 		}),
 		today:builder.query({
-			queryFn:async (day)=>{
+			queryFn:async (day,api)=>{
+				if(Qili.isTedBanned(api)){
+					const data=await Qili.create(api).fetch({
+						id:"today",
+						variables:{}
+					})
+					return {data}
+				}
 				const res=await fetch("http://feeds.feedburner.com/TEDTalks_audio",{
 					headers:{
 						"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
@@ -285,7 +294,7 @@ const Ted=createApi({
 				}).filter(a=>!!a.duration)
 				return {data:{talks}}
 			}
-		}),
+		})
 	})
 })
 
@@ -357,6 +366,41 @@ export function createStore(needPersistor){
 		}
 		return items
 	}
+
+	const listenerSave=createListenerMiddleware()
+	listenerSave.startListening({
+		type:"talk/toggle",
+		async effect(action, {getOriginalState}){
+			if(!(action.key=="favorited" && !!action.value))
+				return 
+			
+			const state=getOriginalState()
+			if(!state.my?.admin?.headers)
+				return 
+			
+			const {id, ...talk}=state.talks[action.talk.id]
+			
+			try{
+				const qili=new Qili(state.my.admin)
+				const url=await qili.upload({file:action.value, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`})
+				
+				await qili.fetch({
+					id:"save",
+					variables:{
+						talk:{
+							...talk,
+							_id:id,
+							video:url,
+						}
+					}
+				})
+
+				FlyMessage.show(`Uploaded a talk`)
+			}catch(e){
+				FlyMessage.error(e.message)
+			}
+		}
+	})
 
 	const store = configureStore({
 		/** reducer can't directly change any object in state, instead shallow copy and change */
@@ -647,7 +691,7 @@ export function createStore(needPersistor){
 				immutableCheck:{
 					warnAfter:100,
 				},
-			}).prepend(Ted.middleware),
+			}).prepend([Ted.middleware,listenerSave.middleware]),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined
 	setupListeners(store)
