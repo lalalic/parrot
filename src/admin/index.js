@@ -9,12 +9,7 @@ export default function Admin(){
     const dispatch=useDispatch()
     const updateToken=React.useCallback(async admin=>{
         const data=await new Qili(admin).fetch({
-            id:"updateToken",
-            query:`query {
-                me{
-                    token
-                }
-            }`
+            id:"authentication_renewToken_Query"
         })
             
         if(data?.me?.token){
@@ -54,7 +49,6 @@ export default function Admin(){
     )
 }
 
-
 function Login({}){
     const dispatch=useDispatch()
     const [contact, setContact]=React.useState("")
@@ -78,13 +72,8 @@ function Login({}){
     const requestCode=React.useCallback(async contact=>{
         try{
             const data=await new Qili().fetch({
-                id:"requestToken",
-                query:`mutation requestCode($contact:String!){
-                    requestToken(contact:$contact)
-                }`,
-                variables:{
-                    contact
-                }
+                id:"authentication_requestToken_Mutation",
+                variables:{ contact}
             })
             setAuthReady(!!data.requestToken)
             if(!!data.requestToken){
@@ -98,12 +87,7 @@ function Login({}){
     const login=React.useCallback(async ({contact, code})=>{
         try{
             const data=await new Qili().fetch({
-                id:"login",
-                query:`mutation login($contact:String!,$token: String!, $name: String){
-                    login(contact:$contact, token:$token, name:$name){
-                        token
-                    }
-                }`,
+                id:"authentication_login_Mutation",
                 variables:{
                     contact,
                     token:code,

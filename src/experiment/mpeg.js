@@ -12,6 +12,9 @@ async function prepareFolder(localUri){
 
 export default {
     async generateAudio({source, target:localUri}){
+        if((await FileSystem.getInfoAsync(localUri)).exists)
+            return 
+
         await prepareFolder(localUri)
 
         const session=await FFmpegKit.execute(`-i "${source}" -vn "${localUri}"`)

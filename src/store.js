@@ -274,8 +274,7 @@ const Ted=createApi({
 			queryFn:async (day,api)=>{
 				if(Qili.isTedBanned(api)){
 					const data=await Qili.create(api).fetch({
-						id:"today",
-						variables:{}
+						id:"today"
 					})
 					return {data}
 				}
@@ -386,38 +385,40 @@ export function createStore(needPersistor){
 				return 
 			
 			const {id,favorited, ...talk}=state.talks[action.talk.id]
-			if(favorited)
+			if(favorited || talk.slug==id)
 				return
 			
 			try{
+
 				const key=`Talk/${id}/video.mp4`
 				const qili=new Qili(state.my.admin)
 				const {uploaded}=await qili.fetch({
-					query:`query file_exists($key:String!){
-						uploaded:file_exists(key:$key)
-					}`,
+					id:"file_exists_Query",
 					variables:{key}
 				})
 				if(uploaded)
 					return 
 
-				const file=`${FileSystem.documentDirectory}${id}/video.mp4`
-				await mpegKit.generateAudio({source:talk.video, target:file})
-				
-				const url=await qili.upload({file, host:`Talk:${id}`, key})
-				
-				await qili.fetch({
-					id:"save",
-					variables:{
-						talk:{
-							...talk,
-							_id:id,
-							video:url,
+				if(talk.video?.indexOf("ted.com")!=-1){
+					const file=`${FileSystem.documentDirectory}${id}/video.mp4`
+					await mpegKit.generateAudio({source:talk.video, target:file})
+					
+					const url=await qili.upload({file, host:`Talk:${id}`, key})
+					
+					await qili.fetch({
+						id:"save",
+						variables:{
+							talk:{
+								...talk,
+								_id:id,
+								video:url,
+							}
 						}
-					}
-				})
+					})
 
-				FlyMessage.show(`Uploaded a talk`)
+					FlyMessage.show(`Uploaded a talk`)
+				}
+
 			}catch(e){
 				FlyMessage.error(e.message)
 			}
@@ -502,16 +503,6 @@ export function createStore(needPersistor){
 										delete payload.chunk
 									}
 									talk[target]={...talk[target], ...payload}
-								})
-							case "talk/fix/chunk":
-								return produce(talks, $talks=>{
-									const {talk, time}=getTalk(action, $talks)
-									if(talk.fixes){
-										if(talk.fixes.indexOf(time)==-1)
-											talk.fixes=[time, ...talk.fixes]
-									}else{
-										talk.fixes=[time]
-									}
 								})
 							case "talk/challenge":{
 								return produce(talks, $talks=>{

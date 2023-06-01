@@ -24,11 +24,11 @@ export default class {
         const res=await fetch(service, {
             method:"POST",
             headers:{
-                'content-type': 'application/json',
+                'Content-Type': 'application/json',
                 "x-application-id":"parrot",
                 ...headers,
             },
-            body:(request.variables||request.query) ? JSON.stringify(request) : request
+            body: request instanceof FormData ? request : JSON.stringify(request)
         })
         const {data}=await res.json()
 
@@ -45,33 +45,40 @@ export default class {
 
     async upload({file, key, host}){
         const {token:{token}}=await this.fetch({
-            query:`query file_token_Query($key:String){
-                token:file_upload_token(key: $key){
-                    _id: id
-                    token
-                }
-            }`,
+            id:"file_token_Query",
             variables:{key}
         })
 
         const formData=new FormData()
-        Object.keys({
+        const props={
             "x:id":host,token,key,
             file: {
                 type:"video/mpeg",
                 uri:file,
                 name:"video.mp4"
-            }
-        }).forEach((a,i,self)=>formData.append(a,self[a]))
+            },
+            //local upload for testing
+            id:"file_create_Mutation",
+            variables:JSON.stringify({
+                _id:key,
+                host,
+                mimeType:"video/mpeg"
+            })
+        }
+        Object.keys(props).forEach(k=>formData.append(k,props[k]))
 
-        return `${this.service.replace("graphql","parrot")}/static/${key}`
+        //return `${this.service.replace("graphql","parrot")}/static/${key}`
+        const headers={
+            ...this.headers, 
+            "x-application-id":"parrot",//local for testing
+            "Content-Type":"multipart/form-data",
+        }
 
+        delete headers["Content-Type"]
+        
         const res=await fetch(this.storage,{
             method:"POST",
-            headers:{
-                ...this.headers, 
-                'content-type': 'multipart/form-data',
-            },
+            headers,
             body:formData
         })
 

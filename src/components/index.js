@@ -808,10 +808,12 @@ export const FlyMessage=Object.assign(()=>{
     }
 },{
     show(message){
+        console.debug(message)
         this.setMessage(message)
         setTimeout(()=>this.setMessage(""),3000)
     },
     error(message){
+        console.error(message)
         this.setMessage(<Text style={{color:"red"}}>{message}</Text>)
         setTimeout(()=>this.setMessage(""),3000)
     }

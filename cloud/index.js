@@ -29,7 +29,6 @@ Cloud.addModule({
             people(q:String):[Talk]
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
-            file_exists(key:String):Boolean
         }
 
         extend type Mutation{
@@ -62,10 +61,6 @@ Cloud.addModule({
             },
             today(_,{},{app}){
                 return app.findEntity("Talk")
-            },
-            file_exists(_,{key},{app}){
-                return app.get1Entity("File",{_id:key})
-                    .then(file=>!!file)
             }
         },
         Mutation:{
