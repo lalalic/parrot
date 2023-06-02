@@ -20,7 +20,6 @@ export default class PictureBook extends TaggedListMedia {
         title: "Picture Book",
         thumb: require("../../assets/widget-picture-book.png"),
         description: "Recognize everything in your world",
-        tags:["kitchen","food"],
         shadowing:{visible:true},
         dictating:{visible:true},
         retelling:{visible:true}
@@ -34,10 +33,10 @@ export default class PictureBook extends TaggedListMedia {
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()
 
-        const PictureItem=React.useCallback(({item:{uri, text}})=>{
+        const PictureItem=React.useCallback(({item:{uri, text}, id})=>{
             return (
                 <Pressable key={uri} style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
-                    onLongPress={e=>dispatch({type:`${slug}/remove`, uri})}>
+                    onLongPress={e=>dispatch({type:`talk/book/remove`,id, uri})}>
                     <ImageBackground source={{uri}} style={{flex:1}}>
                         <TextInput defaultValue={text} selectTextOnFocus={true}
                             style={{position:"absolute",left:5, top: 5, 
@@ -46,7 +45,7 @@ export default class PictureBook extends TaggedListMedia {
                             }}
                             onEndEditing={({nativeEvent:e})=>{
                                 if(text!=e.text){
-                                    dispatch({type:`${slug}/set`,uri, text:e.text})
+                                    dispatch({type:`talk/book/set`, id, uri, text:e.text})
                                 }
                             }}/>
                     </ImageBackground>
@@ -69,10 +68,10 @@ export default class PictureBook extends TaggedListMedia {
         return (
             <TaggedTranscript 
                 slug={slug}
-                actions={tag=>{
+                actions={(tag,id)=>{
                     const save=async select=>{
                         const result=await resize(select)
-                        dispatch({type:"picturebook/record", uri:result.uri, tags:[tag], text:"Name"})
+                        dispatch({type:"talk/book/record", id, uri:result.uri, text:"Name"})
                     }
                     return <PressableIcon name="add-a-photo" 
                         onPress={e=>{

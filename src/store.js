@@ -313,66 +313,6 @@ export function createStore(needPersistor){
 		return true
 	}
 
-	const createBookReducer=book=>(items=[],{type,...action})=>{
-		switch(type){
-			case `${book}/record`:
-				return [...items,action]
-			case `${book}/set`:
-				return produce(items,items=>{
-					checkAction(action, ["uri"])
-					const {uri, ...props}=action
-					const item=items.find(a=>a.uri==uri)
-					Object.assign(item, props)
-					return items
-				})
-			case `${book}/remove`:{
-				return produce(items, items=>{
-					checkAction(action, ["uri"])
-					const i=items.findIndex(a=>a.uri==action.uri)
-					if(i!=-1){
-						try{
-							FileSystem.deleteAsync(action.uri,{idempotent:true})
-						}finally{
-							items.splice(i,1)
-						}
-					}
-				})
-				
-			}
-			case "talk/clear":{
-				if(action.slug!==book){
-					break
-				}else if(action.id!==book){//clear a tagged book
-					return items.filter(a=>{
-						if(a.tags?.indexOf(action.tag)>-1){
-							try{
-								a.uri && FileSystem.deleteAsync(a.uri,{idempotent:true})
-								a.audio && FileSystem.deleteAsync(a.audio,{idempotent:true})
-							}catch{}
-							return false
-						}
-						return true
-					})
-				}else if(action.id==book){
-					//same as book/clear, continue 
-				}
-			}
-			case "talk/clear/all":
-			case `${book}/clear`:{
-				items.forEach(a=>{
-					try{
-						a.uri && FileSystem.deleteAsync(a.uri,{idempotent:true})
-						a.audio && FileSystem.deleteAsync(a.audio,{idempotent:true})
-					}catch{
-
-					}
-				})
-				return []
-			}
-		}
-		return items
-	}
-
 	const listenerSave=createListenerMiddleware()
 	listenerSave.startListening({
 		type:"talk/toggle",
@@ -540,6 +480,32 @@ export function createStore(needPersistor){
 									}
 								})
 							}
+							////unify : id, uri
+							case "talk/book/record":
+								return produce(talks, $talks=>{
+									const {type, id, ...record}=action
+									const talk=$talks[id]
+									talk.data.push(record)
+								})
+							case "talk/book/remove":
+								return produce(talks, $talks=>{
+									const {id, uri}=action
+									const talk=$talks[id]
+									const i=talk.data.findIndex(a=>a.uri==uri)
+									if(i!=-1){
+										talk.data.splice(i,1)
+									}
+								})
+							case "talk/book/set":
+								return produce(talks, $talks=>{
+									const {id, uri, type, ...props}=action
+									const talk=$talks[id]
+									const item=talk.data.find(a=>a.uri==uri)
+									if(item){
+										Object.assign(item, props)
+									}
+								})
+							/////////
 							case "talk/recording":
 								return produce(talks, $talks=>{
 									checkAction(action, ["record","talk","policy"])
@@ -690,8 +656,7 @@ export function createStore(needPersistor){
 						}
 						return state
 					},
-					audiobook:createBookReducer("audiobook"),
-					picturebook:createBookReducer('picturebook'),
+					
 			})),
 
 		middleware: (getDefaultMiddleware) =>getDefaultMiddleware({

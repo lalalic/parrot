@@ -70,7 +70,15 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 <Route path=":slug" element={React.createElement(()=>{
                         const {slug}=useParams()
                         const Widget=globalThis.Widgets[slug]
-                        return Widget && <Widget/>
+                        if(!Widget)
+                            return null
+                        
+                        if(Widget.TagManagement){
+                            const TagManagement=Widget.$TagManagement || (Widget.$TagManagement=Widget.TagManagement.bind(Widget))
+                            return <TagManagement/>
+                        }
+
+                        return <Widget/>
                     })} 
                 />
             </Route>

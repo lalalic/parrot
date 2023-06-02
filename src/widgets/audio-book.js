@@ -11,20 +11,16 @@ import * as DocumentPicker from 'expo-document-picker'
 export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
-        cueHasDuration:true,
         id: "audiobook",
         slug: "audiobook",
         title: "Audio Book",
         thumb: require("../../assets/widget-audio-book.jpeg"),
         description: "A list of audios: manage audio book with tags and practise them",
-        tags:["Vocabulary","Speak","Grammar", "Talk"],
     }
 
     renderAt({text, uri}, i){ 
         const {rate, volume}=this.status
-        return (
-            <PlaySound {...{key:i, audio:uri, rate, volume}}/>
-        )
+        return this.speak({rate,volume,text:{audio:uri}})
     }
 
     static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
@@ -32,7 +28,7 @@ export default class AudioBook extends TaggedListMedia {
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
             
-        const AudioItem=React.useCallback(({item:{text, uri}})=>{
+        const AudioItem=React.useCallback(({item:{text, uri}, id})=>{
             const [playing, setPlaying] = React.useState(false)
             const [editing, setEditing] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
@@ -41,7 +37,7 @@ export default class AudioBook extends TaggedListMedia {
                     style={{ flexDirection: "row", height: 50 }}>
                     <PressableIcon name={!!uri ? (playing ? "pause-circle-outline" : "play-circle-outline") : "radio-button-unchecked"} 
                         onPress={e=>uri && setPlaying(!playing)}
-                        onLongPress={e=>dispatch({type:`${slug}/remove`, uri})}
+                        onLongPress={e=>dispatch({type:`talk/book/remove`, id, uri})}
                         />
                     <Pressable 
                         onPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
@@ -51,7 +47,7 @@ export default class AudioBook extends TaggedListMedia {
                             (<TextInput style={textStyle} defaultValue={text} 
                             onEndEditing={({nativeEvent:e})=>{
                                 if(text!=e.text){
-                                    dispatch({type:`${slug}/set`,text:e.text,uri})
+                                    dispatch({type:`talk/book/set`,id, uri, text:e.text})
                                 }
                                 setEditing(false)
                             }}/>) :
@@ -65,18 +61,16 @@ export default class AudioBook extends TaggedListMedia {
         return (
             <TaggedTranscript slug={slug}
                 renderItem={AudioItem}
-                actions={tag=>[
+                actions={(tag,id)=>[
                     <PressableIcon name="file-upload" key="file"
-                        onPress={e=>DocumentPicker.getDocumentAsync({type:"audio/*",multiple:true}).then((res,files)=>{
-                            if(res.type=="cancel")
+                        onPress={e=>DocumentPicker.getDocumentAsync({type:"audio/*",copyToCacheDirectory:false}).then(file=>{
+                            if(file.type=="cancel")
                                 return
-                            files.forEach(file=>{
-                                this.create({uri:file.uri, tag, text:"placeholder"},dispatch)
-                            })
+                            dispatch({type:"talk/book/record", id, uri:file.uri, text:file.name})
                         })}/>,
                     <Recorder key="recorder"
                         onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"audiobook/record",uri,text, tags:[tag],...record})}
+                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"talk/book/record",id, uri,text, ...record})}
                         />,
                     
                 ]}

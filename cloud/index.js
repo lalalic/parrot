@@ -7,7 +7,7 @@ const Talk_Fields=`
             speaker: String,
             thumb: URL,
             tags: [String],
-            video: URL!,
+            video: URL,
             languages: JSON,
             source: String,
 `

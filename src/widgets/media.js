@@ -8,8 +8,6 @@ import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound } from '../components';
 import { ColorScheme } from '../components/default-style';
 
-import { selectBook } from "../store"
-
 class Media extends React.Component {
     /**
      * protocol: supported actions
@@ -275,6 +273,7 @@ export class ListMedia extends Media{
             const delta=3*this.props.progressUpdateIntervalMillis
             if(!this.cues[this.cues.length-1].end){
                 this.cues.forEach((a,i)=>{
+                    a=this.cues[i]={...a}
                     a.time=(i>0 ? this.cues[i-1].end : 0)+delta
                     a.end=a.time+this.measureTime(a)
                 })
@@ -358,16 +357,8 @@ export class ListMedia extends Media{
             }
         }
 
-        if(this.state.background){
-            props.onStart=(_onStart=>(...args)=>{
-                NowPlaying.info(this.props.tag||this.props.title, "Parrot", 1000.0, props.text?.text||props.text)
-                _onStart(...args)
-            })(props.onStart);
-        }
-
         if(props.text.audio){
             const {audio}=props.text
-            return <Speak key={this.state.i} {...props} text={props.text.text}/>
             return <PlaySound key={this.state.i} {...{...props, audio, text:undefined}}/>
         }
         return <Speak key={this.state.i} {...props}/>
@@ -380,10 +371,9 @@ export class ListMedia extends Media{
 
 export class TaggedListMedia extends ListMedia{
     //@NOTE: chat.js use this id pattern
-    static create({title,tag,id, ...talk}, dispatch){
+    static create({id, ...talk}, dispatch){
         id=id||`${this.defaultProps.slug}${Date.now()}`
-        tag=tag||`${title}-${new Date().asDateTimeString()}`
-        dispatch({type:"talk/create",talk:{...this.defaultProps,id,tag,title,...talk}})
+        dispatch({type:"talk/create",talk:{data:[],...this.defaultProps,...talk,id}})
         return id
     }
 
@@ -397,13 +387,11 @@ export class TaggedListMedia extends ListMedia{
 
 
     createTranscript(){
-        const state=this.context.store.getState()
-        const {slug, tag}=this.props
-        return selectBook(state, slug, tag).map(({tags, ...a})=>a)
+        return [...this.props.data]
     }
 
     title(){
-        return this.props.tag
+        return this.props.title
     }
 }
 
@@ -447,30 +435,30 @@ export const TagManagement=({talk, placeholder, appendable=true, onCreate})=>{
     const slug=talk.slug
     const dispatch=useDispatch()
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
-    React.useEffect(()=>{
-        if(tags.length==0){
-            talk.tags?.forEach(tag=>{
-                dispatch({type:"talk/toggle", talk:{...talk,id:`${talk.id}_${tag}`, tag}})
-            })
-        }
-    },[tags])
+    const create=React.useCallback(tag=>{
+        dispatch({
+            type:"talk/create", 
+            talk:{...talk, id:`${talk.id}_${tag}`, title:tag, slug, data:[]}
+        })
+    },[])
 
     return (
-        <TagList data={tags} 
+        <TagList data={tags}
             placeholder={placeholder}
             appendable={appendable}
-            onEndEditing={({nativeEvent:{text:tag}})=>{
-                tag=tag.trim()
-                if(!tag || -1!==tags.findIndex(a=>a.tag==tag)){
+            onEndEditing={({nativeEvent:{text:title}})=>{
+                title=title.trim()
+                if(!title || -1!==tags.findIndex(a=>a.title==title)){
                     return 
                 }
+
                 if(onCreate){
-                    return onCreate({...talk, tag}, dispatch)
+                    onCreate({...talk, title}, dispatch)
                 }else{
-                    dispatch({type:"talk/toggle", talk:{...talk,id:`${talk.id}_${tag}`, tag}})
+                    create(title)
                 }
             }}
-            renderItemText={item=>item.tag}
+            renderItemText={item=>item.title}
         >
             {!!tags.length && appendable && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>

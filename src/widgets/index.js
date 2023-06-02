@@ -10,6 +10,11 @@ import DialogBook from "./dialog-book"
 import VocabularyBook from "./vocabulary-book"
 import YouTubeVideo from "./youtube-video"
 
+/**
+ * what is widget media?
+ * what is widget talk?
+ * {id, slug:widgetName, title, description, tag, languages:{mine:{transcript}}}
+ */
 export default (props)=>{
     const color=React.useContext(ColorScheme)
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
@@ -26,7 +31,9 @@ export default (props)=>{
             <FlatList
                 data={Object.values(Widgets)}
                 renderItem={({item:Widget,index})=>(
-                    <TalkThumb item={Widget.defaultProps} {...{thumbStyle, imageStyle,durationStyle,titleStyle}}>
+                    <TalkThumb item={Widget.defaultProps} 
+                        getLinkUri={({slug})=>`/widget/${slug}`}
+                        {...{thumbStyle, imageStyle,durationStyle,titleStyle}}>
                         {Widget.Shortcut?.()}
                     </TalkThumb>
                 )}
