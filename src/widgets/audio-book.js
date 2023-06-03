@@ -33,8 +33,7 @@ export default class AudioBook extends TaggedListMedia {
             const [editing, setEditing] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             return (
-                <View
-                    style={{ flexDirection: "row", height: 50 }}>
+                <View style={{ flexDirection: "row", height: 50 }}>
                     <PressableIcon name={!!uri ? (playing ? "pause-circle-outline" : "play-circle-outline") : "radio-button-unchecked"} 
                         onPress={e=>uri && setPlaying(!playing)}
                         onLongPress={e=>dispatch({type:`talk/book/remove`, id, uri})}

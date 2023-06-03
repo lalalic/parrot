@@ -1,7 +1,14 @@
 import React from "react"
+import { Text, Pressable, View } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
-import { PressableIcon } from "../components"
+import { FlyMessage, PressableIcon, Speak,  } from "../components"
 import { TaggedListMedia } from "./media"
+import { TaggedTranscript } from "./tagged-transcript"
+import * as Clipboard from "expo-clipboard"
+import { ColorScheme } from "../components/default-style"
+import { Chat1 } from "./chat"
+import { useParams } from "react-router-native"
+
 
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
@@ -14,8 +21,11 @@ export default class VocabularyBook extends TaggedListMedia{
         locale:false,
     }
 
-    static ExtendActions({policyName, talk}){
-        return policyName=="general" ? <Paste talk={talk}/> : <Locale talk={talk}/>
+    static ExtendActions({talk}){
+        return [
+            <Locale key="locale" talk={talk}/>,
+            <Sentense key="support" talk={talk}/>
+        ]
     }
 
     static prompts=[
@@ -41,12 +51,8 @@ export default class VocabularyBook extends TaggedListMedia{
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
-                const words=response.split(";").filter(a=>!!a).map(a=>{
-                    const [lang, mylang]=a.split(":")
-                    return {lang:lang.trim(), mylang:mylang.trim()}
-                })
-                const title=`vocabulary(${category})`
-                const id=VocabularyBook.create({words,title, category}, dispatch)
+                const words=response.split(";").map(parse).filter(a=>!!a)
+                const id=VocabularyBook.create({data:words,title:category, category}, dispatch)
                 return `save to @#${id}`
             }
         },{
@@ -69,8 +75,6 @@ export default class VocabularyBook extends TaggedListMedia{
         }
     ]
 
-    static Shortcut=undefined
-    static TagManagement=props=>super.TagManagement({...props, appendable:false})
     constructor(){
         super(...arguments)
         this.state.locale=this.props.locale
@@ -81,11 +85,11 @@ export default class VocabularyBook extends TaggedListMedia{
      * lang:mylang
      */
     createTranscript(){
-        const {words=this.isMaster ? Samples : []}=this.props
+        const {data=[]}=this.props
         const {locale}=this.state
             
-        return words.reduce((cues,{lang, mylang})=>{
-            cues.push(!locale ? {ask:lang, text:mylang, recogLocale:true} : {ask:mylang, text:lang})
+        return data.reduce((cues,{word="", translated=""})=>{
+            cues.push(!locale ? {ask:word, text:translated, recogLocale:true} : {ask:translated, text:word})
             return cues
         },[])
     }
@@ -104,16 +108,58 @@ export default class VocabularyBook extends TaggedListMedia{
         }
         return super.shouldComponentUpdate(...arguments)
     }
+
+    static TaggedTranscript({}){
+        const color=React.useContext(ColorScheme)
+        
+        const Item=React.useCallback(({item:{word:lang, translated:mylang=""}, id, index})=>{
+            const [playing, setPlaying] = React.useState(false)
+            const textStyle={color: playing ? color.primary : color.text}
+            const text=`${lang} : ${mylang}`
+            return (
+                <View style={{ flexDirection: "row", height: 50 }}>
+                    <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
+                        onPress={e=>setPlaying(!playing)}/>
+                    <Pressable 
+                        onLongPress={e=>setEditing(true)}
+                        style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                            <Text style={textStyle}>{text}</Text>
+                            {playing && <Speak text={lang} onEnd={e=>setPlaying(false)}/>}
+                    </Pressable>
+                </View>
+            )
+        },[])
+        return (
+            <TaggedTranscript 
+                slug={VocabularyBook.defaultProps.slug}
+                actions={(title,id)=><Paste id={id}/>}
+                listProps={{
+                    renderItem:Item,
+                    keyExtractor:a=>a.word
+                }}
+            />
+        )
+    }
+
+    static parse(text){
+        return text.split(/[\n;]/).filter(a=>!!a)
+            .map(line=>{
+                const [word="", translated=word]=line.split(":").map(a=>a.trim())
+                if(word){
+                    return {word, translated}
+                }
+            }).filter(a=>!!a)
+    }
 }
 
-const Samples=[{lang:"bottle",mylang:"瓶子"},{lang:"Hello", mylang:"你好"}]
+/**
 
-const Paste=talk=>{
+ */
+const Paste=({id})=>{
     const dispatch=useDispatch()
     return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
-        const [title,...lines]=text.split(/[\n;]/).filter(a=>!!a)
-        const words=lines.filter(a=>a.indexOf(":")!=-1)
-        VocalularyBook.create({title, words}, dispatch)
+        const words=VocabularyBook.parse(text)
+        dispatch({type:"talk/toggle",talk:{id, data:words}})
     })}/>
 }
 
@@ -121,4 +167,37 @@ const Locale=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const {locale}=useSelector(state=>state.talks[id]||{})
     return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",talk, payload:{locale:!locale}})}/>
+}
+
+const Sentense=({talk, id=talk?.id})=>{
+    const dispatch=useDispatch()
+    const { policy } = useParams()
+    const [creating, setCreating]=React.useState(false)
+    const {challenges=[]}=useSelector(state=>state.talks[id][policy])
+    const {admin}=useSelector(state=>state.my)
+    const words=challenges.map(a=>a.ask).join(",")
+    if(!admin || !words)
+        return null
+
+    return (
+        <View>
+            <PressableIcon name="support" onPress={e=>setCreating(true)}/>
+            {creating && <Chat1 
+                prompt={`use the following words to make a sentense for me to memorize them: ${words}`}
+                onSuccess={({response})=>{
+                    dispatch({
+                        type:"talk/challenge", 
+                        talk, 
+                        chunk:{word:response}, 
+                        policy
+                    })
+                    setCreating(false)
+                }}
+                onError={e=>{
+                    setCreating(false)
+                    FlyMessage.error(e.message)
+                }}
+            />}
+        </View>
+    )
 }

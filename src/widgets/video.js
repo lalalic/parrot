@@ -21,7 +21,7 @@ export default class extends React.Component{
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name="clear" 
+                {hasHistory && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: "talk/clear", id: talk.id })}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}

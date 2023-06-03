@@ -53,7 +53,7 @@ export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
                         />
                 </View>
                 <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
-                    {actions(state.current, state.id)}
+                    {actions?.(state.current, state.id)}
                     <PressableIcon name="read-more"
                         onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
                 </View>

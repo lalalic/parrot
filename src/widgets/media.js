@@ -24,7 +24,7 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name="clear" 
+                {hasHistory && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}
@@ -63,7 +63,7 @@ class Media extends React.Component {
 
      static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
         const Widget=this
-        const media = <Widget shouldPlay={autoplay} {...talk} />
+        const media = <Widget shouldPlay={autoplay} {...talk} policy={policyName}/>
         return { media, controls: media.props };
      }
 

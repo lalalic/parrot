@@ -18,13 +18,13 @@ const defaultProps={
 	thumb: require("../../assets/widget-chat-bot.png"),
 	description: "Make a conversation with bot",
 }
-export default Object.assign(({})=>{
+export default Object.assign(props=>{
 	useKeepAwake()
 	React.useEffect(()=>()=>Speak.stop(),[])
-	return (<ChatGptProvider><Navigator/></ChatGptProvider>)
+	return (<ChatGptProvider><Navigator {...props}/></ChatGptProvider>)
 },{defaultProps})
 
-function Navigator({}){
+function Navigator({prompt, onSuccess, onError}){
 		const {status, login}=useChatGpt()
 		
 		if (status === 'initializing') return null;
@@ -41,9 +41,31 @@ function Navigator({}){
 				</View>
 			);
 		}
+
+		if(prompt && onSuccess){
+			return <Chat1 {...{prompt, onSuccess, onError}}/>
+		}
 	
 		return <Chat />;
 }
+
+const Chat1=({prompt, onSuccess, onError})=>{
+	const { sendMessage } = useChatGpt();
+	React.useEffect(()=>{
+		sendMessage({
+			message:prompt,
+			onAccumulatedResponse({message, isDone}){
+				if(isDone){
+					onSuccess({response:message})
+				}
+			},
+			onError:e=>onError?.(e)
+		})
+	},[])
+	return null
+}
+
+
 
 const CHAT_GPT_ID = 'system';
 const Icons={system:"adb", assistant:"ac-unit", user:"emoji-people"}
@@ -252,14 +274,15 @@ const Chat = () => {
 				return 
 			let {text, audio, user:{_id}}=message
 			text=createPromptMessage.is(message)?.settled||text
-			return typeof(audio)=="string" ? {user:_id, text, audio} : `${_id}:${text}`
+			return text
 		}).filter(a=>!!a).reverse()
 		if(messages.length % 2){
 			messages.shift()
 		}
-		globalThis.Widgets.dialog.create({
-			title:`Chat`,
-			dialog:messages,
+		const DialogBook=globalThis.Widgets.dialog
+		DialogBook.create({
+			title:`AIChat on ${new Date().asDateTimeString()}`,
+			data:DialogBook.parse(messages.join("\n")),
 		}, dispatch)
 		FlyMessage.show("saved to dialog book!")
 	},[])
