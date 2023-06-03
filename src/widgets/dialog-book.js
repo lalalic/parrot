@@ -35,7 +35,7 @@ export default class DialogBook extends TaggedListMedia{
                 dialog:true
             }
         },
-        {label:"Create Dialog", name:"make-dialog",
+        {label:"Create Dialog", name:"post-add",
             params:{
                 "Your Role":"Software Engineering Manager",
                 "My Role":"Software Engineer",

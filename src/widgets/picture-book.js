@@ -29,6 +29,8 @@ export default class PictureBook extends TaggedListMedia {
         return <Image source={{uri}} style={{flex:1}}/>
     }
 
+    static remoteSave=false
+    
     static TaggedTranscript=({slug=PictureBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()

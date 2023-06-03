@@ -300,6 +300,15 @@ const Ted=createApi({
 				}).filter(a=>!!a.duration)
 				return {data:{talks}}
 			}
+		}),
+		widgetTalks:builder.query({
+			queryFn:async (variables,api)=>{
+				const data=new Qili().fetch({
+					id:"widgetTalks",
+					variables
+				})
+				return data
+			}
 		})
 	})
 })
@@ -329,17 +338,16 @@ export function createStore(needPersistor){
 				return
 			
 			try{
-
-				const key=`Talk/${id}/video.mp4`
 				const qili=new Qili(state.my.admin)
-				const {uploaded}=await qili.fetch({
-					id:"file_exists_Query",
-					variables:{key}
-				})
-				if(uploaded)
-					return 
+				if(talk.video && talk.video.indexOf("ted.com")!=-1){
+					const key=`Talk/${id}/video.mp4`
+					const {uploaded}=await qili.fetch({
+						id:"file_exists_Query",
+						variables:{key}
+					})
+					if(uploaded)
+						return 
 
-				if(talk.video?.indexOf("ted.com")!=-1){
 					const file=`${FileSystem.documentDirectory}${id}/video.mp4`
 					await mpegKit.generateAudio({source:talk.video, target:file})
 					
@@ -357,6 +365,20 @@ export function createStore(needPersistor){
 					})
 
 					FlyMessage.show(`Uploaded a talk`)
+				}else{
+					const Widget=globalThis.Widgets[talk.slug]
+					if(Widget?.remoteSave){
+						await qili.fetch({
+							id:"save",
+							variables:{
+								talk:{
+									...Widget.remoteSave(talk),
+									isWidget:true,
+									_id:id
+								}
+							}
+						})
+					}
 				}
 
 			}catch(e){
@@ -399,7 +421,8 @@ export function createStore(needPersistor){
 					talks(talks={},action){
 						const getTalk=(action, $talks)=>{
 							checkAction(action, ["talk"])
-							const {talk:{slug, title, thumb,duration,link,id, video, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
+							const {talk:{slug, id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
+							const {talk:{title, thumb,duration,link,video}}=action
 							return {
 								talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video}),
 								payload, policy, ...others

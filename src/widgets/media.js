@@ -1,11 +1,11 @@
 import React from 'react'
-import { View, Animated, Easing, Image, Text , TextInput, Pressable, ScrollView, ImageBackground} from "react-native";
+import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackground, FlatList} from "react-native";
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Subtitles } from "../components/player"
-import { PressableIcon, PolicyChoice, html, Speak, PlaySound } from '../components';
+import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText } from '../components';
 import { ColorScheme } from '../components/default-style';
 
 class Media extends React.Component {
@@ -69,6 +69,10 @@ class Media extends React.Component {
 
      static get isWidget(){
         return true
+     }
+
+     static remoteSave({shadowing, retelling, dictating, hasHistory, challenging, ...talk}){
+        return talk
      }
 
     static defaultProps = {
@@ -371,9 +375,10 @@ export class ListMedia extends Media{
 
 export class TaggedListMedia extends ListMedia{
     //@NOTE: chat.js use this id pattern
-    static create({id, ...talk}, dispatch){
-        id=id||`${this.defaultProps.slug}${Date.now()}`
-        dispatch({type:"talk/create",talk:{data:[],...this.defaultProps,...talk,id}})
+    static create({id, slug=this.defaultProps.slug, ...talk}, dispatch){
+        console.assert(slug, "Slug must be specified when creating widget talk")
+        id=`${slug}${Date.now()}`
+        dispatch({type:"talk/create",talk:{data:[],...this.defaultProps,...talk,id,slug}})
         return id
     }
 
@@ -395,31 +400,34 @@ export class TaggedListMedia extends ListMedia{
     }
 }
 
-export const TagList=({data, onEndEditing, navigate=useNavigate(), children, appendable=true,
+export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
     renderItemText=a=>a.id, dispatch=useDispatch(),
     renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
-        <Pressable key={id} 
-            onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
-            onLongPress={e=>dispatch({type:"talk/clear", id})}
-            style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}>
-            <Text style={{fontSize:16}}>{renderItemText(item)}</Text>
-        </Pressable>
+        <View style={{flexDirection:"row"}} key={id} >
+            <PressableIcon name="remove-circle-outline" onPress={e=>dispatch({type:"talk/clear", id})}/>
+            <ChangableText style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}
+                text={{style:{fontSize:16, color:"white"}, value:renderItemText(item)}}
+                onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
+                onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
+                />
+        </View>
     ),
     placeholder, 
     inputProps:{style:inputStyle,...inputProps}={}, 
     listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
     style, ...props})=>{
-        const color=React.useContext(ColorScheme)
-        return (
-            <View style={[{marginTop:10, minHeight:200},style]} {...props}>
-                {appendable && <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
-                    style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
-                    {...inputProps}
-                    />}
-                {data.map(item=>renderItem({item}))}
-                {children}
-            </View>
-        )
+    const color=React.useContext(ColorScheme)
+
+    return (
+        <View style={[{marginTop:10, minHeight:200},style]} {...props}>
+            <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
+                style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
+                {...inputProps}
+                />
+            {data.map(item=>renderItem({item}))}
+            {children}
+        </View>
+    )
 }
 
 export const TagShortcut=({slug, style={left:10}})=>{
@@ -431,21 +439,14 @@ export const TagShortcut=({slug, style={left:10}})=>{
     )
 }
 
-export const TagManagement=({talk, placeholder, appendable=true, onCreate})=>{
+export const TagManagement=({talk, placeholder, onCreate})=>{
     const slug=talk.slug
     const dispatch=useDispatch()
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
-    const create=React.useCallback(tag=>{
-        dispatch({
-            type:"talk/create", 
-            talk:{...talk, id:`${talk.id}_${tag}`, title:tag, slug, data:[]}
-        })
-    },[])
-
+    //const {talks=[]}=Ted.useWidgetTalks({slug, projection:{title,id}})
     return (
         <TagList data={tags}
             placeholder={placeholder}
-            appendable={appendable}
             onEndEditing={({nativeEvent:{text:title}})=>{
                 title=title.trim()
                 if(!title || -1!==tags.findIndex(a=>a.title==title)){
@@ -455,12 +456,12 @@ export const TagManagement=({talk, placeholder, appendable=true, onCreate})=>{
                 if(onCreate){
                     onCreate({...talk, title}, dispatch)
                 }else{
-                    create(title)
+                    TaggedListMedia.create({...talk, title,slug, data:[]}, dispatch)
                 }
             }}
             renderItemText={item=>item.title}
         >
-            {!!tags.length && appendable && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
+            {!!tags.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
 }

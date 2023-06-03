@@ -57,8 +57,9 @@ function useTalkQuery({slug, id}){
     if(slug!="youtube" && !!(Widget=globalThis.Widgets[slug])){
         talk=useSelector(state=>state.talks[id])
         if(!talk){
-            talk=Widget.defaultProps
+            talk={...Widget.defaultProps}
         }else{
+            talk={...talk}
             talk.hasHistory=true
         }
     }else{

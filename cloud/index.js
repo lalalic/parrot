@@ -10,6 +10,7 @@ const Talk_Fields=`
             video: URL,
             languages: JSON,
             source: String,
+            data:[JSON],
 `
 const Talk_Fields_Fragment=Talk_Fields.replace(/(\:.*\,)/g,"")
 
@@ -29,6 +30,7 @@ Cloud.addModule({
             people(q:String):[Talk]
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
+            widgetTalks(slug:String!, q:String):Talk
         }
 
         extend type Mutation{
@@ -61,11 +63,18 @@ Cloud.addModule({
             },
             today(_,{},{app}){
                 return app.findEntity("Talk")
+            },
+            widgetTalks(_,{slug,q, projection},{app}){
+                const props={slug}
+                if(q){
+                    props.title={$regex:q, $options:"i"}
+                }
+                return app.findEntity("Widget", props, projection)
             }
         },
         Mutation:{
             save(_,{talk},{app}){
-                return app.createEntity("Talk",talk)
+                return app.createEntity(talk.isWidget ? "Widget" : "Talk",talk)
                     .then(talk=>true)
                     .catch(e=>false)
             }

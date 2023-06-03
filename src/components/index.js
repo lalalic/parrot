@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
+import { View, Text, TextInput, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
@@ -854,4 +854,25 @@ export function useStateAndLatest(value){
     const $a=React.useRef(a)
     $a.current=a
 	return [a, setA, $a]
+}
+
+export function ChangableText({text:{value:text, ...textProps},onChange,children, ...props}){
+    const [editing, setEditing]=React.useState(false)
+    return (
+        <Pressable {...props} onLongPress={e=>setEditing(true)}>
+            {editing ? 
+                <TextInput defaultValue={text} autoFocus={true} showSoftInputOnFocus={true}
+                    {...textProps}
+                    onEndEditing={e=>{
+                        if(text!==e.nativeEvent.text){
+                            onChange?.(e.nativeEvent.text)
+                        }
+                        setEditing(false)
+                    }} 
+                    style={[textProps.style, {borderBottomWidth:1, borderBottomColor:"gray"}]}
+                    /> : 
+                <Text {...textProps}>{text}</Text>}
+            {children}
+        </Pressable>
+    )
 }

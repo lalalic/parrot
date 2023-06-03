@@ -2,7 +2,6 @@ import React from "react"
 import { FlatList, View, Text } from "react-native"
 import { TalkThumb } from "../components"
 import { ColorScheme } from "../components/default-style"
-import NumberPractice from "./number"
 import AudioBook from "./audio-book"
 import PictureBook from "./picture-book"
 import Chat from "./chat"
@@ -50,8 +49,7 @@ export const Widgets=globalThis.Widgets=[
     PictureBook,
     AudioBook,
     VocabularyBook,
-    YouTubeVideo,
-    //NumberPractice, 
+    YouTubeVideo, 
 ].reduce(((widgets,A)=>{
     widgets[A.defaultProps.slug]=A
     return widgets

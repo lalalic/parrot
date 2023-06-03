@@ -56,7 +56,7 @@ export default class VocabularyBook extends TaggedListMedia{
                 return `save to @#${id}`
             }
         },{
-            label:"voca cluster", name:"menu-book",
+            label:"Number", name:"menu-book",
             params:{
                 "category":"Kitchen",
                 "amount": "30",

@@ -2,7 +2,7 @@ import React from "react"
 import * as FileSystem from "expo-file-system"
 import { View, TextInput, Linking, Pressable, Text } from "react-native" 
 import { TaggedListMedia,  } from "./media"
-import { PlaySound, PressableIcon, Recorder } from "../components"
+import { ChangableText, PlaySound, PressableIcon, Recorder } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"
 import { ColorScheme } from "../components/default-style"
 import { useDispatch, useSelector } from "react-redux"
@@ -23,6 +23,8 @@ export default class AudioBook extends TaggedListMedia {
         return this.speak({rate,volume,text:{audio:uri}})
     }
 
+    static removeSave=false
+
     static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
@@ -30,30 +32,19 @@ export default class AudioBook extends TaggedListMedia {
             
         const AudioItem=React.useCallback(({item:{text, uri}, id})=>{
             const [playing, setPlaying] = React.useState(false)
-            const [editing, setEditing] = React.useState(false)
-            const textStyle={color: playing ? color.primary : color.text}
             return (
                 <View style={{ flexDirection: "row", height: 50 }}>
                     <PressableIcon name={!!uri ? (playing ? "pause-circle-outline" : "play-circle-outline") : "radio-button-unchecked"} 
                         onPress={e=>uri && setPlaying(!playing)}
                         onLongPress={e=>dispatch({type:`talk/book/remove`, id, uri})}
                         />
-                    <Pressable 
+                    <ChangableText 
                         onPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
-                        onLongPress={e=>setEditing(true)}
+                        onChange={value=>dispatch({type:`talk/book/set`,id, uri, text:value})}
+                        text={{style:{color: playing ? color.primary : color.text}, value:text}}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                        {editing ? 
-                            (<TextInput style={textStyle} defaultValue={text} 
-                            onEndEditing={({nativeEvent:e})=>{
-                                if(text!=e.text){
-                                    dispatch({type:`talk/book/set`,id, uri, text:e.text})
-                                }
-                                setEditing(false)
-                            }}/>) :
-                            (<Text style={textStyle}>{text}</Text>)
-                        }
                         {playing && <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/>}
-                    </Pressable>
+                    </ChangableText>
                 </View>
             )
         },[])
