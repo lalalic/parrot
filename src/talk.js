@@ -14,11 +14,8 @@ export default function Talk({autoplay}){
     
     const Media=globalThis.Widgets[slug]||Video
 
-    const {data:talk={}}=useTalkQuery({slug, id})
-    
-    const policy=useSelector(state=>selectPolicy(state,policyName,talk.id))
-
-    const challenging=useSelector(state=>!!state.talks[talk.id]?.[policyName]?.challenging)
+    const {data:talk={}, policy={}}=useTalkQuery({slug, id, policyName})
+    const {challenging}=policy
     
     const toggleTalk=React.useCallback((key,value)=>dispatch({type:"talk/toggle", key,value, talk, policy:policyName}),[policyName,talk])
 
@@ -28,6 +25,9 @@ export default function Talk({autoplay}){
         Media.Info({talk, policyName, toggleTalk, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
         Media.Actions({talk, policyName, toggleTalk, dispatch,navigate,})
     ]),[talk, policyName, toggleTalk, dispatch,navigate])
+
+    if(!talk.id)
+        return null
 
     return (
         <Player
@@ -52,23 +52,17 @@ export default function Talk({autoplay}){
     )
 }
 
-function useTalkQuery({slug, id}){
-    let talk, Widget
-    if(slug!="youtube" && !!(Widget=globalThis.Widgets[slug])){
-        talk=useSelector(state=>state.talks[id])
-        if(!talk){
-            talk={...Widget.defaultProps}
-        }else{
-            talk={...talk}
-            talk.hasHistory=true
-        }
-    }else{
-        const {data={}}=Ted.useTalkQuery({slug,id})
-        const talkLocal=useSelector(state=>state.talks[data.id])
-        talk=React.useMemo(()=>{
-            return {...data, ...talkLocal, hasHistory:!!talkLocal, video: data.favorited || data.video}
-        },[data, talkLocal])
-    }
-    const {general, shadowing, dictating, retelling, tags, ...data}=talk
-    return {data}
+function useTalkQuery({slug, id, policyName}){
+    const {data:remote={}}=Ted.useTalkQuery({slug,id})
+    const local=useSelector(state=>state.talks[remote.id])
+    const policy=useSelector(state=>selectPolicy(state,policyName,remote.id))
+
+    const talk=React.useMemo(()=>{
+        const Widget=globalThis.Widgets[slug]
+        return {...remote, ...Widget?.defaultProps, ...local, hasHistory:!!local}
+    },[remote, local])
+    
+    const {general, shadowing, dictating, retelling, ...data}=talk
+    
+    return {data, policy}
 }

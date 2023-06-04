@@ -1,8 +1,9 @@
 import React from 'react'
-import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackground, FlatList} from "react-native";
+import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackground, FlatList, Pressable} from "react-native";
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Ted } from "../store"
 
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText } from '../components';
@@ -400,23 +401,41 @@ export class TaggedListMedia extends ListMedia{
     }
 }
 
-export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
+export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children,
     renderItemText=a=>a.id, dispatch=useDispatch(),
-    renderItem:renderItem0=({item, slug=item.slug, id=item.id})=>(
-        <View style={{flexDirection:"row"}} key={id} >
-            <PressableIcon name="remove-circle-outline" onPress={e=>dispatch({type:"talk/clear", id})}/>
-            <ChangableText style={{height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}}
-                text={{style:{fontSize:16, color:"white"}, value:renderItemText(item)}}
-                onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
-                onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
-                />
-        </View>
-    ),
+    renderItem:renderItem0=({item, id=item.id, isRemote})=>{
+        const text=renderItemText(item)
+        const textStyle={fontSize:16, color:"white"}
+        const onPress=e=>navigate(`/talk/${slug}/shadowing/${id}`)
+        const iconWidth=50
+        const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
+        if(isRemote){ 
+            return (
+                <Pressable style={containerStyle} onPress={onPress}>
+                    <Text style={[{paddingLeft:iconWidth}, textStyle]}>{text}</Text>
+                </Pressable>
+            )
+        }
+
+        return (
+            <View style={{flexDirection:"row"}} key={id} >
+                <PressableIcon name="remove-circle-outline" onPress={e=>dispatch({type:"talk/clear", id})} style={{width:iconWidth}}/>
+                <ChangableText style={containerStyle}
+                    text={{style:textStyle, value:text}}
+                    onPress={onPress} 
+                    onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
+                    />
+            </View>
+        )
+    },
     placeholder, 
     inputProps:{style:inputStyle,...inputProps}={}, 
     listProps:{style:listStyle, renderItem=renderItem0, ...listProps}={}, 
     style, ...props})=>{
     const color=React.useContext(ColorScheme)
+
+    const local=React.useMemo(()=>data.map(a=>a.id),[data])
+    const {data:{talks=[]}}=Ted.useWidgetTalksQuery({slug})
 
     return (
         <View style={[{marginTop:10, minHeight:200},style]} {...props}>
@@ -425,6 +444,7 @@ export const TagList=({data, onEndEditing, navigate=useNavigate(), children,
                 {...inputProps}
                 />
             {data.map(item=>renderItem({item}))}
+            {talks.filter(a=>local.indexOf(a.id)==-1).map(item=>renderItem({item, isRemote:true}))}
             {children}
         </View>
     )
@@ -443,9 +463,8 @@ export const TagManagement=({talk, placeholder, onCreate})=>{
     const slug=talk.slug
     const dispatch=useDispatch()
     const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
-    //const {talks=[]}=Ted.useWidgetTalks({slug, projection:{title,id}})
     return (
-        <TagList data={tags}
+        <TagList data={tags} slug={slug}
             placeholder={placeholder}
             onEndEditing={({nativeEvent:{text:title}})=>{
                 title=title.trim()

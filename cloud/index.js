@@ -5,7 +5,7 @@ const Talk_Fields=`
             duration: Int,
             description:String,
             speaker: String,
-            thumb: URL,
+            thumb: String,
             tags: [String],
             video: URL,
             languages: JSON,
@@ -30,7 +30,7 @@ Cloud.addModule({
             people(q:String):[Talk]
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
-            widgetTalks(slug:String!, q:String):Talk
+            widgetTalks(slug:String!, q:String):[Talk]
         }
 
         extend type Mutation{
@@ -46,6 +46,9 @@ Cloud.addModule({
         },
         Query:{
             talk(_,{slug, id:_id},{app,user}){
+                if(slug==="Widget"){
+                    return app.get1Entity("Widget", {_id})
+                }
                 const filter={slug,_id}
                 slug ? delete filter._id : (_id && delete filter.slug)
                 return app.get1Entity("Talk", filter)
@@ -64,12 +67,13 @@ Cloud.addModule({
             today(_,{},{app}){
                 return app.findEntity("Talk")
             },
-            widgetTalks(_,{slug,q, projection},{app}){
+            async widgetTalks(_,{slug,q},{app}){
                 const props={slug}
                 if(q){
                     props.title={$regex:q, $options:"i"}
                 }
-                return app.findEntity("Widget", props, projection)
+                const talks=await app.findEntity("Widget", props)
+                return talks
             }
         },
         Mutation:{
@@ -107,6 +111,12 @@ Cloud.addModule({
         today:`query{
             talks:today{
                 ${Talk_Fields_Fragment}
+            }
+        }`,
+        widgetTalks:`query talks_Query($slug:String!, $q:String){
+            talks:widgetTalks(slug:$slug, q:$q){
+                id
+                title
             }
         }`
     },

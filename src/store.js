@@ -80,6 +80,7 @@ const Ted=createApi({
 						})
 						return talk
 					}
+					const Widget=globalThis.Widgets[slug]
 
 					const {lang="en", mylang="zh-cn"}=state.my
 
@@ -99,6 +100,17 @@ const Ted=createApi({
 							})
 						}
 						return {title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
+					}else if(Widget){
+						if(id && !state.talks[id]){
+							const {talk}=await new Qili().fetch({
+								id:"talk",
+								variables:{
+									slug:"Widget", 
+									id
+								}
+							})
+							return talk
+						}
 					}else{
 						const res=await fetch("https://www.ted.com/graphql",{
 							method:"POST",
@@ -177,7 +189,7 @@ const Ted=createApi({
 					}
 				})();
 
-				dispatch({type:"talk/create", talk})
+				talk && dispatch({type:"talk/create", talk})
 				return {data:talk}
 			},
 		}),
@@ -307,7 +319,7 @@ const Ted=createApi({
 					id:"widgetTalks",
 					variables
 				})
-				return data
+				return {data}
 			}
 		})
 	})
@@ -764,6 +776,7 @@ export function selectPolicy(state,policyName,id){
 	const {desc,...policy}={
 		...Policy.general,
 		...Policy[policyName],
+		...extract(globalThis.Widgets[state.talks[id]?.slug]?.defaultProps[policyName],Policy.general),
 		...extract(state.talks[id]?.[policyName],Policy.general)}
 	return policy
 }
