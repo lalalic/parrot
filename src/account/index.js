@@ -4,6 +4,7 @@ import { Link } from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from "react-redux";
 import {Ted} from "../store"
+import { Login } from "../components"
 
 export default ()=>{
     const dispatch=useDispatch()
@@ -16,25 +17,30 @@ export default ()=>{
     ]
     const {admin}=useSelector(state=>state.my)
     if(!!admin){
+        if(!admin.headers){
+            return <Login/>
+        }
+
         sections.push(
             {title:"Developer", data:[
                 {name:"Admin", icon:"person-pin-circle", href:"/admin"},
                 {name:"Test", icon:"file-present"},
                 {name:"Files", icon:"file-present"},
-                {name:"recognizer", icon:"person-pin-circle"},
                 {name:"Clear Ted", icon: "cleaning-services", onPress:e=>dispatch(Ted.util.resetApiState())},
                 {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
-                {name:"Clear Audio Book", icon: "cleaning-services", onPress:e=>dispatch({type:"audiobook/clear"})},
-                {name:"Clear Picture Book", icon: "cleaning-services", onPress:e=>dispatch({type:"picturebook/clear"})},
             ]}
         )
     }
+    
     return (
         <View style={{flex: 1,padding:4, paddingTop:20}}>
             <SectionList 
                 keyExtractor={a=>a.name}
                 renderSectionHeader={({ section: { title } }) => (
-                    <Pressable style={{flex:1}} onLongPress={e=>dispatch({type:"my",payload:{admin: !admin ? {} : false}})}>
+                    <Pressable style={{flex:1}} onLongPress={e=>{
+                            dispatch({type:"my",payload:{admin: !admin ? {} : false}})
+                            dispatch(Ted.util.resetApiState())
+                        }}>
                         <Text style={{flex:1, fontSize:16, paddingTop:20, paddingLeft: 10}}>{title}</Text>
                     </Pressable>
                 )}

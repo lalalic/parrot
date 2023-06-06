@@ -137,7 +137,7 @@ function isTextMessage(message){
 const Chat = () => {
 	const { sendMessage } = useChatGpt();
 	const talk=useSelector(state=>state.talks.chat)
-	const [messages=[], setMessages] = useState(()=>talk?.messages);
+	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput, $audioInput]=useStateAndLatest(false)
 	const store=useStore()
 	const dispatch = useDispatch()
@@ -146,7 +146,6 @@ const Chat = () => {
 
 	const options=useRef()
 
-	const $messages=useLatest(messages)
 	useEffect(()=>()=>{
 		dispatch({type:"talk/create", talk:{
 			...defaultProps, 

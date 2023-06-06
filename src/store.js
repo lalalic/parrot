@@ -66,20 +66,13 @@ const Ted=createApi({
 	reducerPath:"ted",
 	endpoints:builder=>({
 		talk:builder.query({
-			queryFn: async ({slug,id},{getState, dispatch})=>{
-				const state=getState()
+			queryFn: async ({slug,id},api)=>{
+				const state=api.getState()
 				if(id && state.talks[id]){
 					return {data:state.talks[id]}
 				}
 
 				const talk=await (async ()=>{
-					if(Qili.isTedBanned({getState})){
-						const {talk}=await new Qili().fetch({
-							id:"talk",
-							variables:{slug, id}
-						})
-						return talk
-					}
 					const Widget=globalThis.Widgets[slug]
 
 					const {lang="en", mylang="zh-cn"}=state.my
@@ -112,6 +105,14 @@ const Ted=createApi({
 							return talk
 						}
 					}else{
+						if(Qili.isTedBanned(api)){
+							const {talk}=await new Qili().fetch({
+								id:"talk",
+								variables:{slug, id}
+							})
+							return talk
+						}
+
 						const res=await fetch("https://www.ted.com/graphql",{
 							method:"POST",
 							headers:{
@@ -189,7 +190,7 @@ const Ted=createApi({
 					}
 				})();
 
-				talk && dispatch({type:"talk/create", talk})
+				talk && !state.talks[talk.id] && api.dispatch({type:"talk/create", talk})
 				return {data:talk}
 			},
 		}),
@@ -790,4 +791,8 @@ export function selectBook(state, slug, tag){
 		return data.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
 	})();
 	return selected.map(a=>({...a}))
+}
+
+export function selectWidgetTalks(state, slug){
+	return Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug)
 }

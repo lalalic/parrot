@@ -2,7 +2,6 @@ Requirement
 ===========
 > As an english learner, I want to hear each chunk
 
-
 Features
 ========
 > Daily Topic [1.0]
@@ -30,3 +29,13 @@ command
 =======
 > update native code generation : expo prebuild
 > ios>pod install : to refresh xcode project files, such as source, podfile, and etc. it should run after every change of new native file, pod spec file
+
+design
+======
+> remote data (ted, youtube, qili2) => ted store
+
+> Widget defaultProps 
+
+> local state => state.talks[id]
+
+> favorite => local

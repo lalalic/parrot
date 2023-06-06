@@ -1,8 +1,7 @@
 import React from "react"
-import { View, TextInput, Button } from "react-native"
 import Qili from "../experiment/qili"
 
-import { FlyMessage, TalkSelector } from "../components"
+import { FlyMessage, TalkSelector, Login } from "../components"
 import { useDispatch, useSelector } from "react-redux"
 
 export default function Admin(){
@@ -46,99 +45,6 @@ export default function Admin(){
             columnWrapperStyle={{justifyContent:"space-between"}}
             numColumns={2}>
         </TalkSelector>
-    )
-}
-
-function Login({}){
-    const dispatch=useDispatch()
-    const [contact, setContact]=React.useState("")
-    const [authReady, setAuthReady]=React.useState(false)
-    const [code, setCode]=React.useState("")
-    const [tick, setTick]=React.useState()
-
-    const startTick=React.useCallback(()=>{
-        let i=60, doTick;
-        const timer=setInterval(doTick=()=>{
-            if(i==0){
-                clearInterval(timer)
-                setTick(0)
-            }else
-                setTick(i--)
-        },1000);
-
-        doTick()
-    },[])
-
-    const requestCode=React.useCallback(async contact=>{
-        try{
-            const data=await new Qili().fetch({
-                id:"authentication_requestToken_Mutation",
-                variables:{ contact}
-            })
-            setAuthReady(!!data.requestToken)
-            if(!!data.requestToken){
-                startTick()
-            }
-        }catch(e){
-            FlyMessage.error(e.message)
-        }
-    },[])
-
-    const login=React.useCallback(async ({contact, code})=>{
-        try{
-            const data=await new Qili().fetch({
-                id:"authentication_login_Mutation",
-                variables:{
-                    contact,
-                    token:code,
-                    name:"admin"
-                }
-            })
-            
-            dispatch({
-                type:"my",
-                payload:{
-                    admin:{
-                        contact,
-                        headers:{
-                            "x-session-token":data.login.token,
-                        }
-                    }
-                }
-            })
-        }catch(e){
-            FlyMessage.error(e.message)
-        }
-    },[])
-
-    const textStyle={height:40, fontSize:20, borderWidth:1, borderColor:"gray", padding:4}
-    
-    return (
-        <View style={{backgroundColor:"white", padding:10, paddingTop:50}}>
-            <View style={{flexDirection:"row", height:40}}>
-                <TextInput style={{flex:1, ...textStyle}} 
-                    editable={!tick}
-                    value={contact}
-                    placeholder="Phone Number" 
-                    onChangeText={text=>setContact(text)}
-                    />
-                <Button style={{width:500}} 
-                    disabled={!!tick}
-                    onPress={e=>requestCode(contact)}
-                    title={tick ? tick+"" : (tick===0 ? "Re-Request" : "Request Code")}
-                    />
-            </View>
-
-            <TextInput value={code} style={{...textStyle, marginTop:20, marginBottom:20}}
-                editable={!!authReady} 
-                placeholder="Verification Code" 
-                onChangeText={text=>setCode(text)}/>
-
-            <Button title="Login" 
-                disabled={!authReady}
-                onPress={e=>login({contact, code})}
-                />
-        </View>
     )
 }
 

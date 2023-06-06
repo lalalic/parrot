@@ -3,7 +3,7 @@ import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackg
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { Ted } from "../store"
+import { selectWidgetTalks, Ted } from "../store"
 
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText } from '../components';
@@ -411,7 +411,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
         const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
         if(isRemote){ 
             return (
-                <Pressable style={containerStyle} onPress={onPress}>
+                <Pressable style={containerStyle} onPress={onPress} key={id}>
                     <Text style={[{paddingLeft:iconWidth}, textStyle]}>{text}</Text>
                 </Pressable>
             )
@@ -435,7 +435,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     const color=React.useContext(ColorScheme)
 
     const local=React.useMemo(()=>data.map(a=>a.id),[data])
-    const {data:{talks=[]}}=Ted.useWidgetTalksQuery({slug})
+    const {data:{talks=[]}={}}=Ted.useWidgetTalksQuery({slug})
 
     return (
         <View style={[{marginTop:10, minHeight:200},style]} {...props}>
@@ -459,16 +459,13 @@ export const TagShortcut=({slug, style={left:10}})=>{
     )
 }
 
-export const TagManagement=({talk, placeholder, onCreate})=>{
-    const slug=talk.slug
-    const dispatch=useDispatch()
-    const tags=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispatch=useDispatch()})=>{
+    const talks=useSelector(state=>selectWidgetTalks(state, slug))
     return (
-        <TagList data={tags} slug={slug}
-            placeholder={placeholder}
+        <TagList data={talks} slug={slug}  placeholder={placeholder}
             onEndEditing={({nativeEvent:{text:title}})=>{
                 title=title.trim()
-                if(!title || -1!==tags.findIndex(a=>a.title==title)){
+                if(!title || -1!==talks.findIndex(a=>a.title==title)){
                     return 
                 }
 
@@ -480,7 +477,7 @@ export const TagManagement=({talk, placeholder, onCreate})=>{
             }}
             renderItemText={item=>item.title}
         >
-            {!!tags.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
+            {!!talks.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>
     )
 }

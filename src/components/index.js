@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
+import { View, Text, TextInput, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
 import Voice from "@react-native-voice/voice"
 import * as FileSystem from "expo-file-system"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
+import Qili from "../experiment/qili";
 
 const AutoHideDuration=6000
 export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style, ...props }) => {
@@ -875,4 +876,96 @@ export function ChangableText({text:{value:text, ...textProps},onChange,children
             {children}
         </Pressable>
     )
+}
+
+export function Login({ }) {
+    const dispatch = useDispatch();
+    const [contact, setContact] = React.useState("");
+    const [authReady, setAuthReady] = React.useState(false);
+    const [code, setCode] = React.useState("");
+    const [tick, setTick] = React.useState();
+
+    const startTick = React.useCallback(() => {
+        let i = 60, doTick;
+        const timer = setInterval(doTick = () => {
+            if (i == 0) {
+                clearInterval(timer);
+                setTick(0);
+            }
+            else
+                setTick(i--);
+        }, 1000);
+
+        doTick();
+    }, []);
+
+    const requestCode = React.useCallback(async (contact) => {
+        try {
+            const data = await new Qili().fetch({
+                id: "authentication_requestToken_Mutation",
+                variables: { contact }
+            });
+            data.requestToken = true;
+            setAuthReady(!!data.requestToken);
+            if (!!data.requestToken) {
+                startTick();
+            }
+        } catch (e) {
+            FlyMessage.error(e.message);
+        }
+    }, []);
+
+    const login = React.useCallback(async ({ contact, code }) => {
+        try {
+            const data = await new Qili().fetch({
+                id: "authentication_login_Mutation",
+                variables: {
+                    contact,
+                    token: code,
+                    name: "admin"
+                }
+            });
+
+            dispatch({
+                type: "my",
+                payload: {
+                    admin: {
+                        contact,
+                        headers: {
+                            "x-session-token": data.login.token,
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            FlyMessage.error(e.message);
+        }
+    }, []);
+
+    const textStyle = { height: 40, fontSize: 20, borderWidth: 1, borderColor: "gray", padding: 4 };
+
+    return (
+        <View style={{ backgroundColor: "white", padding: 10, paddingTop: 50 }}>
+            <View style={{ flexDirection: "row", height: 40 }}>
+                <TextInput style={{ flex: 1, ...textStyle }}
+                    editable={!tick}
+                    value={contact}
+                    placeholder="Phone Number"
+                    onChangeText={text => setContact(text)} />
+                <Button style={{ width: 500 }}
+                    disabled={!!tick}
+                    onPress={e => requestCode(contact)}
+                    title={tick ? tick + "" : (tick === 0 ? "Re-Request" : "Request Code")} />
+            </View>
+
+            <TextInput value={code} style={{ ...textStyle, marginTop: 20, marginBottom: 20 }}
+                editable={!!authReady}
+                placeholder="Verification Code"
+                onChangeText={text => setCode(text)} />
+
+            <Button title="Login"
+                disabled={!authReady}
+                onPress={e => login({ contact, code })} />
+        </View>
+    );
 }

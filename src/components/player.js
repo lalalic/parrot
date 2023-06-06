@@ -1,5 +1,5 @@
 import React, {} from 'react';
-import {View, Text, ActivityIndicator, Pressable, FlatList, AppState} from "react-native"
+import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
 import { produce } from "immer"
@@ -8,7 +8,6 @@ import * as FileSystem from "expo-file-system"
 import * as Sharing from "expo-sharing"
 import * as ImagePicker from "expo-image-picker"
 import { useKeepAwake} from "expo-keep-awake"
-import { NowPlaying } from 'tts'; 
 
 
 import { PressableIcon, SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
@@ -29,7 +28,7 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onRecordAudioMiss,onChallengePass,onFixChunk,
+    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -201,14 +200,8 @@ export default function Player({
                     setVideoStatusAsync({rate:action.rate})
                         .then(a=>changePolicy("speed",a.rate))
                 break
-                case "record/miss":
-                    asyncCall(()=>onRecordAudioMiss?.(action))
-                break
                 case "record/chunk"://not implemented
                     asyncCall(()=>onLongtermChallenge?.(action.chunk))
-                break
-                case "fix/chunk":
-                    policy.chunk<2 && asyncCall(()=>onFixChunk?.(action.chunk.time))
                 break
                 case "media/time":{
                     const i=chunks.findIndex(a=>a.time>=action.time)
@@ -322,9 +315,33 @@ export default function Player({
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
+
+    const onRecord=React.useCallback(props=>{
+            const {i, chunk=chunks[i], recognized=props.recognized}=status
+            const score=diffScore(chunk.text,recognized)
+            if(policy.autoChallenge){    
+                if(score<policy.autoChallenge){
+                    if(!challenging){
+                        if(!challenges?.find(a=>a.time==chunk.time)){
+                            onCheckChunk?.(chunk)
+                        }
+                    }else {
+                        
+                    }
+                }else {
+                    if(challenging){
+                        onChallengePass?.(chunk)
+                    }
+                }
+            }
+            if(recognized){
+                policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
+            }
+    },[status.i,chunks,policy.record, policy.autoChallenge])
     
+    const [showSubtitle, setShowSubtitle]=React.useState(true)
     useKeepAwake()
-    
+
     return (
         <>
         <SliderIcon.Container 
@@ -410,47 +427,17 @@ export default function Player({
                         }}/>}
                 </AutoHide>
 
-                <Subtitle 
+                {showSubtitle && policy.caption && <Subtitle 
                     testID="subtitle"
                     i={status.i} 
-                    selectRecognized={state=>{
-                        const a=chunks?.[status.i];
-                        return state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]
-                    }}
+                    selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
                     style={{width:"100%",textAlign:"center",position:"absolute",fontSize:20,...subtitleStyle}}
                     title={false!=controls.subtitle ? chunks[status.i]?.text||title : ""}
                     my={chunks[status.i]?.my}
                     autoChallenge={policy.autoChallenge}
                     numberOfLines={4}
                     adjustsFontSizeToFit={true}
-                    delay={policy.captionDelay} 
-                    show={policy.caption}>
-                    {status.whitespacing && <Recognizer key={status.i} i={status.i} locale={chunks[status.i]?.recogLocale}
-                        onRecord={props=>{
-                                const {i, chunk=chunks[i], recognized=props.recognized}=status
-                                const score=diffScore(chunk.text,recognized)
-                                if(policy.autoChallenge){    
-                                    if(score<policy.autoChallenge){
-                                        if(!challenging){
-                                            if(!challenges?.find(a=>a.time==chunk.time)){
-                                                onCheckChunk?.(chunk)
-                                            }
-                                        }else {
-                                            
-                                        }
-                                    }else {
-                                        if(challenging){
-                                            onChallengePass?.(chunk)
-                                        }
-                                    }
-                                }
-                                if(recognized){
-                                    policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
-                                }
-                        }} 
-                        uri={onRecordChunkUri?.(chunks[status.i])}
-                        />}
-                </Subtitle>
+                    delay={policy.captionDelay}/>}
 
                 {policy.fullscreen && status.i==-1 && 
                     <View style={{justifyContent:"center", bottom:50, position:"absolute", width:"100%"}}>
@@ -459,6 +446,9 @@ export default function Player({
                         </Text>
                     </View>
                 }
+
+                {status.whitespacing && <Recognizer key={status.i} i={status.i} locale={chunks[status.i]?.recogLocale}
+                    onRecord={onRecord}  uri={onRecordChunkUri?.(chunks[status.i])} />}
 
                 <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
@@ -471,7 +461,7 @@ export default function Player({
                 </AutoHide>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, onRecordChunkUri, policy:policyName, $policy:policy}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, onRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
         </>
@@ -548,52 +538,38 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitle({show,i,delay,title,my, selectRecognized, children, style, score,  ...props}){
+export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...props}){
     const [text, setText]=React.useState(title)
-    const recognized=useSelector(selectRecognized)
-    
-    const [$title, $children]=React.useMemo(()=>{
-        if(!show || Subtitle.shouldHide)
-            return ["",children]
-        if(!children && recognized){
+    const recognized=useSelector(state=>selectRecognized(state, i))
+
+    const $title=React.useMemo(()=>{
+        if(recognized){
             const diffs=diffPretty(title, recognized)
-            return [
-                diffs[0],
-                <Text {...props} children={diffs[1]} style={[style, {bottom:style.bottom+40}]}/>
-            ]
+            return diffs[0]
         }
-        return [
-            text, 
-            React.isValidElement(children) && React.cloneElement(children,{...props, style:[style, {bottom:style.bottom+40}]})
-        ]
-    },[recognized, text, children, show])
+        return text
+    },[recognized, text])
 
     React.useEffect(()=>{
-        if(!show){
-            setText("")
+        if(delay){
+            setTimeout(()=>setText(title),delay*1000)
         }else{
-            if(delay){
-                setTimeout(()=>setText(title),delay*1000)
-            }else{
-                setText(title)
-            }
+            setText(title)
         }
-    },[i, show])
+    },[i])
+
     return (
-        <>
-            {!Subtitle.shouldHide  && <Pressable>
-                <Text {...props} style={style}>
-                    {$title||""} {"\n"}
-                    <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
-                </Text>
-            </Pressable>}
-            {$children}
-        </>
+        <Pressable>
+            <Text {...props} style={style}>
+                {$title||""} {"\n"}
+                <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
+            </Text>
+        </Pressable>
     )
 }
 
 export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
-    const {id, status, i=status.i, chunks, onRecordChunkUri}=React.useContext(Context)
+    const {id, status, i=status.i, chunks, onRecordChunkUri, setShowSubtitle}=React.useContext(Context)
     const {challenges=[],records=[]}=useSelector(state=>({
         challenges:state.talks[id]?.[policy]?.challenges, 
         records:state.talks[id]?.[policy]?.records,
@@ -609,8 +585,8 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
     },[i])
 
     React.useEffect(()=>{
-        Subtitle.shouldHide=true
-        return ()=>delete Subtitle.shouldHide
+        setShowSubtitle(false)
+        return setShowSubtitle(true)
     },[])
 
     return (
@@ -645,8 +621,6 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                 const info=await FileSystem.getInfoAsync(audio)
                 if(info.exists){
                     setAudioExists(true)
-                }else{
-                    dispatch({type:"record/miss", record: item })
                 }
             })();
         }
@@ -678,9 +652,6 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                     <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end", }}
-                    onLongPress={e=>{
-                        dispatch({type:"fix/chunk", chunk:item})
-                    }}
                     onPress={e => {
                         if(audioExists){
                             dispatch({type:"nav/pause", callback:()=>setPlaying(true)})
@@ -691,7 +662,7 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                             ...textProps.style, 
                             color: playing ? "red" : color.primary
                         }}>{$recognized}</Recognizer.Text>
-                    {!!playing && !!audio && <PlaySound audio={audio} destroy={setPlaying} />}
+                    {!!playing && !!audio && <PlaySound audio={audio} onEnd={e=>setPlaying(false)} />}
                 </Pressable>
             </View>
         </View>

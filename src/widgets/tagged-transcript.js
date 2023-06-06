@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router-native"
 import Select from "react-native-select-dropdown"
 import { PressableIcon, PlaySound } from "../components"
 import { ColorScheme } from "../components/default-style"
-import { selectBook } from "../store"
+import { selectWidgetTalks } from "../store"
 
 export default Wrapper=({slug=useParams().slug})=>{
     if(Widgets[slug]?.TaggedTranscript){
@@ -23,7 +23,7 @@ export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
         const color=React.useContext(ColorScheme)
         const navigate=useNavigate()
         
-        const talks=useSelector(state=>Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug))
+        const talks=useSelector(state=>selectWidgetTalks(state, slug))
         const tags=React.useMemo(()=>talks.map(a=>a.title),[talks])
         const [state, setState]=React.useState(({title,id}=talks[0]||{})=>({current:title,id}))
         

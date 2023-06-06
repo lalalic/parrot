@@ -77,8 +77,16 @@ Cloud.addModule({
             }
         },
         Mutation:{
-            save(_,{talk},{app}){
-                return app.createEntity(talk.isWidget ? "Widget" : "Talk",talk)
+            async save(_,{talk},{app}){
+                const Type=talk.isWidget ? "Widget" : "Talk"
+                const query={_id:talk._id}
+                const old=await app.get1Entity(Type, query)
+                if(old){
+                    return app.updateEntity(Type, query, talk)
+                        .then(talk=>true)
+                        .catch(e=>false)
+                }
+                return app.createEntity(Type,talk)
                     .then(talk=>true)
                     .catch(e=>false)
             }

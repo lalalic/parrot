@@ -3,8 +3,8 @@ import * as FileSystem from "expo-file-system"
 export default class {
     constructor({
         headers, 
-        service="http://localhost:9080/1/graphql", 
-        storage=service, //"https://up.qbox.me"
+        service="https://api.qili2.com/1/graphql",//"http://localhost:9080/1/graphql", 
+        storage="https://up.qbox.me"
     }={}){
         this.service=service
         this.storage=storage
@@ -48,41 +48,17 @@ export default class {
             id:"file_token_Query",
             variables:{key}
         })
-
-        const formData=new FormData()
-        const props={
-            "x:id":host,token,key,
-            file: {
-                type:"video/mpeg",
-                uri:file,
-                name:"video.mp4"
-            },
-            //local upload for testing
-            id:"file_create_Mutation",
-            variables:JSON.stringify({
-                _id:key,
-                host,
-                mimeType:"video/mpeg"
-            })
-        }
-        Object.keys(props).forEach(k=>formData.append(k,props[k]))
-
-        //return `${this.service.replace("graphql","parrot")}/static/${key}`
-        const headers={
-            ...this.headers, 
-            "x-application-id":"parrot",//local for testing
-            "Content-Type":"multipart/form-data",
-        }
-
-        delete headers["Content-Type"]
         
-        const res=await fetch(this.storage,{
-            method:"POST",
-            headers,
-            body:formData
+        const res=await FileSystem.uploadAsync(this.storage, file, {
+            uploadType:FileSystem.FileSystemUploadType.MULTIPART,
+            fieldName:"file",
+            parameters:{
+                "x:id":host,
+                token,key,
+            }
         })
-
-        const {data}=await res.json()
+    
+        const {data}=JSON.parse(res.body)
 
         if(!data){
             throw new Error(res.statusText)
