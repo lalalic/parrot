@@ -2,7 +2,7 @@ import React from "react"
 import { FlatList, View, TextInput} from 'react-native';
 import { ColorScheme, TitleStyle } from "./components/default-style";
 import { PressableIcon, TalkThumb } from "./components";
-import { Ted } from "./store"
+import { TalkApi, getTalkApiState } from "./store"
 import { Picker } from "@react-native-picker/picker"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
@@ -55,7 +55,7 @@ export default function Talks(props){
                     }
                 }}
                 />
-                {!search.people && <TextInput placeholder="TED Talk" defaultValue={search.q} 
+                {!search.people && <TextInput placeholder="TalkApi Talk" defaultValue={search.q} 
                         clearButtonMode="while-editing"
                         keyboardType="web-search"
                         onEndEditing={({nativeEvent:{text:q}})=>{
@@ -73,10 +73,10 @@ export default function Talks(props){
 const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     const color=React.useContext(ColorScheme)
     const [search, setSearch]=React.useState({q:value, name, showPicker:false})
-    const {data:people=[]}=Ted.usePeopleQuery({q:search.q.trim()})
+    const {data:people=[]}=TalkApi.usePeopleQuery({q:search.q.trim()})
     return (
         <>
-            <TextInput style={style} placeholder="TED Speaker"
+            <TextInput style={style} placeholder="TalkApi Speaker"
                 value={search.name}
                 onChangeText={q=>setSearch({q,showPicker:true})}/>
             {search.showPicker && people.length>0 && <Picker {...props} mode="dropdown" 
@@ -101,30 +101,30 @@ export function useTalksQuery(search){
     React.useEffect(()=>{
         try{
             if(!search.q){
-                const sub=dispatch(Ted.endpoints.today.initiate({day:new Date().asDateString()}))
+                const sub=dispatch(TalkApi.endpoints.today.initiate({day:new Date().asDateString()}))
                 return ()=>sub.unsubscribe()
             }
 
             if(search.people){
-                const sub=dispatch(Ted.endpoints.speakerTalks.initiate(search))
+                const sub=dispatch(TalkApi.endpoints.speakerTalks.initiate(search))
                 return ()=>sub.unsubscribe()
             }
 
-            const subs=new Array(search.page).fill(0).map((a,i)=>dispatch(Ted.endpoints.talks.initiate({...search,page:i+1})))
+            const subs=new Array(search.page).fill(0).map((a,i)=>dispatch(TalkApi.endpoints.talks.initiate({...search,page:i+1})))
             return ()=>subs.forEach(a=>a.unsubscribe())
         }finally{
             select.current=defaultMemoize(
                 state=>{    
                     if(!search.q){
-                        return Ted.endpoints.today.select({day:new Date().asDateString()})(state)
+                        return TalkApi.endpoints.today.select({day:new Date().asDateString()})(state)
                     }
                 
                     if(search.people){
-                        return Ted.endpoints.speakerTalks.select(search)(state)
+                        return TalkApi.endpoints.speakerTalks.select(search)(state)
                     }
             
                     const selects=new Array(search.page).fill(0).map((a,i)=>{
-                        return Ted.endpoints.talks.select({...search,page:i+1})(state)
+                        return TalkApi.endpoints.talks.select({...search,page:i+1})(state)
                     })
                     const unfinished=selects.find(a=>a.status!=="fulfilled")
                     if(unfinished)
@@ -138,7 +138,7 @@ export function useTalksQuery(search){
                         return talks
                     }),[])
                 },
-                (a,b)=>a.ted.queries==b.ted.queries
+                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries
             )
 
             dispatch({type:"history", search})

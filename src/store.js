@@ -6,7 +6,7 @@ import { createApi } from "@reduxjs/toolkit/query/react";
 import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
 import {XMLParser} from 'fast-xml-parser'
 
-import { Provider } from "react-redux"
+import { Provider as ReduxProvider} from "react-redux"
 import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore,persistReducer, FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
 import * as FileSystem from "expo-file-system"
@@ -62,7 +62,84 @@ export const Policy={
 const TedHeader={
 	"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
 }
-const Ted=createApi({
+
+async function fetchTedTalk({slug},{lang, mylang}){
+	const res=await fetch("https://www.ted.com/graphql",{
+		method:"POST",
+		headers:{
+			'Content-Type': 'application/json',
+			'Accept': 'application/json',
+		},
+		body:JSON.stringify({
+			query: `query {
+			translation(
+				videoId: "${slug}"
+				language: "${lang}"
+			) {
+				paragraphs {
+					cues {
+						text
+						time
+					}
+				}
+			}
+				
+			video(slug:"${slug}"){
+					description
+					playerData
+				}
+			}`,
+		}),
+	})
+	const {data}=await res.json()
+		
+	const {translation, video: { playerData, description },}=data
+	const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
+	const talk={
+		id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
+		video: resources.hls.stream,
+	}
+	
+	talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
+	
+	if(!translation)
+		return talk
+
+	const {paragraphs}=translation
+	talk.languages.mine={transcript:paragraphs}
+	
+	console.assert(resources.hls.metadata)
+	const resHlsMeta=await fetch(resources.hls.metadata)
+	const hlsMeta=await resHlsMeta.json()
+	const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
+	const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
+	
+	const nextCue=((vtt,last=0)=>()=>{
+		if(!vtt)
+			return
+		const i0=vtt.indexOf("\n\n",last)
+		if(i0==-1)//The last may not have data
+			return 
+		const i=vtt.indexOf("\n",i0+2)
+		try{
+			return vtt.substring(i+1, vtt.indexOf("\n", i+1))
+		}finally{
+			last=i+1
+		}
+	})(target && await (await fetch(target.webvtt)).text());
+
+	(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
+		cue.time+=offset
+		cue.end=talk.duration*1000+offset
+		if(lastCue){
+			lastCue.end=cue.time-200
+		}
+		cue.my=nextCue()
+		lastCue=cue
+	})))();
+	return talk
+}
+const Ted=Object.assign(createApi({
 	reducerPath:"ted",
 	endpoints:builder=>({
 		talk:builder.query({
@@ -105,92 +182,11 @@ const Ted=createApi({
 							return talk
 						}
 					}else{
-						if(Qili.isTedBanned(api)){
-							const {talk}=await new Qili().fetch({
-								id:"talk",
-								variables:{slug, id}
-							})
-							return talk
-						}
-
-						const res=await fetch("https://www.ted.com/graphql",{
-							method:"POST",
-							headers:{
-								'Content-Type': 'application/json',
-								'Accept': 'application/json',
-							},
-							body:JSON.stringify({
-								query: `query {
-								translation(
-									videoId: "${slug}"
-									language: "${lang}"
-								) {
-									paragraphs {
-										cues {
-											text
-											time
-										}
-									}
-								}
-									
-								video(slug:"${slug}"){
-										description
-										playerData
-									}
-								}`,
-							}),
-						})
-						const {data}=await res.json()
-							
-						const {translation, video: { playerData, description },}=data
-						const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
-						const talk={
-							id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
-							video: resources.hls.stream,
-						}
-						
-						talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
-						
-						if(!translation)
-							return {data:talk}
-
-						const {paragraphs}=translation
-						talk.languages.mine={transcript:paragraphs}
-						
-						console.assert(resources.hls.metadata)
-						const resHlsMeta=await fetch(resources.hls.metadata)
-						const hlsMeta=await resHlsMeta.json()
-						const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
-						const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
-						
-						const nextCue=((vtt,last=0)=>()=>{
-							if(!vtt)
-								return
-							const i0=vtt.indexOf("\n\n",last)
-							if(i0==-1)//The last may not have data
-								return 
-							const i=vtt.indexOf("\n",i0+2)
-							try{
-								return vtt.substring(i+1, vtt.indexOf("\n", i+1))
-							}finally{
-								last=i+1
-							}
-						})(target && await (await fetch(target.webvtt)).text());
-
-						(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
-							cue.time+=offset
-							cue.end=talk.duration*1000+offset
-							if(lastCue){
-								lastCue.end=cue.time-200
-							}
-							cue.my=nextCue()
-							lastCue=cue
-						})))();
-						return talk
+						return await fetchTedTalk({slug},{lang, mylang})
 					}
 				})();
 
-				talk && !state.talks[talk.id] && api.dispatch({type:"talk/create", talk})
+				talk && api.dispatch({type:"talk/create", talk})
 				return {data:talk}
 			},
 		}),
@@ -198,14 +194,6 @@ const Ted=createApi({
 			queryFn:async ({q, page}, api)=>{
 				let minutes=0
 				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
-				
-				if(Qili.isTedBanned(api)){
-					const data=new Qili().fetch({
-						id:"talks",
-						variables:{q}
-					})
-					return {data}
-				}
 
 				const query=[
 					minutes>0 && `duration=${(Math.ceil(minutes/6)-1)*6}-${Math.ceil(minutes/6)*6}`,
@@ -234,13 +222,6 @@ const Ted=createApi({
 
 		people:builder.query({
 			queryFn:async ({q}, api)=>{
-				if(Qili.isTedBanned(api)){
-					const {people}=await new Qili().fetch({
-						id:"people",
-						variables:{q}
-					})
-					return {data:people}
-				}
 				const res=await fetch(`https://www.ted.com/search?cat=people&q=${encodeURI(q)}`,TedHeader)
 				const data=await res.text()
 				
@@ -260,13 +241,6 @@ const Ted=createApi({
 		}),
 		speakerTalks:builder.query({
 			queryFn:async ({q},api)=>{
-				if(Qili.isTedBanned(api)){
-					const data=new Qili.fetch({
-						id:"speakerTalks",
-						variables:{q}
-					})
-					return {data}
-				}
 				const res=await fetch(`https://www.ted.com/speakers/${q}`,TedHeader)
 				const data=await res.text()
 				const $=cheerio.load(data)
@@ -285,12 +259,6 @@ const Ted=createApi({
 		}),
 		today:builder.query({
 			queryFn:async (day,api)=>{
-				if(Qili.isTedBanned(api)){
-					const data=await Qili.create(api).fetch({
-						id:"today"
-					})
-					return {data}
-				}
 				const res=await fetch("http://feeds.feedburner.com/TEDTalks_audio",{
 					headers:{
 						"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
@@ -312,6 +280,77 @@ const Ted=createApi({
 					return {id, title, duration:toSec(duration), thumb:thumbnail.url,slug:slug(link)}
 				}).filter(a=>!!a.duration)
 				return {data:{talks}}
+			},
+		}),
+		widgetTalks:builder.query({
+			queryFn:async (variables,api)=>{
+				const data=new Qili().fetch({
+					id:"widgetTalks",
+					variables
+				})
+				return {data}
+			}
+		})
+	})
+}),{
+	testNetwork(state){
+		const {lang="en", mylang="zh-cn"}=state.my
+		return Promise.all([
+			fetchTedTalk({slug:`noah_raford_how_gaming_can_be_a_force_for_good`},{lang,mylang})
+				.then(talk=>!!talk.languages),
+			fetch(`https://www.ted.com/talks`).then(res=>res.text())
+		])
+	}
+})
+
+const Qili2=createApi({
+	reducerPath:"qili",
+	endpoints:builder=>({
+		talk:builder.query({
+			queryFn:async ({slug,id},api)=>{
+				const {talk}=await new Qili().fetch({
+					id:"talk",
+					variables:{slug, id}
+				})
+				return {data:talk}
+			}
+		}),
+		talks:builder.query({
+			queryFn:async ({q, page}, api)=>{
+				let minutes=0
+				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
+				
+				const data=new Qili().fetch({
+					id:"talks",
+					variables:{q}
+				})
+				return {data}
+			}
+		}),
+		people:builder.query({
+			queryFn:async ({q}, api)=>{
+				const {people}=await new Qili().fetch({
+					id:"people",
+					variables:{q}
+				})
+				return {data:people}
+			}
+		}),
+		speakerTalks:builder.query({
+			queryFn:async ({q},api)=>{
+				const data=new Qili.fetch({
+					id:"speakerTalks",
+					variables:{q}
+				})
+				return {data}
+			}
+		}),
+		today:builder.query({
+			queryFn:async (day,api)=>{
+				const data=await Qili.create(api).fetch({
+					id:"today"
+				})
+				return {data}
 			}
 		}),
 		widgetTalks:builder.query({
@@ -377,6 +416,8 @@ export function createStore(needPersistor){
 						}
 					})
 
+					dispatch({type:"talk/toggle", talk:{id}, key:"localVideo", value:file})
+
 					FlyMessage.show(`Uploaded a talk`)
 				}else{
 					const Widget=globalThis.Widgets[talk.slug]
@@ -407,18 +448,22 @@ export function createStore(needPersistor){
 				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
 				combineReducers({
 					[Ted.reducerPath]: Ted.reducer,
-					my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now()}, action) {
+					[Qili2.reducerPath]:Qili2.reducer,
+					my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now(),admin:false, api:"Ted", widgets:{chatgpt:false}}, action) {
 						switch (action.type) {
 							case "persist/REHYDRATE":
-								return produce(state, $state=>{
-									const history=action.payload?.my?.policy
-									if(history?.general){
-										Object.assign($state.policy.general, history.general)
-										Object.assign($state.policy.shadowing, history.shadowing)
-										Object.assign($state.policy.dictating, history.dictating)
-										Object.assign($state.policy.retelling, history.retelling)
+								const {my}=action.payload
+								Object.keys(state).forEach(k=>{
+									if(!(k in my)){
+										my[k]=state[k]
 									}
 								})
+								Object.keys(state.policy).forEach(k=>{
+									my.policy[k]={...state.policy[k],...my.policy[k]}
+								})
+
+								my.since=state.since
+								return state
 							case "policy":
 								return produce(state, $state=>{
 									checkAction(action,["target","payload"])
@@ -426,6 +471,8 @@ export function createStore(needPersistor){
 								})
 							case "my/tts":
 								return {...state, tts:{...state.tts, ...action.payload}}
+							case "my/api":
+								return {...state, api:(Services.current=action.api)}
 							case "my":
 								return {...state, ...action.payload}
 						}
@@ -444,7 +491,7 @@ export function createStore(needPersistor){
 						switch(action.type){
 							case "talk/create":
 								return produce(talks, $talks=>{
-									$talks[action.talk.id]={...action.talk}
+									$talks[action.talk.id]={...$talks[action.talk.id],...action.talk}
 								})
 							case "talk/toggle":
 								return produce(talks, $talks=>{
@@ -705,33 +752,44 @@ export function createStore(needPersistor){
 				immutableCheck:{
 					warnAfter:100,
 				},
-			}).prepend([Ted.middleware,listenerSave.middleware]),
+			}).prepend([Ted.middleware,Qili2.middleware, listenerSave.middleware]),
 	})
 	const persistor=needPersistor ? persistStore(store) : undefined
 	setupListeners(store)
 	return {store, persistor}
 }
 
-const StoreProvider=({children, persistor:needPersistor=true, onReady})=>{
+const Services={Ted, Qili2, current:'Ted'}
+
+export const TalkApi=new Proxy(Services,{
+	get(target, key){
+		return target[target.current][key]
+	}
+})
+
+export const Provider=({children, persistor:needPersistor=true, onReady})=>{
 	const {store, persistor}=React.useMemo(()=>{
 		const data=createStore(needPersistor)
 		const unsub=data.store.subscribe(()=>{
 			const state=data.store.getState()
 			if(state._persist?.rehydrated){
+				Ted.testNetwork(state)
+					.then(()=>data.store.dispatch({type:"my/api",api:"Ted"}))
+					.catch(e=>data.store.dispatch({type:"my/api",api:"Qili2"}))
+					.then(e=>onReady?.())
 				unsub()
-				setTimeout(()=>onReady?.(),4000)
 			}
 		})
+
 		return data
 	},[])
-	StoreProvider.store=store
 	return (
-		<Provider store={store}>
+		<ReduxProvider store={store}>
 			{!!persistor && <PersistGate {...{loading:null, persistor}}>
 				{children}
 			</PersistGate>}
 			{!persistor && children}
-		</Provider>
+		</ReduxProvider>
 	)
 }
 
@@ -751,8 +809,6 @@ function immutableSet(o, keys, value, returnEmpty=true){
 	const firstValue=immutableSet({...o[first]}, keys ,value, false)
 	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
 }
-
-export {Ted, StoreProvider as Provider,}
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];
@@ -782,17 +838,18 @@ export function selectPolicy(state,policyName,id){
 	return policy
 }
 
-export function selectBook(state, slug, tag){
-	const {[slug]:data}=state
-	const selected=(()=>{
-		if(!tag){
-			return data
-		}
-		return data.filter(a=>a.tags && a.tags.indexOf(tag)!=-1)
-	})();
-	return selected.map(a=>({...a}))
-}
-
 export function selectWidgetTalks(state, slug){
 	return Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug)
+}
+
+export function isAdmin(state){
+	return !!state.my.admin
+}
+
+export function isAdminLogin(state){
+	return !!state.my.admin?.headers
+}
+
+export function getTalkApiState(state){
+	return state[TalkApi.reducerPath]
 }

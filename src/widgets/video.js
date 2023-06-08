@@ -1,10 +1,10 @@
 import React from "react"
 import { Audio , Video as ExpoVideo} from "expo-av"
-import { View, Text, ScrollView } from "react-native";
+import { Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
 
-import { PressableIcon, PolicyChoice, html, FlyMessage } from '../components';
+import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
 import mpeg from "../experiment/mpeg";
 
@@ -51,7 +51,7 @@ export default class extends React.Component{
         return {
             media: <Video
                 posterSource={{ uri: talk.thumb }}
-                source={{ uri: talk.video }}
+                source={{ uri: talk.localVideo || talk.video }}
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,

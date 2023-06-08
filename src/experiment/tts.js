@@ -18,14 +18,14 @@ export default function TTS(){
                 await tts.downloadAsync()
                 await melgan.downloadAsync()
                 const ids=processText("")
-                console.log(ids)
+                console.info(ids)
                 const input_ids=btoa(String.fromCharCode(...ids))
                 const audio=await TensorFlowLiteTTS.generateSpeech(
                     input_ids, 
                     tts.localUri.replace("file://",""),
                     melgan.localUri.replace("file://","")
                 )
-                console.log({audio})
+                console.info({audio})
                 setAudio(audio)
             })();
         }

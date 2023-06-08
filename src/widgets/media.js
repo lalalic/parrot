@@ -3,7 +3,7 @@ import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackg
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { selectWidgetTalks, Ted } from "../store"
+import { selectWidgetTalks, TalkApi } from "../store"
 
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText } from '../components';
@@ -17,7 +17,7 @@ class Media extends React.Component {
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
-            <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]}
+            <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]} deselectable={false}
                 onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
                     
                 {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
@@ -435,7 +435,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     const color=React.useContext(ColorScheme)
 
     const local=React.useMemo(()=>data.map(a=>a.id),[data])
-    const {data:{talks=[]}={}}=Ted.useWidgetTalksQuery({slug})
+    const {data:{talks=[]}={}}=TalkApi.useWidgetTalksQuery({slug})
 
     return (
         <View style={[{marginTop:10, minHeight:200},style]} {...props}>

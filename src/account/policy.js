@@ -5,7 +5,7 @@ import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Ted } from "../store"
+import { TalkApi } from "../store"
 import { ControlIcons } from "../components"
 import Player from "../components/player"
 import { ColorScheme } from "../components/default-style"
@@ -16,7 +16,7 @@ export default function Policy(){
     const color=React.useContext(ColorScheme)
     const [target, setTarget]=React.useState("general")
     const policy=useSelector(state=>state.my.policy)
-    const {data:talk={}}=Ted.useTalkQuery({slug})
+    const {data:talk={}}=TalkApi.useTalkQuery({slug})
     
     return (
         <View style={{flex:1}}>

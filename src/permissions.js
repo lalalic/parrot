@@ -5,6 +5,8 @@ import * as Calendar from 'expo-calendar';
 import { useDispatch, useSelector } from "react-redux";
 
 import * as Speech from "./components/speech"
+import { Login } from "./components"
+import { isAdminLogin } from "./store";
 
 export const Permissions = () => {
     const dispatch=useDispatch()
@@ -78,6 +80,23 @@ export const Permissions = () => {
             shouldDuckAndroid: false,
             playThroughEarpieceAndroid: true
         })
+    },[])
+
+    const [admin, bAdminLogin]=useSelector(state=>[state.my.admin, isAdminLogin(state)])
+    React.useEffect(()=>{
+        if(bAdminLogin){
+            (async ()=>{
+                try{
+                    await Login.updateToken(admin,dispatch)
+                }catch(e){
+                    console.error(e)
+                    dispatch({
+                        type:"my",
+                        payload:{admin:undefined}
+                    })
+                }
+            })()
+        }
     },[])
 
     return null;

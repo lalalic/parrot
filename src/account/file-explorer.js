@@ -6,7 +6,7 @@ import * as Sharing from "expo-sharing"
 
 const Context=React.createContext({})
 export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSystem.cacheDirectory], title, ...props}){
-    console.log(dir)
+    console.info(dir)
     const [current, $setCurrent]=React.useState()
     const setCurrent=React.useCallback(a=>{
         $setCurrent(a)

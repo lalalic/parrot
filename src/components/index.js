@@ -96,7 +96,7 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade,children, excludes=[]})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade,children, excludes=[], deselectable=true})=>{
     const color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
@@ -111,7 +111,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
                     color={value==k ? color.primary : undefined}
                     name={PolicyIcons[k]} labelFade={labelFade}
                     label={!!label && k.toUpperCase()}
-                    onPress={e=>change(value==k ? "general" : k)}/>
+                    onPress={e=>deselectable && change(value==k ? "general" : k)}/>
             ))}
             {children}
         </AutoShrinkNavBar>
@@ -878,7 +878,7 @@ export function ChangableText({text:{value:text, ...textProps},onChange,children
     )
 }
 
-export function Login({ }) {
+export const Login=Object.assign(function Login({ }) {
     const dispatch = useDispatch();
     const [contact, setContact] = React.useState("");
     const [authReady, setAuthReady] = React.useState(false);
@@ -968,4 +968,14 @@ export function Login({ }) {
                 onPress={e => login({ contact, code })} />
         </View>
     );
-}
+},{
+    async updateToken(admin, dispatch){
+        const data=await new Qili(admin).fetch({
+            id:"authentication_renewToken_Query"
+        })
+            
+        if(data?.me?.token){
+            dispatch({type:"my",payload:{admin:{...admin,headers:{...admin.headers,"x-session-token":data.me.token}}}})
+        }
+    }
+})

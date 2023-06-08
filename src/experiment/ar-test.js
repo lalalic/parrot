@@ -94,7 +94,7 @@ export default function AR(){
                 createItem={face=>{
                     return React.cloneElement(face,{
                         source,
-                        //onSmile:e=>console.log("smiling"),
+                        //onSmile:e=>console.info("smiling"),
                         eyeLeft: Image.resolveAssetSource(require("../../assets/icon.png")),
                         eyeRight: {emoji:"👁"},
                         mouth: Image.resolveAssetSource(require("../../assets/widget-picture-book.jpeg")),

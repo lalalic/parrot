@@ -5,7 +5,7 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import Video from './widgets/video';
 
-import { Ted, selectPolicy} from "./store"
+import { TalkApi, selectPolicy} from "./store"
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -51,9 +51,9 @@ export default function Talk({autoplay}){
 }
 
 function useTalkQuery({slug, id, policyName}){
-    const {data:remote={}}=Ted.useTalkQuery({slug,id})
-    const local=useSelector(state=>state.talks[remote.id])
-    const policy=useSelector(state=>selectPolicy(state,policyName,remote.id))
+    const {data:remote={}}=TalkApi.useTalkQuery({slug,id})
+    const local=useSelector(state=>state.talks[remote?.id])
+    const policy=useSelector(state=>selectPolicy(state,policyName,remote?.id))
 
     const talk=React.useMemo(()=>{
         const Widget=globalThis.Widgets[slug]

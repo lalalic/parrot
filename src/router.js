@@ -15,6 +15,7 @@ import Favorites from "./account/favorites"
 import Lang from "./account/lang"
 import Test from "./account/test"
 import Admin from "./admin"
+import Log from "./account/log"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -54,7 +55,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="language" element={<Lang/>}/>
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         <Route path="test" element={<Test/>}/>
-
+                        <Route path="logs" element={<Log/>}/>
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>

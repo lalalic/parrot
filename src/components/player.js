@@ -427,12 +427,12 @@ export default function Player({
                         }}/>}
                 </AutoHide>
 
-                {showSubtitle && policy.caption && <Subtitle 
+                {showSubtitle && policy.caption && false!=controls.subtitle && <Subtitle 
                     testID="subtitle"
                     i={status.i} 
                     selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
-                    style={{width:"100%",textAlign:"center",position:"absolute",fontSize:20,...subtitleStyle}}
-                    title={false!=controls.subtitle ? chunks[status.i]?.text||title : ""}
+                    style={{width:"100%",textAlign:"center",fontSize:16, marginBottom:20, ...subtitleStyle}}
+                    title={chunks[status.i]?.text||""}
                     my={chunks[status.i]?.my}
                     autoChallenge={policy.autoChallenge}
                     numberOfLines={4}

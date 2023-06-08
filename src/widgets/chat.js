@@ -4,7 +4,7 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } f
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useLatest, useStateAndLatest } from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest } from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -12,8 +12,8 @@ import { useKeepAwake } from "expo-keep-awake"
 
 const defaultProps={
 	isMedia:false,
-	id: "chat",
-	slug: "chat",
+	id: "chatgpt",
+	slug: "chatgpt",
 	title: "Chat Bot",
 	thumb: require("../../assets/widget-chat-bot.png"),
 	description: "Make a conversation with bot",

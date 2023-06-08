@@ -8,6 +8,7 @@ import Chat from "./chat"
 import DialogBook from "./dialog-book"
 import VocabularyBook from "./vocabulary-book"
 import YouTubeVideo from "./youtube-video"
+import { useSelector } from "react-redux"
 
 /**
  * what is widget media?
@@ -20,6 +21,7 @@ export default (props)=>{
     const imageStyle={height:180}
     const durationStyle={bottom:40,top:undefined}
     const titleStyle={height:40}
+    const {widgets={}}=useSelector(state=>state.my)
     return (
         <View {...props} style={{marginTop:20}}>
             <Text style={[{fontSize:20,backgroundColor:color.inactive, paddingLeft:5, overflow:"hidden",paddingLeft:10,
@@ -28,7 +30,7 @@ export default (props)=>{
                 <Text style={{fontSize:12}}>help practice particular things</Text>
             </Text>
             <FlatList
-                data={Object.values(Widgets)}
+                data={Object.values(Widgets).filter(a=>widgets[a.defaultProps.slug]!==false)}
                 renderItem={({item:Widget,index})=>(
                     <TalkThumb item={Widget.defaultProps} 
                         getLinkUri={({slug})=>`/widget/${slug}`}

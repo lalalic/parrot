@@ -11,10 +11,6 @@ export default class {
         this.headers=headers
     }
 
-    static isTedBanned({getState}){
-        return !getState().my.admin
-    }
-
     static create({getState}){
         return new this()
     }

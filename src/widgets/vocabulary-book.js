@@ -174,9 +174,9 @@ const Sentense=({talk, id=talk?.id})=>{
     const { policy } = useParams()
     const [creating, setCreating]=React.useState(false)
     const {challenges=[]}=useSelector(state=>state.talks[id][policy])
-    const {admin}=useSelector(state=>state.my)
+    const {widgets={}}=useSelector(state=>state.my)
     const words=challenges.map(a=>a.ask).join(",")
-    if(!admin || !words)
+    if(widgets.chat===false || !words)
         return null
 
     return (
