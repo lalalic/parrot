@@ -247,7 +247,6 @@ export default function Player({
 
     const onMediaStatus=React.useCallback((state, action)=>{
         asyncCall(()=>onProgress.current?.(action.status.positionMillis))
-        console.debug(`position: ${action.status.positionMillis}`)
         const {i, whitespacing}=state
         const nextState=(()=>{
             if(action.status.transcript){

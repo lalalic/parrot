@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
+import { View, Text, TextInput, ActivityIndicator, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
@@ -10,7 +10,7 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import Qili from "../experiment/qili";
+import { Qili } from "../store"
 
 const AutoHideDuration=6000
 export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style, ...props }) => {
@@ -901,7 +901,7 @@ export const Login=Object.assign(function Login({ }) {
 
     const requestCode = React.useCallback(async (contact) => {
         try {
-            const data = await new Qili().fetch({
+            const data = await Qili.fetch({
                 id: "authentication_requestToken_Mutation",
                 variables: { contact }
             });
@@ -917,7 +917,7 @@ export const Login=Object.assign(function Login({ }) {
 
     const login = React.useCallback(async ({ contact, code }) => {
         try {
-            const data = await new Qili().fetch({
+            const data = await Qili.fetch({
                 id: "authentication_login_Mutation",
                 variables: {
                     contact,
@@ -970,12 +970,18 @@ export const Login=Object.assign(function Login({ }) {
     );
 },{
     async updateToken(admin, dispatch){
-        const data=await new Qili(admin).fetch({
+        const data=await Qili.fetch({
             id:"authentication_renewToken_Query"
-        })
+        },admin)
             
         if(data?.me?.token){
             dispatch({type:"my",payload:{admin:{...admin,headers:{...admin.headers,"x-session-token":data.me.token}}}})
         }
     }
 })
+
+export function Loading({style, ...props}){
+    return <ActivityIndicator size="large" 
+        style={[{flex:1, alignItems:"center", justifyContent:"center"},style]} 
+        {...props}/>
+}

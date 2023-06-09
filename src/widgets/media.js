@@ -13,7 +13,7 @@ class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
+     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -31,7 +31,7 @@ class Media extends React.Component {
                 />}
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
-                    onPress={async()=> toggleTalk("favorited")}/>
+                    onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
                 
                 {this.ExtendActions?.(...arguments)}
             </PolicyChoice>
@@ -48,7 +48,7 @@ class Media extends React.Component {
      /**protocol: a tagged transcripts management component */
      static TaggedTranscript=null
 
-     static Info({talk, policyName, toggleTalk, dispatch, navigate, style}){
+     static Info({talk, policyName, dispatch, navigate, style}){
         switch (policyName) {
             case "general":
                 return ( 
@@ -379,7 +379,7 @@ export class TaggedListMedia extends ListMedia{
     static create({id, slug=this.defaultProps.slug, ...talk}, dispatch){
         console.assert(slug, "Slug must be specified when creating widget talk")
         id=`${slug}${Date.now()}`
-        dispatch({type:"talk/create",talk:{data:[],...this.defaultProps,...talk,id,slug}})
+        dispatch({type:"talk/set",talk:{data:[],...this.defaultProps,...talk,id,slug}})
         return id
     }
 

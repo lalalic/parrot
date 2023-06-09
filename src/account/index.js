@@ -33,7 +33,10 @@ export default ()=>{
             icon:"electrical-services", 
             children: <Switch 
                 value={api=="Ted"} 
-                onValueChange={e=>dispatch({type:"my/api", api: api=="Ted" ? "Qili2" : "Ted"})}
+                onValueChange={e=>{
+                    dispatch({type:"my/api", api: api=="Ted" ? "Qili" : "Ted"})
+                    dispatch({type:"qili/resetApiState"})
+                }}
                 />
         })
 

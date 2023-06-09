@@ -147,7 +147,7 @@ const Chat = () => {
 	const options=useRef()
 
 	useEffect(()=>()=>{
-		dispatch({type:"talk/create", talk:{
+		dispatch({type:"talk/set", talk:{
 			...defaultProps, 
 			messages:$messages.current.map(a=>{
 				a.speak?.cancel()

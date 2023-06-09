@@ -1,7 +1,7 @@
 import React from "react"
 import { FlatList, View, TextInput} from 'react-native';
 import { ColorScheme, TitleStyle } from "./components/default-style";
-import { PressableIcon, TalkThumb } from "./components";
+import { Loading, PressableIcon, TalkThumb } from "./components";
 import { TalkApi, getTalkApiState } from "./store"
 import { Picker } from "@react-native-picker/picker"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
@@ -18,7 +18,7 @@ export default function Talks(props){
         shallowEqual,
     ),{ q:"",people:false, peopleName:"", ...useSelector(state=>state.history.search), page:1})
     
-    const {data:{talks=[],pages=1}={}}=useTalksQuery(search)
+    const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
 
     const initialScrollIndex=React.useMemo(()=>{
         if(!!history?.id && talks.length>2){
@@ -40,7 +40,7 @@ export default function Talks(props){
                     onPress={e=>setSearch({ people: !search.people,q:""})}
                     />
             </View>
-            <FlatList
+            {isLoading ? <Loading/> : <FlatList
                 data={talks}
                 extraData={`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`}
                 renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
@@ -54,7 +54,7 @@ export default function Talks(props){
                         setSearch({ page:(search.page??1)+1})
                     }
                 }}
-                />
+                />}
                 {!search.people && <TextInput placeholder="TalkApi Talk" defaultValue={search.q} 
                         clearButtonMode="while-editing"
                         keyboardType="web-search"

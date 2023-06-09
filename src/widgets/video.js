@@ -9,7 +9,7 @@ import { Subtitles } from "../components/player"
 import mpeg from "../experiment/mpeg";
 
 export default class extends React.Component{
-    static Actions({talk, policyName, toggleTalk, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
+    static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -27,12 +27,12 @@ export default class extends React.Component{
                 />}
 
                 <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
-                    onPress={async (e) =>toggleTalk("favorited")}/>
+                    onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}/>
             </PolicyChoice>
         )
     }
 
-    static Info({talk, policyName, toggleTalk, dispatch, navigate, style}){
+    static Info({talk, policyName, dispatch, navigate, style}){
         switch (policyName) {
             case "general":
                 return (
@@ -51,7 +51,7 @@ export default class extends React.Component{
         return {
             media: <Video
                 posterSource={{ uri: talk.thumb }}
-                source={{ uri: talk.localVideo || talk.video }}
+                source={{ uri: talk.video }}
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,

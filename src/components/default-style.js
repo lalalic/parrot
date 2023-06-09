@@ -131,6 +131,7 @@ if(!Array.prototype.findLastIndex){
 }
 
 if(console && !__DEV__){
+    globalThis.logFile=`${FileSystem.documentDirectory}/logs.txt`
     const log=logger.createLogger({
         transport:[
             consoleTransport,
@@ -138,7 +139,7 @@ if(console && !__DEV__){
         ],
         transportOptions:{
             FS: FileSystem,
-            fileName: `logs`
+            fileName: `logs.txt`
         }
     });
     log.patchConsole()
