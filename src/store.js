@@ -24,36 +24,35 @@ import mpegKit from "./experiment/mpeg"
 export const Policy={
 	general: {
 		desc: "General options to control player and reaction.",
-		visible: true,
-		caption: true,
-		captionDelay: 0,
-		volume: undefined,
+		record: false,//record my audio
+		visible: true,//show video or not
+		caption: true,//show caption or not
+		captionDelay: 0,//caption delay time
+		autoChallenge:60,//add chunk into challenges if the percentage of identified text matching the original chunk text is lower than the value
 		speed: 1,
-		whitespace: 0, //whitespace time to start next
-		record: false,
+		whitespace: 0, //whitespace time to start next,0:no whitespace
 		chunk: 0, //0:chunck by chunck, n: chunks totally n seconds, 7: paragraph, 10: whole
-		autoHide: true,
-		autoChallenge:60,
-		fullscreen: false,
+		fullscreen: false,//
+		autoHide: true,//hide action bar or not
 	},
 	shadowing: {
 		desc: "options when you learn language by shadowing chunck by chunck",
-		whitespace: 1,
 		record: true,
+		whitespace: 1,
 		chunk: 0,
 	},
 	dictating: {
 		desc: "options when you learn language by dictating chuncks by chunks",
-		whitespace: 1,
 		record: true,
 		captionDelay: 1,
+		whitespace: 1,
 		chunk: 1, //1s
 	},
 	retelling: {
 		desc: "options when you lean language by retelling the story paragraph by paragraph",
-		whitespace: 1,
 		record: true,
 		captionDelay: 1,
+		whitespace: 1,
 		chunk: 7, //paragraph
 	},
 }
@@ -316,7 +315,7 @@ export const Qili=Object.assign(createApi({
 			}
 		}),
 		talks:builder.query({
-			queryFn:async ({q, page}, api)=>{
+			queryFn:async ({q="", page}, api)=>{
 				let minutes=0
 				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
 				
@@ -415,6 +414,9 @@ export const Qili=Object.assign(createApi({
         }
 
         return data?.file_create?.url
+	},
+	isUploaded(video){
+		return video.indexOf("qili2.com")!=-1
 	}
 })
 
@@ -444,7 +446,7 @@ export function createStore(){
 				return
 
 			if(!Ted.supportLocal(talk))
-				return 
+				return
 
 			const file=`${FileSystem.documentDirectory}${id}/video.mp4`
 			await mpegKit.generateAudio({source:talk.video, target:file})
@@ -452,12 +454,12 @@ export function createStore(){
 			
 			dispatch({type:"talk/set", talk:{id, localVideo:file}})
 			
-			if(!state.my?.admin?.headers)
+			if(!isAdminLogin(state))
 				return 
 			
 			const unwrap=({general, shadowing, retelling, dictating, localVideo, challenging, ...talk})=>talk
 			try{
-				if(talk.video.indexOf("qili2.com")==-1){
+				if(!Qili.isUploaded(talk.video)){
 					const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
 
 					FlyMessage.show(`Uploaded talk video`)
@@ -506,7 +508,7 @@ export function createStore(){
 			combineReducers({
 				[Ted.reducerPath]: Ted.reducer,
 				[Qili.reducerPath]: Qili.reducer,
-				my(state = {policy:Policy, lang:"en", mylang: "zh-cn", since:Date.now(),admin:false, api:"Ted", widgets:{chatgpt:false}}, action) {
+				my(state = {policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
 					switch (action.type) {
 						case "persist/REHYDRATE":
 							const {my={}}=action.payload
@@ -519,7 +521,7 @@ export function createStore(){
 								my.policy[k]={...state.policy[k],...my.policy[k]}
 							})
 
-							my.since=state.since
+							my.i++
 							return state
 						case "policy":
 							return produce(state, $state=>{
@@ -805,15 +807,15 @@ export function createStore(){
 export const Provider=({children, onReady})=>{
 	const {store, persistor}=React.useMemo(()=>{
 		const data=createStore()
-		const unsub=data.store.subscribe(()=>{
+		const unsub=data.store.subscribe(async ()=>{
 			const state=data.store.getState()
-			if(state._persist?.rehydrated){
-				Ted.testNetwork(state)
+			if(!('api' in state.my)){
+				await Ted.testNetwork(state)
 					.then(()=>data.store.dispatch({type:"my/api",api:"Ted"}))
 					.catch(e=>data.store.dispatch({type:"my/api",api:"Qili"}))
-					.then(e=>onReady?.())
-				unsub()
 			}
+			unsub()
+			onReady?.()
 		})
 
 		return data
@@ -886,4 +888,12 @@ export function isAdminLogin(state){
 
 export function getTalkApiState(state){
 	return state[TalkApi.reducerPath]
+}
+
+export function isAlreadyFamiliar(state){
+	return state.my.i>10
+}
+
+export function isOnlyAudio(url){
+	return typeof(url)=="string" && url.indexOf("video.mp4")!=-1
 }

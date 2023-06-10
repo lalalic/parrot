@@ -42,15 +42,20 @@ export default ()=>{
 
         sections.push(
             {title:"Developer", data:[
-                /*{name:"Admin", icon:"person-pin-circle", href:"/admin"},
-                {name:"Test", icon:"file-present"},*/
+                /*{name:"Test", icon:"file-present"},*/
+                {name:"Admin", icon:"person-pin-circle", href:"/admin"},
                 {name:"Files", icon:"file-present"},
-                {name:"Logs", icon: "av-timer"},
+                globalThis.logFile ? {name:"Logs", icon: "av-timer"} : false,
                 {name:"Clear TalkApi", icon: "cleaning-services", onPress:e=>dispatch(TalkApi.util.resetApiState())},
                 {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
-            ]}
+            ].filter(a=>!!a)}
         )
     }
+
+    sections[0].data.push({
+        name:"About", 
+        icon:"info-outline"
+    })
     
     return (
         <View style={{flex: 1,padding:4, paddingTop:20}}>
@@ -73,7 +78,7 @@ export default ()=>{
                     )
                     return onPress ? 
                         (<Pressable {...{children:content, onPress}}/>)
-                        :(<Link to={href} children={content}/>)
+                        :(!!!children ? <Link to={href} children={content}/> : content)
                 }} 
                 sections={sections} /> 
         </View>

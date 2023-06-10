@@ -987,12 +987,6 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@babel/runtime@^7.18.6":
-  version "7.20.0"
-  resolved "https://registry.npmmirror.com/@babel/runtime/-/runtime-7.20.0.tgz#824a9ef325ffde6f78056059db3168c08785e24a"
-  dependencies:
-    regenerator-runtime "^0.13.10"
-
 "@babel/runtime@^7.21.0":
   version "7.21.5"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.21.5.tgz#8492dddda9644ae3bda3b45eabe87382caee7200"
@@ -1162,26 +1156,6 @@
     xcode "^3.0.1"
     xml2js "^0.4.23"
 
-"@expo/config-plugins@^4.0.16":
-  version "4.1.5"
-  resolved "https://registry.npmmirror.com/@expo/config-plugins/-/config-plugins-4.1.5.tgz#9d357d2cda9c095e511b51583ede8a3b76174068"
-  dependencies:
-    "@expo/config-types" "^45.0.0"
-    "@expo/json-file" "8.2.36"
-    "@expo/plist" "0.0.18"
-    "@expo/sdk-runtime-versions" "^1.0.0"
-    "@react-native/normalize-color" "^2.0.0"
-    chalk "^4.1.2"
-    debug "^4.3.1"
-    find-up "~5.0.0"
-    getenv "^1.0.0"
-    glob "7.1.6"
-    resolve-from "^5.0.0"
-    semver "^7.3.5"
-    slash "^3.0.0"
-    xcode "^3.0.1"
-    xml2js "0.4.23"
-
 "@expo/config-plugins@^5.0.1":
   version "5.0.4"
   resolved "https://registry.yarnpkg.com/@expo/config-plugins/-/config-plugins-5.0.4.tgz#216fea6558fe66615af1370de55193f4181cb23e"
@@ -1245,10 +1219,6 @@
 "@expo/config-types@^41.0.0":
   version "41.0.0"
   resolved "https://registry.npmmirror.com/@expo/config-types/-/config-types-41.0.0.tgz#ffe1444c6c26e0e3a8f7149b4afe486e357536d1"
-
-"@expo/config-types@^45.0.0":
-  version "45.0.0"
-  resolved "https://registry.npmmirror.com/@expo/config-types/-/config-types-45.0.0.tgz#963c2fdce8fbcbd003758b92ed8a25375f437ef6"
 
 "@expo/config-types@^46.0.0", "@expo/config-types@^46.0.1":
   version "46.0.2"
@@ -1774,20 +1744,6 @@
   dependencies:
     dequal "^1.0.0"
 
-"@mapbox/node-pre-gyp@1.0.9":
-  version "1.0.9"
-  resolved "https://registry.yarnpkg.com/@mapbox/node-pre-gyp/-/node-pre-gyp-1.0.9.tgz#09a8781a3a036151cdebbe8719d6f8b25d4058bc"
-  dependencies:
-    detect-libc "^2.0.0"
-    https-proxy-agent "^5.0.0"
-    make-dir "^3.1.0"
-    node-fetch "^2.6.7"
-    nopt "^5.0.0"
-    npmlog "^5.0.1"
-    rimraf "^3.0.2"
-    semver "^7.3.5"
-    tar "^6.1.11"
-
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.npmmirror.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -2001,7 +1957,7 @@
   version "1.0.0"
   resolved "https://registry.npmmirror.com/@react-native/assets/-/assets-1.0.0.tgz#c6f9bf63d274bafc8e970628de24986b30a55c8e"
 
-"@react-native/normalize-color@*", "@react-native/normalize-color@2.0.0", "@react-native/normalize-color@^2.0.0":
+"@react-native/normalize-color@2.0.0", "@react-native/normalize-color@^2.0.0":
   version "2.0.0"
   resolved "https://registry.npmmirror.com/@react-native/normalize-color/-/normalize-color-2.0.0.tgz#da955909432474a9a0fe1cbffc66576a0447f567"
 
@@ -2054,81 +2010,6 @@
   resolved "https://registry.npmmirror.com/@sinonjs/fake-timers/-/fake-timers-6.0.1.tgz#293674fccb3262ac782c7aadfdeca86b10c75c40"
   dependencies:
     "@sinonjs/commons" "^1.7.0"
-
-"@tensorflow/tfjs-backend-cpu@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-backend-cpu/-/tfjs-backend-cpu-4.4.0.tgz#c6700c6285f012d06ba030422850aba68e883b24"
-  dependencies:
-    "@types/seedrandom" "^2.4.28"
-    seedrandom "^3.0.5"
-
-"@tensorflow/tfjs-backend-webgl@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-backend-webgl/-/tfjs-backend-webgl-4.4.0.tgz#3f328488df7abd3e5e677d18feb125d75ac0e2c4"
-  dependencies:
-    "@tensorflow/tfjs-backend-cpu" "4.4.0"
-    "@types/offscreencanvas" "~2019.3.0"
-    "@types/seedrandom" "^2.4.28"
-    "@types/webgl-ext" "0.0.30"
-    seedrandom "^3.0.5"
-
-"@tensorflow/tfjs-converter@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-converter/-/tfjs-converter-4.4.0.tgz#3ff3095f32efd05b948f6080a4fb5df0ff9ffde4"
-
-"@tensorflow/tfjs-core@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-core/-/tfjs-core-4.4.0.tgz#5b3abce8149330ca8091a7d6e4137e188ea1f3e9"
-  dependencies:
-    "@types/long" "^4.0.1"
-    "@types/offscreencanvas" "~2019.7.0"
-    "@types/seedrandom" "^2.4.28"
-    "@types/webgl-ext" "0.0.30"
-    "@webgpu/types" "0.1.30"
-    long "4.0.0"
-    node-fetch "~2.6.1"
-    seedrandom "^3.0.5"
-
-"@tensorflow/tfjs-data@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-data/-/tfjs-data-4.4.0.tgz#ea0bb00653db24d25f20225b98891ba90705e348"
-  dependencies:
-    "@types/node-fetch" "^2.1.2"
-    node-fetch "~2.6.1"
-    string_decoder "^1.3.0"
-
-"@tensorflow/tfjs-layers@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs-layers/-/tfjs-layers-4.4.0.tgz#2797676d6040d9739a74615974b83722db2548e7"
-
-"@tensorflow/tfjs-node@^4.4.0":
-  version "4.4.0"
-  resolved "https://registry.yarnpkg.com/@tensorflow/tfjs-node/-/tfjs-node-4.4.0.tgz#9b64894cf75ef61b92736bbe7ee53ab882fbe806"
-  dependencies:
-    "@mapbox/node-pre-gyp" "1.0.9"
-    "@tensorflow/tfjs" "4.4.0"
-    adm-zip "^0.5.2"
-    google-protobuf "^3.9.2"
-    https-proxy-agent "^2.2.1"
-    progress "^2.0.0"
-    rimraf "^2.6.2"
-    tar "^4.4.6"
-
-"@tensorflow/tfjs@4.4.0":
-  version "4.4.0"
-  resolved "https://registry.npmmirror.com/@tensorflow/tfjs/-/tfjs-4.4.0.tgz#cea9f10bc1eb16a4308d1906d2d8d2a7591731f9"
-  dependencies:
-    "@tensorflow/tfjs-backend-cpu" "4.4.0"
-    "@tensorflow/tfjs-backend-webgl" "4.4.0"
-    "@tensorflow/tfjs-converter" "4.4.0"
-    "@tensorflow/tfjs-core" "4.4.0"
-    "@tensorflow/tfjs-data" "4.4.0"
-    "@tensorflow/tfjs-layers" "4.4.0"
-    argparse "^1.0.10"
-    chalk "^4.1.0"
-    core-js "3.29.1"
-    regenerator-runtime "^0.13.5"
-    yargs "^16.0.3"
 
 "@tootallnate/once@1":
   version "1.1.2"
@@ -2192,17 +2073,6 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/long@^4.0.1":
-  version "4.0.2"
-  resolved "https://registry.npmmirror.com/@types/long/-/long-4.0.2.tgz#b74129719fc8d11c01868010082d483b7545591a"
-
-"@types/node-fetch@^2.1.2":
-  version "2.6.3"
-  resolved "https://registry.npmmirror.com/@types/node-fetch/-/node-fetch-2.6.3.tgz#175d977f5e24d93ad0f57602693c435c57ad7e80"
-  dependencies:
-    "@types/node" "*"
-    form-data "^3.0.0"
-
 "@types/node@*":
   version "18.11.0"
   resolved "https://registry.npmmirror.com/@types/node/-/node-18.11.0.tgz#f38c7139247a1d619f6cc6f27b072606af7c289d"
@@ -2210,14 +2080,6 @@
 "@types/normalize-package-data@^2.4.0":
   version "2.4.1"
   resolved "https://registry.npmmirror.com/@types/normalize-package-data/-/normalize-package-data-2.4.1.tgz#d3357479a0fdfdd5907fe67e17e0a85c906e1301"
-
-"@types/offscreencanvas@~2019.3.0":
-  version "2019.3.0"
-  resolved "https://registry.npmmirror.com/@types/offscreencanvas/-/offscreencanvas-2019.3.0.tgz#3336428ec7e9180cf4566dfea5da04eb586a6553"
-
-"@types/offscreencanvas@~2019.7.0":
-  version "2019.7.0"
-  resolved "https://registry.npmmirror.com/@types/offscreencanvas/-/offscreencanvas-2019.7.0.tgz#e4a932069db47bb3eabeb0b305502d01586fa90d"
 
 "@types/prettier@^2.0.0":
   version "2.7.1"
@@ -2249,10 +2111,6 @@
   version "0.16.2"
   resolved "https://registry.npmmirror.com/@types/scheduler/-/scheduler-0.16.2.tgz#1a62f89525723dde24ba1b01b092bf5df8ad4d39"
 
-"@types/seedrandom@^2.4.28":
-  version "2.4.30"
-  resolved "https://registry.npmmirror.com/@types/seedrandom/-/seedrandom-2.4.30.tgz#d2efe425869b84163c2d56e779dddadb9372cbfa"
-
 "@types/stack-utils@^2.0.0":
   version "2.0.1"
   resolved "https://registry.npmmirror.com/@types/stack-utils/-/stack-utils-2.0.1.tgz#20f18294f797f2209b5f65c8e3b5c8e8261d127c"
@@ -2260,10 +2118,6 @@
 "@types/use-sync-external-store@^0.0.3":
   version "0.0.3"
   resolved "https://registry.npmmirror.com/@types/use-sync-external-store/-/use-sync-external-store-0.0.3.tgz#b6725d5f4af24ace33b36fafd295136e75509f43"
-
-"@types/webgl-ext@0.0.30":
-  version "0.0.30"
-  resolved "https://registry.npmmirror.com/@types/webgl-ext/-/webgl-ext-0.0.30.tgz#0ce498c16a41a23d15289e0b844d945b25f0fb9d"
 
 "@types/yargs-parser@*":
   version "21.0.0"
@@ -2306,17 +2160,6 @@
     "@urql/core" ">=2.3.1"
     wonka "^4.0.14"
 
-"@viro-community/react-viro@^2.23.0":
-  version "2.23.0"
-  resolved "https://registry.npmmirror.com/@viro-community/react-viro/-/react-viro-2.23.0.tgz#ebafdf9f20eb704dc800677dab2b2d2efd55d851"
-  dependencies:
-    "@expo/config-plugins" "^4.0.16"
-    react "^17.0.2"
-
-"@webgpu/types@0.1.30":
-  version "0.1.30"
-  resolved "https://registry.npmmirror.com/@webgpu/types/-/types-0.1.30.tgz#b6406dc4a1c1e0d469028ceb30ddffbbd2fa706c"
-
 "@xmldom/xmldom@~0.7.0":
   version "0.7.5"
   resolved "https://registry.npmmirror.com/@xmldom/xmldom/-/xmldom-0.7.5.tgz#09fa51e356d07d0be200642b0e4f91d8e6dd408d"
@@ -2332,10 +2175,6 @@
 abab@^2.0.3, abab@^2.0.5:
   version "2.0.6"
   resolved "https://registry.npmmirror.com/abab/-/abab-2.0.6.tgz#41b80f2c871d19686216b82309231cfd3cb3d291"
-
-abbrev@1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.1.1.tgz#f8f2c887ad10bf67f634f005b6987fed3179aac8"
 
 abort-controller@^3.0.0:
   version "3.0.0"
@@ -2373,21 +2212,11 @@ acorn@^8.2.4:
   version "8.8.1"
   resolved "https://registry.npmmirror.com/acorn/-/acorn-8.8.1.tgz#0a3f9cbecc4ec3bea6f0a80b66ae8dd2da250b73"
 
-adm-zip@^0.5.2:
-  version "0.5.10"
-  resolved "https://registry.yarnpkg.com/adm-zip/-/adm-zip-0.5.10.tgz#4a51d5ab544b1f5ce51e1b9043139b639afff45b"
-
 agent-base@6:
   version "6.0.2"
   resolved "https://registry.npmmirror.com/agent-base/-/agent-base-6.0.2.tgz#49fff58577cfee3f37176feab4c22e00f86d7f77"
   dependencies:
     debug "4"
-
-agent-base@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/agent-base/-/agent-base-4.3.0.tgz#8165f01c436009bccad0b1d122f05ed770efc6ee"
-  dependencies:
-    es6-promisify "^5.0.0"
 
 aggregate-error@^3.0.0:
   version "3.1.0"
@@ -2477,22 +2306,11 @@ application-config-path@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmmirror.com/application-config-path/-/application-config-path-0.1.0.tgz#193c5f0a86541a4c66fba1e2dc38583362ea5e8f"
 
-"aproba@^1.0.3 || ^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/aproba/-/aproba-2.0.0.tgz#52520b8ae5b569215b354efc0caa3fe1e45a8adc"
-
-are-we-there-yet@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/are-we-there-yet/-/are-we-there-yet-2.0.0.tgz#372e0e7bd279d8e94c653aaa1f67200884bf3e1c"
-  dependencies:
-    delegates "^1.0.0"
-    readable-stream "^3.6.0"
-
 arg@4.1.0:
   version "4.1.0"
   resolved "https://registry.npmmirror.com/arg/-/arg-4.1.0.tgz#583c518199419e0037abb74062c37f8519e575f0"
 
-argparse@^1.0.10, argparse@^1.0.7:
+argparse@^1.0.7:
   version "1.0.10"
   resolved "https://registry.npmmirror.com/argparse/-/argparse-1.0.10.tgz#bcd6791ea5ae09725e17e5ad988134cd40b3d911"
   dependencies:
@@ -2867,7 +2685,7 @@ buffer-from@^1.0.0:
   version "1.1.2"
   resolved "https://registry.npmmirror.com/buffer-from/-/buffer-from-1.1.2.tgz#2b146a6fd72e80b4f55d255f35ed59a3a9a41bd5"
 
-buffer@^5.5.0:
+buffer@^5.4.3, buffer@^5.5.0:
   version "5.7.1"
   resolved "https://registry.npmmirror.com/buffer/-/buffer-5.7.1.tgz#ba62e7c13133053582197160851a8f648e99eed0"
   dependencies:
@@ -3021,10 +2839,6 @@ cheerio@^1.0.0-rc.12:
     parse5 "^7.0.0"
     parse5-htmlparser2-tree-adapter "^7.0.0"
 
-chownr@^1.1.4:
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/chownr/-/chownr-1.1.4.tgz#6fc9d7b42d32a583596337666e7d08084da2cc6b"
-
 chownr@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmmirror.com/chownr/-/chownr-2.0.0.tgz#15bfbe53d2eab4cf70f18a8cd68ebe5b3cb1dece"
@@ -3077,14 +2891,6 @@ cliui@^6.0.0:
     string-width "^4.2.0"
     strip-ansi "^6.0.0"
     wrap-ansi "^6.2.0"
-
-cliui@^7.0.2:
-  version "7.0.4"
-  resolved "https://registry.npmmirror.com/cliui/-/cliui-7.0.4.tgz#a0265ee655476fc807aea9df3df8df7783808b4f"
-  dependencies:
-    string-width "^4.2.0"
-    strip-ansi "^6.0.0"
-    wrap-ansi "^7.0.0"
 
 clone-deep@^4.0.1:
   version "4.0.1"
@@ -3143,10 +2949,6 @@ color-string@^1.5.3:
   dependencies:
     color-name "^1.0.0"
     simple-swizzle "^0.2.2"
-
-color-support@^1.1.2:
-  version "1.1.3"
-  resolved "https://registry.yarnpkg.com/color-support/-/color-support-1.1.3.tgz#93834379a1cc9a0c61f82f52f0d04322251bd5a2"
 
 colorette@^1.0.7:
   version "1.4.0"
@@ -3229,10 +3031,6 @@ connect@^3.6.5, connect@^3.7.0:
     parseurl "~1.3.3"
     utils-merge "1.0.1"
 
-console-control-strings@^1.0.0, console-control-strings@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/console-control-strings/-/console-control-strings-1.1.0.tgz#3d7cf4464db6446ea644bf4b39507f9851008e8e"
-
 content-type@~1.0.4:
   version "1.0.4"
   resolved "https://registry.npmmirror.com/content-type/-/content-type-1.0.4.tgz#e138cc75e040c727b1966fe5e5f8c9aee256fe3b"
@@ -3251,10 +3049,6 @@ core-js-compat@^3.25.1:
   dependencies:
     browserslist "^4.21.4"
 
-core-js@3.29.1:
-  version "3.29.1"
-  resolved "https://registry.npmmirror.com/core-js/-/core-js-3.29.1.tgz#40ff3b41588b091aaed19ca1aa5cb111803fa9a6"
-
 core-js@^1.0.0:
   version "1.2.7"
   resolved "https://registry.npmmirror.com/core-js/-/core-js-1.2.7.tgz#652294c14651db28fa93bd2d5ff2983a4f08c636"
@@ -3271,13 +3065,6 @@ cosmiconfig@^5.0.5, cosmiconfig@^5.1.0:
     is-directory "^0.3.1"
     js-yaml "^3.13.1"
     parse-json "^4.0.0"
-
-create-react-class@^15.7.0:
-  version "15.7.0"
-  resolved "https://registry.npmmirror.com/create-react-class/-/create-react-class-15.7.0.tgz#7499d7ca2e69bb51d13faf59bd04f0c65a1d6c1e"
-  dependencies:
-    loose-envify "^1.3.1"
-    object-assign "^4.1.1"
 
 cross-fetch@^3.1.5:
   version "3.1.5"
@@ -3314,13 +3101,6 @@ crypto-random-string@^1.0.0:
 crypto-random-string@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmmirror.com/crypto-random-string/-/crypto-random-string-2.0.0.tgz#ef2a7a966ec11083388369baa02ebead229b30d5"
-
-css-in-js-utils@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.npmmirror.com/css-in-js-utils/-/css-in-js-utils-2.0.1.tgz#3b472b398787291b47cfe3e44fecfdd9e914ba99"
-  dependencies:
-    hyphenate-style-name "^1.0.2"
-    isobject "^3.0.1"
 
 css-select@^5.1.0:
   version "5.1.0"
@@ -3486,10 +3266,6 @@ delayed-stream@~1.0.0:
   version "1.0.0"
   resolved "https://registry.npmmirror.com/delayed-stream/-/delayed-stream-1.0.0.tgz#df3ae199acadfb7d440aaae0b29e2272b24ec619"
 
-delegates@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/delegates/-/delegates-1.0.0.tgz#84c6e159b81904fdca59a0ef44cd870d31250f9a"
-
 denodeify@^1.2.1:
   version "1.2.1"
   resolved "https://registry.npmmirror.com/denodeify/-/denodeify-1.2.1.tgz#3a36287f5034e699e7577901052c2e6c94251631"
@@ -3502,14 +3278,6 @@ depd@~1.1.2:
   version "1.1.2"
   resolved "https://registry.npmmirror.com/depd/-/depd-1.1.2.tgz#9bcd52e14c097763e749b274c4346ed2e560b5a9"
 
-deprecated-react-native-prop-types@^2.2.0:
-  version "2.3.0"
-  resolved "https://registry.npmmirror.com/deprecated-react-native-prop-types/-/deprecated-react-native-prop-types-2.3.0.tgz#c10c6ee75ff2b6de94bb127f142b814e6e08d9ab"
-  dependencies:
-    "@react-native/normalize-color" "*"
-    invariant "*"
-    prop-types "*"
-
 dequal@^1.0.0:
   version "1.0.1"
   resolved "https://registry.npmmirror.com/dequal/-/dequal-1.0.1.tgz#dbbf9795ec626e9da8bd68782f4add1d23700d8b"
@@ -3517,10 +3285,6 @@ dequal@^1.0.0:
 destroy@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmmirror.com/destroy/-/destroy-1.2.0.tgz#4803735509ad8be552934c67df614f94e66fa015"
-
-detect-libc@^2.0.0:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/detect-libc/-/detect-libc-2.0.1.tgz#e1897aa88fa6ad197862937fbc0441ef352ee0cd"
 
 detect-newline@^3.0.0:
   version "3.1.0"
@@ -3575,10 +3339,6 @@ ee-first@1.1.1:
 electron-to-chromium@^1.4.251:
   version "1.4.284"
   resolved "https://registry.npmmirror.com/electron-to-chromium/-/electron-to-chromium-1.4.284.tgz#61046d1e4cab3a25238f6bf7413795270f125592"
-
-eme-encryption-scheme-polyfill@^2.0.1:
-  version "2.1.1"
-  resolved "https://registry.npmmirror.com/eme-encryption-scheme-polyfill/-/eme-encryption-scheme-polyfill-2.1.1.tgz#91c823ed584e8ec5a9f03a6a676def8f80c57a4c"
 
 emittery@^0.7.1:
   version "0.7.2"
@@ -3638,16 +3398,6 @@ errorhandler@^1.5.0:
   dependencies:
     accepts "~1.3.7"
     escape-html "~1.0.3"
-
-es6-promise@^4.0.3:
-  version "4.2.8"
-  resolved "https://registry.yarnpkg.com/es6-promise/-/es6-promise-4.2.8.tgz#4eb21594c972bc40553d276e510539143db53e0a"
-
-es6-promisify@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/es6-promisify/-/es6-promisify-5.0.0.tgz#5109d62f3e56ea967c4b63505aef08291c8a5203"
-  dependencies:
-    es6-promise "^4.0.3"
 
 escalade@^3.1.1:
   version "3.1.1"
@@ -3904,17 +3654,6 @@ expo-font@~10.2.1:
   dependencies:
     fontfaceobserver "^2.1.0"
 
-expo-gl-cpp@~11.4.0:
-  version "11.4.0"
-  resolved "https://registry.npmmirror.com/expo-gl-cpp/-/expo-gl-cpp-11.4.0.tgz#62b4b5c61ef065e94aa790a872aad2eee2ae11ea"
-
-expo-gl@~11.4.0:
-  version "11.4.0"
-  resolved "https://registry.npmmirror.com/expo-gl/-/expo-gl-11.4.0.tgz#0aa6b05908f1a8405f804f3e1a360a215569b9f2"
-  dependencies:
-    expo-gl-cpp "~11.4.0"
-    invariant "^2.2.4"
-
 expo-image-loader@~3.2.0:
   version "3.2.0"
   resolved "https://registry.npmmirror.com/expo-image-loader/-/expo-image-loader-3.2.0.tgz#d98b021660edef7243f7c5ec011b8d0545626d41"
@@ -4116,7 +3855,7 @@ fbjs@^0.8.9:
     setimmediate "^1.0.5"
     ua-parser-js "^0.7.30"
 
-fbjs@^3.0.0, fbjs@^3.0.4:
+fbjs@^3.0.0:
   version "3.0.4"
   resolved "https://registry.npmmirror.com/fbjs/-/fbjs-3.0.4.tgz#e1871c6bd3083bac71ff2da868ad5067d37716c6"
   dependencies:
@@ -4284,12 +4023,6 @@ fs-extra@^9.0.0, fs-extra@^9.1.0:
     jsonfile "^6.0.1"
     universalify "^2.0.0"
 
-fs-minipass@^1.2.7:
-  version "1.2.7"
-  resolved "https://registry.yarnpkg.com/fs-minipass/-/fs-minipass-1.2.7.tgz#ccff8570841e7fe4265693da88936c55aed7f7c7"
-  dependencies:
-    minipass "^2.6.0"
-
 fs-minipass@^2.0.0:
   version "2.1.0"
   resolved "https://registry.npmmirror.com/fs-minipass/-/fs-minipass-2.1.0.tgz#7f5036fdbf12c63c169190cbe4199c852271f9fb"
@@ -4308,25 +4041,11 @@ function-bind@^1.1.1:
   version "1.1.1"
   resolved "https://registry.npmmirror.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
 
-gauge@^3.0.0:
-  version "3.0.2"
-  resolved "https://registry.yarnpkg.com/gauge/-/gauge-3.0.2.tgz#03bf4441c044383908bcfa0656ad91803259b395"
-  dependencies:
-    aproba "^1.0.3 || ^2.0.0"
-    color-support "^1.1.2"
-    console-control-strings "^1.0.0"
-    has-unicode "^2.0.1"
-    object-assign "^4.1.1"
-    signal-exit "^3.0.0"
-    string-width "^4.2.3"
-    strip-ansi "^6.0.1"
-    wide-align "^1.1.2"
-
 gensync@^1.0.0-beta.2:
   version "1.0.0-beta.2"
   resolved "https://registry.npmmirror.com/gensync/-/gensync-1.0.0-beta.2.tgz#32a6ee76c3d7f52d46b2b1ae5d93fea8580a25e0"
 
-get-caller-file@^2.0.1, get-caller-file@^2.0.5:
+get-caller-file@^2.0.1:
   version "2.0.5"
   resolved "https://registry.npmmirror.com/get-caller-file/-/get-caller-file-2.0.5.tgz#4f94412a82db32f36e3b0b9741f8a97feb031f7e"
 
@@ -4419,10 +4138,6 @@ globby@^11.0.1:
     merge2 "^1.4.1"
     slash "^3.0.0"
 
-google-protobuf@^3.9.2:
-  version "3.21.2"
-  resolved "https://registry.yarnpkg.com/google-protobuf/-/google-protobuf-3.21.2.tgz#4580a2bea8bbb291ee579d1fefb14d6fa3070ea4"
-
 graceful-fs@^4.1.11, graceful-fs@^4.1.2, graceful-fs@^4.1.3, graceful-fs@^4.1.6, graceful-fs@^4.1.9, graceful-fs@^4.2.0, graceful-fs@^4.2.4, graceful-fs@^4.2.9:
   version "4.2.10"
   resolved "https://registry.npmmirror.com/graceful-fs/-/graceful-fs-4.2.10.tgz#147d3a006da4ca3ce14728c7aefc287c367d7a6c"
@@ -4458,10 +4173,6 @@ has-property-descriptors@^1.0.0:
 has-symbols@^1.0.3:
   version "1.0.3"
   resolved "https://registry.npmmirror.com/has-symbols/-/has-symbols-1.0.3.tgz#bb7b2c4349251dce87b125f7bdf874aa7c8b39f8"
-
-has-unicode@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.yarnpkg.com/has-unicode/-/has-unicode-2.0.1.tgz#e0e6fe6a28cf51138855e086d1691e771de2a8b9"
 
 has-value@^0.3.1:
   version "0.3.1"
@@ -4579,13 +4290,6 @@ http-proxy-agent@^4.0.1:
     agent-base "6"
     debug "4"
 
-https-proxy-agent@^2.2.1:
-  version "2.2.4"
-  resolved "https://registry.yarnpkg.com/https-proxy-agent/-/https-proxy-agent-2.2.4.tgz#4ee7a737abd92678a293d9b34a1af4d0d08c787b"
-  dependencies:
-    agent-base "^4.3.0"
-    debug "^3.1.0"
-
 https-proxy-agent@^5.0.0:
   version "5.0.1"
   resolved "https://registry.npmmirror.com/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz#c59ef224a04fe8b754f3db0063a25ea30d0005d6"
@@ -4596,10 +4300,6 @@ https-proxy-agent@^5.0.0:
 human-signals@^1.1.1:
   version "1.1.1"
   resolved "https://registry.npmmirror.com/human-signals/-/human-signals-1.1.1.tgz#c5b1cd14f50aeae09ab6c59fe63ba3395fe4dfa3"
-
-hyphenate-style-name@^1.0.2:
-  version "1.0.4"
-  resolved "https://registry.npmmirror.com/hyphenate-style-name/-/hyphenate-style-name-1.0.4.tgz#691879af8e220aea5750e8827db4ef62a54e361d"
 
 iconv-lite@0.4.24:
   version "0.4.24"
@@ -4678,12 +4378,6 @@ ini@~1.3.0:
   version "1.3.8"
   resolved "https://registry.npmmirror.com/ini/-/ini-1.3.8.tgz#a29da425b48806f34767a4efce397269af28432c"
 
-inline-style-prefixer@^6.0.1:
-  version "6.0.1"
-  resolved "https://registry.npmmirror.com/inline-style-prefixer/-/inline-style-prefixer-6.0.1.tgz#c5c0e43ba8831707afc5f5bbfd97edf45c1fa7ae"
-  dependencies:
-    css-in-js-utils "^2.0.0"
-
 internal-ip@4.3.0:
   version "4.3.0"
   resolved "https://registry.npmmirror.com/internal-ip/-/internal-ip-4.3.0.tgz#845452baad9d2ca3b69c635a137acb9a0dad0907"
@@ -4691,7 +4385,7 @@ internal-ip@4.3.0:
     default-gateway "^4.2.0"
     ipaddr.js "^1.9.0"
 
-invariant@*, invariant@2.2.4, invariant@^2.2.4:
+invariant@2.2.4, invariant@^2.2.4:
   version "2.2.4"
   resolved "https://registry.npmmirror.com/invariant/-/invariant-2.2.4.tgz#610f3c92c9359ce1db616e538008d23ff35158e6"
   dependencies:
@@ -5596,10 +5290,6 @@ jsonfile@^6.0.1:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
-keymirror@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.npmmirror.com/keymirror/-/keymirror-0.1.1.tgz#918889ea13f8d0a42e7c557250eee713adc95c35"
-
 kind-of@^3.0.2, kind-of@^3.0.3, kind-of@^3.2.0:
   version "3.2.2"
   resolved "https://registry.npmmirror.com/kind-of/-/kind-of-3.2.2.tgz#31ea21a734bab9bbb0f32466d893aea51e4a3c64"
@@ -5703,11 +5393,7 @@ logkitty@^0.7.1:
     dayjs "^1.8.15"
     yargs "^15.1.0"
 
-long@4.0.0:
-  version "4.0.0"
-  resolved "https://registry.npmmirror.com/long/-/long-4.0.0.tgz#9a7b71cfb7d361a194ea555241c92f7468d5bf28"
-
-loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.3.1, loose-envify@^1.4.0:
+loose-envify@^1.0.0, loose-envify@^1.1.0, loose-envify@^1.4.0:
   version "1.4.0"
   resolved "https://registry.npmmirror.com/loose-envify/-/loose-envify-1.4.0.tgz#71ee51fa7be4caec1a63839f7e682d8132d30caf"
   dependencies:
@@ -5726,7 +5412,7 @@ make-dir@^2.0.0, make-dir@^2.1.0:
     pify "^4.0.1"
     semver "^5.6.0"
 
-make-dir@^3.0.0, make-dir@^3.1.0:
+make-dir@^3.0.0:
   version "3.1.0"
   resolved "https://registry.npmmirror.com/make-dir/-/make-dir-3.1.0.tgz#415e967046b3a7f1d185277d84aa58203726a13f"
   dependencies:
@@ -6112,28 +5798,11 @@ minipass@3.1.6:
   dependencies:
     yallist "^4.0.0"
 
-minipass@^2.6.0, minipass@^2.9.0:
-  version "2.9.0"
-  resolved "https://registry.yarnpkg.com/minipass/-/minipass-2.9.0.tgz#e713762e7d3e32fed803115cf93e04bca9fcc9a6"
-  dependencies:
-    safe-buffer "^5.1.2"
-    yallist "^3.0.0"
-
 minipass@^3.0.0, minipass@^3.1.1:
   version "3.3.4"
   resolved "https://registry.npmmirror.com/minipass/-/minipass-3.3.4.tgz#ca99f95dd77c43c7a76bf51e6d200025eee0ffae"
   dependencies:
     yallist "^4.0.0"
-
-minipass@^4.0.0:
-  version "4.2.8"
-  resolved "https://registry.yarnpkg.com/minipass/-/minipass-4.2.8.tgz#f0010f64393ecfc1d1ccb5f582bcaf45f48e1a3a"
-
-minizlib@^1.3.3:
-  version "1.3.3"
-  resolved "https://registry.yarnpkg.com/minizlib/-/minizlib-1.3.3.tgz#2290de96818a34c29551c8a8d301216bd65a861d"
-  dependencies:
-    minipass "^2.9.0"
 
 minizlib@^2.1.1:
   version "2.1.2"
@@ -6149,7 +5818,7 @@ mixin-deep@^1.2.0:
     for-in "^1.0.2"
     is-extendable "^1.0.1"
 
-mkdirp@^0.5.1, mkdirp@^0.5.5, mkdirp@~0.5.1:
+mkdirp@^0.5.1, mkdirp@~0.5.1:
   version "0.5.6"
   resolved "https://registry.npmmirror.com/mkdirp/-/mkdirp-0.5.6.tgz#7def03d2432dcae4ba1d611445c48396062255f6"
   dependencies:
@@ -6254,12 +5923,6 @@ node-fetch@^1.0.1:
     encoding "^0.1.11"
     is-stream "^1.0.1"
 
-node-fetch@~2.6.1:
-  version "2.6.9"
-  resolved "https://registry.npmmirror.com/node-fetch/-/node-fetch-2.6.9.tgz#7c7f744b5cc6eb5fd404e0c7a9fec630a55657e6"
-  dependencies:
-    whatwg-url "^5.0.0"
-
 node-forge@^1.2.1, node-forge@^1.3.1:
   version "1.3.1"
   resolved "https://registry.npmmirror.com/node-forge/-/node-forge-1.3.1.tgz#be8da2af243b2417d5f646a770663a92b7e9ded3"
@@ -6286,16 +5949,6 @@ node-releases@^2.0.6:
 node-stream-zip@^1.9.1:
   version "1.15.0"
   resolved "https://registry.npmmirror.com/node-stream-zip/-/node-stream-zip-1.15.0.tgz#158adb88ed8004c6c49a396b50a6a5de3bca33ea"
-
-nopt@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/nopt/-/nopt-5.0.0.tgz#530942bb58a512fccafe53fe210f13a25355dc88"
-  dependencies:
-    abbrev "1"
-
-normalize-css-color@^1.0.2:
-  version "1.0.2"
-  resolved "https://registry.npmmirror.com/normalize-css-color/-/normalize-css-color-1.0.2.tgz#02991e97cccec6623fe573afbbf0de6a1f3e9f8d"
 
 normalize-package-data@^2.5.0:
   version "2.5.0"
@@ -6336,15 +5989,6 @@ npm-run-path@^4.0.0:
   resolved "https://registry.npmmirror.com/npm-run-path/-/npm-run-path-4.0.1.tgz#b7ecd1e5ed53da8e37a55e1c2269e0b97ed748ea"
   dependencies:
     path-key "^3.0.0"
-
-npmlog@^5.0.1:
-  version "5.0.1"
-  resolved "https://registry.yarnpkg.com/npmlog/-/npmlog-5.0.1.tgz#f06678e80e29419ad67ab964e0fa69959c1eb8b0"
-  dependencies:
-    are-we-there-yet "^2.0.0"
-    console-control-strings "^1.1.0"
-    gauge "^3.0.0"
-    set-blocking "^2.0.0"
 
 nth-check@^2.0.1:
   version "2.1.1"
@@ -6717,10 +6361,6 @@ posix-character-classes@^0.1.0:
   version "0.1.1"
   resolved "https://registry.npmmirror.com/posix-character-classes/-/posix-character-classes-0.1.1.tgz#01eac0fe3b5af71a2a6c02feabb8c1fef7e00eab"
 
-postcss-value-parser@^4.2.0:
-  version "4.2.0"
-  resolved "https://registry.npmmirror.com/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz#723c09920836ba6d3e5af019f92bc0971c02e514"
-
 postinstall-postinstall@^2.1.0:
   version "2.1.0"
   resolved "https://registry.npmmirror.com/postinstall-postinstall/-/postinstall-postinstall-2.1.0.tgz#4f7f77441ef539d1512c40bd04c71b06a4704ca3"
@@ -6754,7 +6394,7 @@ process-nextick-args@~2.0.0:
   version "2.0.1"
   resolved "https://registry.npmmirror.com/process-nextick-args/-/process-nextick-args-2.0.1.tgz#7820d9b16120cc55ca9ae7792680ae7dba6d7fe2"
 
-progress@2.0.3, progress@^2.0.0:
+progress@2.0.3:
   version "2.0.3"
   resolved "https://registry.npmmirror.com/progress/-/progress-2.0.3.tgz#7e8cf8d8f5b8f239c1bc68beb4eb78567d572ef8"
 
@@ -6781,14 +6421,6 @@ prompts@^2.0.1, prompts@^2.2.1, prompts@^2.3.2, prompts@^2.4.0:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
-prop-types@*, prop-types@^15.5.10, prop-types@^15.7.2, prop-types@^15.7.x:
-  version "15.8.1"
-  resolved "https://registry.npmmirror.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
-  dependencies:
-    loose-envify "^1.4.0"
-    object-assign "^4.1.1"
-    react-is "^16.13.1"
-
 prop-types@15.5.8:
   version "15.5.8"
   resolved "https://registry.npmmirror.com/prop-types/-/prop-types-15.5.8.tgz#6b7b2e141083be38c8595aa51fc55775c7199394"
@@ -6803,6 +6435,14 @@ prop-types@15.7.2:
     object-assign "^4.1.1"
     react-is "^16.8.1"
 
+prop-types@^15.5.10, prop-types@^15.7.x:
+  version "15.8.1"
+  resolved "https://registry.npmmirror.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
+  dependencies:
+    loose-envify "^1.4.0"
+    object-assign "^4.1.1"
+    react-is "^16.13.1"
+
 psl@^1.1.33:
   version "1.9.0"
   resolved "https://registry.npmmirror.com/psl/-/psl-1.9.0.tgz#d0df2a137f00794565fcaf3b2c00cd09f8d5a5a7"
@@ -6813,6 +6453,10 @@ pump@^3.0.0:
   dependencies:
     end-of-stream "^1.1.0"
     once "^1.3.1"
+
+punycode@1.3.2:
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/punycode/-/punycode-1.3.2.tgz#9653a036fb7c1ee42342f2325cceefea3926c48d"
 
 punycode@^2.1.0, punycode@^2.1.1:
   version "2.1.1"
@@ -6831,6 +6475,14 @@ qs@^6.9.1:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.11.2.tgz#64bea51f12c1f5da1bc01496f48ffcff7c69d7d9"
   dependencies:
     side-channel "^1.0.4"
+
+querystring@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/querystring/-/querystring-0.2.0.tgz#b209849203bb25df820da756e747005878521620"
+
+querystring@^0.2.1:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/querystring/-/querystring-0.2.1.tgz#40d77615bb09d16902a85c3e38aa8b5ed761c2dd"
 
 querystringify@^2.1.1:
   version "2.2.0"
@@ -6887,10 +6539,6 @@ react-is@^16.13.1, react-is@^16.7.0, react-is@^16.8.1:
 react-is@^17.0.1:
   version "17.0.2"
   resolved "https://registry.npmmirror.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
-
-"react-native-armotion@link:./react-native-armotion":
-  version "0.0.0"
-  uid ""
 
 react-native-calendars@^1.1291.0:
   version "1.1291.0"
@@ -6992,27 +6640,6 @@ react-native-uuid@^2.0.1:
   version "2.0.1"
   resolved "https://registry.yarnpkg.com/react-native-uuid/-/react-native-uuid-2.0.1.tgz#ed4e2dfb1683eddb66967eb5dca140dfe1abddb9"
 
-react-native-video@^5.2.1:
-  version "5.2.1"
-  resolved "https://registry.npmmirror.com/react-native-video/-/react-native-video-5.2.1.tgz#a17e856759d7e17eee9cbd9df0d05ba22e88d457"
-  dependencies:
-    deprecated-react-native-prop-types "^2.2.0"
-    keymirror "^0.1.1"
-    prop-types "^15.7.2"
-    shaka-player "^2.5.9"
-
-react-native-web@~0.18.7:
-  version "0.18.9"
-  resolved "https://registry.npmmirror.com/react-native-web/-/react-native-web-0.18.9.tgz#f5032e0b32ebe99c0ab22d13dbd8ca2944b08f12"
-  dependencies:
-    "@babel/runtime" "^7.18.6"
-    create-react-class "^15.7.0"
-    fbjs "^3.0.4"
-    inline-style-prefixer "^6.0.1"
-    normalize-css-color "^1.0.2"
-    postcss-value-parser "^4.2.0"
-    styleq "^0.1.2"
-
 react-native-webview@11.23.0:
   version "11.23.0"
   resolved "https://registry.yarnpkg.com/react-native-webview/-/react-native-webview-11.23.0.tgz#603a584236da2e993906e6a094f165dcac3a1fdb"
@@ -7025,6 +6652,14 @@ react-native-youtube-iframe@^2.2.2:
   resolved "https://registry.yarnpkg.com/react-native-youtube-iframe/-/react-native-youtube-iframe-2.2.2.tgz#ade1a2e4ead3d539fbb80463f45b59ff1b510b55"
   dependencies:
     events "^3.2.0"
+
+react-native-ytdl@^4.8.3:
+  version "4.8.3"
+  resolved "https://registry.yarnpkg.com/react-native-ytdl/-/react-native-ytdl-4.8.3.tgz#e871c0423468997d10ffa0ba1f2b8fd577a94be7"
+  dependencies:
+    querystring "^0.2.1"
+    url "~0.10.1"
+    whatwg-url-without-unicode "^8.0.0-3"
 
 react-native@0.69.9:
   version "0.69.9"
@@ -7121,13 +6756,6 @@ react@18.0.0:
   dependencies:
     loose-envify "^1.1.0"
 
-react@^17.0.2:
-  version "17.0.2"
-  resolved "https://registry.npmmirror.com/react/-/react-17.0.2.tgz#d0b5cc516d29eb3eee383f75b62864cfb6800037"
-  dependencies:
-    loose-envify "^1.1.0"
-    object-assign "^4.1.1"
-
 read-pkg-up@^7.0.1:
   version "7.0.1"
   resolved "https://registry.npmmirror.com/read-pkg-up/-/read-pkg-up-7.0.1.tgz#f3a6135758459733ae2b95638056e1854e7ef507"
@@ -7148,14 +6776,6 @@ read-pkg@^5.2.0:
 readable-stream@^3.4.0:
   version "3.6.0"
   resolved "https://registry.npmmirror.com/readable-stream/-/readable-stream-3.6.0.tgz#337bbda3adc0706bd3e024426a286d4b4b2c9198"
-  dependencies:
-    inherits "^2.0.3"
-    string_decoder "^1.1.1"
-    util-deprecate "^1.0.1"
-
-readable-stream@^3.6.0:
-  version "3.6.2"
-  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-3.6.2.tgz#56a9b36ea965c00c5a93ef31eb111a0f11056967"
   dependencies:
     inherits "^2.0.3"
     string_decoder "^1.1.1"
@@ -7222,13 +6842,13 @@ regenerate@^1.4.2:
   version "1.4.2"
   resolved "https://registry.npmmirror.com/regenerate/-/regenerate-1.4.2.tgz#b9346d8827e8f5a32f7ba29637d398b69014848a"
 
-regenerator-runtime@^0.13.10, regenerator-runtime@^0.13.2, regenerator-runtime@^0.13.4:
-  version "0.13.10"
-  resolved "https://registry.npmmirror.com/regenerator-runtime/-/regenerator-runtime-0.13.10.tgz#ed07b19616bcbec5da6274ebc75ae95634bfc2ee"
-
-regenerator-runtime@^0.13.11, regenerator-runtime@^0.13.5:
+regenerator-runtime@^0.13.11:
   version "0.13.11"
   resolved "https://registry.npmmirror.com/regenerator-runtime/-/regenerator-runtime-0.13.11.tgz#f6dca3e7ceec20590d07ada785636a90cdca17f9"
+
+regenerator-runtime@^0.13.2, regenerator-runtime@^0.13.4:
+  version "0.13.10"
+  resolved "https://registry.npmmirror.com/regenerator-runtime/-/regenerator-runtime-0.13.10.tgz#ed07b19616bcbec5da6274ebc75ae95634bfc2ee"
 
 regenerator-transform@^0.15.0:
   version "0.15.0"
@@ -7404,7 +7024,7 @@ safe-buffer@5.1.2, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.2"
   resolved "https://registry.npmmirror.com/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
 
-safe-buffer@^5.1.2, safe-buffer@^5.2.1, safe-buffer@~5.2.0:
+safe-buffer@~5.2.0:
   version "5.2.1"
   resolved "https://registry.npmmirror.com/safe-buffer/-/safe-buffer-5.2.1.tgz#1eaf9fa9bdb1fdd4ec75f58f9cdb4e6b7827eec6"
 
@@ -7457,10 +7077,6 @@ scheduler@^0.23.0:
   resolved "https://registry.npmmirror.com/scheduler/-/scheduler-0.23.0.tgz#ba8041afc3d30eb206a487b6b384002e4e61fdfe"
   dependencies:
     loose-envify "^1.1.0"
-
-seedrandom@^3.0.5:
-  version "3.0.5"
-  resolved "https://registry.npmmirror.com/seedrandom/-/seedrandom-3.0.5.tgz#54edc85c95222525b0c7a6f6b3543d8e0b3aa0a7"
 
 "semver@2 || 3 || 4 || 5", semver@^5.5.0, semver@^5.6.0:
   version "5.7.1"
@@ -7541,12 +7157,6 @@ setprototypeof@1.1.1:
 setprototypeof@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmmirror.com/setprototypeof/-/setprototypeof-1.2.0.tgz#66c9a24a73f9fc28cbe66b09fed3d33dcaf1b424"
-
-shaka-player@^2.5.9:
-  version "2.5.23"
-  resolved "https://registry.npmmirror.com/shaka-player/-/shaka-player-2.5.23.tgz#db92d1c6cf2314f0180a2cec11b0e2f2560336f5"
-  dependencies:
-    eme-encryption-scheme-polyfill "^2.0.1"
 
 shallow-clone@^3.0.0:
   version "3.0.1"
@@ -7778,7 +7388,7 @@ string-length@^4.0.1:
     char-regex "^1.0.2"
     strip-ansi "^6.0.0"
 
-"string-width@^1.0.2 || 2 || 3 || 4", string-width@^4.1.0, string-width@^4.2.0, string-width@^4.2.3:
+string-width@^4.1.0, string-width@^4.2.0:
   version "4.2.3"
   resolved "https://registry.npmmirror.com/string-width/-/string-width-4.2.3.tgz#269c7117d27b05ad2e536830a8ec895ef9c6d010"
   dependencies:
@@ -7786,7 +7396,7 @@ string-length@^4.0.1:
     is-fullwidth-code-point "^3.0.0"
     strip-ansi "^6.0.1"
 
-string_decoder@^1.1.1, string_decoder@^1.3.0:
+string_decoder@^1.1.1:
   version "1.3.0"
   resolved "https://registry.npmmirror.com/string_decoder/-/string_decoder-1.3.0.tgz#42f114594a46cf1a8e30b0a84f56c78c3edac21e"
   dependencies:
@@ -7833,10 +7443,6 @@ strnum@^1.0.5:
 structured-headers@^0.4.1:
   version "0.4.1"
   resolved "https://registry.npmmirror.com/structured-headers/-/structured-headers-0.4.1.tgz#77abd9410622c6926261c09b9d16cf10592694d1"
-
-styleq@^0.1.2:
-  version "0.1.2"
-  resolved "https://registry.npmmirror.com/styleq/-/styleq-0.1.2.tgz#052b46af5ca4f920b1bdae2735ffb1e3970f53cd"
 
 sucrase@^3.20.0:
   version "3.28.0"
@@ -7894,18 +7500,6 @@ symbol-tree@^3.2.4:
   version "3.2.4"
   resolved "https://registry.npmmirror.com/symbol-tree/-/symbol-tree-3.2.4.tgz#430637d248ba77e078883951fb9aa0eed7c63fa2"
 
-tar@^4.4.6:
-  version "4.4.19"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-4.4.19.tgz#2e4d7263df26f2b914dee10c825ab132123742f3"
-  dependencies:
-    chownr "^1.1.4"
-    fs-minipass "^1.2.7"
-    minipass "^2.9.0"
-    minizlib "^1.3.3"
-    mkdirp "^0.5.5"
-    safe-buffer "^5.2.1"
-    yallist "^3.1.1"
-
 tar@^6.0.2, tar@^6.0.5:
   version "6.1.11"
   resolved "https://registry.npmmirror.com/tar/-/tar-6.1.11.tgz#6760a38f003afa1b2ffd0ffe9e9abbd0eab3d621"
@@ -7913,17 +7507,6 @@ tar@^6.0.2, tar@^6.0.5:
     chownr "^2.0.0"
     fs-minipass "^2.0.0"
     minipass "^3.0.0"
-    minizlib "^2.1.1"
-    mkdirp "^1.0.3"
-    yallist "^4.0.0"
-
-tar@^6.1.11:
-  version "6.1.13"
-  resolved "https://registry.yarnpkg.com/tar/-/tar-6.1.13.tgz#46e22529000f612180601a6fe0680e7da508847b"
-  dependencies:
-    chownr "^2.0.0"
-    fs-minipass "^2.0.0"
-    minipass "^4.0.0"
     minizlib "^2.1.1"
     mkdirp "^1.0.3"
     yallist "^4.0.0"
@@ -8110,10 +7693,6 @@ tslib@^2.4.0:
   version "2.4.1"
   resolved "https://registry.npmmirror.com/tslib/-/tslib-2.4.1.tgz#0d0bfbaac2880b91e22df0768e55be9753a5b17e"
 
-tts@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/tts/-/tts-0.1.0.tgz#10685054dac7775e97d2271a7e7d1eca4bb1f6c0"
-
 type-check@~0.3.2:
   version "0.3.2"
   resolved "https://registry.npmmirror.com/type-check/-/type-check-0.3.2.tgz#5884cab512cf1d355e3fb784f30804b2b520db72"
@@ -8287,6 +7866,13 @@ url-parse@^1.5.3, url-parse@^1.5.9:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
 
+url@~0.10.1:
+  version "0.10.3"
+  resolved "https://registry.yarnpkg.com/url/-/url-0.10.3.tgz#021e4d9c7705f21bbf37d03ceb58767402774c64"
+  dependencies:
+    punycode "1.3.2"
+    querystring "0.2.0"
+
 use-memo-one@1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/use-memo-one/-/use-memo-one-1.1.2.tgz#0c8203a329f76e040047a35a1197defe342fab20"
@@ -8410,6 +7996,14 @@ whatwg-mimetype@^2.3.0:
   version "2.3.0"
   resolved "https://registry.npmmirror.com/whatwg-mimetype/-/whatwg-mimetype-2.3.0.tgz#3d4b1e0312d2079879f826aff18dbeeca5960fbf"
 
+whatwg-url-without-unicode@^8.0.0-3:
+  version "8.0.0-3"
+  resolved "https://registry.yarnpkg.com/whatwg-url-without-unicode/-/whatwg-url-without-unicode-8.0.0-3.tgz#ab6df4bf6caaa6c85a59f6e82c026151d4bb376b"
+  dependencies:
+    buffer "^5.4.3"
+    punycode "^2.1.1"
+    webidl-conversions "^5.0.0"
+
 whatwg-url@^5.0.0:
   version "5.0.0"
   resolved "https://registry.npmmirror.com/whatwg-url/-/whatwg-url-5.0.0.tgz#966454e8765462e37644d3626f6742ce8b70965d"
@@ -8440,12 +8034,6 @@ which@^2.0.1, which@^2.0.2:
   resolved "https://registry.npmmirror.com/which/-/which-2.0.2.tgz#7c6a8dd0a636a0327e10b59c9286eee93f3f51b1"
   dependencies:
     isexe "^2.0.0"
-
-wide-align@^1.1.2:
-  version "1.1.5"
-  resolved "https://registry.yarnpkg.com/wide-align/-/wide-align-1.1.5.tgz#df1d4c206854369ecf3c9a4898f1b23fbd9d15d3"
-  dependencies:
-    string-width "^1.0.2 || 2 || 3 || 4"
 
 wonka@^4.0.14:
   version "4.0.15"
@@ -8566,14 +8154,6 @@ y18n@^4.0.0:
   version "4.0.3"
   resolved "https://registry.npmmirror.com/y18n/-/y18n-4.0.3.tgz#b5f259c82cd6e336921efd7bfd8bf560de9eeedf"
 
-y18n@^5.0.5:
-  version "5.0.8"
-  resolved "https://registry.npmmirror.com/y18n/-/y18n-5.0.8.tgz#7f4934d0f7ca8c56f95314939ddcd2dd91ce1d55"
-
-yallist@^3.0.0, yallist@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/yallist/-/yallist-3.1.1.tgz#dbb7daf9bfd8bac9ab45ebf602b8cbad0d5d08fd"
-
 yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmmirror.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
@@ -8588,10 +8168,6 @@ yargs-parser@^18.1.2:
   dependencies:
     camelcase "^5.0.0"
     decamelize "^1.2.0"
-
-yargs-parser@^20.2.2:
-  version "20.2.9"
-  resolved "https://registry.npmmirror.com/yargs-parser/-/yargs-parser-20.2.9.tgz#2eb7dc3b0289718fc295f362753845c41a0c94ee"
 
 yargs@^15.1.0, yargs@^15.3.1, yargs@^15.4.1:
   version "15.4.1"
@@ -8608,18 +8184,6 @@ yargs@^15.1.0, yargs@^15.3.1, yargs@^15.4.1:
     which-module "^2.0.0"
     y18n "^4.0.0"
     yargs-parser "^18.1.2"
-
-yargs@^16.0.3:
-  version "16.2.0"
-  resolved "https://registry.npmmirror.com/yargs/-/yargs-16.2.0.tgz#1c82bf0f6b6a66eafce7ef30e376f49a12477f66"
-  dependencies:
-    cliui "^7.0.2"
-    escalade "^3.1.1"
-    get-caller-file "^2.0.5"
-    require-directory "^2.1.1"
-    string-width "^4.2.0"
-    y18n "^5.0.5"
-    yargs-parser "^20.2.2"
 
 yocto-queue@^0.1.0:
   version "0.1.0"

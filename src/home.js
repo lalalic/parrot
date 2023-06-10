@@ -1,8 +1,5 @@
 import React from "react"
-import { View, Text } from "react-native"
-import { useDispatch, useSelector } from "react-redux"
-import { Link } from "react-router-native"
-import { useURL } from "expo-linking"
+import { View } from "react-native"
 import Talks from "./talks"
 import Widgets from "./widgets"
 
@@ -18,7 +15,7 @@ export default ()=>(
 const Monitor=({})=>{
     return (
         <View>
-            <Text>&nbsp;</Text>
+            
         </View>
     )
 }

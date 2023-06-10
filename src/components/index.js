@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, TextInput, ActivityIndicator, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions} from "react-native";
+import { View, Text, TextInput, ActivityIndicator, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions, Keyboard, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
@@ -10,10 +10,11 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import { Qili } from "../store"
+import { isAlreadyFamiliar, Qili } from "../store"
 
 const AutoHideDuration=6000
 export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style, ...props }) => {
+    const notNeedLabelAnyMore=useSelector(state=>isAlreadyFamiliar(state))
     if(labelFade===true)
         labelFade=AutoHideDuration
     const opacity = React.useRef(new Animated.Value(1)).current;
@@ -32,7 +33,7 @@ export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, chil
     return (
         <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center",...style}}}>
             <MaterialIcons {...props}/>
-            {children || (label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
+            {children || (!notNeedLabelAnyMore && label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
         </Pressable>
     )
 }
@@ -382,6 +383,8 @@ export const ControlIcons={
     whitespace:"notifications", 
     chunk:"flash-on", 
     autoChallenge: "alarm",
+    fullscreen:"zoom-out-map",
+    autoHide: "transit-enterexit"
 }
 
 export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), ...props}){
@@ -984,4 +987,8 @@ export function Loading({style, ...props}){
     return <ActivityIndicator size="large" 
         style={[{flex:1, alignItems:"center", justifyContent:"center"},style]} 
         {...props}/>
+}
+
+export function KeyboardAvoidingView(props){
+    return <RNKeyboardAvoidingView {...props} keyboardVerticalOffset={60}/>
 }

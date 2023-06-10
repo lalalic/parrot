@@ -1,12 +1,12 @@
 import React from "react"
-import {View, Text, Pressable} from "react-native"
+import {View, Text, Pressable, TextInput, ScrollView, } from "react-native"
 import {useDispatch, useSelector } from 'react-redux'
 import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { TalkApi } from "../store"
-import { ControlIcons } from "../components"
+import { ControlIcons,  KeyboardAvoidingView} from "../components"
 import Player from "../components/player"
 import { ColorScheme } from "../components/default-style"
 
@@ -19,10 +19,8 @@ export default function Policy(){
     const {data:talk={}}=TalkApi.useTalkQuery({slug})
     
     return (
-        <View style={{flex:1}}>
-            <Player key={target}
-                style={{flex:1}} 
-                id={"example"}
+        <KeyboardAvoidingView style={{flex:1}} behavior="padding">
+            <Player key={target} style={{flex:1}} id={"example"}
                 media={<Video 
                     posterSource={{uri:talk.thumb}} 
                     source={{uri:talk.video}} 
@@ -47,7 +45,7 @@ export default function Policy(){
                     ))}
                 </View>
 
-                <View style={{flexGrow:1,padding:20}}>
+                <ScrollView style={{flexGrow:1,padding:20}}>
                     <Text style={{paddingBottom:20}}>{policy[target].desc}</Text>
                     {JSON.stringify((({desc,...props})=>props)(policy[target]), null, "\t").replace(/[\{\}\",]/g,"").split("\n")
                         .filter(a=>!!a)
@@ -56,23 +54,40 @@ export default function Policy(){
                             const text=(()=>{
                                 if(typeof(value)=="boolean"){
                                     return (
-                                        <Pressable style={{justifyContent:"center"}}
+                                        <Pressable
                                             onPress={e=>dispatch({type:"policy", target, payload:{[key]:!value}})}>
-                                            <Text style={{paddingBottom:10,color:color.primary}}>{a.trim()}</Text>     
+                                            <Text style={{color:color.primary}}>{String(value)}</Text>     
                                         </Pressable>
                                     )
+                                }else{
+                                    return (
+                                        <TextInput style={{flexGrow:1, color:color.primary}} defaultValue={String(value)} 
+                                            inputMode="decimal" keyboardType="decimal-pad" contextMenuHidden={true}
+                                            onEndEditing={({nativeEvent:{text}})=>{
+                                                try{
+                                                    const value=parseFloat(text)
+                                                    if(value!=NaN){
+                                                        dispatch({type:"policy", target, payload:{[key]:value}})
+                                                    }
+                                                }catch(e){
+
+                                                }
+                                            }}
+                                            />
+                                    )
                                 }
-                                return <Text style={{paddingBottom:10}}>{a.trim()}</Text>
+                                
                             })();
                             return (
-                                <View key={key} style={{flexDirection:"row", height:30}}>
-                                    <MaterialIcons name={ControlIcons[key]} size={24} style={{marginRight:10}}/>
+                                <View key={key} style={{flexDirection:"row", borderBottomWidth:1, borderBottomColor:"gray", height:40, alignItems:"center"}}>
+                                    <MaterialIcons name={ControlIcons[key]||""} size={24} />
+                                    <Text style={{width:120, textAlign:"right", marginRight:5}} numberOfLines={1}>{key.replace(/([A-Z])/g, " $1")}:</Text>
                                     {text}
                                 </View>
                             )
                         })}
-                </View>
+                </ScrollView>
             </View>
-        </View>
+        </KeyboardAvoidingView>
     )
 }

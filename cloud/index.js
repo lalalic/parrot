@@ -30,11 +30,12 @@ Cloud.addModule({
             people(q:String):[Talk]
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
-            widgetTalks(slug:String!, q:String):[Talk]
+            widgetTalks(slug:String, q:String):[Talk]
         }
 
         extend type Mutation{
             save(talk:JSON!):Boolean
+            remove(id:String!, type:String):Boolean
         }
     `,
     resolver:{
@@ -67,14 +68,16 @@ Cloud.addModule({
             today(_,{},{app}){
                 return app.findEntity("Talk")
             },
-            async widgetTalks(_,{slug,q},{app}){
+            widgetTalks(_,{slug,q},{app}){
+                if(!slug)
+                    return app.findEntity("Widget")
+
                 const props={slug}
                 if(q){
                     props.title={$regex:q, $options:"i"}
                 }
-                const talks=await app.findEntity("Widget", props)
-                return talks
-            }
+                return app.findEntity("Widget", props)
+            },
         },
         Mutation:{
             async save(_,{talk},{app}){
@@ -89,6 +92,9 @@ Cloud.addModule({
                 return app.createEntity(Type,talk)
                     .then(talk=>true)
                     .catch(e=>false)
+            },
+            remove(_,{id, type="Talk"},{app}){
+                return app.remove1Entity(type, {_id:id})
             }
         }
     },
@@ -121,12 +127,16 @@ Cloud.addModule({
                 ${Talk_Fields_Fragment}
             }
         }`,
-        widgetTalks:`query talks_Query($slug:String!, $q:String){
+        widgetTalks:`query talks_Query($slug:String, $q:String){
             talks:widgetTalks(slug:$slug, q:$q){
                 id
                 title
+                slug
             }
-        }`
+        }`,
+        remove:`mutation remove_Mutation($id:String!, $type:String){
+            remove(id:$id, type:$type)
+        }`,
     },
     index:{
         Talk:[{speaker:1, title:1, slug:1}]

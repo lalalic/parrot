@@ -16,6 +16,7 @@ import Lang from "./account/lang"
 import Test from "./account/test"
 import Admin from "./admin"
 import Log from "./account/log"
+import About from "./account/about"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -56,6 +57,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
                         <Route path="test" element={<Test/>}/>
                         <Route path="logs" element={<Log/>}/>
+                        <Route path="about" element={<About/>}/>
                     </Route>
                 </Route>
                 <Route path="plan" element={<Scheduler/>}/>
@@ -100,8 +102,9 @@ const WithBackButton=()=>(
     </View>
 )
 
-const ShareMointor=()=>{
-    const url=Linking.useURL()//"parrot://share/?url=https://www.youtube.com/watch?v=gOqitVsRYRE"
+function ShareMointor(){
+    //Linking.useURL()//
+    const url="parrot://share/?url=https://www.youtube.com/watch?v=gOqitVsRYRE"
     const navigate=useNavigate()
     const getVideoId=React.useCallback(url=>{
         url=url.split("?url=")[1]

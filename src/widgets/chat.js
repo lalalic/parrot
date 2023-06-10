@@ -1,10 +1,10 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, View , ActivityIndicator, Text, TextInput, Pressable, Modal } from 'react-native';
+import { Button, View , ActivityIndicator, Text, TextInput, Pressable, TouchableWithoutFeedback, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest } from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView} from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -64,8 +64,6 @@ const Chat1=({prompt, onSuccess, onError})=>{
 	},[])
 	return null
 }
-
-
 
 const CHAT_GPT_ID = 'system';
 const Icons={system:"adb", assistant:"ac-unit", user:"emoji-people"}
@@ -287,8 +285,9 @@ const Chat = () => {
 	},[])
 	
 	return (
-		<View style={{flex:1}}>
+		<KeyboardAvoidingView style={{flex:1}} behavior="padding">
 			<GiftedChat
+				isKeyboardInternallyHandled={false}
 				user={user}
 				messages={messages}
 				onSend={onSend}
@@ -306,16 +305,15 @@ const Chat = () => {
 				showUserAvatar={true}
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
-				renderComposer={({onSend,...data})=><MessageComposer 
-						locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
-						submit={message=>message && onSend(message)}
-						ask={params=>{
-							createPromptMessage.submitParams({params, message: messages[0], setMessages, store})
-						}}	
-						forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
-						{...{setDialog, clearDialog, setAudioInput, audioInput}}
-					/>
-				}
+				renderComposer={({onSend,...data})=><MessageComposer style={{flex:0, flexGrow:0, flexShrink:1, flexBasis:'auto'}}
+					locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
+					submit={message=>message && onSend(message)}
+					ask={params=>{
+						createPromptMessage.submitParams({params, message: messages[0], setMessages, store})
+					}}	
+					forget={()=>setMessages(([current, ...prevMessages]) =>[...prevMessages])}
+					{...{setDialog, clearDialog, setAudioInput, audioInput}}
+				/>}
 				renderMessageText={props=>{
 					const {currentMessage:{text,audio}}=props
 					if(React.isValidElement(text)){
@@ -330,9 +328,8 @@ const Chat = () => {
 				}}
 
 				renderMessageAudio={props=><PlayAudioMessage {...props} setMessages={setMessages}/>}
-
 			/>
-		</View>
+		</KeyboardAvoidingView>
 	);
 }
 
@@ -363,7 +360,7 @@ function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog, audioInput, setAudioInput}){
+function MessageComposer({submit, style, ask, forget, setDialog, locale, clearDialog, audioInput, setAudioInput}){
 	const [actions, setActions]=useState(false)
 	const props={
 		submit,
@@ -378,61 +375,61 @@ function MessageComposer({submit, ask, forget, setDialog, locale, clearDialog, a
 	},[globalThis.Widgets])
 
 	return (
-		<View style={{width:"100%"}}>
+		<View style={[{width:"100%", minHeight:50},style]}>
 			<View style={{
 					flex:1, height:50, flexDirection:"row", padding:4,
 					alignItems: 'center', justifyContent: 'center'
 			}}>
-					<PressableIcon name={audioInput ? "mic" : "keyboard"} 
-						style={{width:50}} color={audioInput==2 ? "green" : "black"} size={36}
-						onPress={()=>{
-							setAudioInput(audioInput==2 ? true : !audioInput)
-							setDialog(false)
-						}}
-						onLongPress={()=>{
-							if(audioInput){
-								setDialog(true)
-								setAudioInput(2)
-							}
-						}}
-						/>
-					{audioInput && (
-						<Pressable style={{width:50, flexDirection:"column",alignItems:"center", justifyContent:"center"}}  
-							onPress={locale.toggle}>
-							<Text style={{color:"black"}}>{locale.lang.split("-")[0]}</Text>
-						</Pressable>
-					)}
+				<PressableIcon name={audioInput ? "mic" : "keyboard"} 
+					style={{width:50}} color={audioInput==2 ? "green" : "black"} size={36}
+					onPress={()=>{
+						setAudioInput(audioInput==2 ? true : !audioInput)
+						setDialog(false)
+					}}
+					onLongPress={()=>{
+						if(audioInput){
+							setDialog(true)
+							setAudioInput(2)
+						}
+					}}
+					/>
+				{audioInput && (
+					<Pressable style={{width:50, flexDirection:"column",alignItems:"center", justifyContent:"center"}}  
+						onPress={locale.toggle}>
+						<Text style={{color:"black"}}>{locale.lang.split("-")[0]}</Text>
+					</Pressable>
+				)}
 
-					{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
+				{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
 
-					<PressableIcon name="add-circle-outline" size={36} style={{marginLeft:10}} onPress={()=>setActions(!actions)}/>
-					<PressableIcon name="delete-outline" size={36}  style={{}} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
+				<PressableIcon name="add-circle-outline" size={36} style={{marginLeft:10}} onPress={()=>setActions(!actions)}/>
+				<PressableIcon name="delete-outline" size={36}  style={{}} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
 			</View>
 			{actions && (
-				<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
-					{prompts.map((prompt,i)=><PressableIcon key={i} {...prompt} size={50} labelStyle={{color:"black"}}
-						onPress={()=>{
-							submit(createPromptMessage({
-								prompt,forget, 
-								ask:params=>{
-									if(prompt.settings?.dialog){
-										setDialog(true)
-										setAudioInput(2)
-									}else if(prompt.settings?.dialog===false){
-										setDialog(false)
-										if(prompt.settings.audio){
-											setAudioInput(true)
-										}else if(prompt.settings.audio===false){
-											setAudioInput(false)
-										}
+			<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
+				{prompts.map((prompt,i)=><PressableIcon key={i} {...prompt} size={50} labelStyle={{color:"black"}}
+					onPress={()=>{
+						submit(createPromptMessage({
+							prompt,forget, 
+							ask:params=>{
+								if(prompt.settings?.dialog){
+									setDialog(true)
+									setAudioInput(2)
+								}else if(prompt.settings?.dialog===false){
+									setDialog(false)
+									if(prompt.settings.audio){
+										setAudioInput(true)
+									}else if(prompt.settings.audio===false){
+										setAudioInput(false)
 									}
-									setTimeout(()=>askRef.current?.(params), 1000)	
-								},
-							}))
-							setActions(false)
-						}}
-					/>)}
-				</View>
+								}
+								setTimeout(()=>askRef.current?.(params), 1000)	
+							},
+						}))
+						setActions(false)
+					}}
+				/>)}
+			</View>
 			)}
 		</View>
 	)
@@ -465,7 +462,7 @@ const InputAudio=({submit, autoSubmit, textStyle, locale})=>{
 const InputText=({submit, textStyle})=>{
 	const [value, setValue]=useState("")
 	return (
-			<TextInput 
+			<TextInput enterKeyHint="send"
 				value={value}
 				onChangeText={text=>setValue(text)}
 				onSubmitEditing={e=>{

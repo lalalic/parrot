@@ -14,6 +14,7 @@ export default class extends React.Component{
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
+                excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
                 onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
 
                 {hasTranscript && <PressableIcon name="print"
@@ -26,8 +27,8 @@ export default class extends React.Component{
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}
 
-                <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
-                    onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}/>
+                {hasTranscript&&<PressableIcon name={favorited ? "favorite" : "favorite-outline"}
+                    onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}/>}
             </PolicyChoice>
         )
     }

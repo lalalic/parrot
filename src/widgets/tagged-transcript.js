@@ -1,9 +1,9 @@
 import React, { useMemo } from "react"
-import { FlatList, Pressable, TextInput, View, Text} from "react-native"
+import { FlatList, Pressable, TextInput, View, Text, } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import Select from "react-native-select-dropdown"
-import { PressableIcon, PlaySound } from "../components"
+import { PressableIcon, KeyboardAvoidingView } from "../components"
 import { ColorScheme } from "../components/default-style"
 import { selectWidgetTalks } from "../store"
 
@@ -33,7 +33,7 @@ export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
         const {renderItem:WidgetItem=renderItem}=listProps
 
         return (
-            <View style={{flex:1,marginTop:20}}>
+            <KeyboardAvoidingView style={{flex:1,marginTop:20}} behavior="padding">
                 <Text style={{textAlign:"center", height:20}}>{slug.toUpperCase()}</Text>
                 <View style={{flexDirection:"row"}}>
                     <TextInput style={inputStyle} onChangeText={q=>setState({...state,q})}/>
@@ -57,6 +57,6 @@ export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
                     <PressableIcon name="read-more"
                         onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
                 </View>
-            </View>
+            </KeyboardAvoidingView>
         )
     }

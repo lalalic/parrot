@@ -118,7 +118,7 @@ export default function Player({
     },[])
 
     const [status, dispatch] = React.useReducer((state,action)=>{
-        const {isPlaying, i, whitespacing, rate:currentRate, volume, lastRate}=state
+        const {isPlaying, i, whitespacing, rate:currentRate, lastRate}=state
         const rate=lastRate||currentRate
 
         function terminateWhitespace(next, newState, callback){
@@ -184,14 +184,6 @@ export default function Player({
                 case "nav/challenge/pass":
                     asyncCall(()=>onChallengePass?.(chunks[action.i]))
                     break
-                case "volume/toggle":
-                    setVideoStatusAsync({volume:volume==0 ? .50 : 0})
-                        .then(a=>changePolicy("volume",a.volume))
-                break
-                case "volume/tune":
-                    setVideoStatusAsync({volume})
-                        .then(a=>changePolicy("volume",a.volume))
-                break
                 case "speed/toggle":
                     setVideoStatusAsync({rate:rate==0.75 ? 1 : 0.75})
                         .then(a=>changePolicy("speed",a.rate))
@@ -261,10 +253,10 @@ export default function Player({
                 return state
             }
             
-            const {status:{isLoaded,positionMillis, isPlaying,rate,volume,durationMillis=0,didJustFinish, 
+            const {status:{isLoaded,positionMillis, isPlaying,rate,durationMillis=0,didJustFinish, 
                 i:_i=positionMillis<chunks[0]?.time ? -1 : chunks.findIndex(a=>a.end>=positionMillis)}}=action
             
-            const current={isLoaded,isPlaying,rate,volume,durationMillis,i:_i}
+            const current={isLoaded,isPlaying,rate,durationMillis,i:_i}
 
             if(!isLoaded){//init video pitch, props can't work
                 setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
@@ -353,7 +345,6 @@ export default function Player({
                     onMediaStatus(status, {type:"media/status", status: mediaStatus})
                 },
                 rate:policy.rate,
-                volume:policy.volume,
                 style:{flex:1, minHeight:150},
                 positionMillis: positionMillisHistory
             })}
@@ -407,7 +398,7 @@ export default function Player({
                         slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t} chunks`}}/>}
 
                     {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
-                        name={!policy.fullscreen ? "zoom-out-map" : "fullscreen-exit"}
+                        name={!policy.fullscreen ? ControlIcons.fullscreen : "fullscreen-exit"}
                         onLongPress={e=>{
                             (async()=>{
                                 let result = await ImagePicker.launchImageLibraryAsync({
@@ -430,7 +421,7 @@ export default function Player({
                     testID="subtitle"
                     i={status.i} 
                     selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
-                    style={{width:"100%",textAlign:"center",fontSize:16, marginBottom:20, ...subtitleStyle}}
+                    style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20, ...subtitleStyle}}
                     title={chunks[status.i]?.text||""}
                     my={chunks[status.i]?.my}
                     autoChallenge={policy.autoChallenge}

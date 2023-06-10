@@ -5,7 +5,7 @@ import {useSelector, useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import Video from './widgets/video';
 
-import { TalkApi, selectPolicy, isAdmin} from "./store"
+import { TalkApi, selectPolicy, isAdmin, isOnlyAudio} from "./store"
 import { Loading } from './components';
 
 export default function Talk({autoplay}){
@@ -18,7 +18,7 @@ export default function Talk({autoplay}){
     const {data:talk={}, policy={}, isLoading}=useTalkQuery({slug, id, policyName})
     const {challenging}=policy
     
-    const style=policy.visible ? {flex:1}: {height:150}
+    const style=policy.visible&&!talk.onlyAudio ? {flex:1}: {height:200}
 
     const [info, actions]=React.useMemo(()=>([
         Media.Info({talk, policyName, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
@@ -57,12 +57,14 @@ function useTalkQuery({slug, id, policyName}){
 
     const talk=React.useMemo(()=>{
         const Widget=globalThis.Widgets[slug]
+        const video=bAdmin ? remote?.video : local?.localVideo||remote?.video
         return {
             ...remote, 
             ...Widget?.defaultProps, 
             ...local, 
             hasHistory:!!local, 
-            video:bAdmin ? remote?.video : local?.localVideo||remote?.video
+            video,
+            onlyAudio: isOnlyAudio(video)
         }
     },[remote, local])
     

@@ -55,7 +55,7 @@ export default function Talks(props){
                     }
                 }}
                 />}
-                {!search.people && <TextInput placeholder="TalkApi Talk" defaultValue={search.q} 
+                {!search.people && <TextInput placeholder="Search Talks" defaultValue={search.q} 
                         clearButtonMode="while-editing"
                         keyboardType="web-search"
                         onEndEditing={({nativeEvent:{text:q}})=>{
@@ -76,7 +76,7 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     const {data:people=[]}=TalkApi.usePeopleQuery({q:search.q.trim()})
     return (
         <>
-            <TextInput style={style} placeholder="TalkApi Speaker"
+            <TextInput style={style} placeholder="Search Speaker Talks"
                 value={search.name}
                 onChangeText={q=>setSearch({q,showPicker:true})}/>
             {search.showPicker && people.length>0 && <Picker {...props} mode="dropdown" 
