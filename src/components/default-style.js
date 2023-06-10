@@ -130,7 +130,7 @@ if(!Array.prototype.findLastIndex){
     }
 }
 
-if(console){
+if(console && !__DEV__){
     globalThis.logFile=`${FileSystem.documentDirectory}logs.txt`
     const log=logger.createLogger({
         transport:[

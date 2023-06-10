@@ -101,7 +101,7 @@ const WithBackButton=()=>(
         </Link>
     </View>
 )
-
+ 
 function ShareMointor(){
     //Linking.useURL()//
     const url="parrot://share/?url=https://www.youtube.com/watch?v=gOqitVsRYRE"

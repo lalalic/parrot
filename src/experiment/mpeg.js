@@ -1,7 +1,7 @@
 import * as FileSystem from "expo-file-system"
 import { FFmpegKit } from 'ffmpeg-kit-react-native'
 
-async function prepareFolder(localUri){
+export async function prepareFolder(localUri){
     const folder=(segs=>(segs.pop(), segs.join("/")))(localUri.split("/"));
         
     const info = await FileSystem.getInfoAsync(folder)

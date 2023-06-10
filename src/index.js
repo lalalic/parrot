@@ -7,7 +7,7 @@ import Router from "./router"
 import {Provider} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
-import { FlyMessage } from "./components"
+import { FlyMessage, Loading } from "./components"
 
 LogBox.ignoreAllLogs()
 ExpoSplashScreen.preventAutoHideAsync()
@@ -44,7 +44,7 @@ export default ()=>{
     },[dataReady])
 
     return  (
-        <Provider onReady={e=>setDataReady(true)}>
+        <Provider onReady={e=>setDataReady(true)} loading={<Loading/>}>
             {dataReady && <SafeAreaView 
                 onLayout={onLayout}
                 style={{flex:1, backgroundColor:style.backgroundColor}}>

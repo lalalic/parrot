@@ -13,13 +13,11 @@ import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
 
-import { getYoutubeMeta } from "react-native-youtube-iframe"
 import { YoutubeTranscript } from "./experiment/youtube-transcript"
-
+import ytdl from "react-native-ytdl"
 
 import * as Calendar from "./experiment/calendar"
-import { FlyMessage, Loading } from "./components"
-import mpegKit from "./experiment/mpeg"
+import mpegKit, { prepareFolder } from "./experiment/mpeg"
 
 export const Policy={
 	general: {
@@ -150,7 +148,50 @@ export const Ted=Object.assign(createApi({
 					const {lang="en", mylang="zh-cn"}=state.my
 
 					if(slug=="youtube"){
-						const {title, thumbnail_url:thumb, author_name:author,} = await getYoutubeMeta(id)
+						debugger
+						/*
+						if(state.talks[id]){
+							return {id,slug:"youtube"}
+						}
+						*/
+
+						const info=await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`)
+						const format=(formats=>{
+							/*
+							const audios=formats.filter(a=>a.hasAudio && !a.hasVideo && a.container=="mp4" && a.contentLength)
+							if(audios.length){
+								const i=audios.reduce((k,a,I)=>{
+									return parseInt(a.contentLength)<parseInt(audios[k].contentLength) ? I : k
+								},0)
+								return audios[i]
+							}
+							*/
+							return ytdl.chooseFormat(formats,{
+								filter:a=>a.hasAudio && a.container=="mp4",
+								quality:"lowestvideo",
+							})
+						})(info.formats);
+
+						const {title, keywords:tags, lengthSeconds, thumbnails:[{url:thumb}], author:{name:author},} = info.videoDetails
+						
+						const talk={
+							title, id, slug:`youtube`, source:"youtube", thumb,tags,author,
+							video: format.url,
+							duration:parseInt(lengthSeconds)*1000,
+						}
+
+						api.dispatch({type:"talk/set",talk})
+						
+						const file=talk.localVideo=`${FileSystem.documentDirectory}${id}/video.mp4`
+						mpegKit.generateAudio({source:format.url, target:file})
+							.then(()=>{
+								//api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
+							})
+							.catch(e=>{
+								console.error(e)
+								api.dispatch({type:"talk/clear",id})
+							})
+							
 						const transcripts=await YoutubeTranscript.fetchTranscript(id,{lang})
 						const myTranscripts=await YoutubeTranscript.fetchTranscript(id,{lang:mylang})
 						if(myTranscripts && transcripts.length==myTranscripts.length){
@@ -164,7 +205,10 @@ export const Ted=Object.assign(createApi({
 								delete cue.duration
 							})
 						}
-						return {title, id, slug:`youtube`, source:"youtube", thumb, languages:{mine:{transcript:[{cues:transcripts}]}}, video:id, description:`by ${author}`}
+						talk.languages={mine:{transcript:[{cues:transcripts}]}}
+						api.dispatch({type:"talk/set",talk})
+
+						return {id, slug:"youtube"}
 					}else if(Widget){
 						if(id && !state.talks[id]){
 							const {talk}=await Qili.fetch({
@@ -396,7 +440,7 @@ export const Qili=Object.assign(createApi({
             id:"file_token_Query",
             variables:{key,host}
         },admin)
-        
+        await prepareFolder(file)
         const res=await FileSystem.uploadAsync(this.storage, file, {
             uploadType:FileSystem.FileSystemUploadType.MULTIPART,
             fieldName:"file",
@@ -449,8 +493,9 @@ export function createStore(){
 				return
 
 			const file=`${FileSystem.documentDirectory}${id}/video.mp4`
+			await prepareFolder(file)
 			await mpegKit.generateAudio({source:talk.video, target:file})
-			FlyMessage.show(`Downloaded talk audio`)
+			dispatch({type:"message/info",message:`Downloaded talk audio`})
 			
 			dispatch({type:"talk/set", talk:{id, localVideo:file}})
 			
@@ -462,7 +507,7 @@ export function createStore(){
 				if(!Qili.isUploaded(talk.video)){
 					const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
 
-					FlyMessage.show(`Uploaded talk video`)
+					dispatch({type:"message/info",message:`Uploaded talk video`})
 
 					await Qili.fetch({
 						id:"save",
@@ -477,7 +522,7 @@ export function createStore(){
 
 					dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
 
-					FlyMessage.show(`Cloned the talk to Qili`)
+					dispatch({type:"message/info",message:`Cloned the talk to Qili`})
 				}else{
 					const Widget=globalThis.Widgets[talk.slug]
 					if(Widget?.remoteSave){
@@ -492,12 +537,12 @@ export function createStore(){
 							}
 						})
 
-						FlyMessage.show(`Cloned the talk to Qili`)
+						dispatch({type:"message/info",message:`Cloned the talk to Qili`})
 					}
 				}
 
 			}catch(e){
-				FlyMessage.error(e.message)
+				dispatch({type:"message/error",message:e.message})
 			}
 		}
 	})
@@ -804,7 +849,7 @@ export function createStore(){
 }
 
 
-export const Provider=({children, onReady})=>{
+export const Provider=({children, onReady, loading})=>{
 	const {store, persistor}=React.useMemo(()=>{
 		const data=createStore()
 		const unsub=data.store.subscribe(async ()=>{
@@ -822,7 +867,7 @@ export const Provider=({children, onReady})=>{
 	},[])
 	return (
 		<ReduxProvider store={store}>
-			<PersistGate {...{loading:<Loading/>, persistor}}>
+			<PersistGate {...{loading, persistor}}>
 				{children}
 			</PersistGate>
 		</ReduxProvider>
