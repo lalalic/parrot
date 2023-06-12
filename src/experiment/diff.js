@@ -14,7 +14,7 @@ const trim=text=>{
 export function diffScore(text, recognized, data) {
     text = trim(text)
     if(!text)
-        return 100
+        return 110
     if(!recognized)
         return 10
     const diffs = WordDiff.diffString(text, recognized.toLowerCase());

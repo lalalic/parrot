@@ -5,25 +5,25 @@ import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { TalkApi } from "../store"
+import { Qili } from "../store"
 import { ControlIcons,  KeyboardAvoidingView} from "../components"
 import Player from "../components/player"
 import { ColorScheme } from "../components/default-style"
 
-const slug="noah_raford_how_gaming_can_be_a_force_for_good"
+const slug="punya_mishra_how_to_design_a_school_for_the_future"
 export default function Policy(){
     const dispatch=useDispatch()
     const color=React.useContext(ColorScheme)
     const [target, setTarget]=React.useState("general")
     const policy=useSelector(state=>state.my.policy)
-    const {data:talk={}}=TalkApi.useTalkQuery({slug})
+    const {data:talk={}}=Qili.useTalkQuery({slug})
     
     return (
         <KeyboardAvoidingView style={{flex:1}} behavior="padding">
             <Player key={target} style={{flex:1}} id={"example"}
                 media={<Video 
-                    posterSource={{uri:talk.thumb}} 
-                    source={{uri:talk.video}} 
+                    posterSource={{uri:talk?.thumb}} 
+                    source={{uri:talk?.video}} 
                     useNativeControls={false}
                     shouldCorrectPitch={true}
                     style={{flex:1}}
@@ -31,7 +31,7 @@ export default function Policy(){
                 policy={{...policy.general, ...policy[target]}} 
                 policyName={target}
                 autoHide={false}
-                transcript={talk.languages?.mine?.transcript}
+                transcript={talk?.languages?.mine?.transcript}
                 onPolicyChange={({name, desc, ...policy})=>dispatch({type:"policy",target, payload:policy})}
                 onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 
@@ -90,4 +90,12 @@ export default function Policy(){
             </View>
         </KeyboardAvoidingView>
     )
+}
+
+const sample={
+    id:"",
+    slug:"",
+    thumb:"",
+    video:"",
+    transcript:[]
 }

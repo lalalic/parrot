@@ -50,8 +50,12 @@ Cloud.addModule({
                 if(slug==="Widget"){
                     return app.get1Entity("Widget", {_id})
                 }
-                const filter={slug,_id}
-                slug ? delete filter._id : (_id && delete filter.slug)
+                const filter={}
+                if(slug){
+                    filter.slug=slug
+                }else if(_id){
+                    filter._id=_id
+                }
                 return app.get1Entity("Talk", filter)
             },
             talks(_,{q, duration},{app}){
@@ -138,8 +142,9 @@ Cloud.addModule({
             remove(id:$id, type:$type)
         }`,
     },
-    index:{
-        Talk:[{speaker:1, title:1, slug:1}]
+    indexes:{
+        Talk:[{speaker:1}, {title:1}, {slug:1}],
+        Widget:[{title:1, slug:1}]
     },
     proxy:{
         ted: {

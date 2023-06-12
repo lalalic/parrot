@@ -1,6 +1,6 @@
 import React from "react"
 import * as FileSystem from "expo-file-system"
-import { View, Linking, Pressable, Text } from "react-native" 
+import { View, Linking} from "react-native" 
 import { TaggedListMedia,  } from "./media"
 import { ChangableText, PlaySound, PressableIcon, Recorder } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"

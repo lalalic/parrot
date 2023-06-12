@@ -1,6 +1,6 @@
 import React from "react"
-import { Text, Pressable, View } from "react-native"
-import { useDispatch, useSelector } from "react-redux"
+import { Text, Pressable, View , Linking} from "react-native"
+import { useDispatch, useSelector,  } from "react-redux"
 import { FlyMessage, PressableIcon, Speak,  } from "../components"
 import { TaggedListMedia } from "./media"
 import { TaggedTranscript } from "./tagged-transcript"
@@ -9,14 +9,16 @@ import { ColorScheme } from "../components/default-style"
 import { Chat1 } from "./chat"
 import { useParams } from "react-router-native"
 
-
+/**
+ * {word, translated, pronunciation, classification, explanation, example}
+ */
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
         ...super.defaultProps,
         id:"vocabulary",
         slug:"vocabulary",
         title:"Vocabulary Book",
-        description:"",
+        description:"Remember Every Word",
         thumb:require("../../assets/widget-vocabulary-book.png"),
         locale:false,
     }
@@ -29,7 +31,7 @@ export default class VocabularyBook extends TaggedListMedia{
     }
 
     static prompts=[
-        {label:"vocabulary", name:"menu-book",
+        {label:"Vocabulary", name:"menu-book",
             params:{
                 "category":"Kitchen",
                 "amount": "50",
@@ -37,39 +39,40 @@ export default class VocabularyBook extends TaggedListMedia{
             speakable:false,
             prompt:(a,store)=>{
                 const state=store.getState()
+                const {mylang, lang}=state.my
                 const existings=Object.values(state.talks)
                     .filter(b=>b.slug=="vocabulary" && b.category==a.category)
                     .map(b=>b.words.map(b=>b.lang).join(","))
                     .join(",")
 
-                return `I'm an English learner from zh-CN. You are an english tutor. 
-                    Please give ${a.amount} vocabulary of ${a.category}.
-                    Each must format like spoon: zh-CN translated, and You must put all words in one paragraph using ; to seperate.
+                return `list ${a.amount} words for locale ${lang} about ${a.category} with translation to locale ${mylang}.
+                    Each must format like word:translation , and You must put all words in one paragraph using ; to seperate.
                     You can't respond anything else.
-                    I already know these words: ${existings}`
+                    ${existings ? `I already know these words: ${existings}` : ''}`
             },
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
-                const words=response.split(";").map(parse).filter(a=>!!a)
+                const words=response.split(";").map(VocabularyBook.parse).filter(a=>!!a).flat()
                 const id=VocabularyBook.create({data:words,title:category, category}, dispatch)
                 return `save to @#${id}`
             }
         },{
-            label:"Number", name:"menu-book",
+            label:"Idioms", name:"category",
             params:{
-                "category":"Kitchen",
-                "amount": "30",
+                amount:"10",
+                category:"meeting"
             }, 
             speakable:false,
-            prompt:a=>`You are english teacher. I am an english learner from China.  
-                Please use the following words to make a sentence to help me remember them.`,
+            prompt:a=>`list ${amount} idioms used in ${a.category} with explanation and an example. 
+            your response should only contain the idioms, 
+            and its format must be json format`,
 
             onSuccess({response,dispatch}){
                 const {category}=this.params
-                const words=response.split("\n").filter(a=>!!a)
-                const title=`vocabulary(${category})`
-                const id=VocabularyBook.create({words,title}, dispatch)
+                const {idioms}=JSON.parse(response.replace(/\"idiom\"\:/g, '"word":').replace(/\"translation\"\:/,'"translated":'))
+                const title=`idioms(${category})`
+                const id=VocabularyBook.create({data:idioms,title, category}, dispatch)
                 return `save to @#${id}`
             }
         }
@@ -88,15 +91,21 @@ export default class VocabularyBook extends TaggedListMedia{
         const {data=[]}=this.props
         const {locale}=this.state
             
-        return data.reduce((cues,{word="", translated=""})=>{
-            cues.push(!locale ? {ask:word, text:translated, recogLocale:true} : {ask:translated, text:word})
+        return data.reduce((cues,{word="", translated=word}, i)=>{
+            const label=getShowText(data[i])
+            cues.push(!locale ? {label, text:translated, ask:word, recogLocale:true} : {label, text:word, ask:translated})
             return cues
         },[])
     }
 
-    renderAt({ask},i){
+    renderAt({ask, label},i){
         const {locale}=this.state
-        return this.speak({locale, text:ask})
+        return (
+            <>
+            <Text style={{padding:10}}>{label.replace("-","\n").replace(".","\n")}</Text>
+            {this.speak({locale, text:ask})}
+            </>
+        )
     }
 
     shouldComponentUpdate(props, state){
@@ -111,20 +120,22 @@ export default class VocabularyBook extends TaggedListMedia{
 
     static TaggedTranscript({}){
         const color=React.useContext(ColorScheme)
+        const {lang="en"}=useSelector(state=>state.my)
         
-        const Item=React.useCallback(({item:{word:lang, translated:mylang=""}, id, index})=>{
+        const Item=React.useCallback(({item, id, index, word=item.word})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
-            const text=`${lang} : ${mylang}`
+            const text=getShowText(item)
             return (
                 <View style={{ flexDirection: "row", height: 50 }}>
                     <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
                     <Pressable 
+                        onPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${word}`)}
                         onLongPress={e=>setEditing(true)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                             <Text style={textStyle}>{text}</Text>
-                            {playing && <Speak text={lang} onEnd={e=>setPlaying(false)}/>}
+                            {playing && <Speak text={word} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
                 </View>
             )
@@ -174,7 +185,7 @@ const Sentense=({talk, id=talk?.id})=>{
     const { policy } = useParams()
     const [creating, setCreating]=React.useState(false)
     const {challenges=[]}=useSelector(state=>state.talks[id][policy])
-    const {widgets={}}=useSelector(state=>state.my)
+    const {widgets={}, tts:{mylang}}=useSelector(state=>state.my)
     const words=challenges.map(a=>a.ask).join(",")
     if(widgets.chat===false || !words)
         return null
@@ -183,12 +194,14 @@ const Sentense=({talk, id=talk?.id})=>{
         <View>
             <PressableIcon name="support" onPress={e=>setCreating(true)}/>
             {creating && <Chat1 
-                prompt={`use the following words to make a sentense for me to memorize them: ${words}`}
+                prompt={`use the following words to make a sentence to memorize them: ${words}. 
+                    Your response should only include the sentence and translation to ${mylang}. 
+                    the format must be json.`}
                 onSuccess={({response})=>{
                     dispatch({
                         type:"talk/challenge", 
                         talk, 
-                        chunk:{word:response}, 
+                        chunk:JSON.parse(response.replace(/\"sentence\"\:/ig, '"word":').replace(/\"translation\"\:/ig,'"translated":')), 
                         policy
                     })
                     setCreating(false)
@@ -200,4 +213,13 @@ const Sentense=({talk, id=talk?.id})=>{
             />}
         </View>
     )
+}
+
+function getShowText({word, pronunciation, translated, classification, explanation}){
+    pronunciation=pronunciation ? `[${pronunciation}]` : ""
+    translated= translated? `:${translated}` : ""
+    classification= classification ? `${classification}. ` : ""
+    let extra = [classification,explanation||""].filter(a=>!!a).join("")
+    extra = extra ? `- ${extra}` : ""
+    return `${word}${pronunciation}${translated} ${extra}`
 }

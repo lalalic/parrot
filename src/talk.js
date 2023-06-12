@@ -1,12 +1,11 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-native'
 import Player from "./components/player"
-import {useSelector, useDispatch, } from 'react-redux';
+import {useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
 import Video from './widgets/video';
 
-import { TalkApi, selectPolicy, isAdmin, isOnlyAudio} from "./store"
-import { Loading } from './components';
+import { Loading, useTalkQuery } from './components';
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()
@@ -18,7 +17,7 @@ export default function Talk({autoplay}){
     const {data:talk={}, policy={}, isLoading}=useTalkQuery({slug, id, policyName})
     const {challenging}=policy
     
-    const style=policy.visible&&!talk.onlyAudio ? {flex:1}: {height:200}
+    const style=policy.visible&&!talk.miniPlayer ? {flex:1}: {height:200}
 
     const [info, actions]=React.useMemo(()=>([
         Media.Info({talk, policyName, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
@@ -50,25 +49,3 @@ export default function Talk({autoplay}){
     )
 }
 
-function useTalkQuery({slug, id, policyName}){
-    const {data:remote={}, ...status}=TalkApi.useTalkQuery({slug,id})
-    const [local,bAdmin ]=useSelector(state=>[state.talks[remote?.id],isAdmin(state)])
-    const policy=useSelector(state=>selectPolicy(state,policyName,remote?.id))
-
-    const talk=React.useMemo(()=>{
-        const Widget=globalThis.Widgets[slug]
-        const video=bAdmin ? remote?.video : local?.localVideo||remote?.video
-        return {
-            ...remote, 
-            ...Widget?.defaultProps, 
-            ...local, 
-            hasHistory:!!local, 
-            video,
-            onlyAudio: isOnlyAudio(video)
-        }
-    },[remote, local])
-    
-    const {general, shadowing, dictating, retelling, ...data}=talk
-    
-    return {data, policy, ...status}
-}

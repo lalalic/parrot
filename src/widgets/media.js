@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { selectWidgetTalks, TalkApi } from "../store"
 
 import { Subtitles } from "../components/player"
-import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText } from '../components';
+import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText, Loading } from '../components';
 import { ColorScheme } from '../components/default-style';
 
 class Media extends React.Component {
@@ -52,10 +52,10 @@ class Media extends React.Component {
         switch (policyName) {
             case "general":
                 return ( 
-                    <ScrollView style={style}>
-                        <Text>{talk.description}</Text>
+                    <View style={style}>
+                        <Text style={{fontSize:20}}>{talk.title}</Text>
                         {this.TagManagement()}
-                    </ScrollView>
+                    </View>
                 )
             default: 
                 return <Subtitles {...{ policy: policyName, style }} />;
@@ -81,6 +81,7 @@ class Media extends React.Component {
         progressUpdateIntervalMillis: 100,
         positionMillis: 0,
         cueHasDuration:false,
+        miniPlayer:true,
     }
 
     static contextType=ReactReduxContext
@@ -403,13 +404,13 @@ export class TaggedListMedia extends ListMedia{
 
 export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children,
     renderItemText=a=>a.id, dispatch=useDispatch(),
-    renderItem:renderItem0=({item, id=item.id, isRemote})=>{
+    renderItem:renderItem0=({item, id=item.id})=>{
         const text=renderItemText(item)
         const textStyle={fontSize:16, color:"white"}
         const onPress=e=>navigate(`/talk/${slug}/shadowing/${id}`)
         const iconWidth=50
         const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
-        if(isRemote){ 
+        if(item.isLocal!==true){ 
             return (
                 <Pressable style={containerStyle} onPress={onPress} key={id}>
                     <Text style={[{paddingLeft:iconWidth}, textStyle]}>{text}</Text>
@@ -434,17 +435,30 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     style, ...props})=>{
     const color=React.useContext(ColorScheme)
 
-    const local=React.useMemo(()=>data.map(a=>a.id),[data])
-    const {data:{talks=[]}={}}=TalkApi.useWidgetTalksQuery({slug})
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useWidgetTalksQuery({slug})
+
+    const all=React.useMemo(()=>{
+        const locals=data.map(a=>a.id)
+        return [
+            ...data.map(a=>({...a, isLocal:true})).sort(), 
+            ...talks.filter(a=>locals.indexOf(a.id)==-1).sort((a,b)=>{
+                const aTitle=a.title.toUpperCase(), bTitle=b.title.toUpperCase()
+                return aTitle<bTitle ? -1 : (aTitle>bTitle ? 1 : 0)
+            })
+        ]
+    },[data, talks])
 
     return (
-        <View style={[{marginTop:10, minHeight:200},style]} {...props}>
+        <View style={[{flex:1, marginTop:10, minHeight:200},style]} {...props}>
             <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
                 style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
                 {...inputProps}
                 />
-            {data.map(item=>renderItem({item}))}
-            {talks.filter(a=>local.indexOf(a.id)==-1).map(item=>renderItem({item, isRemote:true}))}
+            <FlatList data={all} style={{flex:1, flexGrow:1}}
+                keyExtractor={({id, isLocal})=>`${id}-${isLocal}`}
+                renderItem={renderItem}
+                />
+            {isLoading && <Loading/>}
             {children}
         </View>
     )

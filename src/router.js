@@ -31,7 +31,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         <View style={{flex:1}}>
                             <View style={{flexGrow: 1,flex:1}}>
                                 <Outlet/>
-                                <ShareMointor/>
+                                {/*<ShareMointor/>*/}
                             </View>
                             <View style={{flexDirection: "row", justifyContent: "space-around",}}>
                                 {[["/home","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
@@ -97,7 +97,7 @@ const WithBackButton=()=>(
     <View style={{flex:1}}>
         <Outlet/>
         <Link to={-1} style={{position:"absolute",left:10}}>
-            <MaterialIcons name="keyboard-arrow-left"  size={32}/>
+            <MaterialIcons name="keyboard-arrow-left"  size={32} color="white"/>
         </Link>
     </View>
 )

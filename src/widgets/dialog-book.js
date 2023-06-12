@@ -17,7 +17,7 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     static prompts=[
-        {label:"Role Play", name:"post-add",
+        {label:"RolePlay", name:"face-retouching-natural",
             params:{
                 "Your Role":"Software Engineering Manager",
                 "Your Name":"Bob",
@@ -35,7 +35,7 @@ export default class DialogBook extends TaggedListMedia{
                 dialog:true
             }
         },
-        {label:"Create Dialog", name:"post-add",
+        {label:"Dialog", name:"record-voice-over",
             params:{
                 "Your Role":"Software Engineering Manager",
                 "My Role":"Software Engineer",

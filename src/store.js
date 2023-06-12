@@ -367,6 +367,7 @@ export const Qili=Object.assign(createApi({
 					id:"talks",
 					variables:{q}
 				})
+				data.talks.reverse()
 				return {data}
 			},
 			providesTags:()=>['Talk']
@@ -386,6 +387,7 @@ export const Qili=Object.assign(createApi({
 					id:"speakerTalks",
 					variables:{q}
 				})
+				data.talks.reverse()
 				return {data}
 			},
 			providesTags:()=>['Talk']
@@ -395,6 +397,7 @@ export const Qili=Object.assign(createApi({
 				const data=await Qili.fetch({
 					id:"today"
 				})
+				data.talks.reverse()
 				return {data}
 			},
 			providesTags:()=>[{type:"Talk", id:"today"}]
@@ -405,6 +408,7 @@ export const Qili=Object.assign(createApi({
 					id:"widgetTalks",
 					variables
 				})
+				data.talks.reverse()
 				return {data}
 			},
 			providesTags:()=>['Talk']
@@ -566,6 +570,10 @@ export function createStore(){
 								my.policy[k]={...state.policy[k],...my.policy[k]}
 							})
 
+							if(my.api){
+								Services.current=my.api
+							}
+
 							my.i++
 							return state
 						case "policy":
@@ -586,9 +594,9 @@ export function createStore(){
 					const getTalk=(action, $talks)=>{
 						checkAction(action, ["talk"])
 						const {talk:{slug, id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
-						const {talk:{title, thumb,duration,link,video}}=action
+						const {talk:{title, thumb,duration,link,video, data, languages}}=action
 						return {
-							talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video}),
+							talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video, data, languages}),
 							payload, policy, ...others
 						}
 					}

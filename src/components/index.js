@@ -10,10 +10,11 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import { isAlreadyFamiliar, Qili } from "../store"
+import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isAdmin, isOnlyAudio } from "../store"
+
 
 const AutoHideDuration=6000
-export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style, ...props }) => {
+export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style,size, ...props }) => {
     const notNeedLabelAnyMore=useSelector(state=>isAlreadyFamiliar(state))
     if(labelFade===true)
         labelFade=AutoHideDuration
@@ -33,7 +34,7 @@ export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, chil
     return (
         <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center",...style}}}>
             <MaterialIcons {...props}/>
-            {children || (!notNeedLabelAnyMore && label && <Animated.Text style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
+            {children || (!notNeedLabelAnyMore && label && <Animated.Text numberOfLines={1} ellipsizeMode="tail" style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
         </Pressable>
     )
 }
@@ -991,4 +992,27 @@ export function Loading({style, ...props}){
 
 export function KeyboardAvoidingView(props){
     return <RNKeyboardAvoidingView {...props} keyboardVerticalOffset={60}/>
+}
+
+export function useTalkQuery({ slug, id, policyName }) {
+    const { data: remote = {}, ...status } = TalkApi.useTalkQuery({ slug, id });
+    const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
+    const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
+
+    const talk = React.useMemo(() => {
+        const Widget = globalThis.Widgets[slug];
+        const video = bAdmin ? remote?.video : local?.localVideo || remote?.video;
+        return {
+            miniPlayer: isOnlyAudio(video),
+            ...remote,
+            ...(({ id, description, slug, title, ...data }) => data)(Widget?.defaultProps||{}),
+            ...local,
+            hasHistory: !!local,
+            video,
+        };
+    }, [remote, local]);
+
+    const { general, shadowing, dictating, retelling, ...data } = talk;
+
+    return { data, policy, ...status };
 }
