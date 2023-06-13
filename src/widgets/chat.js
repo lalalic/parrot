@@ -189,7 +189,7 @@ const Chat = () => {
 									dialog && listenDialog()
 								})
 								if(isPrompt?.onSuccess){
-									placeholder.text=isPrompt.onSuccess({...isPrompt, response:message, dispatch})
+									placeholder.text=isPrompt.onSuccess({...isPrompt, response:message, dispatch, store})
 								}
 								delete isPrompt?.onSuccess
 								delete isPrompt?.prompt
@@ -299,7 +299,7 @@ const Chat = () => {
 					onPress(text){//check id patter in Media.create
 						const [id]=/\d+/.exec(text)
 						const slug=text.substring(2).replace(id,"")
-						navigate(`/talk/${slug}/shadowing/${slug}${id}`)
+						navigate(`/widget/${slug}/${id}`)
 					}
 				}]}
 				showUserAvatar={true}

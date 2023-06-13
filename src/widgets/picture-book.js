@@ -32,7 +32,7 @@ export default class PictureBook extends TaggedListMedia {
 
     static remoteSave=false
     
-    static TaggedTranscript=({slug=PictureBook.defaultProps.slug})=>{
+    static TaggedTranscript=props=>{
         const dispatch=useDispatch()
         const {width}=useWindowDimensions()
 
@@ -69,8 +69,7 @@ export default class PictureBook extends TaggedListMedia {
             return result
         },[])
         return (
-            <TaggedTranscript 
-                slug={slug}
+            <TaggedTranscript {...props}
                 actions={(tag,id)=>{
                     const save=async select=>{
                         const result=await resize(select)

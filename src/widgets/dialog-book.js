@@ -1,6 +1,8 @@
 import React from "react"
+import { View, Text, Pressable } from "react-native"
 import { TaggedListMedia } from "./media"
-import { PressableIcon } from "../components"
+import { PressableIcon, Speak } from "../components"
+import { ColorScheme } from "../components/default-style"
 import { TaggedTranscript } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
@@ -23,34 +25,43 @@ export default class DialogBook extends TaggedListMedia{
                 "Your Name":"Bob",
                 "My Role":"Software Engineer",
                 "My Name":"Ray",
-                "Scene":"We are discussing a solution for a message queue",
+                "Scene":"Discuss a message queue solution",
             }, 
-            prompt:a=>`Let's role-play. 
-                Your role is ${a["Your Role"]}, and your name is ${a["Your Name"]}. 
-                My role is ${a["My Role"]}, and my name is ${a["My Name"]}.
+            prompt:a=>{
+                return `Let's role-play. 
+                Your role is ${a["Your Role"]} called ${a["Your Name"]}. 
+                My role is ${a["My Role"]} called ${a["My Name"]}.
                 the scene: ${a["Scene"]}.
                 You must wait for my response before you continue.  
-                ${a["Your Name"]}:`,
+                ${a["Your Name"]}, you start first.`
+            },
             settings:{
                 dialog:true
             }
         },
         {label:"Dialog", name:"record-voice-over",
+            speakable:false,
             params:{
                 "Your Role":"Software Engineering Manager",
                 "My Role":"Software Engineer",
-                "Scene":"We are discussing a solution for a message queue",
+                "Scene":"Discuss a message queue solution",
             }, 
-            prompt:a=>` 
-                Your role is ${a["Your Role"]}. 
-                My role is ${a["My Role"]}.
-                the scene: ${a["Scene"]}.
-                Please make a dialog for me to practise english. 
-                `,
-            onSuccess({response, dispatch}){
+            prompt:(a,store)=>{
+                const {lang}=store.getState().my
+                return ` I'm learning language of locale ${lang}.
+                    Please make a short dialog to practise the language.
+                    Your role is ${a["Your Role"]} called Joe. 
+                    My role is ${a["My Role"]} called Ray.
+                    the scene: ${a["Scene"]}.
+                    you must return all response in one time. 
+                    `
+            },
+            onSuccess({response, store}){
                 const {Scene:title}=this.params
+                const {lang}=store.getState().my
+                
                 const data=DialogBook.parse(response)
-                const id=DialogBook.create({title, data }, dispatch)
+                const id=DialogBook.create({title, data, params:this.params, generator:"Dialog", lang}, store.dispatch)
                 return `save to @#${id}`
             }
         },
@@ -60,30 +71,29 @@ export default class DialogBook extends TaggedListMedia{
         return this.speak({text:ask})
     }
 
-    static TaggedTranscript({}){
+    static TaggedTranscript(props){
         const color=React.useContext(ColorScheme)
         
-        const Item=React.useCallback(({item:{text:lang, mylang=""}, id, index})=>{
+        const Item=React.useCallback(({item:{ask, text}, id, index})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
-            const text=`${lang} : ${mylang}`
+            
             return (
-                <View style={{ flexDirection: "row", height: 50 }}>
-                    <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
+                <View style={{ flexDirection: "row", marginTop:10}}>
+                    <PressableIcon style={{ alignSelf: "flex-start" }}
+                        name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
-                    <Pressable 
-                        onLongPress={e=>setEditing(true)}
-                        style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                            <Text style={textStyle}>{text}</Text>
-                            {playing && <Speak text={lang} onEnd={e=>setPlaying(false)}/>}
+                    <Pressable style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                            <Text style={textStyle}>{ask}</Text>
+                            <Text style={{...textStyle, color:"gray"}}>{text}</Text>
+                            {playing && <Speak text={ask} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
                 </View>
             )
         },[])
 
         return (
-            <TaggedTranscript 
-                slug={DialogBook.defaultProps.slug}
+            <TaggedTranscript {...props}
                 actions={(title,id)=><Paste id={id}/>}
                 listProps={{
                     renderItem:Item,
@@ -97,13 +107,14 @@ export default class DialogBook extends TaggedListMedia{
         return text.split("\n").filter(a=>!!a)
             .map(a=>{
                 const [user, ask=user]=a.split(":")
-                return {ask}
+                return {ask, text:" "}
             }).reduce((data,a, i)=>{
                 if(0 === i%2){
                     data.push(a)
                 }else{
                     data[data.length-1].text=a.ask
                 }
+                return data
             },[])
     }
 }

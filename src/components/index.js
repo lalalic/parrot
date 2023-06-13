@@ -1007,12 +1007,13 @@ export function useTalkQuery({ slug, id, policyName }) {
             ...remote,
             ...(({ id, description, slug, title, ...data }) => data)(Widget?.defaultProps||{}),
             ...local,
-            hasHistory: !!local,
             video,
+            hasLocal:!!local,
+            hasRemote:!!remote?.id,
         };
     }, [remote, local]);
 
     const { general, shadowing, dictating, retelling, ...data } = talk;
 
-    return { data, policy, ...status };
+    return { data, policy, ...status};
 }

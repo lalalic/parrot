@@ -9,7 +9,7 @@ import { Subtitles } from "../components/player"
 import mpeg from "../experiment/mpeg";
 
 export default class extends React.Component{
-    static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
+    static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -22,7 +22,7 @@ export default class extends React.Component{
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name="delete-sweep" 
+                {talk.hasLocal && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: "talk/clear", id: talk.id })}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}

@@ -581,7 +581,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 
     return (
         <View {...props} style={[{padding:4},style]}>
-            <FlatList data={chunks} 
+            {height && <FlatList data={chunks} 
                 ref={subtitleRef}
                 extraData={`${i}-${challenges.length}-${records?.changed}`} 
                 estimatedItemSize={height}
@@ -594,7 +594,8 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
                     recognized:records[`${item.time}-${item.end}`],
                     isChallenged: !!challenges.find(a=>a.time==item.time)
                 }}/>}
-                />
+                />}
+            {!height && testHeight}
         </View>
     )
 }
@@ -603,7 +604,6 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
     const {dispatch, status, current=status.i}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
     const [playing, setPlaying] = React.useState(false);
-    const { text, time, end } = item;
     const [audioExists, setAudioExists]=React.useState(false)
     React.useEffect(()=>{
         if(audio && recognized){
@@ -623,7 +623,7 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
 
     const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
 
-    const [$text, $recognized]=React.useMemo(()=>diffPretty(text, recognized),[text, recognized])
+    const [$text, $recognized]=React.useMemo(()=>diffPretty(item.text, recognized),[item.text, recognized])
     return (
         <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
                 flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
@@ -632,13 +632,13 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                 <PressableIcon size={20} color={color.text}
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
                     name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
-                <Text style={{textAlign: "center",fontSize:10}}>{!!recognized ? diffScore(text, recognized) : ""}</Text>
+                <Text style={{textAlign: "center",fontSize:10}}>{!!recognized ? diffScore(item.text, recognized) : ""}</Text>
             </View>
             <View style={{flex:1, flexGrow:1 }}>
                 <Pressable style={{flex:1}}
                     onPressOut={e=>!$shouldCaption && setShouldCaption(false)}
                     onLongPress={e=>!$shouldCaption && setShouldCaption(true)}
-                    onPress={e => dispatch({ type: "media/time", time , shouldPlay:true})}>
+                    onPress={e => dispatch({ type: "media/time", time:item.time , shouldPlay:true})}>
                     <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end", }}

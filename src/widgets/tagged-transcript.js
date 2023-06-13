@@ -7,26 +7,30 @@ import { PressableIcon, KeyboardAvoidingView } from "../components"
 import { ColorScheme } from "../components/default-style"
 import { selectWidgetTalks } from "../store"
 
-export default Wrapper=({slug=useParams().slug})=>{
+export default Wrapper=({})=>{
+    const {slug, id}=useParams()
     if(Widgets[slug]?.TaggedTranscript){
         const MyTaggedTranscript=Widgets[slug].TaggedTranscript
-        return <MyTaggedTranscript slug={slug}/>
+        return <MyTaggedTranscript slug={slug} id={id}/>
     }
-    return <TaggedTranscript slug={slug}/>
+    return <TaggedTranscript slug={slug} id={id}/>
 }
 
 
 /**
  * it's for audio item {text, uri}
  */
-export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
+export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderItem}){
         const color=React.useContext(ColorScheme)
         const navigate=useNavigate()
         
         const talks=useSelector(state=>selectWidgetTalks(state, slug))
-        const tags=React.useMemo(()=>talks.map(a=>a.title),[talks])
-        const [state, setState]=React.useState(({title,id}=talks[0]||{})=>({current:title,id}))
+        const [state, setState]=React.useState(()=>{
+            const {title,id}=talks[talks.findIndex(a=>a.id==$id)]||talks[0]||{}
+            return ({current:title,id})
+        })
         
+        const tags=React.useMemo(()=>talks.map(a=>a.title),[talks])
         const {data=[]}=React.useMemo(()=>talks.find(a=>a.title==state.current)||{},[talks, state.current])
 
         const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10}
@@ -52,11 +56,11 @@ export function TaggedTranscript({slug, actions, listProps={}, renderItem}){
                         renderItem={props=><WidgetItem {...{...props,id:state.id, slug}}/>}
                         />
                 </View>
-                <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
+                {!!state.id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                     {actions?.(state.current, state.id)}
                     <PressableIcon name="read-more"
                         onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
-                </View>
+                </View>}
             </KeyboardAvoidingView>
         )
     }

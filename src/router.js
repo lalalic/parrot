@@ -64,14 +64,14 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
             </Route>
 
             <Route path="/talk" element={<WithBackButton/>}>
-                <Route path=":slug" element={<Talk/>} />
-                <Route path=":slug/:policy" element={<Talk/>} />
+                <Route path=":slug" element={<Talk/>}/>
+                <Route path=":slug/:policy" element={<Talk/>}/>
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
-                <Route path="manage/:slug" element={<TaggedTranscript/>} />
             </Route>
+
             <Route path="/widget" element={<WithBackButton/>}>
                 <Route path=":slug" element={React.createElement(()=>{
-                        const {slug}=useParams()
+                        const {slug,}=useParams()
                         const Widget=globalThis.Widgets[slug]
                         if(!Widget)
                             return null
@@ -84,6 +84,9 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                         return <Widget/>
                     })} 
                 />
+
+                <Route path=":slug/:id" element={<TaggedTranscript/>}/>
+                <Route path="manage/:slug" element={<TaggedTranscript/>}/>
             </Route>
             <Route path="/admin" element={<WithBackButton/>}>
                 <Route path="" element={<Admin/>}/>

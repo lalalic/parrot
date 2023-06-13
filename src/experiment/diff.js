@@ -3,7 +3,7 @@ import { Text } from "react-native";
 
 import WordDiff from "word-diff";
 
-const trim=text=>{
+function trim(text){
     text=text.replace(/\n/g, " ")
     
     text=text.replace(/(\(.*\))/g, "")
@@ -25,6 +25,9 @@ export function diffScore(text, recognized, data) {
     return Math.ceil(100 * correctWords / text.split(/\s+/).length);
 }
 export function diffPretty(text, recognized) {
+    if(typeof(text)=="undefined"){
+        debugger
+    }
     const data={}
     const score=diffScore(text, recognized, data)
     if(score==100){

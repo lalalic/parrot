@@ -11,6 +11,8 @@ const Talk_Fields=`
             languages: JSON,
             source: String,
             data:[JSON],
+            lang: String,
+            mylang: String,
 `
 const Talk_Fields_Fragment=Talk_Fields.replace(/(\:.*\,)/g,"")
 
@@ -143,8 +145,8 @@ Cloud.addModule({
         }`,
     },
     indexes:{
-        Talk:[{speaker:1}, {title:1}, {slug:1}],
-        Widget:[{title:1, slug:1}]
+        Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
+        Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
     proxy:{
         ted: {

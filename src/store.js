@@ -496,6 +496,8 @@ export function createStore(){
 			if(!Ted.supportLocal(talk))
 				return
 
+			const {lang, mylang}=state.my
+
 			const file=`${FileSystem.documentDirectory}${id}/video.mp4`
 			await prepareFolder(file)
 			await mpegKit.generateAudio({source:talk.video, target:file})
@@ -519,7 +521,9 @@ export function createStore(){
 							talk:{
 								...unwrap(talk), 
 								_id:id, 
-								video:url
+								video:url,
+								lang,
+								mylang,
 							}
 						}
 					}, state.my.admin)
@@ -944,7 +948,7 @@ export function getTalkApiState(state){
 }
 
 export function isAlreadyFamiliar(state){
-	return state.my.i>10
+	return state.my.i>1000
 }
 
 export function isOnlyAudio(url){

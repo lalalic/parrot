@@ -1,6 +1,6 @@
 import React from "react"
 import * as FileSystem from "expo-file-system"
-import { View, Linking} from "react-native" 
+import { View, Linking, Text} from "react-native" 
 import { TaggedListMedia,  } from "./media"
 import { ChangableText, PlaySound, PressableIcon, Recorder } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"
@@ -8,6 +8,9 @@ import { ColorScheme } from "../components/default-style"
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
+/**
+ * data:[{text}]
+ */
 export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
         ...super.defaultProps,
@@ -20,12 +23,17 @@ export default class AudioBook extends TaggedListMedia {
 
     renderAt({text, uri}, i){ 
         const {rate, volume}=this.status
-        return this.speak({rate,volume,text:{audio:uri}})
+        return (
+            <>
+                <Text style={{color:"yellow"}}>{text}</Text>
+                {this.speak({rate,volume,text:uri ? {audio:uri} : text})}
+            </>
+        )
     }
 
     static removeSave=false
 
-    static TaggedTranscript=({slug=AudioBook.defaultProps.slug})=>{
+    static TaggedTranscript=props=>{
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
@@ -49,7 +57,7 @@ export default class AudioBook extends TaggedListMedia {
             )
         },[])
         return (
-            <TaggedTranscript slug={slug}
+            <TaggedTranscript {...props}
                 renderItem={AudioItem}
                 actions={(tag,id)=>[
                     <PressableIcon name="file-upload" key="file"
@@ -69,6 +77,28 @@ export default class AudioBook extends TaggedListMedia {
     }
 
     static prompts=[
-        
+        {label:"Article", name:"article",
+            speakable:false,
+            params:{
+                "Target":"a short self-introduction",
+                "Role":"a customer communication management software architect",
+                "Scene":"interview"
+            }, 
+            prompt:(a,store)=>{
+                const {lang}=store.getState().my
+                return ` Please make ${a.Target} in language of locale ${lang} for Ray, 
+                as ${a.Role}, for ${a.Scene}. 
+                your response should only include the introduction with a few paragraphs.
+                    `
+            },
+            onSuccess({response, store}){
+                const {Role, Target}=this.params
+                const {lang}=store.getState().my
+                const title=`${Target} for ${Role}`
+                const data=response.split(/[\n]/g).filter(a=>!!a).map(text=>({text}))
+                const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
+                return `save to @#${id}`
+            }
+        }
     ]
 }

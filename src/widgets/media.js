@@ -13,7 +13,7 @@ class Media extends React.Component {
     /**
      * protocol: supported actions
      */
-     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited, hasHistory=talk.hasHistory}){
+     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
@@ -25,13 +25,15 @@ class Media extends React.Component {
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {hasHistory && <PressableIcon name="delete-sweep" 
+                {talk.hasLocal && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}
 
-                <PressableIcon name={favorited ? "favorite" : "favorite-outline"}
+                <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
                     onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
+
+                {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
                 
                 {this.ExtendActions?.(...arguments)}
             </PolicyChoice>
@@ -72,7 +74,7 @@ class Media extends React.Component {
         return true
      }
 
-     static remoteSave({shadowing, retelling, dictating, hasHistory, challenging, ...talk}){
+     static remoteSave({shadowing, retelling, dictating, challenging, ...talk}){
         return talk
      }
 
@@ -325,7 +327,7 @@ export class ListMedia extends Media{
 
 
     render() {
-        const { thumb, posterSource = thumb, source, title, ...props } = this.props
+        const { thumb, posterSource, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
@@ -467,7 +469,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
 export const TagShortcut=({slug, style={left:10}})=>{
     const color=React.useContext(ColorScheme)
     return (
-        <Link to={`/talk/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
+        <Link to={`/widget/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
             <MaterialIcons name="category" size={32} color={color.text}/>
         </Link>
     )

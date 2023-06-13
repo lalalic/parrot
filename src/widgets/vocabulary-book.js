@@ -37,24 +37,25 @@ export default class VocabularyBook extends TaggedListMedia{
                 "amount": "50",
             }, 
             speakable:false,
-            prompt:(a,store)=>{
+            prompt(a,store){
                 const state=store.getState()
                 const {mylang, lang}=state.my
                 const existings=Object.values(state.talks)
                     .filter(b=>b.slug=="vocabulary" && b.category==a.category)
-                    .map(b=>b.words.map(b=>b.lang).join(","))
+                    .map(b=>b.data.map(b=>b.word).join(","))
                     .join(",")
 
-                return `list ${a.amount} words for locale ${lang} about ${a.category} with translation to locale ${mylang}.
+                return `list ${a.amount} words of locale ${lang} about ${a.category} with translation to locale ${mylang}.
                     Each must format like word:translation , and You must put all words in one paragraph using ; to seperate.
                     You can't respond anything else.
                     ${existings ? `I already know these words: ${existings}` : ''}`
             },
 
-            onSuccess({response,dispatch}){
+            onSuccess({response,store}){
                 const {category}=this.params
+                const {mylang,lang}=store.getState().my
                 const words=response.split(";").map(VocabularyBook.parse).filter(a=>!!a).flat()
-                const id=VocabularyBook.create({data:words,title:category, category}, dispatch)
+                const id=VocabularyBook.create({data:words,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
                 return `save to @#${id}`
             }
         },{
@@ -64,15 +65,22 @@ export default class VocabularyBook extends TaggedListMedia{
                 category:"meeting"
             }, 
             speakable:false,
-            prompt:a=>`list ${amount} idioms used in ${a.category} with explanation and an example. 
-            your response should only contain the idioms, 
-            and its format must be json format`,
+            prompt:(a,store)=>{
+                const state=store.getState()
+                const {mylang, lang}=state.my
+                a.lang=lang
+                a.mylang=mylang
+                return `list ${a.amount} idioms of locale ${lang} used in ${a.category} with explanation, an example and translation to locale ${mylang}. 
+                    your response should only contain the idioms, 
+                    and its format must be json format with keys: idiom,explanation,example, translated.`
+            },
 
-            onSuccess({response,dispatch}){
+            onSuccess({response,store}){
                 const {category}=this.params
+                const {lang, mylang}=store.getState()
                 const {idioms}=JSON.parse(response.replace(/\"idiom\"\:/g, '"word":').replace(/\"translation\"\:/,'"translated":'))
-                const title=`idioms(${category})`
-                const id=VocabularyBook.create({data:idioms,title, category}, dispatch)
+                const title=`idioms - ${category}`
+                const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
                 return `save to @#${id}`
             }
         }
@@ -92,17 +100,24 @@ export default class VocabularyBook extends TaggedListMedia{
         const {locale}=this.state
             
         return data.reduce((cues,{word="", translated=word}, i)=>{
-            const label=getShowText(data[i])
-            cues.push(!locale ? {label, text:translated, ask:word, recogLocale:true} : {label, text:word, ask:translated})
+            cues.push(!locale ? {text:translated, ask:word, recogLocale:true} : {text:word, ask:translated})
             return cues
         },[])
     }
 
     renderAt({ask, label},i){
+        const {data=[]}=this.props
         const {locale}=this.state
+        let {word, pronunciation, translated, classification, explanation,example}=data[i]
+        
+        pronunciation=pronunciation ? `[${pronunciation}]` : ""
+        translated= translated? `: ${translated}` : ""
+        classification= classification ? `- ${classification}.` : ""
+        const text=`${word} ${pronunciation} ${classification}`
+
         return (
             <>
-            <Text style={{padding:10}}>{label.replace("-","\n").replace(".","\n")}</Text>
+            <Text style={{padding:10}}>{[text,explanation,example].filter(a=>!!a).join("\n")}</Text>
             {this.speak({locale, text:ask})}
             </>
         )
@@ -118,7 +133,7 @@ export default class VocabularyBook extends TaggedListMedia{
         return super.shouldComponentUpdate(...arguments)
     }
 
-    static TaggedTranscript({}){
+    static TaggedTranscript(props){
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
         
@@ -141,8 +156,7 @@ export default class VocabularyBook extends TaggedListMedia{
             )
         },[])
         return (
-            <TaggedTranscript 
-                slug={VocabularyBook.defaultProps.slug}
+            <TaggedTranscript {...props}
                 actions={(title,id)=><Paste id={id}/>}
                 listProps={{
                     renderItem:Item,
@@ -184,8 +198,8 @@ const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const { policy } = useParams()
     const [creating, setCreating]=React.useState(false)
-    const {challenges=[]}=useSelector(state=>state.talks[id][policy])
-    const {widgets={}, tts:{mylang}}=useSelector(state=>state.my)
+    const {challenges=[]}=useSelector(state=>state.talks[id][policy]||{})
+    const {widgets={}, mylang}=useSelector(state=>state.my)
     const words=challenges.map(a=>a.ask).join(",")
     if(widgets.chat===false || !words)
         return null
@@ -217,7 +231,7 @@ const Sentense=({talk, id=talk?.id})=>{
 
 function getShowText({word, pronunciation, translated, classification, explanation}){
     pronunciation=pronunciation ? `[${pronunciation}]` : ""
-    translated= translated? `:${translated}` : ""
+    translated= translated? `: ${translated}` : ""
     classification= classification ? `${classification}. ` : ""
     let extra = [classification,explanation||""].filter(a=>!!a).join("")
     extra = extra ? `- ${extra}` : ""
