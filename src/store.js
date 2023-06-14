@@ -356,7 +356,8 @@ export const Qili=Object.assign(createApi({
 					variables:{slug, id}
 				})
 				return {data:talk}
-			}
+			},
+			providesTags: data=>data.talk ? [{type:"Talk",id:data.talk.id}] : null
 		}),
 		talks:builder.query({
 			queryFn:async ({q="", page}, api)=>{
@@ -471,6 +472,10 @@ export const Qili=Object.assign(createApi({
 const Services={Ted, Qili, current:'Ted'}
 export const TalkApi=new Proxy(Services,{
 	get(target, key){
+		if(key=="Qili")
+			return Qili
+		else if(key="Ted")
+			return Ted
 		return target[target.current][key]
 	}
 })
@@ -684,8 +689,12 @@ export function createStore(){
 						////unify : id, uri
 						case "talk/book/record":
 							return produce(talks, $talks=>{
-								const {type, id, ...record}=action
-								const talk=$talks[id]
+								const {type, id, talk:talk0, ...record}=action
+								let talk=$talks[id]
+								if(!talk && talk0){
+									talk=$talks[id]={data:[], ...talk0}
+								}
+
 								talk.data.push(record)
 							})
 						case "talk/book/remove":

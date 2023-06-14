@@ -994,8 +994,8 @@ export function KeyboardAvoidingView(props){
     return <RNKeyboardAvoidingView {...props} keyboardVerticalOffset={60}/>
 }
 
-export function useTalkQuery({ slug, id, policyName }) {
-    const { data: remote = {}, ...status } = TalkApi.useTalkQuery({ slug, id });
+export function useTalkQuery({api, slug, id, policyName }) {
+    const { data: remote = {}, ...status } = (api ? TalkApi[api] : TalkApi).useTalkQuery({slug, id });
     const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 

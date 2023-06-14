@@ -63,6 +63,7 @@
     "react-native-calendars": "^1.1291.0",
     "react-native-chatgpt": "^0.9.0",
     "react-native-fs": "^2.20.0",
+    "react-native-gesture-handler": "~2.5.0",
     "react-native-gifted-chat": "^2.0.1",
     "react-native-logs": "^5.0.1",
     "react-native-select-dropdown": "^3.3.3",
