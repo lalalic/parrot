@@ -18,6 +18,8 @@ import ytdl from "react-native-ytdl"
 
 import * as Calendar from "./experiment/calendar"
 import mpegKit, { prepareFolder } from "./experiment/mpeg"
+import uuid from "react-native-uuid"
+import { SubscriptionClient } from "subscriptions-transport-ws"
 
 export const Policy={
 	general: {
@@ -327,6 +329,7 @@ export const Ted=Object.assign(createApi({
 					id:"widgetTalks",
 					variables
 				})
+				data.talks.reverse()
 				return {data}
 			}
 		})
@@ -357,7 +360,9 @@ export const Qili=Object.assign(createApi({
 				})
 				return {data:talk}
 			},
-			providesTags: data=>data.talk ? [{type:"Talk",id:data.talk.id}] : null
+			providesTags: talk=>{
+				return talk ? [{type:"Talk",id:talk.id}] : null
+			}
 		}),
 		talks:builder.query({
 			queryFn:async ({q="", page}, api)=>{
@@ -411,11 +416,11 @@ export const Qili=Object.assign(createApi({
 				})
 				data.talks.reverse()
 				return {data}
-			},
-			providesTags:()=>['Talk']
+			}
 		})
 	})
 }),{
+	//service: "http://localhost:9080/1/graphql",
 	service: "https://api.qili2.com/1/graphql",
 	storage: "https://up.qbox.me",
 	async fetch(request, {headers}={}){
@@ -452,30 +457,49 @@ export const Qili=Object.assign(createApi({
             parameters
         })
     
-        const {data}=JSON.parse(res.body)
+        const {data, error}=JSON.parse(res.body)
+
+		if(error){
+			throw new Error(error)
+        }
 
         if(!data){
             throw new Error(res.statusText)
-        }
-
-        if(data.errors){
-            throw new Error(data.errors.map(a=>a.message).join("\n"))
         }
 
         return data?.file_create?.url
 	},
 	isUploaded(video){
 		return video.indexOf("qili2.com")!=-1
+	},
+	subscribe(request, callback){
+		const url=this.service.replace(/^https?\:/, "ws:")
+		const client=new SubscriptionClient(url,{
+			reconnect:true,
+			connectionParams:{
+				"x-application-id":"parrot"
+			}
+		})
+
+		const sub=client.request({query:"*",...request}).subscribe(
+			function onNext(data){
+				callback?.(data)
+			},
+			function onError(error){
+				console.error(error)
+			}
+		)
+		
+		return ()=>{
+			sub.unsubscribe()
+			client.close()
+		}
 	}
 })
 
 const Services={Ted, Qili, current:'Ted'}
 export const TalkApi=new Proxy(Services,{
 	get(target, key){
-		if(key=="Qili")
-			return Qili
-		else if(key="Ted")
-			return Ted
 		return target[target.current][key]
 	}
 })

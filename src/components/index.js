@@ -995,7 +995,7 @@ export function KeyboardAvoidingView(props){
 }
 
 export function useTalkQuery({api, slug, id, policyName }) {
-    const { data: remote = {}, ...status } = (api ? TalkApi[api] : TalkApi).useTalkQuery({slug, id });
+    const { data: remote = {}, ...status } = (api=="Qili" ? Qili : TalkApi).useTalkQuery({slug, id });
     const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 
@@ -1005,12 +1005,12 @@ export function useTalkQuery({api, slug, id, policyName }) {
         return {
             miniPlayer: isOnlyAudio(video),
             ...remote,
-            ...(({ id, description, slug, title, ...data }) => data)(Widget?.defaultProps||{}),
+            ...(({ id, description, slug, title, thumb, ...data }) => data)(Widget?.defaultProps||{}),
             ...local,
             video,
             hasLocal:!!local,
             hasRemote:!!remote?.id,
-        };
+        }
     }, [remote, local]);
 
     const { general, shadowing, dictating, retelling, ...data } = talk;

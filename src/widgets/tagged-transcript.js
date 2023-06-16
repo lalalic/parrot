@@ -20,7 +20,7 @@ export default Wrapper=({})=>{
 /**
  * it's for audio item {text, uri}
  */
-export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderItem}){
+export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderItem, children}){
         const color=React.useContext(ColorScheme)
         const navigate=useNavigate()
         
@@ -49,12 +49,13 @@ export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderIte
                         />
                 </View>
                 <View style={{flexGrow:1,flex:1}}>
-                    <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
+                    {!!data?.length && <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
                         extraData={`${state.q}-${state.current}-${data.length}`}
                         keyExtractor={a=>`${a.uri}-${a.text}`}
                         {...listProps}
                         renderItem={props=><WidgetItem {...{...props,id:state.id, slug}}/>}
-                        />
+                        />}
+                    {children}
                 </View>
                 {!!state.id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                     {actions?.(state.current, state.id)}

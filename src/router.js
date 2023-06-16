@@ -24,7 +24,7 @@ import { DailyPicture } from "./widgets/picture-book";
 import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/home","/widget/picturebook/DailyPicture",]}>
+    <NativeRouter initialEntries={["/home","/widget/picturebook/DailyPicture"]}>
         <Routes>
             <Route path="/" element={React.createElement(()=>{
                     const {pathname}=useLocation()

@@ -20,21 +20,22 @@ class Media extends React.Component {
             <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]} deselectable={false}
                 onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
                     
-                {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
-                    onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
-                    onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
-                />}
+                {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
+                
+                <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
+                    onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
 
+                
                 {talk.hasLocal && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
                     onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
                 />}
 
-                <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
-                    onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
+                {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
+                    onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
+                    onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
+                />}
 
-                {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
-                
                 {this.ExtendActions?.(...arguments)}
             </PolicyChoice>
         )
@@ -236,12 +237,12 @@ class Media extends React.Component {
     }
 
     render() {
-        const { thumb, posterSource = thumb, source, title, ...props } = this.props
+        const { thumb, posterSource=thumb, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
-                {!!posterSource && (<Image source={posterSource}
-                    style={{position:"absolute", width: "100%", height: "100%", marginTop:50, marginBottom:50 }} />)}
-                <Text style={{paddingTop:50, fontSize:20,height:50}}>{this.title()}</Text>
+                <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
+                    {this.doRenderAt()}
+                </ImageBackground>
             </View>
         )
     }
@@ -325,18 +326,6 @@ export class ListMedia extends Media{
         return this.cues.findLastIndex(a=>positionMillis>=a.time)
     }
 
-
-    render() {
-        const { thumb, posterSource, source, title, ...props } = this.props
-        return (
-            <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
-                <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
-                    {this.doRenderAt()}
-                </ImageBackground>
-            </View>
-        )
-    }
-
     doRenderAt(){
         const {i=-1}=this.state
         if(i==-1)
@@ -396,7 +385,7 @@ export class TaggedListMedia extends ListMedia{
 
 
     createTranscript(){
-        return [...this.props.data]
+        return [...(this.props.data||[])]
     }
 
     title(){

@@ -5,11 +5,17 @@ import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
 
 import { TaggedListMedia } from "./media"
-import { Loading, PressableIcon, Recognizer, Recorder, useStateAndLatest, useTalkQuery } from "../components"
+import { Loading, PressableIcon, useStateAndLatest, useTalkQuery } from "../components"
 import { TaggedTranscript } from "./tagged-transcript"
-import { useDispatch, useSelector } from "react-redux"
-import { isAdminLogin } from "../store"
+import { useDispatch, useSelector, } from "react-redux"
+import { isAdminLogin, Qili } from "../store"
 import { useNavigate } from "react-router-native"
+import Chat from "./chat"
+
+function isImageArea(uri){
+    const parts=uri.split(",")
+    return parts.length==4
+}
 
 /**
  * some may not have audio, but the image is able to be shown
@@ -29,8 +35,23 @@ export default class PictureBook extends TaggedListMedia {
         miniPlayer:false
     }
 
-    renderAt({uri}){ 
+    renderAt({uri,text}){
+        debugger
+        if(isImageArea(uri)){
+            debugger
+            const {thumb}=this.props
+            const [left,top,width,height]=uri.split(",").map(a=>parseInt(a))
+            return (
+                <View style={{flex:1, alignItems:"center", justifyContent:"center"}}>
+                    <AreaImage src={thumb} size={200} area={{left,top,width,height}}/>
+                </View>
+            )
+        }
         return <Image source={{uri}} style={{flex:1}}/>
+    }
+
+    createTranscript(){
+        return [{uri:"0,0,500,500", text:"road"}, {uri:"0,0,1250,1250", text:"building"}]
     }
 
     static remoteSave=false
@@ -62,17 +83,36 @@ export default class PictureBook extends TaggedListMedia {
 
         return (
             <TaggedTranscript {...props}
-                actions={(tag,id)=>(<Uploader 
-                        options={{
-                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                            aspect: [1, 1],
-                            quality: 0,
-                        }} 
-                        upload={async select=>{
-                            const result=await ImageManipulator.manipulateAsync(select.uri,[{resize:{width:400}}], {compress:0,format:"jpeg"})
-                            FileSystem.deleteAsync(select.uri,{idempotent:true})
-                            dispatch({type:"talk/book/record", id, uri:result.uri, text:"Name"})
-                        }}/>
+                actions={(tag,id)=>([
+                        <Uploader key="upload"
+                            options={{
+                                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                aspect: [1, 1],
+                                quality: 0,
+                            }} 
+                            upload={async select=>{
+                                const result=await ImageManipulator.manipulateAsync(select.uri,[{resize:{width:400}}], {compress:0,format:"jpeg"})
+                                FileSystem.deleteAsync(select.uri,{idempotent:true})
+                                dispatch({type:"talk/book/record", id, uri:result.uri, text:"Name"})
+                            }}/>,
+                        <Uploader name="apartment" key="objects"
+                            options={{
+                                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                allowsMultipleSelection:false,
+                                quality: 0.8
+                            }}
+                            upload={async select=>{
+                                if(select.width>select.height){
+                                    const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
+                                    await FileSystem.moveAsync({from:result.uri, to:path})
+                                }
+                                dispatch({type:"talk/set", talk:{id, thumb:result.uri, identfier:true}})
+                            }}
+                            onPress={e=>{
+
+                            }}
+                            />
+                    ]
                 )}
                 renderItem={PictureItem}
                 listProps={{numColumns:2}}
@@ -84,13 +124,12 @@ export default class PictureBook extends TaggedListMedia {
         id:"DailyPicture",
         slug: this.defaultProps.slug,
         title: "A Daily Picture",
-        isWidget:true,
-        api:"https://source.unsplash.com/random",
+        isWidget:true
     }
 }
 
-function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, upload, ...props}) {
-    return <PressableIcon name="add-a-photo" {...props}
+function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, upload=a=>a, ...props}) {
+    return <PressableIcon name="add-a-photo"
         onPress={e => {
             (async () => {
                 const select = await ImagePicker.launchCameraAsync({allowsEditing: true, ...options })
@@ -103,69 +142,113 @@ function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, up
             (async () => {
                 const select = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, ...options })
                 if (!select.cancelled) {
-                    select.selected.forEach(upload)
+                    if(select.selected){
+                        select.selected.forEach(upload)
+                    }else{
+                        upload(select)
+                    }
                 }
             })()
-        } } />
+        } } 
+        {...props}
+        />
 }
 
 export function DailyPicture({}){
     const {width, height}=useWindowDimensions()
-    const {slug, id, api}=PictureBook.DailyPicture
-
-    const {data:talk={}, isLoading} = useTalkQuery({api:"Qili", slug, id})
-    const {
-        posterSource=`${api}/${width}x${height}/?city,night`, 
-        data=[]
-    }=talk||{}
-    
-    const bAdmin=true//useSelector(isAdminLogin)
     const navigate=useNavigate()
+    const dispatch=useDispatch()
+    const today=new Date().asDateString()
 
-    const [visible, setVisible]=React.useState(true)
-
+    const {data:talk={}, isLoading} = useTalkQuery({api:"Qili", id:`DailyPicture/${today}`, slug:"Widget"})
+    
+    const bAdmin=useSelector(state=>isAdminLogin(state))
+    
+    const [{visible, random, source}, setState]=React.useReducer((state,action)=>{
+        state={...state, ...action}
+        if(action.source){
+            state.visible=false
+        }
+        if(action.visible){
+            state.source=""
+        }
+        return state
+    },{visible:true, random:false, source:""})
+    
     if(isLoading)
         return <Loading/>
 
     return (
         <View style={{flex:1}}>
-            <ImageBackground source={{uri:posterSource}} style={{flex:1}} resizeMode="contain">
-                {visible && data.map(a=><IdentifiedObject key={a.text} {...a}/>)}
-                <Locator {...{x:width/2, y: (height-50)/2}}/>
+            <ImageBackground source={{uri:source||talk.thumb}} style={{flex:1,resizeMode:"contain"}}>
+                <IdentifiedObjects visible={visible} today={today} data={talk.data||[]}/>
+                <Locator {...{x:width/2, y: (height-50)/2}} onLocate={async identified=>{
+                    await Qili.fetch({
+                        query:`mutation a($today:String!, $uri:String!, $text:String!){
+                            identifiedInDailyPicture(today:$today, uri:$uri, text:$text)
+                        }`,
+                        variables:{today, ...identified}
+                    })   
+                }}/>
             </ImageBackground>
             <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
-                <PressableIcon name="apps" color={visible ? "yellow" : "gray"} onPress={e=>setVisible(!visible)}/>
+                <PressableIcon name="apps" color={visible ? "yellow" : "gray"} onPress={e=>setState({visible:!visible})}/>
                 {!bAdmin ? <Text> </Text> :
-                    <Uploader name="cloud-upload"
-                        options={{
-                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                            quality: 0.8
-                        }}
-                        upload={async select=>{
-                            const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
-                            FileSystem.deleteAsync(select.uri,{idempotent:true})
-                            const posterSource=await Qili.upload({file:result.uri, key:`Widget/${PictureBook}/${new Date().asDateString()}.png`, host:`Widget:${PictureBook.DailyPicture.id}`})
-                            const talk={...PictureBook.DailyPicture,  posterSource, }
-                            await Qili.fetch({
-                                id:"save", 
-                                variables:{talk}
-                            })
-                            Qili.invalidate([{type:"Talk", id:PictureBook.DailyPicture.id}])
-                        }}
-                        /> 
+                    [   <Uploader name="360"key="uploader"
+                            options={{
+                                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                                allowsMultipleSelection:false,
+                                quality: 0.8
+                            }}
+                            onPress={e=>setState({random:true})}
+
+                            upload={async select=>{
+                                let url=select.uri
+                                setState({source:url})
+                            }}
+                        />,
+                        <PressableIcon name="cloud-upload" key="test" color={!source ? "gray" : "white"}
+                            onPress={e=>{
+                                if(!source)
+                                    return 
+                                ;(async ()=>{
+                                    let path=source
+                                    if(path.startsWith("http")){
+                                        path=`${FileSystem.documentDirectory}DailyPicture/${today}.png`
+                                        await prepareFolder(path)
+                                        await FileSystem.downloadAsync(source, path)
+                                        const size=await new Promise((resolve)=>Image.getSize(path, (width,height)=>resolve({width,height})),e=>resolve({width:0,height:1}))
+                                        if(size.width>size.height){
+                                            const result=await ImageManipulator.manipulateAsync(path,[{rotate:90}], {compress:1,format:"png"})
+                                            await FileSystem.moveAsync({from:result.uri, to:path})
+                                        }
+                                    }
+                                    await Qili.upload({file:path, key:`Widget/DailyPicture/${today}.png`, host:`Widget:${PictureBook.DailyPicture.id}`})
+                                    dispatch(Qili.util.invalidateTags([{type:"Talk", id:PictureBook.DailyPicture.id}]))
+                                    setState({source:""})
+                                })();
+                            }}
+                            />
+                    ]
                     
                 }
                 <PressableIcon name="read-more" onPress={e=>navigate(`/talk/picturebook/retelling/DailyPicture`)}/>
             </View>
+            {random && <Chat 
+                prompt="response one or two words to describe a random scene with comma as seperator" 
+                onSuccess={async ({message})=>{
+                    const res=await fetch(`https://source.unsplash.com/random/${width}*${height-50}/?${message}`)
+                    setState({random:false,source:res.url})
+                }}
+            />}
         </View>
     )
 }
 
-
 import { Gesture, GestureDetector } from "react-native-gesture-handler"
-function Locator({size=125, x:x0=0, y:y0=0, d=-size/2}){
+import { prepareFolder } from "../experiment/mpeg"
+function Locator({size=125, x:x0=0, y:y0=0, d=-size/2, onLocate}){
     const [{x,y,dx=0,dy=0,width,height,scale}, setPosition, $position]=useStateAndLatest({x:x0+d,y:y0+d,width:size,height:size,scale:1})
-    const dispatch=useDispatch()
     const pinchGesture = Gesture.Pinch()
         .onUpdate((e) => {
             setPosition({...$position.current, scale:$position.current.scale*e.scale})
@@ -203,7 +286,7 @@ function Locator({size=125, x:x0=0, y:y0=0, d=-size/2}){
                             if(!text)
                                 return 
                             const uri=`${parseInt(x+dx)},${parseInt(y+dy)},${parseInt(width*scale)},${parseInt(height*scale)}`
-                            dispatch({type:"talk/book/record", id:PictureBook.DailyPicture.id, text, uri, talk:PictureBook.DailyPicture})
+                            onLocate?.({text, uri})
                             refEditor.current.clear()
                         }}
                     />
@@ -231,4 +314,62 @@ function IdentifiedObject({uri,text}){
             <Text textAlign="center">{text}</Text>
         </View>
     )
+}
+
+function IdentifiedObjects({visible, today, data=[]}){
+    const [objects, setObjects]=React.useState([...data])
+    React.useEffect(()=>{
+        const unsub=Qili.subscribe({
+            query:`subscription a($today:String!){
+                newObjects:objectsInDailyPicture(today:$today)
+            }`,
+            variables:{today}
+        },({newObjects=[]})=>{
+            setObjects([...objects, ...newObjects])
+        })
+        return unsub
+    },[])
+
+    if(!visible)
+        return null
+    
+    return <>{objects.map(a=><IdentifiedObject key={a.uri} {...a}/>)}</>
+}
+
+
+function AreaImage({ src, size, area }){
+    const [imageSize, setImageSize]=React.useState({width:100,height:100})
+
+    React.useEffect(()=>{
+        Image.getSize(src,(width,height)=>{
+            setImageSize({width,height})
+        })
+    },[])
+
+  const frameStyle = React.useMemo(()=>({
+    width: size,
+    height: size,
+    overflow: 'hidden',
+    position: 'relative',
+  }),[size])
+
+  const scale=size / area.width
+  const croppedImageStyle = React.useMemo(()=>({
+    height:"100%", width:"100%",
+    ...imageSize,
+    position: 'absolute',
+    left: -(area.left * scale),
+    top: -(area.top * scale),
+    resizeMode: "contain",
+    transform: [
+        { scaleX:  scale},
+        { scaleY: scale },
+    ],
+  }),[imageSize, area, size])
+
+  return (
+    <View style={frameStyle}>
+      <Image source={{ uri: src }} style={croppedImageStyle} />
+    </View>
+  );
 }

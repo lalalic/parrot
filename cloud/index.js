@@ -33,11 +33,17 @@ Cloud.addModule({
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
             widgetTalks(slug:String, q:String):[Talk]
+            dailyPicture(today:String):JSON
         }
 
         extend type Mutation{
             save(talk:JSON!):Boolean
             remove(id:String!, type:String):Boolean
+            identifiedInDailyPicture(today:String!, uri:String!, text:String!):Boolean
+        }
+
+        extend type Subscription{
+            objectsInDailyPicture(today:String!):[JSON]
         }
     `,
     resolver:{
@@ -48,8 +54,12 @@ Cloud.addModule({
             id:({_id})=>_id,
         },
         Query:{
-            talk(_,{slug, id:_id},{app,user}){
+            async talk(_,{slug, id:_id},{app,user}){
                 if(slug==="Widget"){
+                    if(_id.startsWith("DailyPicture/")){
+                        const [,today]=_id.split("/")
+                        return await app.cloud.resolvers.Query.dailyPicture(_,{today},arguments[2])
+                    }
                     return app.get1Entity("Widget", {_id})
                 }
                 const filter={}
@@ -84,6 +94,29 @@ Cloud.addModule({
                 }
                 return app.findEntity("Widget", props)
             },
+
+            async dailyPicture(_,{today=asDateString(new Date())},{app}){
+                debugger
+                const key=`Widget/DailyPicture/${today}.png`, filter={_id:key}
+                const exist=await app.get1Entity("File",filter)
+                let thumb, data=[]
+                if(!exist){
+                    const uri="https://source.unsplash.com/random/900*1800/?night,city"
+                    thumb=await app.upload({uri,key,host:"Widget:DailyPicture"})
+                    await app.updateEntity("File",filter, {$set:{objects:[]}})
+                }else{
+                    thumb=app.cloud.resolvers.File.url(exist,{},arguments[2])
+                    data=exist.objects
+                }
+
+                return {
+                    thumb,
+                    data,
+                    _id:"DailyPicture",
+                    slug:"picturebook",
+                    title: today,
+                }
+            },
         },
         Mutation:{
             async save(_,{talk},{app}){
@@ -101,6 +134,25 @@ Cloud.addModule({
             },
             remove(_,{id, type="Talk"},{app}){
                 return app.remove1Entity(type, {_id:id})
+            },
+            async identifiedInDailyPicture(_,{today, ...identified},{app}){
+                const key=`Widget/DailyPicture/${today}.png`
+                const filter={_id:key}
+                await app.updateEntity("File",filter, {$push:{objects: identified}})
+                app.pubsub.publish("Identified_In_Daily_Picture", {today, identified})
+                return true
+            }
+        },
+        Subscription:{
+            objectsInDailyPicture:{
+                subscribe(_,{},{app}){
+                    return app.pubsub.asyncIterator("Identified_In_Daily_Picture")
+                },
+                async resolve(_,{today},{app}){
+                    if(today==_.today){
+                        return [_.identified]
+                    }
+                }
             }
         }
     },
@@ -143,6 +195,13 @@ Cloud.addModule({
         remove:`mutation remove_Mutation($id:String!, $type:String){
             remove(id:$id, type:$type)
         }`,
+        dailyPicture:`query today_Query($today:String){
+            dailyPicture(today:$today)
+        }`,
+
+        objectsInDailyPicture:`subscription a($today:String!){
+            objectsInDailyPicture(today:$today)
+        }`
     },
     indexes:{
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
@@ -163,5 +222,9 @@ Cloud.addModule({
     },
     supportAnonymous:true,
 })
+function asDateString(a){
+    const pad=i=>String(i).padStart(2,"0")
+    return `${a.getFullYear()}-${pad(a.getMonth()+1)}-${pad(a.getDate())}`
+}
 
 module.exports=Cloud

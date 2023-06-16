@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, View , ActivityIndicator, Text, TextInput, Pressable, TouchableWithoutFeedback, } from 'react-native';
+import { Button, View , ActivityIndicator, Text, TextInput, Pressable, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
@@ -49,20 +49,19 @@ function Navigator({prompt, onSuccess, onError}){
 		return <Chat />;
 }
 
-const Chat1=({prompt, onSuccess, onError})=>{
+const Chat1=({prompt,hint="thinking", onSuccess, onError=e=>FlyMessage.error(e.message)})=>{
 	const { sendMessage } = useChatGpt();
 	React.useEffect(()=>{
-		sendMessage({
-			message:prompt,
-			onAccumulatedResponse({message, isDone}){
-				if(isDone){
-					onSuccess({response:message})
-				}
-			},
-			onError:e=>onError?.(e)
-		})
+		(async ()=>{
+			try{
+				const res=await sendMessage(prompt)
+				onSuccess?.(res)
+			}catch(e){
+				onError?.(e)
+			}
+		})();
 	},[])
-	return null
+	return <Text style={{position:"absolute"}}>{hint}</Text>
 }
 
 const CHAT_GPT_ID = 'system';

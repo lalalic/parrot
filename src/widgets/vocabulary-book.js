@@ -6,7 +6,7 @@ import { TaggedListMedia } from "./media"
 import { TaggedTranscript } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "../components/default-style"
-import { Chat1 } from "./chat"
+import Chat from "./chat"
 import { useParams } from "react-router-native"
 
 /**
@@ -207,7 +207,7 @@ const Sentense=({talk, id=talk?.id})=>{
     return (
         <View>
             <PressableIcon name="support" onPress={e=>setCreating(true)}/>
-            {creating && <Chat1 
+            {creating && <Chat 
                 prompt={`use the following words to make a sentence to memorize them: ${words}. 
                     Your response should only include the sentence and translation to ${mylang}. 
                     the format must be json.`}
