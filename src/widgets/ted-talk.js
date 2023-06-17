@@ -6,7 +6,8 @@ import * as FileSystem from 'expo-file-system';
 
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
-import mpeg from "../experiment/mpeg";
+import mpeg, {prepareFolder} from "../experiment/mpeg"
+import { Qili, Ted } from "../store"
 
 export default class extends React.Component{
     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
@@ -90,4 +91,40 @@ export default class extends React.Component{
             {...props} 
             ref={ref}/>
     })
+
+    static async onFavorite({id, talk, state, dispatch}){
+        if(!Ted.supportLocal(talk))
+			return
+        
+        if(Qili.isUploaded(talk.video))
+            return 
+        
+        const {lang, mylang}=state.my
+        const file=`${FileSystem.documentDirectory}${id}/video.mp4`
+        await prepareFolder(file)
+        await mpegKit.generateAudio({source:talk.video, target:file})
+        dispatch({type:"message/info",message:`Downloaded talk audio`})
+        
+        dispatch({type:"talk/set", talk:{id, localVideo:file}})
+
+        const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
+
+        dispatch({type:"message/info",message:`Uploaded talk video`})
+
+        await Qili.fetch({
+            id:"save",
+            variables:{
+                talk:{
+                    ...talk, 
+                    video:url,
+                    lang,
+                    mylang,
+                }
+            }
+        }, state.my.admin)
+
+        dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
+
+        dispatch({type:"message/info",message:`Cloned the talk to Qili`})
+    }
 }

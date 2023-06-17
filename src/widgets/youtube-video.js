@@ -3,7 +3,7 @@ import { View } from "react-native"
 import YoutubePlayer from "react-native-youtube-iframe"
 import {useStateAndLatest } from "../components"
 
-import Video from "./video"
+import Video from "./ted-talk"
 
 
 export default class YouTubeVideo extends Video{

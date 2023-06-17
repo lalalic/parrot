@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-native'
 import Player from "./components/player"
 import {useDispatch, } from 'react-redux';
 import * as FileSystem from 'expo-file-system';
-import Video from './widgets/video';
+import Video from './widgets/ted-talk';
 
 import { Loading, useTalkQuery } from './components';
 

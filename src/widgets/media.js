@@ -3,7 +3,7 @@ import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackg
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { selectWidgetTalks, TalkApi } from "../store"
+import { selectWidgetTalks, TalkApi, Qili } from "../store"
 
 import { Subtitles } from "../components/player"
 import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText, Loading } from '../components';
@@ -383,6 +383,19 @@ export class TaggedListMedia extends ListMedia{
         return <TagManagement talk={this.defaultProps} placeholder={`Tag: to categorize ${this.defaultProps.title}`} {...props}/>
     }
 
+    static async onFavorite({id, talk, state, dispatch}){
+        await Qili.fetch({
+            id:"save",
+            variables:{
+                talk:{
+                    ...talk,
+                    isWidget:true
+                }
+            }
+        }, state.my.admin)
+
+        dispatch({type:"message/info",message:`Cloned the talk to Qili`})
+    }
 
     createTranscript(){
         return [...(this.props.data||[])]

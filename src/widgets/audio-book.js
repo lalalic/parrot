@@ -101,4 +101,6 @@ export default class AudioBook extends TaggedListMedia {
             }
         }
     ]
+
+    static onFavorite=null
 }

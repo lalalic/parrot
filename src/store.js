@@ -12,13 +12,13 @@ import { persistStore,persistReducer, FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGIST
 import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
+import * as uuid from "uuid"
 
 import { YoutubeTranscript } from "./experiment/youtube-transcript"
 import ytdl from "react-native-ytdl"
 
 import * as Calendar from "./experiment/calendar"
 import mpegKit, { prepareFolder } from "./experiment/mpeg"
-import uuid from "react-native-uuid"
 import { SubscriptionClient } from "subscriptions-transport-ws"
 
 export const Policy={
@@ -420,8 +420,8 @@ export const Qili=Object.assign(createApi({
 		})
 	})
 }),{
-	//service: "http://localhost:9080/1/graphql",
-	service: "https://api.qili2.com/1/graphql",
+	service: "http://localhost:9080/1/graphql",
+	//service: "https://api.qili2.com/1/graphql",
 	storage: "https://up.qbox.me",
 	async fetch(request, {headers}={}){
 		const res=await fetch(this.service, {
@@ -522,62 +522,12 @@ export function createStore(){
 			if(!favorited || talk.slug==id)
 				return
 
-			if(!Ted.supportLocal(talk))
-				return
-
-			const {lang, mylang}=state.my
-
-			const file=`${FileSystem.documentDirectory}${id}/video.mp4`
-			await prepareFolder(file)
-			await mpegKit.generateAudio({source:talk.video, target:file})
-			dispatch({type:"message/info",message:`Downloaded talk audio`})
-			
-			dispatch({type:"talk/set", talk:{id, localVideo:file}})
-			
 			if(!isAdminLogin(state))
 				return 
-			
-			const unwrap=({general, shadowing, retelling, dictating, localVideo, challenging, ...talk})=>talk
+
 			try{
-				if(!Qili.isUploaded(talk.video)){
-					const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
-
-					dispatch({type:"message/info",message:`Uploaded talk video`})
-
-					await Qili.fetch({
-						id:"save",
-						variables:{
-							talk:{
-								...unwrap(talk), 
-								_id:id, 
-								video:url,
-								lang,
-								mylang,
-							}
-						}
-					}, state.my.admin)
-
-					dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
-
-					dispatch({type:"message/info",message:`Cloned the talk to Qili`})
-				}else{
-					const Widget=globalThis.Widgets[talk.slug]
-					if(Widget?.remoteSave){
-						await Qili.fetch({
-							id:"save",
-							variables:{
-								talk:{
-									...Widget.remoteSave(unwrap(talk)),
-									isWidget:true,
-									_id:id
-								}
-							}
-						})
-
-						dispatch({type:"message/info",message:`Cloned the talk to Qili`})
-					}
-				}
-
+				const unwrap=({general, shadowing, retelling, dictating, challenging, ...talk})=>talk
+				;(globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite?.({id, talk:{...unwrap,_id:id}, state, dispatch});
 			}catch(e){
 				dispatch({type:"message/error",message:e.message})
 			}
@@ -590,7 +540,7 @@ export function createStore(){
 			combineReducers({
 				[Ted.reducerPath]: Ted.reducer,
 				[Qili.reducerPath]: Qili.reducer,
-				my(state = {sessions:{}, policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
+				my(state = {sessions:{}, id: uuid.v4(), policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
 					switch (action.type) {
 						case "persist/REHYDRATE":
 							const {my={}}=action.payload
@@ -625,6 +575,22 @@ export function createStore(){
 					}
 					return state
 				
+				},
+				message(state=[],action){
+					switch(action.type){
+						case "message":
+							return [...state, action.message]
+						case "message/remove":
+							return produce(state, $messages=>{
+								action.messages.forEach(a=>{
+									const i=$messages.indexOf(a)
+									if(i!=-1){
+										$messages.splice(i,1)
+									}
+								})
+							}) 
+					}
+					return state
 				},
 				talks(talks={},action){
 					const getTalk=(action, $talks)=>{
@@ -988,4 +954,8 @@ export function isAlreadyFamiliar(state){
 
 export function isOnlyAudio(url){
 	return typeof(url)=="string" && url.indexOf("video.mp4")!=-1
+}
+
+export function hasChatGPTAccount(state){
+	return !!state.my.widgets?.chatgpt
 }

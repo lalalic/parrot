@@ -1,12 +1,11 @@
 import React from "react"
 import { Text, Pressable, View , Linking} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
-import { FlyMessage, PressableIcon, Speak,  } from "../components"
+import { PressableIcon, Speak, useAsk,  } from "../components"
 import { TaggedListMedia } from "./media"
 import { TaggedTranscript } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "../components/default-style"
-import Chat from "./chat"
 import { useParams } from "react-router-native"
 
 /**
@@ -196,8 +195,8 @@ const Locale=({talk, id=talk?.id})=>{
 
 const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
+    const ask=useAsk()
     const { policy } = useParams()
-    const [creating, setCreating]=React.useState(false)
     const {challenges=[]}=useSelector(state=>state.talks[id][policy]||{})
     const {widgets={}, mylang}=useSelector(state=>state.my)
     const words=challenges.map(a=>a.ask).join(",")
@@ -205,27 +204,22 @@ const Sentense=({talk, id=talk?.id})=>{
         return null
 
     return (
-        <View>
-            <PressableIcon name="support" onPress={e=>setCreating(true)}/>
-            {creating && <Chat 
-                prompt={`use the following words to make a sentence to memorize them: ${words}. 
-                    Your response should only include the sentence and translation to ${mylang}. 
-                    the format must be json.`}
-                onSuccess={({response})=>{
+        <PressableIcon name="support" 
+            onPress={e=>{
+                (async()=>{
+                    const response=await ask(`
+                        use the following words to make a sentence to memorize them: ${words}. 
+                        Your response should only include the sentence and translation to ${mylang}. 
+                        the format must be json.
+                    `)
                     dispatch({
                         type:"talk/challenge", 
                         talk, 
                         chunk:JSON.parse(response.replace(/\"sentence\"\:/ig, '"word":').replace(/\"translation\"\:/ig,'"translated":')), 
                         policy
                     })
-                    setCreating(false)
-                }}
-                onError={e=>{
-                    setCreating(false)
-                    FlyMessage.error(e.message)
-                }}
-            />}
-        </View>
+                })();
+            }}/>
     )
 }
 

@@ -1,15 +1,14 @@
 import React from "react"
-import { SafeAreaView, LogBox} from "react-native"
+import { SafeAreaView, LogBox, View} from "react-native"
 import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
-import { ChatGptProvider } from "react-native-chatgpt";
-
 
 import Router from "./router"
-import {Provider} from "./store"
+import {Provider, isAdminLogin} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
-import { FlyMessage, Loading } from "./components"
+import { FlyMessage, Loading, ChatProvider } from "./components"
+import { useSelector } from "react-redux";
 
 LogBox.ignoreAllLogs()
 ExpoSplashScreen.preventAutoHideAsync()
@@ -51,17 +50,24 @@ export default ()=>{
                 onLayout={onLayout}
                 style={{flex:1, backgroundColor:style.backgroundColor}}>
                     <ColorScheme.Provider key={scheme} value={style}>
-                        <ChatGptProvider>
+                        <ChatProvider>
                             <Router/>
-                        </ChatGptProvider>
+                        </ChatProvider>
                     </ColorScheme.Provider>
                 <StatusBar style="light"/>
                 <Permissions/>
             </SafeAreaView>}
             <FlyMessage/>
+            <AdminHinter/>
         </Provider>
     )
 }
 
+function AdminHinter(){
+    const bAdmin=useSelector(state=>isAdminLogin(state))
+    if(!bAdmin)
+        return null
+    return <View style={{postion:"absolute",bottom:0,borderWidth:1,backgroundColor:"red", borderColor:"red",width:"100%",height:1}}></View>
+}
 
 

@@ -1,3 +1,6 @@
+const {withFilter}=require("graphql-subscriptions")
+let uuid=Date.now()
+
 const Talk_Fields=`
             id:ID!,
             slug:String!,
@@ -33,6 +36,8 @@ Cloud.addModule({
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
             widgetTalks(slug:String, q:String):[Talk]
+            answerHelp(session:String!, response:JSON!):JSON
+            removeHelper(helper:String!):Boolean
         }
 
         extend type Mutation{
@@ -41,7 +46,8 @@ Cloud.addModule({
         }
 
         extend type Subscription{
-            
+            askThenWaitAnswer(message:JSON!):JSON
+            helpQueue(helper:String!):JSON
         }
     `,
     resolver:{
@@ -87,6 +93,14 @@ Cloud.addModule({
                     props.title={$regex:q, $options:"i"}
                 }
                 return app.findEntity("Widget", props)
+            },
+            answerHelp(_,{session, response}, {app}){
+                app.pubsub.publish("answerHelp", {session, response})
+                return true
+            },
+            removeHelper(_,{helper},{app}){
+                Helpers.remove(helper)
+                return true
             }
         },
         Mutation:{
@@ -108,7 +122,43 @@ Cloud.addModule({
             }
         },
         Subscription:{
-            
+            askThenWaitAnswer:{
+                subscribe(_,{message}, {app}){
+                    const session=`${++uuid}`
+                    app.pubsub.publish("askHelp", {session, message})
+                    try{
+                        return withFilter(
+                            ()=>app.pubsub.asyncIterator(['answerHelp']),
+                            payload=>payload.session==session,
+                        )(...arguments)
+                    }finally{
+                        if(Helpers.no){
+                            app.pubsub.publish("answerHelp", {session, response:new Error("We can't process your request now!")})
+                        }
+                    }
+                },
+                resolve(payload,{message}){
+                    return payload.response
+                }
+            },
+
+            helpQueue:{
+                subscribe(_,{helper}, {app}){
+                    Helpers.add(helper)
+                    return withFilter(
+                        ()=>app.pubsub.asyncIterator(["askHelp"]),
+                        payload=>Helpers.pick1(payload)===helper
+                    )(...arguments)
+                },
+                unsubscribe(_,{helper},{}){
+                    Helpers.remove(helper)
+                },
+                resolve(payload,{helper},{app}){
+                    Helpers.done1(payload)
+                    return payload
+                }
+            }
+
         }
     },
     persistedQuery:{ 
@@ -170,4 +220,46 @@ Cloud.addModule({
     },
     supportAnonymous:true,
 })
+
+class Helpers{
+    constructor(){
+        const helpers=[], sessions={}
+        Helpers.add=this.add=function(helper){
+            const id=helper//`user${++uuid}`
+            if(!!helpers.find(a=>a.id==id)){
+                helpers.push({id,sessions:[]})
+            }
+            return id
+        }
+
+        Helpers.remove=this.remove=function(helper){
+            const i=helpers.findIndex(a=>a.id==helper)
+            helpers.splice(i,1)
+            return helper
+        }
+
+        Helpers.pick1=this.pick1=function({session, message}){
+            if(session in sessions)
+                return
+            const min=helpers.reduce((min,a)=>{
+                if(a.sessions.length<min.sessions.length){
+                    return a
+                }
+                return min
+            },helpers[0])
+            min.sessions.push(session)
+            sessions[session]=min.id
+            return min.id
+        }
+        Helpers.done1=this.done1=function({session}){
+            const id=sessions[session]
+            const helper=helpers.find(a=>a.id==id)
+            helper.sessions.splice(helper.sessions.indexOf(session),1)
+            delete sessions[session]
+        }
+    }
+
+    static instance=new Helpers()
+}
+
 module.exports=Cloud

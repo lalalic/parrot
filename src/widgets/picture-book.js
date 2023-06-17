@@ -106,7 +106,7 @@ export default class PictureBook extends TaggedListMedia {
             >
                 <PictureIdentifier {...{
                     visible,
-                    onLocate({id, uri,text}){
+                    onLocate({uri,text}, id){
                         dispatch({type:"talk/book/record", id, uri, text})
                     },
                     locator:{size:150, x:width/2,y:100}
@@ -147,6 +147,17 @@ export default class PictureBook extends TaggedListMedia {
             </View>
         )
     }
+
+    static async onFavorite({id, talk, state, dispatch}){
+        const slug=this.defaultProps.slug
+        const file=talk.thumb
+        if(file.startsWith("file://")){
+            const url=await Qili.upload({file:talk.thumb, key:`${slug}/${id}/objects.png`})
+            dispatch({type:"talk/set", talk:{id, thumb:url}})
+            talk.thumb=url
+        }
+        return super.onFavorite(...arguments)
+    }
 }
 
 function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, upload=a=>a, ...props}) {
@@ -183,7 +194,7 @@ function PictureIdentifier({id, visible, onLocate, locator, ...props}){
     return (
         <ImageBackground source={{uri:talk.thumb}} style={{flex:1,resizeMode:"contain"}} {...props}>
             <IdentifiedObjects visible={visible} objects={talk.data}/>
-            <Locator {...locator} onLocate={onLocate}/>
+            <Locator {...locator} onLocate={identified=>onLocate?.(identified, id)}/>
         </ImageBackground>
     )
 }

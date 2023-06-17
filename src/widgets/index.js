@@ -9,6 +9,7 @@ import DialogBook from "./dialog-book"
 import VocabularyBook from "./vocabulary-book"
 import YouTubeVideo from "./youtube-video"
 import { useSelector } from "react-redux"
+import TedTalk from "./ted-talk"
 
 /**
  * what is widget media?
@@ -56,3 +57,5 @@ export const Widgets=globalThis.Widgets=[
     widgets[A.defaultProps.slug]=A
     return widgets
 }),{})
+
+globalThis.TedTalk=TedTalk

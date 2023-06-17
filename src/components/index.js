@@ -10,8 +10,8 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isAdmin, isOnlyAudio } from "../store"
-import { useChatGpt } from 'react-native-chatgpt';
+import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isAdmin, isOnlyAudio, hasChatGPTAccount } from "../store"
+import { ChatGptProvider, useChatGpt } from 'react-native-chatgpt';
 
 
 const AutoHideDuration=6000
@@ -800,7 +800,16 @@ export function PopMenu({style, triggerIconName="more-vert", label, children, he
 }
 
 export const FlyMessage=Object.assign(()=>{
+    const dispatch=useDispatch()
     const [message, setMessage]=React.useState("")
+    const messages=useSelector(state=>state.messages||[])
+    useEffect(()=>{
+        if(messages.length){
+            setMessage(messages.join("\n"))
+            return ()=>dispatch({type:"message/remove",messages})
+        }
+    },messages)
+
     useEffect(()=>{
         FlyMessage.setMessage=setMessage
         return ()=>FlyMessage.setMessage=()=>null
@@ -997,9 +1006,9 @@ export function KeyboardAvoidingView(props){
 
 export function useTalkQuery({api, slug, id, policyName }) {
     const Widget = globalThis.Widgets[slug]
-    const remoteService=api=="Qili"||!!Widget ? Qili : TalkApi
-
-    const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
+    
+    //const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
+    const { data: remote = {}, ...status } = api=="Qili"||!!Widget ? Qili : TalkApi.useTalkQuery({slug, id });
     const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 
@@ -1017,24 +1026,101 @@ export function useTalkQuery({api, slug, id, policyName }) {
     }, [remote, local]);
 
     const { general, shadowing, dictating, retelling, ...data } = talk;
-
-    console.log(status)
     return { data, policy, ...status};
 }
 
 export function useAsk(id, defaultQuestion){
-    const {sendMessage, status, login}=useChatGpt()
+    const {sendMessage, status}=useChat()
     const dispatch=useDispatch()
     if(status=="logged-out"){
         dispatch({type:"my", sessions:{}})
     }
     const session=useSelector(state=>state.my.sessions?.[id])
     return React.useCallback(async (prompt=defaultQuestion)=>{
-        const {message, conversationId, messageId}=await sendMessage(prompt,session)
+        const {message, conversationId, messageId}=await sendMessage({message:prompt, ...session})
         if(id && (!session || session.conversationId!=conversationId || session.messageId!=messageId)){
             dispatch({type:"my/session", payload:{[id]:{conversationId, messageId}}})
         }
         return message
     },[session])
 
+}
+
+export function ChatProvider({children}){
+    const enableChatGPT=useSelector(state=>hasChatGPTAccount(state))
+
+    if(enableChatGPT){
+        return (
+            <ChatGptProvider>
+                <SubscribeHelpQueue>{children}</SubscribeHelpQueue>
+            </ChatGptProvider>
+        )
+    }
+
+    return children
+}
+
+function SubscribeHelpQueue({children}){
+    const {sendMessage}=useChatGpt()
+    const {id:helper}=useSelector(state=>state.my)
+    React.useEffect(()=>{
+        const unsub=Qili.subscribe({
+            id:"helpQueue",
+            query:`subscription a($helper:String!){
+                helpQueue(helper:$helper)
+            }`,
+            variables:{helper}
+        },function({errors, session, message}){
+            if(errors){
+                return console.error(errors)
+            }
+            (async ()=>{
+                const response=await sendMessage(message)
+                await Qili.fetch({
+                    id:"answer",
+                    query:`query a($session:String!, $response:JSON!){
+                        answerHelp(session:$session, response:$response)
+                    }`,
+                    variables:{
+                        session,
+                        response
+                    }
+                })
+            })();
+        })
+        return ()=>{
+            unsub()
+            Qili.fetch({
+                id:"removeHelper",
+                query:`query a($helper:String!){
+                    removeHelper(helper:$helper)
+                }`,
+                variables:{helper}
+            })
+        }
+    },[])
+    return children
+}
+
+export function useChat(){
+    const enableChatGPT=useSelector(state=>hasChatGPTAccount(state))
+    if(enableChatGPT)
+        return useChatGpt()
+
+    async function sendMessage(message){
+        return new Promise((resolve, reject)=>{
+            const unsub=Qili.subscribe({
+                id:"askThenWaitAnswer",
+                query:`subscription a($message:String!){
+                    askThenWaitAnswer(message:$message)
+                }`,
+                variables:{ message }
+            },message=>{
+                unsub()
+                resolve(message)
+            })
+        })
+    }
+
+    return {sendMessage,status:"proxy"}
 }
