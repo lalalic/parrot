@@ -896,7 +896,6 @@ export function createStore(){
 	return {store, persistor:persistStore(store)}
 }
 
-
 export const Provider=({children, onReady, loading})=>{
 	const {store, persistor}=React.useMemo(()=>{
 		const data=createStore()
