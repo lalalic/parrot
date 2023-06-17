@@ -237,7 +237,7 @@ class Media extends React.Component {
     }
 
     render() {
-        const { thumb, posterSource=thumb, source, title, ...props } = this.props
+        const { posterSource, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
@@ -368,7 +368,7 @@ export class ListMedia extends Media{
 
 export class TaggedListMedia extends ListMedia{
     //@NOTE: chat.js use this id pattern
-    static create({id, slug=this.defaultProps.slug, ...talk}, dispatch){
+    static create({id, slug=this.defaultProps.slug, thumb, ...talk}, dispatch){
         console.assert(slug, "Slug must be specified when creating widget talk")
         id=`${slug}${Date.now()}`
         dispatch({type:"talk/set",talk:{data:[],...this.defaultProps,...talk,id,slug}})

@@ -420,8 +420,8 @@ export const Qili=Object.assign(createApi({
 		})
 	})
 }),{
-	service: "http://localhost:9080/1/graphql",
-	//service: "https://api.qili2.com/1/graphql",
+	//service: "http://localhost:9080/1/graphql",
+	service: "https://api.qili2.com/1/graphql",
 	storage: "https://up.qbox.me",
 	async fetch(request, {headers}={}){
 		const res=await fetch(this.service, {

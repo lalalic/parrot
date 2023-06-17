@@ -1037,7 +1037,7 @@ export function useAsk(id, defaultQuestion){
     }
     const session=useSelector(state=>state.my.sessions?.[id])
     return React.useCallback(async (prompt=defaultQuestion)=>{
-        const {message, conversationId, messageId}=await sendMessage({message:prompt, ...session})
+        const {message, conversationId, messageId}=await sendMessage(prompt, session)
         if(id && (!session || session.conversationId!=conversationId || session.messageId!=messageId)){
             dispatch({type:"my/session", payload:{[id]:{conversationId, messageId}}})
         }
@@ -1075,7 +1075,7 @@ function SubscribeHelpQueue({children}){
                 return console.error(errors)
             }
             (async ()=>{
-                const response=await sendMessage(message)
+                const response=await sendMessage(message.message||message, message.options)
                 await Qili.fetch({
                     id:"answer",
                     query:`query a($session:String!, $response:JSON!){
@@ -1107,7 +1107,10 @@ export function useChat(){
     if(enableChatGPT)
         return useChatGpt()
 
-    async function sendMessage(message){
+    async function sendMessage(message, options){
+        if(options){
+            message={message,options}
+        }
         return new Promise((resolve, reject)=>{
             const unsub=Qili.subscribe({
                 id:"askThenWaitAnswer",

@@ -125,10 +125,10 @@ export default class PictureBook extends TaggedListMedia {
                     ...props,
                     renderItemExtra({item}){
                         return ( 
-                            <Pressable style={{width:50,height:50}}
+                            <Pressable style={{width:50,height:50,borderWidth:1,borderColor:"lightgray"}}
                                 onPress={e=>navigate(`/widget/${item.slug}/${item.id}`)}
                                 >
-                                <Image source={{uri:item.thumb}} style={{width:"100%",height:"100%"}}/>
+                                {item.thumb && <Image source={{uri:item.thumb}} style={{width:"100%",height:"100%"}}/>}
                             </Pressable>
                         )
                     }
@@ -203,7 +203,11 @@ function Locator({size=125, x:x0=0, y:y0=0, d=-size/2, onLocate}){
     const [{x,y,dx=0,dy=0,width,height,scale}, setPosition, $position]=useStateAndLatest({x:x0+d,y:y0+d,width:size,height:size,scale:1})
     const pinchGesture = Gesture.Pinch()
         .onUpdate((e) => {
-            setPosition({...$position.current, scale:$position.current.scale*e.scale})
+            setPosition({...$position.current, scale:e.scale})
+        })
+        .onEnd(e=>{
+            const {width,height,scale}=$position.current
+            setPosition({...$position.current, width:width*scale,height:height*scale,scale:1})
         })
     
     const panGesture=Gesture.Pan()
