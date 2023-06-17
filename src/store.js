@@ -590,7 +590,7 @@ export function createStore(){
 			combineReducers({
 				[Ted.reducerPath]: Ted.reducer,
 				[Qili.reducerPath]: Qili.reducer,
-				my(state = {policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
+				my(state = {sessions:{}, policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
 					switch (action.type) {
 						case "persist/REHYDRATE":
 							const {my={}}=action.payload
@@ -618,10 +618,13 @@ export function createStore(){
 							return {...state, tts:{...state.tts, ...action.payload}}
 						case "my/api":
 							return {...state, api:(Services.current=action.api)}
+						case "my/session":
+							return {...state, sessions:{...state.sessions, ...action.payload}}
 						case "my":
 							return {...state, ...action.payload}
 					}
 					return state
+				
 				},
 				talks(talks={},action){
 					const getTalk=(action, $talks)=>{

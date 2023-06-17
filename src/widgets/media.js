@@ -394,8 +394,9 @@ export class TaggedListMedia extends ListMedia{
 }
 
 export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children,
+    renderItemExtra=a=>null,
     renderItemText=a=>a.id, dispatch=useDispatch(),
-    renderItem:renderItem0=({item, id=item.id})=>{
+    renderItem:renderItem0=function({item, id=item.id}){
         const text=renderItemText(item)
         const textStyle={fontSize:16, color:"white"}
         const onPress=e=>navigate(`/talk/${slug}/shadowing/${id}`)
@@ -403,20 +404,22 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
         const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
         if(item.isLocal!==true){ 
             return (
-                <Pressable style={containerStyle} onPress={onPress} key={id}>
-                    <Text style={[{paddingLeft:iconWidth}, textStyle]}>{text}</Text>
+                <Pressable style={[containerStyle,{flexDirection:"row",alignItems:"center", marginTop:2}]} onPress={onPress} key={id}>
+                    <Text style={[{paddingLeft:iconWidth, flexGrow:1}, textStyle]}>{text}</Text>
+                    {renderItemExtra(...arguments)}
                 </Pressable>
             )
         }
 
         return (
-            <View style={{flexDirection:"row"}} key={id} >
+            <View style={{flexDirection:"row", marginTop:2}} key={id} >
                 <PressableIcon name="remove-circle-outline" onPress={e=>dispatch({type:"talk/clear", id})} style={{width:iconWidth}}/>
-                <ChangableText style={containerStyle}
+                <ChangableText style={[containerStyle,{flexGrow:1}]}
                     text={{style:textStyle, value:text}}
                     onPress={onPress} 
                     onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
                     />
+                {renderItemExtra(...arguments)}
             </View>
         )
     },
@@ -464,10 +467,11 @@ export const TagShortcut=({slug, style={left:10}})=>{
     )
 }
 
-export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispatch=useDispatch()})=>{
+export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispatch=useDispatch(), ...props})=>{
     const talks=useSelector(state=>selectWidgetTalks(state, slug))
     return (
-        <TagList data={talks} slug={slug}  placeholder={placeholder}
+        <TagList  
+            data={talks} slug={slug}  placeholder={placeholder}
             onEndEditing={({nativeEvent:{text:title}})=>{
                 title=title.trim()
                 if(!title || -1!==talks.findIndex(a=>a.title==title)){
@@ -481,6 +485,7 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
                 }
             }}
             renderItemText={item=>item.title}
+            {...props}
         >
             {!!talks.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
         </TagList>

@@ -2,6 +2,8 @@ import React from "react"
 import { SafeAreaView, LogBox} from "react-native"
 import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
+import { ChatGptProvider } from "react-native-chatgpt";
+
 
 import Router from "./router"
 import {Provider} from "./store"
@@ -49,7 +51,9 @@ export default ()=>{
                 onLayout={onLayout}
                 style={{flex:1, backgroundColor:style.backgroundColor}}>
                     <ColorScheme.Provider key={scheme} value={style}>
-                        <Router/>
+                        <ChatGptProvider>
+                            <Router/>
+                        </ChatGptProvider>
                     </ColorScheme.Provider>
                 <StatusBar style="light"/>
                 <Permissions/>

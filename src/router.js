@@ -20,11 +20,10 @@ import About from "./account/about"
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
-import { DailyPicture } from "./widgets/picture-book";
 import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/home","/widget/picturebook/DailyPicture"]}>
+    <NativeRouter initialEntries={["/home"]}>
         <Routes>
             <Route path="/" element={React.createElement(()=>{
                     const {pathname}=useLocation()
@@ -88,7 +87,6 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
 
                 <Route path=":slug/:id" element={<TaggedTranscript/>}/>
                 <Route path="manage/:slug" element={<TaggedTranscript/>}/>
-                <Route path="picturebook/DailyPicture" element={<DailyPicture/>}/>
             </Route>
             <Route path="/admin" element={<WithBackButton/>}>
                 <Route path="" element={<Admin/>}/>

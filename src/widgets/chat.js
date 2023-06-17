@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, View , ActivityIndicator, Text, TextInput, Pressable, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
-import { ChatGptProvider, useChatGpt } from "react-native-chatgpt";
+import { useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
 import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView} from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
@@ -21,7 +21,7 @@ const defaultProps={
 export default Object.assign(props=>{
 	useKeepAwake()
 	React.useEffect(()=>()=>Speak.stop(),[])
-	return (<ChatGptProvider><Navigator {...props}/></ChatGptProvider>)
+	return (<Navigator {...props}/>)
 },{defaultProps})
 
 function Navigator({prompt, onSuccess, onError}){

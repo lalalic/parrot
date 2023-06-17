@@ -33,7 +33,7 @@ export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderIte
         const tags=React.useMemo(()=>talks.map(a=>a.title),[talks])
         const {data=[]}=React.useMemo(()=>talks.find(a=>a.title==state.current)||{},[talks, state.current])
 
-        const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10,marginLeft:10}
+        const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10}
         const {renderItem:WidgetItem=renderItem}=listProps
 
         return (
@@ -49,13 +49,12 @@ export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderIte
                         />
                 </View>
                 <View style={{flexGrow:1,flex:1}}>
-                    {!!data?.length && <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
+                    {children ? React.cloneElement(children, {id:state.id}) : <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
                         extraData={`${state.q}-${state.current}-${data.length}`}
                         keyExtractor={a=>`${a.uri}-${a.text}`}
                         {...listProps}
                         renderItem={props=><WidgetItem {...{...props,id:state.id, slug}}/>}
                         />}
-                    {children}
                 </View>
                 {!!state.id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                     {actions?.(state.current, state.id)}

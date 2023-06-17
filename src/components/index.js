@@ -11,6 +11,7 @@ import {Mutex} from "async-mutex"
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
 import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isAdmin, isOnlyAudio } from "../store"
+import { useChatGpt } from 'react-native-chatgpt';
 
 
 const AutoHideDuration=6000
@@ -113,7 +114,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
                     color={value==k ? color.primary : undefined}
                     name={PolicyIcons[k]} labelFade={labelFade}
                     label={!!label && k.toUpperCase()}
-                    onPress={e=>deselectable && change(value==k ? "general" : k)}/>
+                    onPress={e=>change(value==k && deselectable ? "general" : k)}/>
             ))}
             {children}
         </AutoShrinkNavBar>
@@ -995,12 +996,14 @@ export function KeyboardAvoidingView(props){
 }
 
 export function useTalkQuery({api, slug, id, policyName }) {
-    const { data: remote = {}, ...status } = (api=="Qili" ? Qili : TalkApi).useTalkQuery({slug, id });
+    const Widget = globalThis.Widgets[slug]
+    const remoteService=api=="Qili"||!!Widget ? Qili : TalkApi
+
+    const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
     const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 
     const talk = React.useMemo(() => {
-        const Widget = globalThis.Widgets[slug];
         const video = bAdmin ? remote?.video : local?.localVideo || remote?.video;
         return {
             miniPlayer: isOnlyAudio(video),
@@ -1015,5 +1018,23 @@ export function useTalkQuery({api, slug, id, policyName }) {
 
     const { general, shadowing, dictating, retelling, ...data } = talk;
 
+    console.log(status)
     return { data, policy, ...status};
+}
+
+export function useAsk(id, defaultQuestion){
+    const {sendMessage, status, login}=useChatGpt()
+    const dispatch=useDispatch()
+    if(status=="logged-out"){
+        dispatch({type:"my", sessions:{}})
+    }
+    const session=useSelector(state=>state.my.sessions?.[id])
+    return React.useCallback(async (prompt=defaultQuestion)=>{
+        const {message, conversationId, messageId}=await sendMessage(prompt,session)
+        if(id && (!session || session.conversationId!=conversationId || session.messageId!=messageId)){
+            dispatch({type:"my/session", payload:{[id]:{conversationId, messageId}}})
+        }
+        return message
+    },[session])
+
 }
