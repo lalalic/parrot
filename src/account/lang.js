@@ -50,7 +50,7 @@ export default function SpeechSetting({}){
             <View style={{flexDirection:"row", marginTop:10, alignItems:"center", justifyContent:"center", marginBottom:10}}>
                 <Text style={{width:"40%"}}>Learning Language</Text>
                 <Select style={{flex:1}} data={langs} defaultValueByIndex={langs.indexOf(lang)} 
-                    onSelect={value=>dispatch({type:"my", payload:{lang:value.split("-")[0]}})}/>
+                    onSelect={value=>dispatch({type:"my/lang", lang:value.split("-")[0]})}/>
             </View>
 
             <SectionList sections={voices.filter(a=>a.language.startsWith(lang))} 

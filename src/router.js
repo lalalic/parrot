@@ -23,7 +23,7 @@ import TaggedTranscript from "./widgets/tagged-transcript"
 import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/home","/widget/picturebook/picturebook1686945493056"]}>
+    <NativeRouter initialEntries={["/home"/*,"/widget/picturebook/picturebook1687193344157"*/]}>
         <Routes>
             <Route path="/" element={React.createElement(()=>{
                     const {pathname}=useLocation()

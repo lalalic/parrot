@@ -5,10 +5,10 @@ import * as ImageManipulator from "expo-image-manipulator"
 import * as FileSystem from "expo-file-system"
 
 import { TaggedListMedia, TagManagement } from "./media"
-import { Loading, PressableIcon, useStateAndLatest, useTalkQuery, useAsk } from "../components"
+import { Loading, PressableIcon, useTalkQuery, useAsk } from "../components"
+import ImageCropper from "../components/image-cropper"
 import { TaggedTranscript } from "./tagged-transcript"
 import { useDispatch, } from "react-redux"
-import { Gesture, GestureDetector } from "react-native-gesture-handler"
 import { useNavigate } from "react-router-native"
 
 /**
@@ -106,8 +106,8 @@ export default class PictureBook extends TaggedListMedia {
             >
                 <PictureIdentifier {...{
                     visible,
-                    onLocate({uri,text}, id){
-                        dispatch({type:"talk/book/record", id, uri, text})
+                    onLocate({rect:{x,y,width,height}, ...identified}){
+                        dispatch({type:"talk/book/record", ...identified, uri:`${x},${y},${width},${height}`})
                     },
                     locator:{size:150, x:width/2,y:100}
                 }}/>
@@ -141,7 +141,7 @@ export default class PictureBook extends TaggedListMedia {
                             const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
                             source=result.uri
                         }
-                        PictureBook.create({thumb:source, title:`locale-${uuid++}`},dispatch)
+                        PictureBook.create({thumb:source, title:`local-${uuid++}`},dispatch)
                     }}/>
                 </View>
             </View>
@@ -192,66 +192,13 @@ function PictureIdentifier({id, visible, onLocate, locator, ...props}){
         return <Loading/>
     
     return (
-        <ImageBackground source={{uri:talk.thumb}} style={{flex:1,resizeMode:"contain"}} {...props}>
+        <ImageCropper source={{uri:talk.thumb}} 
+            style={{flex:1}}
+            viewerSize={150} 
+            onCrop={identified=>onLocate?.({...identified, id})}
+            {...props}>
             <IdentifiedObjects visible={visible} objects={talk.data}/>
-            <Locator {...locator} onLocate={identified=>onLocate?.(identified, id)}/>
-        </ImageBackground>
-    )
-}
-
-function Locator({size=125, x:x0=0, y:y0=0, d=-size/2, onLocate}){
-    const [{x,y,dx=0,dy=0,width,height,scale}, setPosition, $position]=useStateAndLatest({x:x0+d,y:y0+d,width:size,height:size,scale:1})
-    const pinchGesture = Gesture.Pinch()
-        .onUpdate((e) => {
-            setPosition({...$position.current, scale:e.scale})
-        })
-        .onEnd(e=>{
-            const {width,height,scale}=$position.current
-            setPosition({...$position.current, width:width*scale,height:height*scale,scale:1})
-        })
-    
-    const panGesture=Gesture.Pan()
-        .onUpdate(e=>{
-            setPosition({
-                ...$position.current, 
-                dx:e.translationX,
-                dy:e.translationY,
-            }) 
-        })
-        .onEnd(e=>{
-            const {x,y,dx,dy}=$position.current
-            setPosition({
-                ...$position.current,
-                x:x+dx,y:y+dy,
-                dx:undefined,
-                dy:undefined
-            })
-        })
-    const refEditor=React.useRef()
-    return (
-        <GestureDetector gesture={Gesture.Race(panGesture, pinchGesture)}>
-            <View style={{ 
-                    justifyContent:"center", alignContent:"center",
-                    borderWidth:2, borderColor:"red",
-                    position:"absolute", 
-                    left:x+dx, top:y+dy,  width:width*scale, height:height*scale}}>
-                <View style={{ bottom:0, left:0, flexDirection:"row"}}>
-                    <TextInput ref={refEditor} textAlign="center"
-                        style={{flex:1,height:20, marginLeft:2, marginRight:2, borderBottomWidth:2, borderColor:"yellow", color:"yellow"}}
-                        onEndEditing={({nativeEvent:{text}})=>{
-                            if(!text)
-                                return 
-                            const uri=`${parseInt(x+dx)},${parseInt(y+dy)},${parseInt(width*scale)},${parseInt(height*scale)}`
-                            onLocate?.({text, uri})
-                            refEditor.current.clear()
-                        }}
-                    />
-                    <PressableIcon 
-                        color="yellow" name="check" style={{width:20}}
-                        onPress={e=>refEditor.current.blur()}/>
-                </View> 
-            </View>
-        </GestureDetector>
+        </ImageCropper>
     )
 }
 
@@ -267,7 +214,7 @@ function IdentifiedObject({uri,text}){
                 borderColor:"gray", 
                 justifyContent:"center", 
                 alignItems:"center",
-            }}>
+            }} pointerEvents="none">
             <Text textAlign="center">{text}</Text>
         </View>
     )
@@ -290,30 +237,23 @@ function AreaImage({ src, size, area }){
         })
     },[])
 
+    const scale=size / area.width
+  
   const frameStyle = React.useMemo(()=>({
     width: size,
     height: size,
     overflow: 'hidden',
-    position: 'relative',
   }),[size])
-
-  const scale=size / area.width
-  const croppedImageStyle = React.useMemo(()=>({
-    height:"100%", width:"100%",
-    ...imageSize,
-    position: 'absolute',
-    left: -(area.left * scale),
-    top: -(area.top * scale),
-    resizeMode: "contain",
-    transform: [
-        { scaleX:  scale},
-        { scaleY: scale },
-    ],
-  }),[imageSize, area, size])
-
   return (
     <View style={frameStyle}>
-      <Image source={{ uri: src }} style={croppedImageStyle} />
+        <Image source={{ uri: src }} style={{
+            ...imageSize,
+            transform:[
+                { translateX: -imageSize.width*(1-scale)/2 - area.left*scale},
+                { translateY: - imageSize.height*(1-scale)/2 - area.top*scale},
+                { scale:  scale},
+            ]
+        }} />
     </View>
   );
 }

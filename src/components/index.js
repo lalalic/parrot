@@ -1008,7 +1008,7 @@ export function useTalkQuery({api, slug, id, policyName }) {
     const Widget = globalThis.Widgets[slug]
     
     //const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
-    const { data: remote = {}, ...status } = api=="Qili"||!!Widget ? Qili : TalkApi.useTalkQuery({slug, id });
+    const { data: remote = {}, ...status } = (api=="Qili"||!!Widget ? Qili : TalkApi).useTalkQuery({slug:!!Widget ? "Widget" : slug, id });
     const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 
@@ -1062,7 +1062,7 @@ export function ChatProvider({children}){
 
 function SubscribeHelpQueue({children}){
     const {sendMessage}=useChatGpt()
-    const {id:helper}=useSelector(state=>state.my)
+    const {uuid:helper}=useSelector(state=>state.my)
     React.useEffect(()=>{
         const unsub=Qili.subscribe({
             id:"helpQueue",

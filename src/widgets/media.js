@@ -368,10 +368,10 @@ export class ListMedia extends Media{
 
 export class TaggedListMedia extends ListMedia{
     //@NOTE: chat.js use this id pattern
-    static create({id, slug=this.defaultProps.slug, thumb, ...talk}, dispatch){
+    static create({id, slug=this.defaultProps.slug, ...talk}, dispatch){
         console.assert(slug, "Slug must be specified when creating widget talk")
         id=`${slug}${Date.now()}`
-        dispatch({type:"talk/set",talk:{data:[],...this.defaultProps,...talk,id,slug}})
+        dispatch({type:"talk/set",talk:{data:[],...talk,id,slug}})
         return id
     }
 
@@ -492,9 +492,9 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
                 }
 
                 if(onCreate){
-                    onCreate({...talk, title}, dispatch)
+                    onCreate({title,slug}, dispatch)
                 }else{
-                    TaggedListMedia.create({...talk, title,slug, data:[]}, dispatch)
+                    TaggedListMedia.create({title,slug, data:[]}, dispatch)
                 }
             }}
             renderItemText={item=>item.title}

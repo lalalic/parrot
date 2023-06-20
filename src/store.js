@@ -12,7 +12,6 @@ import { persistStore,persistReducer, FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGIST
 import * as FileSystem from "expo-file-system"
 import cheerio from "cheerio"
 import { produce } from "immer"
-import * as uuid from "uuid"
 
 import { YoutubeTranscript } from "./experiment/youtube-transcript"
 import ytdl from "react-native-ytdl"
@@ -20,6 +19,8 @@ import ytdl from "react-native-ytdl"
 import * as Calendar from "./experiment/calendar"
 import mpegKit, { prepareFolder } from "./experiment/mpeg"
 import { SubscriptionClient } from "subscriptions-transport-ws"
+import uuid from 'react-native-uuid'
+
 
 export const Policy={
 	general: {
@@ -358,10 +359,10 @@ export const Qili=Object.assign(createApi({
 					id:"talk",
 					variables:{slug, id}
 				})
-				return {data:talk}
+				return {data:talk||{id}}
 			},
 			providesTags: talk=>{
-				return talk ? [{type:"Talk",id:talk.id}] : null
+				return [{type:"Talk",id:talk.id}]
 			}
 		}),
 		talks:builder.query({
@@ -513,8 +514,8 @@ export function createStore(){
 		return true
 	}
 
-	const listenerSave=createListenerMiddleware()
-	listenerSave.startListening({
+	const listener=createListenerMiddleware()
+	listener.startListening({
 		type:"talk/toggle/favorited",
 		async effect(action, {getState, dispatch}){
 			const state=getState()
@@ -533,318 +534,395 @@ export function createStore(){
 			}
 		}
 	})
+	listener.startListening({
+		type:"my/lang",
+		async effect(action, api){
+			const originalState=api.getOriginalState()
+			if(action.lang==originalState.my.lang)
+				return 
+			//save current for last lang
+			try{
+				const originalLangData=Object.keys(reducers).reduce((data, k)=>{
+					data[k]=reducers[k](originalState[k],{type:"lang/PERSIST"})
+					return data
+				},{});
+
+				await FileSystem.writeAsStringAsync(
+					`${FileSystem.documentDirectory}${originalState.my.lang}.json`, 
+					JSON.stringify(originalLangData)
+				)
+				console.info(`saved store for ${originalState.my.lang}`)
+			}catch(e){
+				console.error(e)
+			}
+
+			//rehydrate for current lang
+			try{
+				const currentLangData=await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.json`)
+				api.dispatch({type:'lang/REHYDRATE', payload:JSON.parse(currentLangData)})
+			}catch(e){
+				console.warn(e)
+			}
+		}
+	})
+
+	const reducers={
+		[Ted.reducerPath](state, action){
+			switch(action.type){
+				case "lang/PERSIST":
+					return {}
+			}
+			return Ted.reducer(...arguments)
+		},
+		[Qili.reducerPath](state,action){
+			switch(action.type){
+				case "lang/PERSIST":
+					return {}
+			}
+			return Qili.reducer(...arguments)
+		},
+		my(state = {sessions:{}, uuid:uuid.v4(), policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false,tts:{}, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
+			switch (action.type) {
+				case "lang/PERSIST":
+					const {lang, tts}=state
+					const data={lang}
+					if(tts?.[lang]){
+						data.tts={[lang]:tts[lang]}
+					}
+					return data
+				case "lang/REHYDRATE":
+					return produce(state,$state=>{
+						const {lang, tts}=action.payload.my
+						$state.lang=lang
+						if(tts?.[lang]){
+							$state.tts[lang]=tts[lang]
+						}
+					})
+				case "persist/REHYDRATE":
+					if(!!!action.payload?.my)
+						return state
+					const {my={}}=action.payload
+					Object.keys(state).forEach(k=>{
+						if(!(k in my)){
+							my[k]=state[k]
+						}
+					})
+					Object.keys(state.policy).forEach(k=>{
+						my.policy[k]={...state.policy[k],...my.policy[k]}
+					})
+
+					if(my.api){
+						Services.current=my.api
+					}
+
+					my.i++
+					return state
+				case "policy":
+					return produce(state, $state=>{
+						checkAction(action,["target","payload"])
+						Object.assign($state.policy[action.target], action.payload)
+					})
+				case "my/lang":
+					return {...state, lang:action.lang}
+				case "my/tts":
+					return {...state, tts:{...state.tts, ...action.payload}}
+				case "my/api":
+					return {...state, api:(Services.current=action.api)}
+				case "my/session":
+					return {...state, sessions:{...state.sessions, ...action.payload}}
+				case "my":
+					return {...state, ...action.payload}
+			}
+			return state
+		},
+		message(state=[],action){
+			switch(action.type){
+				case "message":
+					return [...state, action.message]
+				case "message/remove":
+					return produce(state, $messages=>{
+						action.messages.forEach(a=>{
+							const i=$messages.indexOf(a)
+							if(i!=-1){
+								$messages.splice(i,1)
+							}
+						})
+					}) 
+			}
+			return state
+		},
+		talks(talks={},action){
+			const getTalk=(action, $talks)=>{
+				checkAction(action, ["talk"])
+				const {talk:{slug, id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
+				const {talk:{title, thumb,duration,link,video, data, languages}}=action
+				return {
+					talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video, data, languages}),
+					payload, policy, ...others
+				}
+			}
+			switch(action.type){
+				case "lang/PERSIST":
+					return talks
+				case "lang/REHYDRATE":
+					return action.payload.talks
+				case "talk/set":
+					return produce(talks, $talks=>{
+						$talks[action.talk.id]={...$talks[action.talk.id],...action.talk}
+					})
+				case "talk/toggle/favorited":
+					return produce(talks, $talks=>{
+						const {talk}=getTalk(action, $talks)
+						talk.favorited=!!!talk.favorited
+					})
+				case "talk/toggle/challenging":
+					return produce(talks, $talks=>{
+						checkAction(action, ["policy"])
+						const {talk, policy}=getTalk(action, $talks)
+
+						const hasChallenges=talk[policy]?.challenges?.length>0
+						if(action.value==undefined){
+							(talk[policy]||(talk[policy]={})).challenging=hasChallenges
+						}else if(action.value===true && hasChallenges){
+							(talk[policy]||(talk[policy]={})).challenging=true
+						}
+						if(talk[policy]){
+							delete talk[policy].history
+						}
+					})
+				case "talk/policy":
+					return produce(talks, $talks=>{
+						checkAction(action, ["payload","talk"])
+						const {talk, payload, target="general",}=getTalk(action, $talks)
+						if(talk[target]?.challenging){
+							delete payload.chunk
+						}
+						talk[target]={...talk[target], ...payload}
+					})
+				case "talk/challenge":
+					return produce(talks, $talks=>{
+						checkAction(action, ["chunk","talk","policy"])
+						const {talk, policy="general", chunk}=getTalk(action, $talks)
+						
+						const {challenges=[]}=talk[policy]||(talk[policy]={})
+						talk[policy].challenges=challenges
+						const i=challenges.findIndex(a=>a.time>=chunk.time)
+						if(i==-1){
+							challenges.push(chunk)
+						}else if(challenges[i].time==chunk.time){
+							challenges.splice(i,1)
+						}else{
+							challenges.splice(i,0,chunk)
+						}
+						if(challenges.length==0){
+							delete talk[policy].challenging
+						}
+					})
+				case "talk/challenge/remove":
+					return produce(talks, $talks=>{
+						checkAction(action, ["chunk","talk","policy"])
+						const {talk, policy="general", chunk}=getTalk(action, $talks)
+
+						const {challenges=[]}=talk[policy]||(talk[policy]={})
+						talk[policy].challenges=challenges
+						const i=challenges.findIndex(a=>a.time==chunk.time)
+						if(i!==-1){
+							challenges.splice(i,1)
+						}
+						if(challenges.length==0){
+							delete talk[policy].challenging
+						}
+					})
+				case "talk/recording":
+					return produce(talks, $talks=>{
+						checkAction(action, ["record","talk","policy"])
+						const {talk, policy:policyName, record, score}=getTalk(action, $talks)
+
+						const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
+						(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
+						records.changed=Date.now()
+					})
+				////unify : id, uri
+				case "talk/book/record":
+					return produce(talks, $talks=>{
+						const {type, id, talk:talk0, ...record}=action
+						let talk=$talks[id]
+						if(!talk && talk0){
+							talk=$talks[id]={data:[], ...talk0}
+						}
+
+						talk.data.push(record)
+					})
+				case "talk/book/remove":
+					return produce(talks, $talks=>{
+						const {id, uri}=action
+						const talk=$talks[id]
+						const i=talk.data.findIndex(a=>a.uri==uri)
+						if(i!=-1){
+							talk.data.splice(i,1)
+						}
+					})
+				case "talk/book/set":
+					return produce(talks, $talks=>{
+						const {id, uri, type, ...props}=action
+						const talk=$talks[id]
+						const item=talk.data.find(a=>a.uri==uri)
+						if(item){
+							Object.assign(item, props)
+						}
+					})
+				/////////
+				case "talk/clear/history":
+					return produce(talks, $talks=>{
+						checkAction(action, ["id"])
+						const talk=$talks[action.id]
+						
+						if(talk){ 
+							const Widget=globalThis.Widgets[talk.slug]
+							Object.keys(Policy).forEach(policy=>{
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+								talk[policy]= Widget?.defaultProps[policy]
+							})
+						}
+					})
+				case "talk/clear":
+					return produce(talks, $talks=>{
+						const talk=$talks[action.id]
+						if(talk){
+							const clear=a=>{
+								FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
+								delete $talks[a.id]
+							}
+							clear(talk)
+							const Widget=globalThis.Widgets[talk.slug]
+							
+							if(Widget && talk.id==talk.slug){
+								Object.values($talks).forEach(a=>{
+									if(a.slug==talk.slug){
+										clear(a)
+									}
+								})
+							}
+						}
+					})
+				case "talk/clear/all":{
+					return produce(talks, $talks=>{
+						const clear=a=>{
+							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
+							delete $talks[a.id]
+						}
+						Object.values($talks).forEach(clear)
+					})
+				}
+				default:
+					return talks
+			}
+			return talks
+		},
+		plan(plans={},action){
+			switch(action.type){
+				case "lang/PERSIST":
+					return plans
+				case "lang/REHYDRATE":
+					return action.payload.plan
+				case "persist/REHYDRATE":{
+					const {plan:{calendar, ...lastPlans}={}}=action.payload||{}
+					return {
+						...plans,
+						calendar,
+						...(function deep(a){
+								if(a.start){
+									a.start=new Date(a.start)
+								}else{
+									Object.values(a).forEach(deep)
+								}
+								return a
+							})(lastPlans)
+						}
+				}
+				case "plan/calendar":
+					return produce(plans,plans=>{
+						plans.calendar=action.id
+					})
+				case "plan/events":
+					return produce(plans,plans=>{
+						action.events.forEach(({start,eventID})=>{
+							const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+							plans[y][w][d][h].eventID=eventID
+						})
+					})
+				case "plan":{
+					const {plan:{start}}=action
+					checkAction(action, ["plan"])
+					const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+					Calendar.createEvents(store, action.plan, plans[y]?.[w]?.[d]?.[h])
+					return immutableSet(plans, [y,w,d,h], action.plan)
+				}
+				case "plan/remove":{
+					const {time:start}=action
+					checkAction(action, ["time"])
+					const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
+					Calendar.deleteEvents(plans[y]?.[w]?.[d]?.[h])
+					const removed=immutableSet(plans, [y,w,d,h], null)
+					return removed||{}
+				}
+				case "plan/copy/1":{
+					checkAction(action, ["replacements","day","templateDay"])
+					const {replacements, day, templateDay}=action
+					const template=plans[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
+					const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
+						switch(key){
+							case "start":
+								return new Date(value).switchDay(day)
+							case "id":
+								return replacements[value]||value
+						}
+						return value
+					})
+					const [y,w,d]=[day.getFullYear(),day.getWeek(),day.getDay()]
+					Calendar.createEvents(store, plan, plans[y]?.[w]?.[d])
+					return immutableSet(plans,[y,w,d],plan)
+				}
+				case "plan/copy/7":{
+					checkAction(action, ["replacements","day","templateDay"])
+					
+					const {replacements, day, templateDay}=action
+					const template=plans[templateDay.getFullYear()][templateDay.getWeek()]
+					const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
+						switch(key){
+							case "start":
+								return new Date(value).switchWeek(day)
+							case "id":
+								return replacements[value]||value
+						}
+						return value
+					})
+					const [y,w]=[day.getFullYear(),day.getWeek()]
+					Calendar.createEvents(store, plan, plans[y]?.[w])
+					return immutableSet(plans,[y,w],plan)
+				}
+				
+			}
+			return plans
+		},
+		history(state={},{type, ...history}){
+			switch(type){
+				case "lang/PERSIST":
+					return {}
+				case "history":
+					return {...state, ...history}
+			}
+			return state
+		},	
+	}
 
 	const store = configureStore({
 		/** reducer can't directly change any object in state, instead shallow copy and change */
-		reducer:persistReducer({key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
-			combineReducers({
-				[Ted.reducerPath]: Ted.reducer,
-				[Qili.reducerPath]: Qili.reducer,
-				my(state = {sessions:{}, id: uuid.v4(), policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
-					switch (action.type) {
-						case "persist/REHYDRATE":
-							const {my={}}=action.payload
-							Object.keys(state).forEach(k=>{
-								if(!(k in my)){
-									my[k]=state[k]
-								}
-							})
-							Object.keys(state.policy).forEach(k=>{
-								my.policy[k]={...state.policy[k],...my.policy[k]}
-							})
-
-							if(my.api){
-								Services.current=my.api
-							}
-
-							my.i++
-							return state
-						case "policy":
-							return produce(state, $state=>{
-								checkAction(action,["target","payload"])
-								Object.assign($state.policy[action.target], action.payload)
-							})
-						case "my/tts":
-							return {...state, tts:{...state.tts, ...action.payload}}
-						case "my/api":
-							return {...state, api:(Services.current=action.api)}
-						case "my/session":
-							return {...state, sessions:{...state.sessions, ...action.payload}}
-						case "my":
-							return {...state, ...action.payload}
-					}
-					return state
-				
-				},
-				message(state=[],action){
-					switch(action.type){
-						case "message":
-							return [...state, action.message]
-						case "message/remove":
-							return produce(state, $messages=>{
-								action.messages.forEach(a=>{
-									const i=$messages.indexOf(a)
-									if(i!=-1){
-										$messages.splice(i,1)
-									}
-								})
-							}) 
-					}
-					return state
-				},
-				talks(talks={},action){
-					const getTalk=(action, $talks)=>{
-						checkAction(action, ["talk"])
-						const {talk:{slug, id, ...$payload}, key,value, policy,payload=key ? {[key]:value} : $payload, ...others}=action
-						const {talk:{title, thumb,duration,link,video, data, languages}}=action
-						return {
-							talk: $talks[id]||($talks[id]={slug, title, thumb,duration,link,id, video, data, languages}),
-							payload, policy, ...others
-						}
-					}
-					switch(action.type){
-						case "talk/set":
-							return produce(talks, $talks=>{
-								$talks[action.talk.id]={...$talks[action.talk.id],...action.talk}
-							})
-						case "talk/toggle/favorited":
-							return produce(talks, $talks=>{
-								const {talk}=getTalk(action, $talks)
-								talk.favorited=!!!talk.favorited
-							})
-						case "talk/toggle/challenging":
-							return produce(talks, $talks=>{
-								checkAction(action, ["policy"])
-								const {talk, policy}=getTalk(action, $talks)
-
-								const hasChallenges=talk[policy]?.challenges?.length>0
-								if(action.value==undefined){
-									(talk[policy]||(talk[policy]={})).challenging=hasChallenges
-								}else if(action.value===true && hasChallenges){
-									(talk[policy]||(talk[policy]={})).challenging=true
-								}
-								if(talk[policy]){
-									delete talk[policy].history
-								}
-							})
-						case "talk/policy":
-							return produce(talks, $talks=>{
-								checkAction(action, ["payload","talk"])
-								const {talk, payload, target="general",}=getTalk(action, $talks)
-								if(talk[target]?.challenging){
-									delete payload.chunk
-								}
-								talk[target]={...talk[target], ...payload}
-							})
-						case "talk/challenge":
-							return produce(talks, $talks=>{
-								checkAction(action, ["chunk","talk","policy"])
-								const {talk, policy="general", chunk}=getTalk(action, $talks)
-								
-								const {challenges=[]}=talk[policy]||(talk[policy]={})
-								talk[policy].challenges=challenges
-								const i=challenges.findIndex(a=>a.time>=chunk.time)
-								if(i==-1){
-									challenges.push(chunk)
-								}else if(challenges[i].time==chunk.time){
-									challenges.splice(i,1)
-								}else{
-									challenges.splice(i,0,chunk)
-								}
-								if(challenges.length==0){
-									delete talk[policy].challenging
-								}
-							})
-						case "talk/challenge/remove":
-							return produce(talks, $talks=>{
-								checkAction(action, ["chunk","talk","policy"])
-								const {talk, policy="general", chunk}=getTalk(action, $talks)
-
-								const {challenges=[]}=talk[policy]||(talk[policy]={})
-								talk[policy].challenges=challenges
-								const i=challenges.findIndex(a=>a.time==chunk.time)
-								if(i!==-1){
-									challenges.splice(i,1)
-								}
-								if(challenges.length==0){
-									delete talk[policy].challenging
-								}
-							})
-						case "talk/recording":
-							return produce(talks, $talks=>{
-								checkAction(action, ["record","talk","policy"])
-								const {talk, policy:policyName, record, score}=getTalk(action, $talks)
-
-								const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
-								(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
-								records.changed=Date.now()
-							})
-						////unify : id, uri
-						case "talk/book/record":
-							return produce(talks, $talks=>{
-								const {type, id, talk:talk0, ...record}=action
-								let talk=$talks[id]
-								if(!talk && talk0){
-									talk=$talks[id]={data:[], ...talk0}
-								}
-
-								talk.data.push(record)
-							})
-						case "talk/book/remove":
-							return produce(talks, $talks=>{
-								const {id, uri}=action
-								const talk=$talks[id]
-								const i=talk.data.findIndex(a=>a.uri==uri)
-								if(i!=-1){
-									talk.data.splice(i,1)
-								}
-							})
-						case "talk/book/set":
-							return produce(talks, $talks=>{
-								const {id, uri, type, ...props}=action
-								const talk=$talks[id]
-								const item=talk.data.find(a=>a.uri==uri)
-								if(item){
-									Object.assign(item, props)
-								}
-							})
-						/////////
-						case "talk/clear/history":
-							return produce(talks, $talks=>{
-								checkAction(action, ["id"])
-								const talk=$talks[action.id]
-								
-								if(talk){ 
-									const Widget=globalThis.Widgets[talk.slug]
-									Object.keys(Policy).forEach(policy=>{
-										FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
-										talk[policy]= Widget?.defaultProps[policy]
-									})
-								}
-							})
-						case "talk/clear":
-							return produce(talks, $talks=>{
-								const talk=$talks[action.id]
-								if(talk){
-									const clear=a=>{
-										FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
-										delete $talks[a.id]
-									}
-									clear(talk)
-									const Widget=globalThis.Widgets[talk.slug]
-									
-									if(Widget && talk.id==talk.slug){
-										Object.values($talks).forEach(a=>{
-											if(a.slug==talk.slug){
-												clear(a)
-											}
-										})
-									}
-								}
-							})
-						case "talk/clear/all":{
-							return produce(talks, $talks=>{
-								const clear=a=>{
-									FileSystem.deleteAsync(`${FileSystem.documentDirectory}${a.id}`,{idempotent:true})
-									delete $talks[a.id]
-								}
-								Object.values($talks).forEach(clear)
-							})
-						}
-						default:
-							return talks
-					}
-				},
-				plan(plans={},action){
-					switch(action.type){
-						case "persist/REHYDRATE":{
-							const {plan:{calendar, ...lastPlans}={}}=action.payload||{}
-							return {
-								...plans,
-								calendar,
-								...(function deep(a){
-										if(a.start){
-											a.start=new Date(a.start)
-										}else{
-											Object.values(a).forEach(deep)
-										}
-										return a
-									})(lastPlans)
-								}
-						}
-						case "plan/calendar":
-							return produce(plans,plans=>{
-								plans.calendar=action.id
-							})
-						case "plan/events":
-							return produce(plans,plans=>{
-								action.events.forEach(({start,eventID})=>{
-									const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
-									plans[y][w][d][h].eventID=eventID
-								})
-							})
-						case "plan":{
-							const {plan:{start}}=action
-							checkAction(action, ["plan"])
-							const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
-							Calendar.createEvents(store, action.plan, plans[y]?.[w]?.[d]?.[h])
-							return immutableSet(plans, [y,w,d,h], action.plan)
-						}
-						case "plan/remove":{
-							const {time:start}=action
-							checkAction(action, ["time"])
-							const [y,w,d,h]=[start.getFullYear(), start.getWeek(),start.getDay(),Math.floor(start.getHalfHour())]
-							Calendar.deleteEvents(plans[y]?.[w]?.[d]?.[h])
-							const removed=immutableSet(plans, [y,w,d,h], null)
-							return removed||{}
-						}
-						case "plan/copy/1":{
-							checkAction(action, ["replacements","day","templateDay"])
-							const {replacements, day, templateDay}=action
-							const template=plans[templateDay.getFullYear()][templateDay.getWeek()][templateDay.getDay()]
-							const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
-								switch(key){
-									case "start":
-										return new Date(value).switchDay(day)
-									case "id":
-										return replacements[value]||value
-								}
-								return value
-							})
-							const [y,w,d]=[day.getFullYear(),day.getWeek(),day.getDay()]
-							Calendar.createEvents(store, plan, plans[y]?.[w]?.[d])
-							return immutableSet(plans,[y,w,d],plan)
-						}
-						case "plan/copy/7":{
-							checkAction(action, ["replacements","day","templateDay"])
-							
-							const {replacements, day, templateDay}=action
-							const template=plans[templateDay.getFullYear()][templateDay.getWeek()]
-							const plan=JSON.parse(JSON.stringify(template),(key,value)=>{
-								switch(key){
-									case "start":
-										return new Date(value).switchWeek(day)
-									case "id":
-										return replacements[value]||value
-								}
-								return value
-							})
-							const [y,w]=[day.getFullYear(),day.getWeek()]
-							Calendar.createEvents(store, plan, plans[y]?.[w])
-							return immutableSet(plans,[y,w],plan)
-						}
-						
-					}
-					return plans
-				},
-				history(state={},{type, ...history}){
-					switch(type){
-						case "history":
-							return {...state, ...history}
-					}
-					return state
-				},	
-			})),
+		reducer:
+			persistReducer(
+				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
+				combineReducers(reducers)
+			),
 
 		middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
 				serializableCheck:{
@@ -856,8 +934,9 @@ export function createStore(){
 				immutableCheck:{
 					warnAfter:100,
 				},
-			}).prepend([Ted.middleware,Qili.middleware, listenerSave.middleware]),
+			}).prepend([Ted.middleware,Qili.middleware, listener.middleware]),
 	})
+
 	setupListeners(store)
 	return {store, persistor:persistStore(store)}
 }

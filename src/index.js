@@ -1,10 +1,10 @@
 import React from "react"
-import { SafeAreaView, LogBox, View} from "react-native"
+import { SafeAreaView, LogBox, View, Text, Alert} from "react-native"
 import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
 
 import Router from "./router"
-import {Provider, isAdminLogin} from "./store"
+import {Provider, isAdminLogin, hasChatGPTAccount} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
 import { FlyMessage, Loading, ChatProvider } from "./components"
@@ -38,36 +38,41 @@ export default ()=>{
         setStyle({text:color,backgroundColor,active, inactive, primary, warn:"red"})
     },[scheme])
 
-    const onLayout=React.useCallback(async ()=>{
+    const content=React.useMemo(()=>{
         if(dataReady){
-            await ExpoSplashScreen.hideAsync()
-        }
-    },[dataReady])
-
-    return  (
-        <Provider onReady={e=>setDataReady(true)} loading={<Loading/>}>
-            {dataReady && <SafeAreaView 
-                onLayout={onLayout}
-                style={{flex:1, backgroundColor:style.backgroundColor}}>
+            const containerStyle={flex:1, backgroundColor:style.backgroundColor}
+            return (
+                <SafeAreaView onLayout={e=>ExpoSplashScreen.hideAsync()} style={containerStyle}>
                     <ColorScheme.Provider key={scheme} value={style}>
                         <ChatProvider>
                             <Router/>
                         </ChatProvider>
                     </ColorScheme.Provider>
-                <StatusBar style="light"/>
-                <Permissions/>
-            </SafeAreaView>}
+                </SafeAreaView>
+            )
+        }
+        return null
+    },[dataReady, scheme])
+
+    return  (
+        <Provider onReady={e=>setDataReady(true)} loading={<Loading/>}>
+            {content}
             <FlyMessage/>
+            <Permissions/>
             <AdminHinter/>
+            <StatusBar style="light"/>
         </Provider>
     )
 }
 
 function AdminHinter(){
-    const bAdmin=useSelector(state=>isAdminLogin(state))
-    if(!bAdmin)
-        return null
-    return <View style={{postion:"absolute",bottom:0,borderWidth:1,backgroundColor:"red", borderColor:"red",width:"100%",height:1}}></View>
+    const [bAdmin,hasChatGPT]=useSelector(state=>[isAdminLogin(state),hasChatGPTAccount(state)])
+    return <View style={{
+        postion:"absolute",bottom:0,
+        borderWidth:1,backgroundColor:bAdmin ? "red" : "transparent", 
+        borderColor:hasChatGPT ? "green" : "transparent",
+        width:"100%",
+        height:2}}></View>
 }
 
 

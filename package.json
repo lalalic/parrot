@@ -55,6 +55,7 @@
     "expo-status-bar": "~1.4.0",
     "fast-xml-parser": "^4.0.11",
     "ffmpeg-kit-react-native": "^5.1.0",
+    "nanoid": "^4.0.2",
     "patch-package": "^6.5.0",
     "postinstall-postinstall": "^2.1.0",
     "react": "18.0.0",
@@ -66,6 +67,7 @@
     "react-native-gesture-handler": "~2.5.0",
     "react-native-gifted-chat": "^2.0.1",
     "react-native-logs": "^5.0.1",
+    "react-native-reanimated": "~2.9.1",
     "react-native-select-dropdown": "^3.3.3",
     "react-native-tts": "^4.1.0",
     "react-native-webview": "11.23.0",
@@ -77,7 +79,6 @@
     "redux-persist": "^6.0.0",
     "redux-persist-expo-filesystem": "^2.0.0",
     "subscriptions-transport-ws": "^0.11.0",
-    "uuid": "^9.0.0",
     "word-diff": "^1.0.1"
   },
   "devDependencies": {
