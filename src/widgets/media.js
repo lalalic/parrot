@@ -394,7 +394,7 @@ export class TaggedListMedia extends ListMedia{
             }
         }, state.my.admin)
 
-        dispatch({type:"message/info",message:`Cloned the talk to Qili`})
+        console.info(`Cloned the talk to Qili`)
     }
 
     createTranscript(){

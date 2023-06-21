@@ -430,6 +430,7 @@ export const Qili=Object.assign(createApi({
             headers:{
                 'Content-Type': 'application/json',
                 "x-application-id":"parrot",
+				...getSession(),
                 ...headers,
             },
             body: request instanceof FormData ? request : JSON.stringify(request)
@@ -478,7 +479,8 @@ export const Qili=Object.assign(createApi({
 		const client=new SubscriptionClient(url,{
 			reconnect:true,
 			connectionParams:{
-				"x-application-id":"parrot"
+				"x-application-id":"parrot",
+				...getSession()
 			}
 		})
 
@@ -486,8 +488,8 @@ export const Qili=Object.assign(createApi({
 			function onNext(data){
 				callback?.(data)
 			},
-			function onError(error){
-				console.error(error)
+			function onError(errors){
+				callback?.({data:{errors}})
 			}
 		)
 		
@@ -916,7 +918,7 @@ export function createStore(){
 		},	
 	}
 
-	const store = configureStore({
+	const store = globalThis.store=configureStore({
 		/** reducer can't directly change any object in state, instead shallow copy and change */
 		reducer:
 			persistReducer(
@@ -1015,7 +1017,7 @@ export function selectWidgetTalks(state, slug){
 	return Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug)
 }
 
-export async function isAdmin(state){
+export async function isAdmin(state=globalThis.store.getState()){
 	if(isUserLogin(state)){
 		const data=await Qili.fetch({
 			query:"query{isAdmin}"
@@ -1047,4 +1049,9 @@ export function isUserLogin(state){
 
 export function needLogin(state){
 	return !isUserLogin(state) && state.my.requireLogin
+}
+
+export function getSession(){
+	const {my:{admin}}=globalThis.store.getState()
+	return admin?.headers
 }

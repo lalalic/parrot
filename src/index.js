@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
 
 import Router from "./router"
-import {Provider, hasChatGPTAccount, needLogin, isUserLogin} from "./store"
+import {Provider, hasChatGPTAccount, needLogin, isUserLogin, isAdmin} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
 import { FlyMessage, Loading, ChatProvider, Login } from "./components"
@@ -60,20 +60,30 @@ export default ()=>{
             <FlyMessage/>
             <Permissions/>
             <LoginCheck/>
-            <StatusHinter/>
+            <AdminStatusHinter/>
             <StatusBar style="light"/>
         </Provider>
     )
 }
 
-function StatusHinter(){
-    const [bUser,hasChatGPT]=useSelector(state=>[isUserLogin(state),hasChatGPTAccount(state)])
+function AdminStatusHinter(){
+    const hasChatGPT=useSelector(state=>hasChatGPTAccount(state))
+    const [bAdmin, setAdmin]=React.useState(false)
+    React.useEffect(()=>{
+        (async ()=>setAdmin(await isAdmin()))();
+    },[])
+    
+    if(!bAdmin)
+        return null
+
     return <View style={{
         postion:"absolute",bottom:0,
-        borderWidth:1,backgroundColor:bUser ? "red" : "transparent", 
+        backgroundColor:bAdmin ? "red" : "transparent", 
+        borderWidth:1,
         borderColor:hasChatGPT ? "green" : "transparent",
         width:"100%",
-        height:2}}></View>
+        height:2
+    }}></View>
 }
 
 function LoginCheck({}){

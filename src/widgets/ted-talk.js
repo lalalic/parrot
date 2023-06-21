@@ -104,13 +104,13 @@ export default class extends React.Component{
         const file=`${FileSystem.documentDirectory}${id}/video.mp4`
         await prepareFolder(file)
         await mpegKit.generateAudio({source:talk.video, target:file})
-        dispatch({type:"message/info",message:`Downloaded talk audio`})
+        console.info(`Downloaded talk audio`)
         
         dispatch({type:"talk/set", talk:{id, localVideo:file}})
 
         const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
 
-        dispatch({type:"message/info",message:`Uploaded talk video`})
+        console.info(`Uploaded talk video`)
 
         await Qili.fetch({
             id:"save",
@@ -126,6 +126,6 @@ export default class extends React.Component{
 
         dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
 
-        dispatch({type:"message/info",message:`Cloned the talk to Qili`})
+        console.info(`Cloned the talk to Qili`)
     }
 }

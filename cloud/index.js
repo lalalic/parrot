@@ -101,11 +101,11 @@ Cloud.addModule({
                 return app.findEntity("Widget", props)
             },
             answerHelp(_,{session, response}, {app}){
-                app.pubsub.publish("answerHelp", {session, response})
+                app.pubsub.publish("answer", {session, response})
                 return true
             },
-            removeHelper(_,{helper},{app}){
-                Helpers.remove(helper)
+            removeHelper(_,{help},{app,user}){
+                Helpers.remove(user._id||helper)
                 return true
             },
             isAdmin(_,{},{app,user}){
@@ -132,50 +132,49 @@ Cloud.addModule({
         },
         Subscription:{
             askThenWaitAnswer:{
-                subscribe(_,{message}, {app}){
+                subscribe(_,{message}, {app, user}){
                     if(Helpers.no){
-                        throw new Error("We can't process your request now!")
+                        app.logger.info('No helper, discard an ask')
+                        throw new Error("Your request can't be processed now!")
                     }
-                    const session=`${++uuid}`
-                    app.pubsub.publish("askHelp", {session, message})
-                    try{
-                        return withFilter(
-                            ()=>app.pubsub.asyncIterator(['answerHelp']),
-                            payload=>{
-                                console.info({...payload, subscribe:"answerHelp"})
-                                payload.session==session
-                            },
-                        )(...arguments)
-                    }finally{
-                        
-                    }
+                    const ask={session:`${++uuid}`,message}
+                    app.pubsub.publish("ask", ask)
+                    return withFilter(
+                        ()=>app.pubsub.asyncIterator(['answer']),
+                        answer=>{
+                            const answered=answer.session==ask.session
+                            if(answered){
+                                app.logger.info(`ask[${answer.session}] is answered and returned to asker`)
+                            }
+                            return answered
+                        },
+                    )(...arguments)
                 },
-                resolve(payload,{message}){
-                    return payload.response
+                resolve(answer,{}){
+                    return answer.response
                 }
             },
 
             helpQueue:{
-                subscribe(_,{helper}, {app}){
-                    Helpers.add(helper)
+                subscribe(_,{helper}, {app,user}){
+                    Helpers.add(helper=user._id||helper)
                     return withFilter(
                         ()=>{
-                            console.info(`helper[${helper}] added`)
-                            return app.pubsub.asyncIterator(["askHelp"])
+                            app.logger.info(`helper[${helper}] added`)
+                            return app.pubsub.asyncIterator(["ask"])
                         },
-                        payload=>{
-                            console.info({...payload, subscribe:"askHelp"})
-                            return Helpers.pick1(payload)===helper
+                        ask=>{
+                            const picked=Helpers.pick1(ask)===helper
+                            if(picked){
+                                app.logger.info(`ask[${ask.session}] is send to helper[${helper}]`)
+                            }
+                            return picked
                         }
                     )(...arguments)
                 },
-                unsubscribe(_,{helper},{}){
-                    Helpers.remove(helper)
-                },
-                resolve(payload,{helper},{app}){
-                    console.info(`resovling askHelp : `+JSON.stringify(payload))
-                    Helpers.done1(payload)
-                    return payload
+                resolve(ask,{},{app}){
+                    Helpers.done1(ask)
+                    return ask
                 }
             }
 
@@ -225,6 +224,7 @@ Cloud.addModule({
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
         Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
+    /*
     proxy:{
         ted: {
             target:"https://www.ted.com",
@@ -238,8 +238,6 @@ Cloud.addModule({
             },
         }
     },
-    supportAnonymous:true,
-    /*
     init(cloud){
         cloud.pubsub=new RedisPubSub({
             connection: {

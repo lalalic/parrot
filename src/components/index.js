@@ -10,7 +10,7 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isOnlyAudio, hasChatGPTAccount, isUserLogin } from "../store"
+import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isOnlyAudio, hasChatGPTAccount, isUserLogin, isAdmin } from "../store"
 import { ChatGptProvider, useChatGpt } from 'react-native-chatgpt';
 
 
@@ -1168,12 +1168,39 @@ export function useChat(){
                     askThenWaitAnswer(message:$message)
                 }`,
                 variables:{ message }
-            },({data:{askThenWaitAnswer:message}})=>{
+            },({data:{askThenWaitAnswer:message, errors}})=>{
                 unsub()
-                resolve(message)
+                if(errors){
+                    reject(errors)
+                }else{
+                    resolve(message)
+                }
             })
         })
     }
 
     return {sendMessage,status:"proxy"}
+}
+
+export function Monitor({}){
+    return null
+}
+
+import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
+export function makeLogger(){
+    const options={
+        transport:[
+            consoleTransport,
+            fileAsyncTransport
+        ],
+        transportOptions:{
+            FS: FileSystem,
+            fileName: `logs.txt`
+        }
+    }
+    
+    globalThis.logFile=`${FileSystem.documentDirectory}logs.txt`
+    console.info(`logs at ${logFile}`)
+    const log=logger.createLogger(options);
+    log.patchConsole()
 }

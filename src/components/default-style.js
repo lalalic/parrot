@@ -1,9 +1,6 @@
 import React from "react"
 import * as Components from "react-native"
 import { MaterialIcons } from '@expo/vector-icons';
-import * as FileSystem from "expo-file-system"
-import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
-
 
 export default ({MaterialIcons:_MaterialIcons, ...styles}={}) => {
     if(_MaterialIcons){
@@ -128,20 +125,4 @@ if(!Array.prototype.findLastIndex){
         }
         return -1
     }
-}
-
-if(console && !__DEV__){
-    globalThis.logFile=`${FileSystem.documentDirectory}logs.txt`
-    const log=logger.createLogger({
-        transport:[
-            consoleTransport,
-            fileAsyncTransport
-        ],
-        transportOptions:{
-            FS: FileSystem,
-            fileName: `logs.txt`
-        }
-    });
-    log.patchConsole()
-    console.info(`logs at ${logFile}`)
 }
