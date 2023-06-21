@@ -527,7 +527,7 @@ export function createStore(){
 				return 
 
 			try{
-				const unwrap=({general, shadowing, retelling, dictating, challenging, ...talk})=>talk
+				const unwrap=(({general, shadowing, retelling, dictating, challenging, ...talk})=>talk)(talk);
 				;(globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite?.({id, talk:{...unwrap,_id:id}, state, dispatch});
 			}catch(e){
 				dispatch({type:"message/error",message:e.message})
@@ -1017,10 +1017,10 @@ export function selectWidgetTalks(state, slug){
 
 export async function isAdmin(state){
 	if(isUserLogin(state)){
-		const {data:{isAdmin}}=await Qili.fetch({
+		const data=await Qili.fetch({
 			query:"query{isAdmin}"
 		},state.my.admin)
-		return isAdmin
+		return data.isAdmin
 	}
 	return false
 }

@@ -6,8 +6,9 @@ import * as FileSystem from 'expo-file-system';
 
 import { PressableIcon, PolicyChoice, html } from '../components';
 import { Subtitles } from "../components/player"
-import mpeg, {prepareFolder} from "../experiment/mpeg"
+import mpegKit, {prepareFolder} from "../experiment/mpeg"
 import { Qili, Ted } from "../store"
+
 
 export default class extends React.Component{
     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
