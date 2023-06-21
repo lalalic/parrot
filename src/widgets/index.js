@@ -36,7 +36,6 @@ export default (props)=>{
                     <TalkThumb item={Widget.defaultProps} 
                         getLinkUri={({slug})=>`/widget/${slug}`}
                         {...{thumbStyle, imageStyle,durationStyle,titleStyle}}>
-                        {Widget.Shortcut?.()}
                     </TalkThumb>
                 )}
                 keyExtractor={item=>item.defaultProps.slug}

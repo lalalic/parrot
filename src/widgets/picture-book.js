@@ -110,7 +110,7 @@ export default class PictureBook extends TaggedListMedia {
                     onLocate({rect:{x,y,width,height}, ...identified}){
                         dispatch({type:"talk/book/record", ...identified, uri:`${x},${y},${width},${height}`})
                     },
-                    locator:{size:150, x:width/2,y:100}
+                    viewerSize:200,
                 }}/>
             </TaggedTranscript>
         )
@@ -187,18 +187,19 @@ function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, up
         />
 }
 
-function PictureIdentifier({id, visible, onLocate, locator, ...props}){
+function PictureIdentifier({id, visible, onLocate, locator, search, ...props}){
     const {data:talk={}, isLoading}=useTalkQuery({slug:PictureBook.defaultProps.slug, id})
     if(isLoading)
         return <Loading/>
     
+    const objects=React.useMemo(()=>talk.data.filter(a=>!q || a.text.indexOf(q)!=-1),[talk.data, search])
     return (
         <ImageCropper source={{uri:talk.thumb}} 
             style={{flex:1}}
             viewerSize={150} 
             onCrop={identified=>onLocate?.({...identified, id})}
             {...props}>
-            <IdentifiedObjects visible={visible} objects={talk.data}/>
+            <IdentifiedObjects visible={visible} objects={objects}/>
         </ImageCropper>
     )
 }

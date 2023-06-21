@@ -86,7 +86,6 @@ export default ({scheme=React.useContext(ColorScheme)})=>(
                 />
 
                 <Route path=":slug/:id" element={<TaggedTranscript/>}/>
-                <Route path="manage/:slug" element={<TaggedTranscript/>}/>
             </Route>
             <Route path="/admin" element={<WithBackButton/>}>
                 <Route path="" element={<Admin/>}/>

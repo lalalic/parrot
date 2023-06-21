@@ -20,46 +20,31 @@ export default Wrapper=({})=>{
 /**
  * it's for audio item {text, uri}
  */
-export function TaggedTranscript({slug, id:$id, actions, listProps={}, renderItem, children}){
+export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, children}){
         const color=React.useContext(ColorScheme)
         const navigate=useNavigate()
-        
-        const talks=useSelector(state=>selectWidgetTalks(state, slug))
-        const [state, setState]=React.useState(()=>{
-            const {title,id}=talks[talks.findIndex(a=>a.id==$id)]||talks[0]||{}
-            return ({current:title,id})
-        })
-        
-        const tags=React.useMemo(()=>talks.map(a=>a.title),[talks])
-        const {data=[]}=React.useMemo(()=>talks.find(a=>a.title==state.current)||{},[talks, state.current])
+        const [q, setSearch]=React.useState("")
+        const {data=[], title}=useSelector(state=>state.talks[id])
+        const showingData=React.useMemo(()=>data.filter(a=>!q || a.text.indexOf(q)!=-1),[data, q])
 
-        const inputStyle={flex:1, fontSize:20,height:"100%",color:color.text, backgroundColor:color.inactive,paddingLeft:10}
+        const inputStyle={height:50, fontSize:20,color:color.text, backgroundColor:color.inactive,paddingLeft:10}
         const {renderItem:WidgetItem=renderItem}=listProps
 
         return (
             <KeyboardAvoidingView style={{flex:1,marginTop:20}} behavior="padding">
-                <Text style={{textAlign:"center", height:20}}>{slug.toUpperCase()}</Text>
-                <View style={{flexDirection:"row"}}>
-                    <TextInput style={inputStyle} onChangeText={q=>setState({...state,q})}/>
-                    <Select style={{flex:1}} data={tags} defaultValueByIndex={tags.indexOf(state.current)}
-                        onSelect={value=>{
-                            const talk=talks.find(a=>a.title==value)
-                            setState({...state,listing:false, current:talk.title, id: talk.id})
-                        }}
-                        />
-                </View>
+                <TextInput style={inputStyle} onChangeText={search=>setSearch(search)}/>
                 <View style={{flexGrow:1,flex:1}}>
-                    {children ? React.cloneElement(children, {id:state.id}) : <FlatList data={data.filter(a=>!state.q || a.text.indexOf(state.q)!=-1)} 
-                        extraData={`${state.q}-${state.current}-${data.length}`}
+                    {children ? React.cloneElement(children, {id, filter:q}) : <FlatList data={showingData} 
+                        extraData={`${q}-${title}-${data.length}`}
                         keyExtractor={a=>`${a.uri}-${a.text}`}
                         {...listProps}
-                        renderItem={props=><WidgetItem {...{...props,id:state.id, slug}}/>}
+                        renderItem={props=><WidgetItem {...{...props,id, slug}}/>}
                         />}
                 </View>
-                {!!state.id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
-                    {actions?.(state.current, state.id)}
+                {!!id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
+                    {actions?.(title, id)}
                     <PressableIcon name="read-more"
-                        onPress={e=>navigate(`/talk/${slug}/shadowing/${state.id}`)}/>
+                        onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)}/>
                 </View>}
             </KeyboardAvoidingView>
         )

@@ -45,9 +45,6 @@ class Media extends React.Component {
      */
      static TagManagement=null
 
-     /**protocol: Shortcut thumbnail */
-     static Shortcut=undefined
- 
      /**protocol: a tagged transcripts management component */
      static TaggedTranscript=null
 
@@ -375,10 +372,6 @@ export class TaggedListMedia extends ListMedia{
         return id
     }
 
-    static Shortcut(props){
-        return <TagShortcut slug={this.defaultProps.slug}/>
-    }
-
     static TagManagement(props){
         return <TagManagement talk={this.defaultProps} placeholder={`Tag: to categorize ${this.defaultProps.title}`} {...props}/>
     }
@@ -406,20 +399,28 @@ export class TaggedListMedia extends ListMedia{
     }
 }
 
-export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children,
-    renderItemExtra=a=>null,
+export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children, iconWidth=50,
+    renderItemExtra=({item})=>{
+        if(item.isLocal!==true){
+            return null
+        }
+        return (
+            <PressableIcon name="keyboard-arrow-right" 
+                onPress={e=>navigate(`/widget/${item.slug}/${item.id}`)} 
+                style={{width:iconWidth}}/>
+        )
+    },
     renderItemText=a=>a.id, dispatch=useDispatch(),
     renderItem:renderItem0=function({item, id=item.id}){
         const text=renderItemText(item)
         const textStyle={fontSize:16, color:"white"}
         const onPress=e=>navigate(`/talk/${slug}/shadowing/${id}`)
-        const iconWidth=50
         const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
         if(item.isLocal!==true){ 
             return (
                 <Pressable style={[containerStyle,{flexDirection:"row",alignItems:"center", marginTop:2}]} onPress={onPress} key={id}>
                     <Text style={[{paddingLeft:iconWidth, flexGrow:1}, textStyle]}>{text}</Text>
-                    {renderItemExtra(...arguments)}
+                    {renderItemExtra?.(...arguments)}
                 </Pressable>
             )
         }
@@ -432,7 +433,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
                     onPress={onPress} 
                     onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
                     />
-                {renderItemExtra(...arguments)}
+                {renderItemExtra?.(...arguments)}
             </View>
         )
     },
@@ -471,14 +472,6 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     )
 }
 
-export const TagShortcut=({slug, style={left:10}})=>{
-    const color=React.useContext(ColorScheme)
-    return (
-        <Link to={`/widget/manage/${slug}`} style={{position:"absolute", top:10, height:50,...style}} >
-            <MaterialIcons name="category" size={32} color={color.text}/>
-        </Link>
-    )
-}
 
 export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispatch=useDispatch(), ...props})=>{
     const talks=useSelector(state=>selectWidgetTalks(state, slug))
@@ -499,8 +492,6 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
             }}
             renderItemText={item=>item.title}
             {...props}
-        >
-            {!!talks.length && <TagShortcut key="shortcut" slug={slug} style={{right:10}}/>}
-        </TagList>
+        />
     )
 }

@@ -489,7 +489,7 @@ export const Qili=Object.assign(createApi({
 				callback?.(data)
 			},
 			function onError(errors){
-				callback?.({data:{errors}})
+				callback?.({errors})
 			}
 		)
 		

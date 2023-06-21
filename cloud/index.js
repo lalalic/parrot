@@ -286,7 +286,14 @@ class Helpers{
             helper.sessions.splice(helper.sessions.indexOf(session),1)
             delete sessions[session]
         }
+
+        Object.defineProperty(Helpers,"no",{
+            get(){
+                return helpers.length==0
+            }
+        })
     }
+
 
     static instance=new Helpers()
 }

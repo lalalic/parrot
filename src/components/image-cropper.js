@@ -88,7 +88,7 @@ export default function ImageCropper({source, viewerSize=150, viewerStyle, onCro
 	  
 
 	return (
-		<View  style={{flex:1}} onLayout={({nativeEvent:{layout}})=>setContainerSize({...layout})}>
+		<View  style={{flex:1, overflow:"hidden"}} onLayout={({nativeEvent:{layout}})=>setContainerSize({...layout})}>
 			<GestureDetector gesture={Gesture.Race(pan,pinch)}>
 				<Animated.View style={imageContainerStyle}>
 					<Animated.Image	source={source}	style={imageSize}/>

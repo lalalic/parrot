@@ -45,6 +45,8 @@ export const PressableIcon = ({requireLogin, onPress:$onPress, onLongPress:$onLo
                 setRunning(true)
                 e.loading=setRunning
                 await $onPress(e)
+            }catch(e){
+                FlyMessage.error(e.message)
             }finally{
                 setRunning(false)
             }
@@ -60,6 +62,8 @@ export const PressableIcon = ({requireLogin, onPress:$onPress, onLongPress:$onLo
                 setRunning(true)
                 e.loading=setRunning
                 await $onLongPress(e)
+            }catch(e){
+                FlyMessage.error(e.message)
             }finally{
                 setRunning(false)
             }
@@ -836,13 +840,6 @@ export function PopMenu({style, triggerIconName="more-vert", label, children, he
 export const FlyMessage=Object.assign(()=>{
     const dispatch=useDispatch()
     const [message, setMessage]=React.useState("")
-    const messages=useSelector(state=>state.messages||[])
-    useEffect(()=>{
-        if(messages.length){
-            setMessage(messages.join("\n"))
-            return ()=>dispatch({type:"message/remove",messages})
-        }
-    },messages)
 
     useEffect(()=>{
         FlyMessage.setMessage=setMessage
@@ -1168,12 +1165,12 @@ export function useChat(){
                     askThenWaitAnswer(message:$message)
                 }`,
                 variables:{ message }
-            },({data:{askThenWaitAnswer:message, errors}})=>{
+            },({data,errors})=>{
                 unsub()
                 if(errors){
-                    reject(errors)
+                    reject("Your request can't be processed now.")
                 }else{
-                    resolve(message)
+                    resolve(data.askThenWaitAnswer)
                 }
             })
         })
