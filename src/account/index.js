@@ -1,16 +1,19 @@
-import React, { useDebugValue } from "react"
+import React from "react"
 import {View, Text, Pressable, SectionList, Switch} from "react-native"
 import { Link } from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from "react-redux";
-import { TalkApi, isAdmin, isAdminLogin} from "../store"
-import { Login } from "../components"
+import { isUserLogin, TalkApi, } from "../store"
 
 export default ()=>{
     const dispatch=useDispatch()
-    const {widgets, api}=useSelector(state=>state.my)
+    const [magic, setMagic]=React.useState(false)
+    const [{widgets, api},signedIn]=useSelector(state=>[state.my,isUserLogin(state)])
     const sections=[
         {title:"Settings", data:[
+            {name:"Sign In", icon:"account-circle", 
+                onPress:e=>dispatch({type:"my",payload:{requireLogin:true}})
+            },
             {name:"Policy", icon:"policy"},
             {name:"Favorites", icon:"favorite"},
             {name:"Language", icon:"compass-calibration"}, 
@@ -23,11 +26,10 @@ export default ()=>{
             }
         ]},
     ]
-    const [bAdmin, bAdminLogin]=useSelector(state=>[isAdmin(state), isAdminLogin(state)])
-    if(bAdmin){
-        if(!bAdminLogin){
-            return <Login/>
-        }
+    if(signedIn){
+        sections[0].data.splice(0,1)
+    }
+    if(magic){
         sections[0].data.push({
             name:"Ted Service", 
             icon:"electrical-services", 
@@ -62,9 +64,7 @@ export default ()=>{
             <SectionList 
                 keyExtractor={a=>a.name}
                 renderSectionHeader={({ section: { title } }) => (
-                    <Pressable style={{flex:1}} onLongPress={e=>{
-                            dispatch({type:"my",payload:{admin: !bAdmin ? {} : false}})
-                        }}>
+                    <Pressable style={{flex:1}} onLongPress={e=>setMagic(true)}>
                         <Text style={{flex:1, fontSize:16, paddingTop:20, paddingLeft: 10}}>{title}</Text>
                     </Pressable>
                 )}

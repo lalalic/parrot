@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import * as Speech from "./components/speech"
 import { Login } from "./components"
-import { isAdminLogin } from "./store";
+import { isUserLogin } from "./store";
 
 export const Permissions = () => {
     const dispatch=useDispatch()
@@ -82,9 +82,9 @@ export const Permissions = () => {
         })
     },[])
 
-    const [admin, bAdminLogin]=useSelector(state=>[state.my.admin, isAdminLogin(state)])
+    const [admin, bUserLogin]=useSelector(state=>[state.my.admin, isUserLogin(state)])
     React.useEffect(()=>{
-        if(bAdminLogin){
+        if(bUserLogin){
             (async ()=>{
                 try{
                     await Login.updateToken(admin,dispatch)

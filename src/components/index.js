@@ -10,12 +10,14 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from './default-style'
 import * as Speech from "./speech"
-import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isAdmin, isOnlyAudio, hasChatGPTAccount } from "../store"
+import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isOnlyAudio, hasChatGPTAccount, isUserLogin } from "../store"
 import { ChatGptProvider, useChatGpt } from 'react-native-chatgpt';
 
 
 const AutoHideDuration=6000
-export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style,size, ...props }) => {
+export const PressableIcon = ({requireLogin, onPress:$onPress, onLongPress:$onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style,size, ...props }) => {
+    const dispatch=useDispatch()
+    const needLogin=useSelector(state=>requireLogin && !isUserLogin(state))
     const notNeedLabelAnyMore=useSelector(state=>isAlreadyFamiliar(state))
     if(labelFade===true)
         labelFade=AutoHideDuration
@@ -32,10 +34,42 @@ export const PressableIcon = ({onPress, onLongPress, onPressIn, onPressOut, chil
             return ()=>timing.stop()
         }
     },[labelFade])
+    const [running, setRunning]=React.useState(false)
+    const onPress=React.useCallback(async e=>{
+        if($onPress){
+            if(needLogin){
+                dispatch({type:"my", payload:{requireLogin}})
+                return 
+            }
+            try{
+                setRunning(true)
+                e.loading=setRunning
+                await $onPress(e)
+            }finally{
+                setRunning(false)
+            }
+        }
+    },[$onPress])
+    const onLongPress=React.useCallback(async e=>{
+        if($onLongPress){
+            try{
+                if(needLogin){
+                    dispatch({type:"my", payload:{requireLogin}})
+                    return 
+                }
+                setRunning(true)
+                e.loading=setRunning
+                await $onLongPress(e)
+            }finally{
+                setRunning(false)
+            }
+        }
+    },[$onLongPress]) 
     return (
         <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center",...style}}}>
             <MaterialIcons {...props}/>
             {children || (!notNeedLabelAnyMore && label && <Animated.Text numberOfLines={1} ellipsizeMode="tail" style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
+            {running && <Loading style={{position:"absolute"}}/>}
         </Pressable>
     )
 }
@@ -948,7 +982,8 @@ export const Login=Object.assign(function Login({ }) {
                         headers: {
                             "x-session-token": data.login.token,
                         }
-                    }
+                    },
+                    requireLogin:false,
                 }
             });
         } catch (e) {
@@ -959,7 +994,7 @@ export const Login=Object.assign(function Login({ }) {
     const textStyle = { height: 40, fontSize: 20, borderWidth: 1, borderColor: "gray", padding: 4 };
 
     return (
-        <View style={{ backgroundColor: "white", padding: 10, paddingTop: 50 }}>
+        <View style={{ backgroundColor: "white", padding: 10, width:"100%"}}>
             <View style={{ flexDirection: "row", height: 40 }}>
                 <TextInput style={{ flex: 1, ...textStyle }}
                     editable={!tick}
@@ -977,16 +1012,30 @@ export const Login=Object.assign(function Login({ }) {
                 placeholder="Verification Code"
                 onChangeText={text => setCode(text)} />
 
-            <Button title="Login"
-                disabled={!authReady}
-                onPress={e => login({ contact, code })} />
+            <View style={{flexDirection:"row", height:50, width:"100%"}}>
+                <View style={{flex:1}}>
+                    <Button title="Cancel"
+                        onPress={e => dispatch({type:"my", payload:{requireLogin:false}})}
+                    />
+                </View>
+                <View style={{flex:1}}>
+                    <Button title="Login"
+                        disabled={!authReady}
+                        onPress={e => login({ contact, code })} />
+                </View>
+            </View>
         </View>
     );
 },{
     async updateToken(admin, dispatch){
         const data=await Qili.fetch({
-            id:"authentication_renewToken_Query"
+            id:"authentication_renewToken_Query",
         },admin)
+
+        if(data?.errors){
+            dispatch({type:"my",payload:{admin:undefined, requireLogin:true}})
+            return 
+        }
             
         if(data?.me?.token){
             dispatch({type:"my",payload:{admin:{...admin,headers:{...admin.headers,"x-session-token":data.me.token}}}})
@@ -1009,11 +1058,11 @@ export function useTalkQuery({api, slug, id, policyName }) {
     
     //const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
     const { data: remote = {}, ...status } = (api=="Qili"||!!Widget ? Qili : TalkApi).useTalkQuery({slug:!!Widget ? "Widget" : slug, id });
-    const [local, bAdmin] = useSelector(state => [state.talks[id||remote?.id], isAdmin(state)]);
+    const local = useSelector(state => state.talks[id||remote?.id]);
     const policy = useSelector(state => selectPolicy(state, policyName, remote?.id));
 
     const talk = React.useMemo(() => {
-        const video = bAdmin ? remote?.video : local?.localVideo || remote?.video;
+        const video = local?.localVideo || remote?.video;
         return {
             miniPlayer: isOnlyAudio(video),
             ...remote,
@@ -1042,7 +1091,7 @@ export function useAsk(id, defaultQuestion){
             dispatch({type:"my/session", payload:{[id]:{conversationId, messageId}}})
         }
         return message
-    },[session])
+    },[session, sendMessage])
 
 }
 
@@ -1062,6 +1111,8 @@ export function ChatProvider({children}){
 
 function SubscribeHelpQueue({children}){
     const {sendMessage}=useChatGpt()
+    const $sendMessage=React.useRef(sendMessage)
+    $sendMessage.current=sendMessage
     const {uuid:helper}=useSelector(state=>state.my)
     React.useEffect(()=>{
         const unsub=Qili.subscribe({
@@ -1070,12 +1121,10 @@ function SubscribeHelpQueue({children}){
                 helpQueue(helper:$helper)
             }`,
             variables:{helper}
-        },function({errors, session, message}){
-            if(errors){
-                return console.error(errors)
-            }
+        },function({data:{helpQueue:{message, session}}}){
             (async ()=>{
-                const response=await sendMessage(message.message||message, message.options)
+                debugger
+                const response=await $sendMessage.current(message.message||message, message.options)
                 await Qili.fetch({
                     id:"answer",
                     query:`query a($session:String!, $response:JSON!){
@@ -1099,6 +1148,7 @@ function SubscribeHelpQueue({children}){
             })
         }
     },[])
+    
     return children
 }
 
@@ -1109,16 +1159,16 @@ export function useChat(){
 
     async function sendMessage(message, options){
         if(options){
-            message={message,options}
+            message={message, options}
         }
         return new Promise((resolve, reject)=>{
             const unsub=Qili.subscribe({
                 id:"askThenWaitAnswer",
-                query:`subscription a($message:String!){
+                query:`subscription a($message:JSON!){
                     askThenWaitAnswer(message:$message)
                 }`,
                 variables:{ message }
-            },message=>{
+            },({data:{askThenWaitAnswer:message}})=>{
                 unsub()
                 resolve(message)
             })

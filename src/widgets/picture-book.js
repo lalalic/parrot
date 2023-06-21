@@ -76,7 +76,8 @@ export default class PictureBook extends TaggedListMedia {
                             color={visible ? "yellow" : "gray"} 
                             onPress={e=>setVisible(!visible)}/>,
 
-                        <Uploader name="360" key="objects"
+                        <Uploader name="360" key="objects" 
+                            requireLogin="generate a scenario picture"
                             options={{
                                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                                 allowsMultipleSelection:false,

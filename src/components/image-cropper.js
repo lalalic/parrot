@@ -48,7 +48,7 @@ export default function ImageCropper({source, viewerSize=150, viewerStyle, onCro
 
 	const pinch = Gesture.Pinch()
 		.onUpdate(event=> {
-			scale.value = event.scale
+			scale.value = last.current.scale*event.scale
 			ref.current?.({scale:event.scale})
 		})
 		.onEnd(e=>{

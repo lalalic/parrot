@@ -474,7 +474,7 @@ export const Qili=Object.assign(createApi({
 		return video.indexOf("qili2.com")!=-1
 	},
 	subscribe(request, callback){
-		const url=this.service.replace(/^https?\:/, "ws:")
+		const url=this.service.replace(/^https?\:/, "wss:")
 		const client=new SubscriptionClient(url,{
 			reconnect:true,
 			connectionParams:{
@@ -523,7 +523,7 @@ export function createStore(){
 			if(!favorited || talk.slug==id)
 				return
 
-			if(!isAdminLogin(state))
+			if(!(await isAdmin(state)))
 				return 
 
 			try{
@@ -1015,12 +1015,14 @@ export function selectWidgetTalks(state, slug){
 	return Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug)
 }
 
-export function isAdmin(state){
-	return !!state.my.admin
-}
-
-export function isAdminLogin(state){
-	return !!state.my.admin?.headers
+export async function isAdmin(state){
+	if(isUserLogin(state)){
+		const {data:{isAdmin}}=await Qili.fetch({
+			query:"query{isAdmin}"
+		},state.my.admin)
+		return isAdmin
+	}
+	return false
 }
 
 export function getTalkApiState(state){
@@ -1037,4 +1039,12 @@ export function isOnlyAudio(url){
 
 export function hasChatGPTAccount(state){
 	return !!state.my.widgets?.chatgpt
+}
+
+export function isUserLogin(state){
+	return !!state.my.admin?.headers
+}
+
+export function needLogin(state){
+	return !isUserLogin(state) && state.my.requireLogin
 }

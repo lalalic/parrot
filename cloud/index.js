@@ -1,4 +1,5 @@
-const {withFilter}=require("graphql-subscriptions")
+const { withFilter }=require("graphql-subscriptions")
+const { RedisPubSub }=require("graphql-redis-subscriptions")
 let uuid=Date.now()
 
 const Talk_Fields=`
@@ -29,6 +30,10 @@ Cloud.addModule({
             ${Talk_Fields}
         }
 
+        extend type User{
+            isAdmin:Boolean
+        }
+
         extend type Query{
             talk(slug:String, id:String):Talk
             talks(q:String, duration: Int):[Talk]
@@ -38,6 +43,7 @@ Cloud.addModule({
             widgetTalks(slug:String, q:String):[Talk]
             answerHelp(session:String!, response:JSON!):JSON
             removeHelper(helper:String!):Boolean
+            isAdmin:Boolean
         }
 
         extend type Mutation{
@@ -101,6 +107,9 @@ Cloud.addModule({
             removeHelper(_,{helper},{app}){
                 Helpers.remove(helper)
                 return true
+            },
+            isAdmin(_,{},{app,user}){
+                return app.get1Entity("User",{_id:user._id}).then(user=>user.isAdmin)
             }
         },
         Mutation:{
@@ -124,17 +133,21 @@ Cloud.addModule({
         Subscription:{
             askThenWaitAnswer:{
                 subscribe(_,{message}, {app}){
+                    if(Helpers.no){
+                        throw new Error("We can't process your request now!")
+                    }
                     const session=`${++uuid}`
                     app.pubsub.publish("askHelp", {session, message})
                     try{
                         return withFilter(
                             ()=>app.pubsub.asyncIterator(['answerHelp']),
-                            payload=>payload.session==session,
+                            payload=>{
+                                console.info({...payload, subscribe:"answerHelp"})
+                                payload.session==session
+                            },
                         )(...arguments)
                     }finally{
-                        if(Helpers.no){
-                            app.pubsub.publish("answerHelp", {session, response:new Error("We can't process your request now!")})
-                        }
+                        
                     }
                 },
                 resolve(payload,{message}){
@@ -146,14 +159,21 @@ Cloud.addModule({
                 subscribe(_,{helper}, {app}){
                     Helpers.add(helper)
                     return withFilter(
-                        ()=>app.pubsub.asyncIterator(["askHelp"]),
-                        payload=>Helpers.pick1(payload)===helper
+                        ()=>{
+                            console.info(`helper[${helper}] added`)
+                            return app.pubsub.asyncIterator(["askHelp"])
+                        },
+                        payload=>{
+                            console.info({...payload, subscribe:"askHelp"})
+                            return Helpers.pick1(payload)===helper
+                        }
                     )(...arguments)
                 },
                 unsubscribe(_,{helper},{}){
                     Helpers.remove(helper)
                 },
                 resolve(payload,{helper},{app}){
+                    console.info(`resovling askHelp : `+JSON.stringify(payload))
                     Helpers.done1(payload)
                     return payload
                 }
@@ -199,7 +219,7 @@ Cloud.addModule({
         }`,
         remove:`mutation remove_Mutation($id:String!, $type:String){
             remove(id:$id, type:$type)
-        }`,
+        }`
     },
     indexes:{
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
@@ -219,6 +239,15 @@ Cloud.addModule({
         }
     },
     supportAnonymous:true,
+    /*
+    init(cloud){
+        cloud.pubsub=new RedisPubSub({
+            connection: {
+                host:"qili.pubsub",
+            }
+        })
+    }
+    */
 })
 
 class Helpers{
@@ -226,7 +255,7 @@ class Helpers{
         const helpers=[], sessions={}
         Helpers.add=this.add=function(helper){
             const id=helper//`user${++uuid}`
-            if(!!helpers.find(a=>a.id==id)){
+            if(!helpers.find(a=>a.id==id)){
                 helpers.push({id,sessions:[]})
             }
             return id
@@ -239,6 +268,7 @@ class Helpers{
         }
 
         Helpers.pick1=this.pick1=function({session, message}){
+            console.info({helpers, sessions})
             if(session in sessions)
                 return
             const min=helpers.reduce((min,a)=>{
@@ -249,6 +279,7 @@ class Helpers{
             },helpers[0])
             min.sessions.push(session)
             sessions[session]=min.id
+            console.info(`pick ${min.id}`)
             return min.id
         }
         Helpers.done1=this.done1=function({session}){

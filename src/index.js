@@ -4,10 +4,10 @@ import { StatusBar } from "expo-status-bar"
 import * as ExpoSplashScreen from 'expo-splash-screen'
 
 import Router from "./router"
-import {Provider, isAdminLogin, hasChatGPTAccount} from "./store"
+import {Provider, hasChatGPTAccount, needLogin, isUserLogin} from "./store"
 import setDefaultStyle, {ColorScheme} from "./components/default-style"
 import { Permissions } from "./permissions"
-import { FlyMessage, Loading, ChatProvider } from "./components"
+import { FlyMessage, Loading, ChatProvider, Login } from "./components"
 import { useSelector } from "react-redux";
 
 LogBox.ignoreAllLogs()
@@ -59,20 +59,36 @@ export default ()=>{
             {content}
             <FlyMessage/>
             <Permissions/>
-            <AdminHinter/>
+            <LoginCheck/>
+            <StatusHinter/>
             <StatusBar style="light"/>
         </Provider>
     )
 }
 
-function AdminHinter(){
-    const [bAdmin,hasChatGPT]=useSelector(state=>[isAdminLogin(state),hasChatGPTAccount(state)])
+function StatusHinter(){
+    const [bUser,hasChatGPT]=useSelector(state=>[isUserLogin(state),hasChatGPTAccount(state)])
     return <View style={{
         postion:"absolute",bottom:0,
-        borderWidth:1,backgroundColor:bAdmin ? "red" : "transparent", 
+        borderWidth:1,backgroundColor:bUser ? "red" : "transparent", 
         borderColor:hasChatGPT ? "green" : "transparent",
         width:"100%",
         height:2}}></View>
+}
+
+function LoginCheck({}){
+    const hasLoginReason=useSelector(state=>needLogin(state))
+    if(!hasLoginReason)
+        return null
+    return (
+        <View style={{ flex:1,
+            position:"absolute",width:"100%",height:"100%",
+            justifyContent:"center"}}>
+            <Text style={{textAlign:"center",fontSize:20,paddingBottom:40,paddingTop: 40, backgroundColor:"white",color:"black"}}>Login to {hasLoginReason}</Text>
+            <Login/>
+        </View>
+        
+    )
 }
 
 
