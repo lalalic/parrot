@@ -104,10 +104,6 @@ Cloud.addModule({
                 app.pubsub.publish("answer", {session, response})
                 return true
             },
-            removeHelper(_,{help},{app,user}){
-                Helpers.remove(user._id||helper)
-                return true
-            },
             isAdmin(_,{},{app,user}){
                 return app.get1Entity("User",{_id:user._id}).then(user=>user.isAdmin)
             }
@@ -150,7 +146,7 @@ Cloud.addModule({
                         },
                     )(...arguments)
                 },
-                resolve(answer,{}){
+                resolve(answer){
                     return answer.response
                 }
             },
@@ -159,10 +155,7 @@ Cloud.addModule({
                 subscribe(_,{helper}, {app,user}){
                     Helpers.add(helper=user._id||helper)
                     return withFilter(
-                        ()=>{
-                            app.logger.info(`helper[${helper}] added`)
-                            return app.pubsub.asyncIterator(["ask"])
-                        },
+                        ()=>app.pubsub.asyncIterator(["ask"]),
                         ask=>{
                             const picked=Helpers.pick1(ask)===helper
                             if(picked){
@@ -224,67 +217,86 @@ Cloud.addModule({
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
         Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
-    /*
-    proxy:{
-        ted: {
-            target:"https://www.ted.com",
-            changeOrigin:true,
-        },
-        openai:{
-            target:"https://api.openai.com",
-            changeOrigin:true,
-            headers: {
-               // 'Authorization': `Bearer ${apiKey}`
-            },
-        }
-    },
-    init(cloud){
-        cloud.pubsub=new RedisPubSub({
-            connection: {
-                host:"qili.pubsub",
+    pubsub:{
+        init(cloud){
+            /*
+            cloud.pubsub=new RedisPubSub({
+                connection: {
+                    host:"qili.pubsub",
+                }
+            })
+            */
+        }, 
+        onDisconnect({app,user, request}){
+            switch(request?.id){
+                case "helpQueue":
+                    Helpers.remove(user._id)
+                    Helpers.remove(request.variables.helper)
+                break
             }
-        })
+        }
     }
-    */
 })
-
+ 
 class Helpers{
     constructor(){
         const helpers=[], sessions={}
         Helpers.add=this.add=function(helper){
-            const id=helper//`user${++uuid}`
+            const id=helper
             if(!helpers.find(a=>a.id==id)){
                 helpers.push({id,sessions:[]})
+                console.info(`helper[${helper}] join`)
             }
             return id
         }
 
         Helpers.remove=this.remove=function(helper){
             const i=helpers.findIndex(a=>a.id==helper)
-            helpers.splice(i,1)
-            return helper
+            if(i!=-1){
+                helpers.splice(i,1)
+                console.info(`helper[${helper}] left!`)
+                return helper
+            }
         }
 
         Helpers.pick1=this.pick1=function({session, message}){
-            console.info({helpers, sessions})
+            console.debug({helpers, sessions})
             if(session in sessions)
                 return
-            const min=helpers.reduce((min,a)=>{
-                if(a.sessions.length<min.sessions.length){
-                    return a
-                }
-                return min
-            },helpers[0])
-            min.sessions.push(session)
-            sessions[session]=min.id
-            console.info(`pick ${min.id}`)
-            return min.id
+
+            let picker
+            if(message.options?.helper){
+                picker=helpers.find(a=>a.id==message.options.helper)    
+            }
+
+            if(!picker){
+                picker=helpers.reduce((min,a)=>{
+                    if(a.sessions.length<min.sessions.length){
+                        return a
+                    }
+                    return min
+                },helpers[0])
+            }
+
+
+            picker.sessions.push(session)
+            sessions[session]=picker.id
+            console.info(`pick helper[${picker.id}] for ask[${session}]`)
+            return picker.id
         }
         Helpers.done1=this.done1=function({session}){
-            const id=sessions[session]
-            const helper=helpers.find(a=>a.id==id)
-            helper.sessions.splice(helper.sessions.indexOf(session),1)
+            const helperId=sessions[session]
+            if(!helperId)
+                return 
+            const helper=helpers.find(a=>a.id==helperId)
+            if(!helper)
+                return 
+            const i=helper.sessions.indexOf(session)
+            if(i==-1)
+                return 
+            helper.sessions.splice(i,1)
             delete sessions[session]
+            console.info(`ask[${session}] picked and removed from queue`)
         }
 
         Object.defineProperty(Helpers,"no",{

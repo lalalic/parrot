@@ -22,78 +22,89 @@ import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
 import * as Linking from "expo-linking";
 
-export default ({scheme=React.useContext(ColorScheme)})=>(
-    <NativeRouter initialEntries={["/home"/*,"/widget/picturebook/picturebook1687193344157"*/]}>
-        <Routes>
-            <Route path="/" element={React.createElement(()=>{
-                    const {pathname}=useLocation()
-                    return (
-                        <View style={{flex:1}}>
-                            <View style={{flexGrow: 1,flex:1}}>
-                                <Outlet/>
-                                {/*<ShareMointor/>*/}
+export default ({scheme=React.useContext(ColorScheme)})=>{
+    const initialEntries=React.useMemo(()=>{
+        const entries=["/home"]
+        if(globalThis.lastPathName){//chatgpt switch lead to different parent
+            entries.push(globalThis.lastPathName)
+            delete globalThis.lastPathName
+        }
+        return entries
+    },[])
+    
+    return (
+        <NativeRouter initialEntries={initialEntries}>
+            <Routes>
+                <Route path="/" element={React.createElement(()=>{
+                        const {pathname}=useLocation()
+                        return (
+                            <View style={{flex:1}}>
+                                <View style={{flexGrow: 1,flex:1}}>
+                                    <Outlet/>
+                                    {/*<ShareMointor/>*/}
+                                </View>
+                                <View style={{flexDirection: "row", justifyContent: "space-around",}}>
+                                    {[["/home","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
+                                        return (
+                                            <Link key={name} to={to} style={{flex: 1,alignItems: "center", padding: 10}}>
+                                                <MaterialIcons name={name} color={pathname.startsWith(to) ? scheme.active : undefined}/>
+                                            </Link>
+                                        )
+                                    })}
+                                </View>
                             </View>
-                            <View style={{flexDirection: "row", justifyContent: "space-around",}}>
-                                {[["/home","home"],["/plan","date-range"],["/account","account-circle"]].map(([to,name])=>{
-                                    return (
-                                        <Link key={name} to={to} style={{flex: 1,alignItems: "center", padding: 10}}>
-                                            <MaterialIcons name={name} color={pathname.startsWith(to) ? scheme.active : undefined}/>
-                                        </Link>
-                                    )
-                                })}
-                            </View>
-                        </View>
-                    )
-                })}>
-                    
-                <Route path="talks" element={<Talks/>} />
-                <Route path="home" element={<Home/>} />
-                <Route path="account">
-                    <Route path="" element={<Account/>}/>
-                    <Route element={<WithBackButton/>}>
-                        <Route path="policy" element={<Policy/>}/>
-                        <Route path="favorites" element={<Favorites/>}/>
-                        <Route path="language" element={<Lang/>}/>
-                        <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
-                        <Route path="test" element={<Test/>}/>
-                        <Route path="logs" element={<Log/>}/>
-                        <Route path="about" element={<About/>}/>
-                    </Route>
-                </Route>
-                <Route path="plan" element={<Scheduler/>}/>
-            </Route>
-
-            <Route path="/talk" element={<WithBackButton/>}>
-                <Route path=":slug" element={<Talk/>}/>
-                <Route path=":slug/:policy" element={<Talk/>}/>
-                <Route path=":slug/:policy/:id" element={<Talk/>}/>
-            </Route>
-
-            <Route path="/widget" element={<WithBackButton/>}>
-                <Route path=":slug" element={React.createElement(()=>{
-                        const {slug,}=useParams()
-                        const Widget=globalThis.Widgets[slug]
-                        if(!Widget)
-                            return null
+                        )
+                    })}>
                         
-                        if(Widget.TagManagement){
-                            const TagManagement=Widget.$TagManagement || (Widget.$TagManagement=Widget.TagManagement.bind(Widget))
-                            return <TagManagement/>
-                        }
+                    <Route path="talks" element={<Talks/>} />
+                    <Route path="home" element={<Home/>} />
+                    <Route path="account">
+                        <Route path="" element={<Account/>}/>
+                        <Route element={<WithBackButton/>}>
+                            <Route path="policy" element={<Policy/>}/>
+                            <Route path="favorites" element={<Favorites/>}/>
+                            <Route path="language" element={<Lang/>}/>
+                            <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
+                            <Route path="test" element={<Test/>}/>
+                            <Route path="logs" element={<Log/>}/>
+                            <Route path="about" element={<About/>}/>
+                        </Route>
+                    </Route>
+                    <Route path="plan" element={<Scheduler/>}/>
+                </Route>
 
-                        return <Widget/>
-                    })} 
-                />
+                <Route path="/talk" element={<WithBackButton/>}>
+                    <Route path=":slug" element={<Talk/>}/>
+                    <Route path=":slug/:policy" element={<Talk/>}/>
+                    <Route path=":slug/:policy/:id" element={<Talk/>}/>
+                </Route>
 
-                <Route path=":slug/:id" element={<TaggedTranscript/>}/>
-            </Route>
-            <Route path="/admin" element={<WithBackButton/>}>
-                <Route path="" element={<Admin/>}/>
-            </Route>
-            <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
-        </Routes>
-    </NativeRouter>
-)
+                <Route path="/widget" element={<WithBackButton/>}>
+                    <Route path=":slug" element={React.createElement(()=>{
+                            const {slug,}=useParams()
+                            const Widget=globalThis.Widgets[slug]
+                            if(!Widget)
+                                return null
+                            
+                            if(Widget.TagManagement){
+                                const TagManagement=Widget.$TagManagement || (Widget.$TagManagement=Widget.TagManagement.bind(Widget))
+                                return <TagManagement/>
+                            }
+
+                            return <Widget/>
+                        })} 
+                    />
+
+                    <Route path=":slug/:id" element={<TaggedTranscript/>}/>
+                </Route>
+                <Route path="/admin" element={<WithBackButton/>}>
+                    <Route path="" element={<Admin/>}/>
+                </Route>
+                <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
+            </Routes>
+        </NativeRouter>
+    )
+}
 
 const WithBackButton=()=>(
     <View style={{flex:1}}>

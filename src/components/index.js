@@ -1134,16 +1134,7 @@ function SubscribeHelpQueue({children}){
                 })
             })();
         })
-        return ()=>{
-            unsub()
-            Qili.fetch({
-                id:"removeHelper",
-                query:`query a($helper:String!){
-                    removeHelper(helper:$helper)
-                }`,
-                variables:{helper}
-            })
-        }
+        return unsub
     },[])
     
     return children
@@ -1168,7 +1159,7 @@ export function useChat(){
             },({data,errors})=>{
                 unsub()
                 if(errors){
-                    reject("Your request can't be processed now.")
+                    reject(new Error("Your request can't be processed now."))
                 }else{
                     resolve(data.askThenWaitAnswer)
                 }

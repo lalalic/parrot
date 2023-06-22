@@ -187,12 +187,12 @@ function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, up
         />
 }
 
-function PictureIdentifier({id, visible, onLocate, locator, search, ...props}){
+function PictureIdentifier({id, visible, onLocate, locator, search:q, ...props}){
     const {data:talk={}, isLoading}=useTalkQuery({slug:PictureBook.defaultProps.slug, id})
+    const objects=React.useMemo(()=>talk.data.filter(a=>!q || a.text.indexOf(q)!=-1),[talk.data, q])
     if(isLoading)
         return <Loading/>
     
-    const objects=React.useMemo(()=>talk.data.filter(a=>!q || a.text.indexOf(q)!=-1),[talk.data, search])
     return (
         <ImageCropper source={{uri:talk.thumb}} 
             style={{flex:1}}

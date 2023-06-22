@@ -1,12 +1,13 @@
 import React from "react"
 import {View, Text, Pressable, SectionList, Switch} from "react-native"
-import { Link } from "react-router-native"
+import { Link, useLocation, useNavigate } from "react-router-native"
 import { MaterialIcons } from '@expo/vector-icons';
 import { useDispatch, useSelector } from "react-redux";
 import { isUserLogin, TalkApi, } from "../store"
 
 export default ()=>{
     const dispatch=useDispatch()
+    const {pathname}=useLocation()
     const [magic, setMagic]=React.useState(false)
     const [{widgets, api},signedIn]=useSelector(state=>[state.my,isUserLogin(state)])
     const sections=[
@@ -21,7 +22,10 @@ export default ()=>{
                 icon:"chat-bubble-outline", 
                 children: <Switch 
                     value={widgets.chatgpt} 
-                    onValueChange={e=>dispatch({type:"my", payload:{widgets:{...widgets, chatgpt:!widgets.chatgpt}}})}
+                    onValueChange={e=>{
+                        dispatch({type:"my", payload:{widgets:{...widgets, chatgpt:!widgets.chatgpt}}})
+                        globalThis.lastPathName=pathname
+                    }}
                     />
             }
         ]},

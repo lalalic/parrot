@@ -475,12 +475,22 @@ export const Qili=Object.assign(createApi({
 		return video.indexOf("qili2.com")!=-1
 	},
 	subscribe(request, callback){
-		const url=this.service.replace(/^https?\:/, "wss:")
+		const url=this.service.replace(/^http/, "ws")
+		//@Why: a shared client can't work, is it because close method is changed ???
 		const client=new SubscriptionClient(url,{
 			reconnect:true,
 			connectionParams:{
 				"x-application-id":"parrot",
-				...getSession()
+				...getSession(),
+				request:{
+					id:request.id,
+					variables: request.variables
+				},
+			},
+			connectionCallback(errors){
+				if(errors){
+					callback?.({errors})
+				}
 			}
 		})
 
