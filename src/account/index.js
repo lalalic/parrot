@@ -23,7 +23,7 @@ export default ()=>{
                 children: <Switch 
                     value={widgets.chatgpt} 
                     onValueChange={e=>{
-                        dispatch({type:"my", payload:{widgets:{...widgets, chatgpt:!widgets.chatgpt}}})
+                        dispatch({type:"my", payload:{sessions:{},widgets:{...widgets, chatgpt:!widgets.chatgpt}}})
                         globalThis.lastPathName=pathname
                     }}
                     />
