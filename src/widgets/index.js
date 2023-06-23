@@ -31,7 +31,7 @@ export default (props)=>{
                 <Text style={{fontSize:12}}>help practice particular things</Text>
             </Text>
             <FlatList
-                data={Object.values(Widgets).filter(a=>widgets[a.defaultProps.slug]!==false)}
+                data={Object.values(Widgets)/*.filter(a=>widgets[a.defaultProps.slug]!==false)*/}
                 renderItem={({item:Widget,index})=>(
                     <TalkThumb item={Widget.defaultProps} 
                         getLinkUri={({slug})=>`/widget/${slug}`}

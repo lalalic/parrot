@@ -1075,21 +1075,35 @@ export function useTalkQuery({api, slug, id, policyName }) {
     return { data, policy, ...status};
 }
 
+/**
+ * local: use id to avoid massive session
+ * remote: chat session should be kept
+ * @returns 
+ */
 export function useAsk(id, defaultQuestion){
-    const {sendMessage, status}=useChat()
+    const {sendMessage, status, login}=useChat()
     const dispatch=useDispatch()
-    if(status=="logged-out"){
-        dispatch({type:"my", sessions:{}})
-    }
     const session=useSelector(state=>state.my.sessions?.[id])
-    return React.useCallback(async (prompt=defaultQuestion)=>{
-        const {message, conversationId, messageId}=await sendMessage(prompt, session)
-        if(id && (!session || session.conversationId!=conversationId || session.messageId!=messageId)){
-            dispatch({type:"my/session", payload:{[id]:{conversationId, messageId}}})
+    
+    const ask=React.useCallback(async (prompt=defaultQuestion)=>{
+        const {message, ...newSession}=await sendMessage(prompt, session, id)
+        if(!message){
+            throw new Error("Your request can't be processed now!")
+        }
+        if(id && Object.keys(newSession).length>0 && (!session 
+                || session.conversationId!=newSession.conversationId 
+                || session.messageId!=newSession.messageId)){
+            dispatch({type:"my/session", payload:{[id]:newSession}})
         }
         return message
     },[session, sendMessage])
 
+    if(status=="logged-out"){
+        dispatch({type:"my", sessions:{}})
+        login?.()
+    }
+
+    return ask
 }
 
 export function ChatProvider({children}){
@@ -1145,23 +1159,45 @@ export function useChat(){
     if(enableChatGPT)
         return useChatGpt()
 
-    async function sendMessage(message, options){
-        if(options){
-            message={message, options}
-        }
+    async function sendMessage(message, options, id){
+        const [request, processData=a=>a, onError=a=>a]=(()=>{
+            if(id=="chat"){//no helper then no session
+                if(typeof(message)=="object"){
+                    const {message:prompt, options:$options, onAccumulatedResponse, onError}=message
+                    return [
+                        {message:prompt, options:{...$options,...options}},
+                        data=>{
+                            onAccumulatedResponse?.({...data, isDone:true})
+                            return {...data}
+                        },
+                        onError
+                    ]
+                }else{
+                    return [
+                        {
+                            message, 
+                            options: options?.helper ? options : {}/* empty indicate remote proxy to return session*/
+                        }
+                    ]
+                }
+            }else {
+                return [message.message||message]
+            }
+        })();
+        
         return new Promise((resolve, reject)=>{
             const unsub=Qili.subscribe({
                 id:"askThenWaitAnswer",
                 query:`subscription a($message:JSON!){
                     askThenWaitAnswer(message:$message)
                 }`,
-                variables:{ message }
+                variables:{ message:request }
             },({data,errors})=>{
                 unsub()
                 if(errors){
-                    reject(new Error("Your request can't be processed now."))
+                    reject(onError(new Error("Your request can't be processed now.")))
                 }else{
-                    resolve(data.askThenWaitAnswer)
+                    resolve(processData(data.askThenWaitAnswer))
                 }
             })
         })

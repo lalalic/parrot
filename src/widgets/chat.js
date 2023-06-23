@@ -4,7 +4,7 @@ import { Button, View , ActivityIndicator, Text, TextInput, Pressable, } from 'r
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { useChatGpt } from "react-native-chatgpt";
 import { MaterialIcons } from '@expo/vector-icons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView} from "../components"
+import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView, useAsk} from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -21,10 +21,10 @@ const defaultProps={
 export default Object.assign(props=>{
 	useKeepAwake()
 	React.useEffect(()=>()=>Speak.stop(),[])
-	return (<Navigator {...props}/>)
+	return (<Chat/>)
 },{defaultProps})
 
-function Navigator({prompt, onSuccess, onError}){
+function Navigator(){
 		const {status, login}=useChatGpt()
 		
 		if (status === 'initializing') return null;
@@ -42,26 +42,7 @@ function Navigator({prompt, onSuccess, onError}){
 			);
 		}
 
-		if(prompt && onSuccess){
-			return <Chat1 {...{prompt, onSuccess, onError}}/>
-		}
-	
 		return <Chat />;
-}
-
-const Chat1=({prompt,hint="thinking", onSuccess, onError=e=>FlyMessage.error(e.message)})=>{
-	const { sendMessage } = useChatGpt();
-	React.useEffect(()=>{
-		(async ()=>{
-			try{
-				const res=await sendMessage(prompt)
-				onSuccess?.(res)
-			}catch(e){
-				onError?.(e)
-			}
-		})();
-	},[])
-	return <Text style={{position:"absolute"}}>{hint}</Text>
 }
 
 const CHAT_GPT_ID = 'system';
@@ -132,8 +113,8 @@ function isTextMessage(message){
  * @returns 
  */
 const Chat = () => {
-	const { sendMessage } = useChatGpt();
-	const talk=useSelector(state=>state.talks.chat)
+	const sendMessage = useAsk("chat")
+	const talk=useSelector(state=>state.talks[defaultProps.id])
 	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput, $audioInput]=useStateAndLatest(false)
 	const store=useStore()
@@ -298,7 +279,7 @@ const Chat = () => {
 					onPress(text){//check id patter in Media.create
 						const [id]=/\d+/.exec(text)
 						const slug=text.substring(2).replace(id,"")
-						navigate(`/widget/${slug}/${id}`)
+						navigate(`/widget/${slug}/${slug}${id}`)
 					}
 				}]}
 				showUserAvatar={true}

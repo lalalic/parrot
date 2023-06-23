@@ -165,7 +165,7 @@ Cloud.addModule({
                         }
                     )(...arguments)
                 },
-                resolve(ask,{},{app}){
+                resolve(ask,{},{app,user}){
                     Helpers.done1(ask)
                     return ask
                 }
@@ -218,14 +218,12 @@ Cloud.addModule({
         Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
     pubsub:{
-        init(cloud){
-            /*
-            cloud.pubsub=new RedisPubSub({
+        init(){
+            return new RedisPubSub({
                 connection: {
                     host:"qili.pubsub",
                 }
             })
-            */
         }, 
         onDisconnect({app,user, request}){
             switch(request?.id){
