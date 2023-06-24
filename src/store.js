@@ -593,6 +593,78 @@ export function createStore(){
 			}
 			return Qili.reducer(...arguments)
 		},
+		wechat(state={key:"@bot", 
+			policy:{}, schedule:{},
+			messages:[],
+			enableSelf:false, enableScenario:true, enableRole:true, enableSchedule:true,
+			roles:["English Tutor"], 
+			scenarioes:{"English Lesson":["Spell", "Pronounce"]}
+		},action){
+			switch(action.type){
+				case "persist/REHYDRATE":
+					if(!!!action.payload?.wechat){
+						return state
+					}
+					action.payload.wechat={...state, ...action.payload.wechat}
+					return state
+				case "wechat/contact/role":
+					return produce(state,$state=>{
+						const {value, contact}=action
+						$state.policy[contact].roles=value
+						value.forEach(a=>{
+							if($state.roles.indexOf(a)==-1){
+								$state.roles.push(a)
+							}
+						})
+					})
+				case "wechat/contact/scenario":
+					return produce(state,$state=>{
+						const {value, contact}=action
+						$state.policy[contact].scenarioes=value
+					})
+				case "wechat/scenario":
+					return produce(state, $state=>{
+						const {current, name, keys}=action
+						$state.scenarioes[name]=keys
+						if(current){
+							delete $state.scenarioes[current]
+						}
+					})
+				case "wechat/roles":
+					return produce(state, $state=>{
+						const {roles}=action
+						$state.roles=roles
+					})
+				case "wechat/delete/scenario":
+					return produce(state, $state=>{
+						const { name}=action
+						delete $state.scenarioes[name]
+					})
+				case "wechat/schedule":
+					return produce(state, $state=>{
+						const {key, start, end}=action
+						$state.schedule[key]={start, end}
+					})
+				case "wechat/toggle":
+					return produce(state, $state=>{
+						$state[action.key]=!$state[action.key]
+					})
+				case "wechat/message"://reversed order for GiftedChat
+					return produce(state, $state=>{
+						const messages=$state.messages
+						const {message}=action
+						if('answerTo' in message){
+							const i=messages.findIndex(a=>a.id==message.answerTo)
+							if(i>0){
+								messages.splice(i-1,0,message)
+								return 
+							}
+						}
+						messages.unshift(message)
+					})
+			}
+			return state
+		},
 		my(state = {sessions:{}, uuid:uuid.v4(), policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false,tts:{}, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
 			switch (action.type) {
 				case "lang/PERSIST":

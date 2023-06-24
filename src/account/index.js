@@ -48,7 +48,8 @@ export default ()=>{
 
         sections.push(
             {title:"Developer", data:[
-                /*{name:"Test", icon:"file-present"},*/
+                {name:"Test", icon:"file-present"},
+                {name:"Wechat", icon:"file-present"},
                 {name:"Admin", icon:"person-pin-circle", href:"/admin"},
                 {name:"Files", icon:"file-present"},
                 globalThis.logFile ? {name:"Logs", icon: "av-timer"} : false,

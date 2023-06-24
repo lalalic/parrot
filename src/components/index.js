@@ -1080,12 +1080,13 @@ export function useTalkQuery({api, slug, id, policyName }) {
  * remote: chat session should be kept
  * @returns 
  */
-export function useAsk(id, defaultQuestion){
+export function useAsk(xid="random", defaultQuestion){
     const {sendMessage, status, login}=useChat()
     const dispatch=useDispatch()
-    const session=useSelector(state=>state.my.sessions?.[id])
+    const sessions=useSelector(state=>state.my.sessions)
     
-    const ask=React.useCallback(async (prompt=defaultQuestion)=>{
+    const ask=React.useCallback(async (prompt=defaultQuestion, id=xid)=>{
+        const session=sessions[id]
         const {message, ...newSession}=await sendMessage(prompt, session, id)
         if(!message){
             throw new Error("Your request can't be processed now!")
@@ -1096,7 +1097,7 @@ export function useAsk(id, defaultQuestion){
             dispatch({type:"my/session", payload:{[id]:newSession}})
         }
         return message
-    },[session, sendMessage])
+    },[sessions, sendMessage])
 
     if(status=="logged-out"){
         dispatch({type:"my", sessions:{}})

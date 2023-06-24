@@ -13,18 +13,20 @@ import Explorer from "./account/file-explorer"
 import Policy from "./account/policy"
 import Favorites from "./account/favorites"
 import Lang from "./account/lang"
-import Test from "./account/test"
 import Admin from "./admin"
 import Log from "./account/log"
 import About from "./account/about"
+import {Setting as WeChatSetting} from "./experiment/wechat"
+import Test from "./experiment/wechat";
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
 import * as Linking from "expo-linking";
 
+
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home"]
+        const entries=["/home","/account/test"]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName
@@ -68,6 +70,8 @@ export default ({scheme=React.useContext(ColorScheme)})=>{
                             <Route path="test" element={<Test/>}/>
                             <Route path="logs" element={<Log/>}/>
                             <Route path="about" element={<About/>}/>
+                            <Route path="wechat" element={<WeChatSetting/>}/>
+
                         </Route>
                     </Route>
                     <Route path="plan" element={<Scheduler/>}/>

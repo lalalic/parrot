@@ -94,6 +94,10 @@ if(!Date.prototype.getWeek){
         return `${pad(this.getHours())}:${pad(this.getMinutes())}:${pad(this.getSeconds())}`
     }
 
+    Date.prototype.asTimeInt=function(){
+        return parseInt(this.asTimeString().replace(/\:/g,""))
+    }
+
     Date.from=function(time){
         if(!time)
             return 
