@@ -1040,10 +1040,11 @@ export const Login=Object.assign(function Login({ }) {
     }
 })
 
-export function Loading({style, ...props}){
-    return <ActivityIndicator size="large" 
-        style={[{flex:1, alignItems:"center", justifyContent:"center"},style]} 
-        {...props}/>
+export function Loading({style, onLongPress, ...props}){
+    const style0={flex:1, alignItems:"center", justifyContent:"center"}
+    return <ActivityIndicator size="large" style={[style0,style]} {...props}/>
+    
+    return !!!onLongPress ? loading : (<Pressable onLongPress={onLongPress} style={{style0}}>{loading}</Pressable>)
 }
 
 export function KeyboardAvoidingView(props){
@@ -1080,17 +1081,26 @@ export function useTalkQuery({api, slug, id, policyName }) {
  * remote: chat session should be kept
  * @returns 
  */
-export function useAsk(xid="random", defaultQuestion){
+export function useAsk(xid="random", defaultQuestion, timeout0=60000){
     const {sendMessage, status, login}=useChat()
     const dispatch=useDispatch()
     const sessions=useSelector(state=>state.my.sessions)
     
-    const ask=React.useCallback(async (prompt=defaultQuestion, id=xid)=>{
+    const ask=React.useCallback(async (prompt=defaultQuestion, id=xid, timeout=timeout0)=>{
         const session=sessions[id]
-        const {message, ...newSession}=await sendMessage(prompt, session, id)
+        console.debug({event:"ask", prompt, session, id})
+
+        const timer=setTimeout(()=>{
+            throw new Error("Your request can't be processed now!")
+        }, timeout)
+        
+        const {message, ...newSession}=await sendMessage(prompt, session, id, timeout)
+        clearTimeout(timer)
+
         if(!message){
             throw new Error("Your request can't be processed now!")
         }
+        
         if(id && Object.keys(newSession).length>0 && (!session 
                 || session.conversationId!=newSession.conversationId 
                 || session.messageId!=newSession.messageId)){
@@ -1185,7 +1195,7 @@ export function useChat(){
                 return [message.message||message]
             }
         })();
-        
+        console.debug({event:"askThenWaitAnswer", message,options, id})
         return new Promise((resolve, reject)=>{
             const unsub=Qili.subscribe({
                 id:"askThenWaitAnswer",
@@ -1229,3 +1239,40 @@ export function makeLogger(){
     const log=logger.createLogger(options);
     log.patchConsole()
 }
+
+
+
+export const useStateGlobalSwitch=(()=>{
+    let uuid=Date.now()
+    return (EventName, initState)=>{
+        const uid=React.useRef({id:uuid++, listener:null})
+    
+        const state = React.useReducer(
+            (status,action)=>{
+                if(action===false)
+                    return false
+                try{
+                    return !status
+                }finally{
+                    if(!status){//going to enable,
+                        DeviceEventEmitter.emit(EventName, uid.current.id)
+                    }
+                }
+            }, 
+            initState
+        )
+    
+        const [, toggleSelecting]=state
+    
+        React.useEffect(()=>{
+            uid.current.fn=DeviceEventEmitter.addListener(EventName,who=>{
+                if(who!==uid.current.id){
+                    setTimeout(()=>toggleSelecting(false),0)
+                }
+            })
+            return ()=>uid.current.fn.remove()
+        },[toggleSelecting])
+    
+        return state
+    }
+})();

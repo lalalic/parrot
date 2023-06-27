@@ -16,8 +16,12 @@ import Lang from "./account/lang"
 import Admin from "./admin"
 import Log from "./account/log"
 import About from "./account/about"
-import {Setting as WeChatSetting} from "./experiment/wechat"
-import Test from "./experiment/wechat";
+import Wechat, {
+    Setting as WechatSetting, 
+    Schedule as WechatSchedule,
+    Monitor as WechatMonitor,
+    Contacts as WechatContacts
+} from "./experiment/wechat";
 
 import { ColorScheme } from "./components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
@@ -26,7 +30,7 @@ import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home","/account/test"]
+        const entries=["/home","/account/wechat/monitor"]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName
@@ -67,11 +71,15 @@ export default ({scheme=React.useContext(ColorScheme)})=>{
                             <Route path="favorites" element={<Favorites/>}/>
                             <Route path="language" element={<Lang/>}/>
                             <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>
-                            <Route path="test" element={<Test/>}/>
                             <Route path="logs" element={<Log/>}/>
                             <Route path="about" element={<About/>}/>
-                            <Route path="wechat" element={<WeChatSetting/>}/>
 
+                            <Route path="wechat" element={<Wechat/>}>
+                                <Route path="setting" element={<WechatSetting/>}/>
+                                <Route path="schedule" element={<WechatSchedule/>}/>
+                                <Route path="contacts" element={<WechatContacts/>}/>
+                                <Route path="monitor" element={<WechatMonitor/>}/>
+                            </Route>
                         </Route>
                     </Route>
                     <Route path="plan" element={<Scheduler/>}/>
@@ -104,6 +112,7 @@ export default ({scheme=React.useContext(ColorScheme)})=>{
                 <Route path="/admin" element={<WithBackButton/>}>
                     <Route path="" element={<Admin/>}/>
                 </Route>
+
                 <Route element={React.createElement(()=><WithBackButton><Text>oops!</Text></WithBackButton>)}/>
             </Routes>
         </NativeRouter>

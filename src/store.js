@@ -594,9 +594,11 @@ export function createStore(){
 			return Qili.reducer(...arguments)
 		},
 		wechat(state={key:"@bot", 
-			policy:{}, schedule:{},
+			amount:0,
+			policy:{}, 
+			schedule:{'*':{start:"20", end:"8"}},
 			messages:[],
-			enableSelf:false, enableScenario:true, enableRole:true, enableSchedule:true,
+			enableSelf:true, enableScenario:true, enableRole:true, enableSchedule:false,
 			roles:["English Tutor"], 
 			scenarioes:{"English Lesson":["Spell", "Pronounce"]}
 		},action){
@@ -609,18 +611,18 @@ export function createStore(){
 					return state
 				case "wechat/contact/role":
 					return produce(state,$state=>{
-						const {value, contact}=action
-						$state.policy[contact].roles=value
-						value.forEach(a=>{
+						const {contact, target, role}=action
+						;($state.policy[contact]||($state.policy[contact]={}))[target]=role
+						role.split(",").filter(a=>!!a).forEach(a=>{
 							if($state.roles.indexOf(a)==-1){
 								$state.roles.push(a)
 							}
 						})
 					})
-				case "wechat/contact/scenario":
+				case "wechat/contact/scenarioes":
 					return produce(state,$state=>{
-						const {value, contact}=action
-						$state.policy[contact].scenarioes=value
+						const {contact, scenarioes}=action
+						;($state.policy[contact]||($state.policy[contact]={})).scenarioes=scenarioes
 					})
 				case "wechat/scenario":
 					return produce(state, $state=>{
@@ -642,23 +644,42 @@ export function createStore(){
 					})
 				case "wechat/schedule":
 					return produce(state, $state=>{
-						const {key, start, end}=action
-						$state.schedule[key]={start, end}
+						const {key, payload}=action
+						$state.schedule[key]={...$state.schedule[key], ...payload}
 					})
+				case "wechat/set":
+					return {...state, ...action.payload}
 				case "wechat/toggle":
 					return produce(state, $state=>{
-						$state[action.key]=!$state[action.key]
+						const key=`enable${action.key}`
+						$state[key]=!$state[key]
+					})
+				case "wechat/message/remove":
+					return produce(state, draft=>{
+						const i=draft.messages.findIndex(a=>a._id==action._id)
+						if(i!=-1){
+							draft.messages.splice(i,1)
+						}
 					})
 				case "wechat/message"://reversed order for GiftedChat
 					return produce(state, $state=>{
 						const messages=$state.messages
 						const {message}=action
 						if('answerTo' in message){
-							const i=messages.findIndex(a=>a.id==message.answerTo)
+							const i=messages.findIndex(a=>a._id==message.answerTo)
+							if(i==-1){
+								return 
+							}
+							if(i!=-1){
+								delete messages[i].pending
+								message._id=`_${message.answerTo}`
+								delete message.answerTo
+							}
 							if(i>0){
 								messages.splice(i-1,0,message)
 								return 
 							}
+							$state.amount++
 						}
 						messages.unshift(message)
 					})

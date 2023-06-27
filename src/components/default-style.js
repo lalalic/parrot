@@ -94,6 +94,11 @@ if(!Date.prototype.getWeek){
         return `${pad(this.getHours())}:${pad(this.getMinutes())}:${pad(this.getSeconds())}`
     }
 
+    Date.toTimeInt=time=>{
+        const padPart=time.split(":").filter(a=>!!a).map(a=>(b=>b.substring(b.length-2))(`00${a}`)).join("")
+        return parseInt((a=>a.substring(0,6))(`${padPart}000000`))
+    }
+
     Date.prototype.asTimeInt=function(){
         return parseInt(this.asTimeString().replace(/\:/g,""))
     }
