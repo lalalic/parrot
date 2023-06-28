@@ -243,8 +243,8 @@ export default function WeChatProvider({ uri = "https://wx.qq.com", children, de
                             appScope.$on("newLoginPage",()=>WechatyBro.emit("pageInited"))
 
                             function toContactJSON(){
-                                const {PYQuanPin:id, HeadImgUrl:thumb, StarFriend:starred, NickName, RemarkName, name=RemarkName||NickName}=this
-                                const obj={id,name,thumb,starred}
+                                const {UserName, PYQuanPin:id, HeadImgUrl:thumb, StarFriend:starred, NickName, RemarkName, name=RemarkName||NickName}=this
+                                const obj={id,name,thumb,starred, UserName}
                                 
                                 for (const [key, value] of Object.entries(this)) {
                                     if(typeof(key)=="string" && 

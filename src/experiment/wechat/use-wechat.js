@@ -108,25 +108,23 @@ export function useAutobot(wechat) {
             pending: true, 
             createdAt: new Date(createdAt*1000),
             keyed,scenario, myRole, senderRole,
-        } })
-        let answer
+        } });
+        
         try{
-            answer = await ask(prompt, room?.id || from.id);
+            const answer = await ask(prompt, room?.id || from.id);
+            last={content:answer, from: room?.id || from.id}
+        
+            await wechat.send(room?.UserName || from.UserName, answer)
+            dispatch({ type: "wechat/message", message: { 
+                answerTo: id,
+                user: {...bot, room }, 
+                text: answer, 
+                createdAt: new Date(),
+            } })
         }catch(e){
             console.error(e.message)
             dispatch({type:"wechat/message/remove", _id:id})
-            return 
         }
-        last={content:answer, from: room?.id || from.id}
-        
-        await wechat.send(room?.id || from.id, answer)
-        dispatch({ type: "wechat/message", message: { 
-            answerTo: id,
-            user: {...bot, room }, 
-            text: answer, 
-            createdAt: new Date(),
-        } })
-        
     }, [ask, store]);
 }
 

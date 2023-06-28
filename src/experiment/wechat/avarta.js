@@ -1,6 +1,6 @@
 import React from "react"
 import { Image, View } from "react-native"
-import { MaterialIcons } from '@expo/vector-icons'
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useWeChat } from "./use-wechat"
 import { useStateAndLatest } from "../../components"
 import { prepareFolder } from "../mpeg"

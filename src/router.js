@@ -1,7 +1,7 @@
 import React from "react"
 import { View } from "react-native"
 import { NativeRouter, Route, Routes, Link, Outlet, useLocation, useParams, useNavigate} from "react-router-native"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import Home from "./home"
 import Talks from "./talks"
@@ -30,7 +30,7 @@ import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home","/account/wechat/monitor"]
+        const entries=["/home",]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName

@@ -1,7 +1,7 @@
 import React from "react"
 import {View, Text, Pressable, SectionList, Switch} from "react-native"
 import { Link, useLocation, useNavigate } from "react-router-native"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useDispatch, useSelector } from "react-redux";
 import { isUserLogin, TalkApi, } from "../store"
 

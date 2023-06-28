@@ -1,6 +1,6 @@
 import React from "react";
 import { View } from "react-native"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Link, Outlet, useLocation } from "react-router-native";
 
 export default function WeNavigator({root=""}){

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, View , ActivityIndicator, Text, TextInput, Pressable, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import { useChatGpt } from "react-native-chatgpt";
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView, useAsk} from "../components"
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';

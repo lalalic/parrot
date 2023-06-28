@@ -233,7 +233,7 @@ Cloud.addModule({
                 break
             }
         }
-    }
+    },
 })
  
 class Helpers{

@@ -39,3 +39,7 @@ design
 > local state => state.talks[id]
 
 > favorite => local
+
+todo
+====
+> remove reanimated 10%

@@ -1,6 +1,6 @@
 import React from "react"
 import * as Components from "react-native"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 export default ({MaterialIcons:_MaterialIcons, ...styles}={}) => {
     if(_MaterialIcons){

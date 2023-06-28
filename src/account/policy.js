@@ -3,7 +3,7 @@ import {View, Text, Pressable, TextInput, ScrollView, } from "react-native"
 import {useDispatch, useSelector } from 'react-redux'
 import { Video } from "expo-av"
 import * as FileSystem from "expo-file-system"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { Qili } from "../store"
 import { ControlIcons,  KeyboardAvoidingView} from "../components"

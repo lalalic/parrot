@@ -1,6 +1,6 @@
 import React,{Component, useState} from "react"
 import {Recognizer} from "../components"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView } from "react-native";
 
 const PROMPT=

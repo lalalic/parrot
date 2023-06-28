@@ -72,7 +72,7 @@ export default function AutobotMessages({}) {
 				renderComposer={() => <View />}
 				renderUsernameOnMessage={true}
 				onLongPress={(ctx, {pending, _id})=>pending && dispatch({type:"wechat/message/remove", _id})}
-				renderBubble={(props) => {
+				renderBubble={({currentMessage, ...props}) => {
 					const borderRadius = 5,
 						margin = 45;
 					const textStyle = {
@@ -83,9 +83,15 @@ export default function AutobotMessages({}) {
 						color: "#151c16",
 					};
 					const timeTextStyle = { color: "gray" };
+					const {myRole, senderRole, scenario, user,}=currentMessage
+					const params=[myRole, senderRole, scenario].filter(a=>!!a)
+					if(user._id!=bot._id && params.length>0){
+						currentMessage={...currentMessage, text:`[${params.join("/")}]:${currentMessage.text}`}
+					}
 					return (
 						<Bubble
 							{...props}
+							currentMessage={currentMessage}
 							wrapperStyle={{
 								left: {
 									backgroundColor: "#f7faf7",

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, Text, TextInput, ActivityIndicator, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions, Keyboard, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
 import Voice from "@react-native-voice/voice"

@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Animated, Easing, Image, Text , TextInput, ScrollView, ImageBackground, FlatList, Pressable} from "react-native";
 import { useDispatch, useSelector, ReactReduxContext } from "react-redux";
 import { Link, useNavigate } from 'react-router-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { selectWidgetTalks, TalkApi, Qili } from "../store"
 
 import { Subtitles } from "../components/player"

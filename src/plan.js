@@ -3,7 +3,7 @@ import { Text, View, FlatList, Modal, Pressable, ScrollView} from "react-native"
 import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
 import { Picker } from "@react-native-picker/picker"
-import { MaterialIcons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
 import { ColorScheme } from "./components/default-style";
