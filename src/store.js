@@ -598,7 +598,8 @@ export function createStore(){
 			policy:{}, 
 			schedule:{'*':{start:"20", end:"8"}},
 			messages:[],
-			enableSelf:true, enableScenario:true, enableRole:true, enableSchedule:false,
+			enableSelf:true, enableSchedule:true,
+			enableScenario:false, enableRole:false, 
 			roles:["English Tutor"], 
 			scenarioes:{"English Lesson":["Spell", "Pronounce"]}
 		},action){

@@ -10,8 +10,6 @@ import { TaggedTranscript } from "./tagged-transcript"
 import { useDispatch, } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
-//const ImageCropper = React.lazy(() => import('../components/image-cropper'));
-
 /**
  * some may not have audio, but the image is able to be shown
  * data:[{uri,text}]

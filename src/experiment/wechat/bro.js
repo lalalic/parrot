@@ -40,7 +40,8 @@
 
 /* eslint no-undef: off */
 /* eslint sort-keys: off */
-export default function injectWechat(){
+export default function injectWechatyBro(){
+  window.wechatyPuppetBridgeEmit=window.emit;
 (function () {
   function init () {
     if (!angularIsReady()) {

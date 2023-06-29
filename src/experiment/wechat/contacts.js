@@ -6,16 +6,17 @@ import { Loading, PressableIcon, useStateGlobalSwitch } from "../../components"
 import Avarta from "./avarta";
 
 export default function ContactList() {
-    const { wechat } = useWeChat();
+    const { service } = useWeChat();
     
     const [contacts, setContacts] = React.useState([]);
     const [q, setSearch] = React.useState("");
     const [current, setCurrent]=React.useState("")
     React.useEffect(() => {
         (async () => {
-            setContacts(await wechat.getAllContacts())
-            wechat.on('addContacts',async()=>{
-                setContacts(await wechat.getAllContacts())
+            const getAllContacts=async ()=>Object.values(await service["glue.contactFactory.getAllContacts"]());
+            setContacts(await getAllContacts())
+            service.on('addContacts',async()=>{
+                setContacts(await getAllContacts())
             })
         })();
     }, [])
@@ -125,6 +126,8 @@ function Policy({id, name}){
         </View>
     )
 }
+
+
 
 const InputSelector=(()=>{
     let uuid=Date.now()

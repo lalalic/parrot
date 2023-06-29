@@ -10,7 +10,8 @@
     "ios:release": "expo run:ios -d 00008101-001609640C22001E --configuration release --no-bundler",
     "web": "expo start --web",
     "test": "yarn jest",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "export-updates":"node scripts/export-updates.js cloud/updates"
   },
   "jest": {
     "preset": "jest-expo",
@@ -27,7 +28,6 @@
   },
   "dependencies": {
     "@react-native-community/slider": "^4.3.3",
-    "@react-native-picker/picker": "2.4.2",
     "@react-native-voice/voice": "^3.2.4",
     "@reduxjs/toolkit": "^1.8.6",
     "@types/react-native": "~0.69.1",

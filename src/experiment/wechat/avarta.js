@@ -7,7 +7,7 @@ import { prepareFolder } from "../mpeg"
 import * as FileSystem from "expo-file-system"
 
 export default function Avarta({user,size=30}){
-    const {wechat}=useWeChat()
+    const {service}=useWeChat()
     const style={backgroundColor:"black", borderRadius:4,marginRight:4}
     const [uri, setUri, $uri]=useStateAndLatest("")
 
@@ -24,9 +24,9 @@ export default function Avarta({user,size=30}){
                 return 
             }
 
-            const thumb=user.thumb || (await wechat.getContact(user.id)).thumb
+            const thumb=user.thumb || (await service["glue.contactFactory.getContact"](user.id)).thumb
             if(thumb){
-                const data=await wechat.toThumbURI(thumb)
+                const data=await service.toThumbURI(thumb)
                 if(data){
                     setUri(data)
                     saveLocalThumb(user, data)
@@ -35,7 +35,7 @@ export default function Avarta({user,size=30}){
         }
 
         update()
-        wechat.on('addContacts',update)
+        service.on('addContacts',update)
     },[user])
 
     if(user._id=="bot"){

@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View, FlatList, Modal, Pressable, ScrollView} from "react-native";
 import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
-import { Picker } from "@react-native-picker/picker"
+
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { PressableIcon, PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
@@ -286,17 +286,25 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
     )
 }
 
-const TimeSelector=({style, min=0, max=48, ...props})=>{
+const TimeSelector=({style, min=0, max=48, selectedValue, onValueChange, ...props})=>{
     const color=React.useContext(ColorScheme)
+    const all=React.memo(()=>
+        new Array(49).fill(0).map((a,index)=>({
+            label:`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`,
+            value:index,
+        }))
+    ,[])
+    const data=React.memo(()=>all.filter((a,index)=>index>=min && index<=max),[all, min, max])
+    const i=React.memo(()=>data.findIndex(a=>a.value==selectedValue),[selectedValue, data])
     return (
-        <Picker style={style} mode="dropdown" itemStyle={{color:color.text}} {...props}>
-            {new Array(49).fill(0).map((a,index)=>{
-                if(index>=min && index<=max){
-                    const label=`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`
-                    return <Picker.Item key={index} label={label} value={index}/>
-                }
-            })}
-        </Picker>
+        <Select 
+            data={data}
+            buttonStyle={style} 
+            defaultValueByIndex={i}
+            rowTextForSelection={a=>a.lable}
+            onSelect={a=>onValueChange(a.value)}
+            {...props}
+            />
     ) 
 }
 

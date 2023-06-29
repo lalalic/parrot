@@ -3,10 +3,10 @@ import { FlatList, View, TextInput} from 'react-native';
 import { ColorScheme, TitleStyle } from "./components/default-style";
 import { Loading, PressableIcon, TalkThumb } from "./components";
 import { TalkApi, getTalkApiState } from "./store"
-import { Picker } from "@react-native-picker/picker"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
 import { defaultMemoize } from "reselect";
+import Select from "react-native-select-dropdown";
 
 export default function Talks(props){
     const {state: history}=useLocation()
@@ -72,25 +72,27 @@ export default function Talks(props){
 
 const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     const color=React.useContext(ColorScheme)
-    const [search, setSearch]=React.useState({q:value, name, showPicker:false})
+    const [search, setSearch]=React.useState({q:value, name})
     const {data:people=[]}=TalkApi.usePeopleQuery({q:search.q.trim()})
     return (
-        <>
-            <TextInput style={style} placeholder="Search Speaker Talks"
-                value={search.name}
-                onChangeText={q=>setSearch({q,showPicker:true})}/>
-            {search.showPicker && people.length>0 && <Picker {...props} mode="dropdown" 
-                itemStyle={{color:color.primary}}
-                onValueChange={(value,i)=>{
-                    setSearch({name:people[i].name, q: value, showPicker:false})
-                    onValueChange?.(value, people[i].name)
-                }}
-                style={{position:"absolute",width:"100%",
-                    backgroundColor:color.inactive,top:35, 
-                    height:200}} >
-                {people.map(({name,slug=name})=><Picker.Item {...{key:slug, label:name, value:slug}}/>)}
-            </Picker>}
-        </>
+            <View style={[style]}>
+                <Select {...props}
+                    dropdownStyle={{marginRight:5}}
+                    defaultButtonText="Search Speaker Talks"
+                    buttonStyle={{
+                        backgroundColor:"transparent",
+                        justifyContent:"flex-start",
+                        flex:1, height:"100%", width:"100%"}}
+                    search={true}
+                    defaultValue={search.name}
+                    onChangeSearchInputText={q=>MusetSearch({q})}
+                    data={people.map(({name})=>name)}
+                    onSelect={(value,i)=>{
+                        setSearch({name:people[i].name, q: value})
+                        onValueChange?.(value, people[i].name)
+                    }}
+                />
+            </View>
     )
 }
 

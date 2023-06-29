@@ -1,23 +1,49 @@
 import React from "react"
-import { Text , AppState, Image} from "react-native"
-import { useAssets} from "expo-asset"
+import { Text , AppState, View, Button, Alert} from "react-native"
+import { TextInput } from "react-native-gesture-handler"
 
+import Select from "react-native-select-dropdown"
+import { PressableIcon } from "../components"
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+export default function Test(){
+    const refSelector=React.useRef()
+    return (
+        <View style={{flex:1, padding:50,backgroundColor:"white", alignItems:"flex-end"}}>
+            <Select ref={refSelector}
+                buttonStyle={{ backgroundColor:"transparent", width:50,height:50}}
+                defaultButtonText="Search"
+                //dropdownStyle={{width:100,marginRight:5}}
+                searchInputStyle={{width:100,padding:10}}
+                renderCustomizedButtonChild={(value)=><MaterialIcons name="more"/>}
+                search={true}
+                data={["hello","world"]}
+                />
+        </View>
+    )
+}
+
+
+
+
+
+
+/*
 import { TrainPlayer } from "tts"
 import * as Clipboard from "expo-clipboard"
-export default function TestTrainPlayer({}){
+function TestTrainPlayer({}){
     React.useEffect(()=>{
         Clipboard.setUrlAsync("https://www.youtube.com/watch?v=lUUte2o2Sn8")
     },[])
-    /*
     React.useEffect(()=>{
         const {uri}=Image.resolveAssetSource(require("../../assets/sample.mp3"))
         const items=[uri,...new Array(10).fill("good morning for today and tomorrow")]
         TrainPlayer.playItems(items)
         return ()=>TrainPlayer.stop()
     },[])
-*/
     return <Text>playing...</Text>
 }
+
+*/
 
 /*
 import { PlaySound, Speak } from "../components"
