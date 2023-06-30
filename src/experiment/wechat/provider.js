@@ -4,11 +4,11 @@ import { Loading } from "../../components";
 import WechatyBro from "./bro.js";
 import { useAutobot, WeChatContext } from "./use-wechat";
 import { useStore } from "react-redux";
-import { WebviewServiceProvider } from "../../components/provider-web";
+import ProvideWeb from "../../components/provider-web";
 
 export default function WechatProvider({children, ...props}){
     return (
-        <WebviewServiceProvider 
+        <ProvideWeb 
             Context={WeChatContext}
             uri="https://wx.qq.com"
             bro={WechatyBro}
@@ -103,7 +103,7 @@ export default function WechatProvider({children, ...props}){
             {...props}
             >
             <Wechat children={children}/>
-        </WebviewServiceProvider>
+        </ProvideWeb>
     )
 }
 

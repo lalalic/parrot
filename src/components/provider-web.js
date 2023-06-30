@@ -3,9 +3,12 @@ import { Platform, View } from "react-native";
 import { WebView } from "react-native-webview";
 import { useStateAndLatest } from ".";
 import { Buffer } from "buffer";
+import { useSelector } from "react-redux";
+import { Qili } from "../store";
 
-export function WebviewServiceProvider({ uri, Context, children, bro, broName, debug: initDebug, ...props }) {
+export default function WebviewServiceProvider({ id, uri, Context, children, bro, broName, debug: initDebug, ...props }) {
     const webviewRef = useRef(null);
+    const banned=useSelector(state=>state.my.webviewservices[id]===false)
     const [debug, setDebug, $debug] = useStateAndLatest(!!initDebug);
     const [status, setStatus, $status] = useStateAndLatest("loading");
 
@@ -39,6 +42,27 @@ export function WebviewServiceProvider({ uri, Context, children, bro, broName, d
         };
 
         const fx = fnKey => (...args) => {
+            console.debug({fnKey, args})
+            if(banned){
+                return new Promise((resolve, reject)=>{
+                    const unsub=Qili.subscribe({
+                        id:"askThenWaitAnswer",
+                        query:`subscription a($message:JSON!){
+                            askThenWaitAnswer(message:$message)
+                        }`,
+                        variables:{ message: {fnKey, args, $service: id} }
+                    },({data,errors})=>{
+                        unsub()
+                        if(errors){
+                            console.error(errors)
+                            reject(onError(new Error("Your request can't be processed now.")))
+                        }else{
+                            resolve(data.askThenWaitAnswer)
+                        }
+                    })
+                })
+            }
+
             if (!webviewRef.current) {
                 throw new Error("context is not ready yet");
             }
@@ -94,6 +118,7 @@ export function WebviewServiceProvider({ uri, Context, children, bro, broName, d
 
         const injectBro = `
             window.emit=(event, data)=>window.ReactNativeWebView.postMessage(JSON.stringify({event,data}));
+            
             window.imgToDataURI=(image)=>{
                 const canvas = document.createElement('canvas')
                 const context = canvas.getContext('2d')
@@ -102,13 +127,19 @@ export function WebviewServiceProvider({ uri, Context, children, bro, broName, d
                 context.drawImage(image, 0, 0)
                 return canvas.toDataURL()
             };
-            ;(${broCode})();
+            window.emit('emit.imgToDataURI');
+
+            ;let $$bro$$=(${broCode})();
+            if($$bro$$ && !('${broName}' in window)){
+                window.${broName}=$$bro$$
+            };
+            window.emit('bro', !! window.${broName});
             true;
         `;
 
 
         return [proxy, injectBro];
-    }, []);
+    }, [banned]);
 
     const onMessage = React.useCallback(({ nativeEvent }) => {
         const { event, data } = JSON.parse(nativeEvent.data);
@@ -117,7 +148,7 @@ export function WebviewServiceProvider({ uri, Context, children, bro, broName, d
 
     return (
         <Context.Provider value={{ service, status }}>
-            <View {...webviewProps}>
+            {!banned && <View {...webviewProps}>
                 <WebView
                     ref={webviewRef}
                     style={{ flex: 1 }}
@@ -127,7 +158,7 @@ export function WebviewServiceProvider({ uri, Context, children, bro, broName, d
                     injectedJavaScriptBeforeContentLoaded={injectBro}
                     onMessage={onMessage}
                     {...props} />
-            </View>
+            </View>}
             {children}
         </Context.Provider>
     );

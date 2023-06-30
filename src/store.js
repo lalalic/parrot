@@ -687,7 +687,15 @@ export function createStore(){
 			}
 			return state
 		},
-		my(state = {sessions:{}, uuid:uuid.v4(), policy:Policy, lang:"en",i:0, mylang: "zh-cn", since:Date.now(),admin:false,tts:{}, /*api:"Ted",*/ widgets:{chatgpt:false}}, action) {
+		my(state = {
+			sessions:{}, uuid:uuid.v4(), 
+			policy:Policy, 
+			lang:"en",mylang: "zh-cn", tts:{}, 
+			i:0, since:Date.now(),
+			admin:false,
+			widgets:{chatgpt:false},
+			webviewservices:{},
+		}, action) {
 			switch (action.type) {
 				case "lang/PERSIST":
 					const {lang, tts}=state

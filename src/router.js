@@ -23,6 +23,8 @@ import Wechat, {
     Contacts as WechatContacts
 } from "./experiment/wechat";
 
+import Difussion from "./experiment/diffusion"
+
 import Test from "./account/test"
 
 import { ColorScheme } from "./components/default-style"
@@ -32,7 +34,7 @@ import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home","/account/wechat/contacts"]
+        const entries=["/home","/account/wechat/contacts", "/account/difussion"]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName
@@ -83,6 +85,8 @@ export default ({scheme=React.useContext(ColorScheme)})=>{
                                 <Route path="contacts" element={<WechatContacts/>}/>
                                 <Route path="monitor" element={<WechatMonitor/>}/>
                             </Route>
+
+                            <Route path="difussion" element={<Difussion/>}/>
                         </Route>
                     </Route>
                     <Route path="plan" element={<Scheduler/>}/>

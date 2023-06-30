@@ -234,6 +234,8 @@ Cloud.addModule({
             }
         }
     },
+
+    //appUpdates:false
 })
  
 class Helpers{
@@ -303,8 +305,7 @@ class Helpers{
             }
         })
     }
-
-
+    
     static instance=new Helpers()
 }
 
