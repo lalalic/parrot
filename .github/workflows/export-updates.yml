@@ -1,0 +1,32 @@
+name: export-updates
+on:
+  push:
+    branches: [ master ]
+
+jobs: 
+  deploy:
+    environment: deploy
+    runs-on: ubuntu-latest
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      QILI_TOKEN: ${{ secrets.QILI_TOKEN }}
+      DEPLOY_PATH: /data/parrot/cloud
+
+    steps:
+    - run: sudo apt-get install -y sshpass
+    - uses: actions/checkout@v3
+    - name: Use Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 14.x
+        cache: 'yarn'
+    - run: npm install -g yarn 
+    - run: yarn
+    - run: yarn export-updates
+    - name: deploy cloud code to qili2
+        run: |
+          export SSHPASS=${{ secrets.SERVER_PASS }}
+          sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null cloud/index.js "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
+          sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "./qili.travis.deploy.sh"
+
