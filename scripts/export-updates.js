@@ -1,3 +1,4 @@
+require('dotenv').config()
 const ExpoConfig = require("@expo/config");
 const FormData = require("form-data");
 
@@ -5,7 +6,7 @@ const fetch = require("node-fetch2");
 
 const { version } = require("../package.json");
 let platform = "ios";
-const token = process.env['qili2Token']
+const token = process.env['QILI_TOKEN']
 
 const cwd = process.cwd();
 const [, , root = "dist"] = process.argv;
