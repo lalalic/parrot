@@ -217,7 +217,7 @@ Cloud.addModule({
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
         Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
-    pubsub1:{
+    pubsub:{
         init(){
             return new RedisPubSub({
                 connection: {

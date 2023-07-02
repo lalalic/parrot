@@ -8,10 +8,10 @@ jobs:
     environment: deploy
     runs-on: ubuntu-latest
     env:
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_HOST: ${{ secrets.SERVER_HOST }}
+      DEPLOY_USER: ${{ secrets.SERVER_USER }}
       QILI_TOKEN: ${{ secrets.QILI_TOKEN }}
-      DEPLOY_PATH: /data/parrot/cloud
+      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
 
     steps:
     - run: sudo apt-get install -y sshpass
