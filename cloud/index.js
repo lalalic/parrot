@@ -217,7 +217,7 @@ Cloud.addModule({
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
         Widget:[{title:1, slug:1, lang:1, mylang:1}]
     },
-    pubsub:{
+    pubsub1:{
         init(){
             return new RedisPubSub({
                 connection: {
@@ -235,7 +235,11 @@ Cloud.addModule({
         }
     },
 
-    //appUpdates:false
+    appUpdates:{
+        fromManifestURI({runtimeVersion, platform}){
+           return `https://cdn.qili2.com/parrot/updates/${runtimeVersion}/${platform}-manifest.json`
+        }
+    }
 })
  
 class Helpers{

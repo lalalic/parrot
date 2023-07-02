@@ -14,7 +14,7 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url":"http://localhost:9080/1/parrot/updates/api/manifest"
+      "url":"http://localhost:9080/1/parrot/static/updates/manifest"
     },
     "assetBundlePatterns": [
       "**/*"

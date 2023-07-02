@@ -1,5 +1,5 @@
 /* babel-ignore */
-module.exports=function inject(){
+module.exports=function injectBro(){
     return window.HelloBro={
         init(){
             window.emit("status", "load")
@@ -7,17 +7,14 @@ module.exports=function inject(){
         generate(prompt,timeout=60000){
             const root=document.querySelector('gradio-app').shadowRoot
             return new Promise((resolve,reject)=>{
-                root.querySelector('input').value=prompt
-                root.querySelector('button').click()
-                const $gallery=root.querySelector('#gallery')
                 const observer = new MutationObserver((mutationsList, observer) => {
                     for(let i=0; i<mutationsList.length; i++){
                         let mutation=mutationsList[i]
-                        if (mutation.type === 'childList') {
-                            const images=Array.from($gallery.querySelectorAll('img'))
-                            if(images.length>=4){
-                                clearTimeout(timer)
+                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                            if(mutation.target.getAttribute('class').indexOf('opacity-0')!=-1){
                                 observer.disconnect()
+                                clearTimeout(timer)
+                                const images=Array.from(root.querySelectorAll('#gallery img'))
                                 resolve(images.map(a=>a.src))
                                 break
                             }
@@ -25,10 +22,12 @@ module.exports=function inject(){
                     }
                 });
 
-                observer.observe($gallery, {
-                    childList: true,
-                    subtree: true
+                observer.observe(root.querySelector('#gallery>div:first-child'), {
+                    attributes:true, attributeFilter:["class"],
                 })
+
+                root.querySelector('input').value=prompt
+                root.querySelector('button').click()
 
                 const timer=setTimeout(()=>{
                     observer.disconnect()

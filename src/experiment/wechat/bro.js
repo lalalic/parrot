@@ -40,6 +40,7 @@
 
 /* eslint no-undef: off */
 /* eslint sort-keys: off */
+/* babel-ignore */
 export default function injectWechatyBro(){
   window.wechatyPuppetBridgeEmit=window.emit;
 (function () {

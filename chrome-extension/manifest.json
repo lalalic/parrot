@@ -1,0 +1,23 @@
+{
+    "manifest_version": 2,
+    "name": "parrot-bros",
+    "description": "A chrome extension as chatgpt puppet to provide response help",
+    "version": "1.0.0",
+    "permissions": ["storage","https://*.openai.com/", "https://runwayml-stable-diffusion-v1-5.hf.space/"],
+    "icons": {
+        "512": "assets/icons/parrot.png"
+    },
+    "browser_action": {
+        "default_popup": "popup.html"
+    },
+    "background": {
+        "scripts": ["SubscriptionsTransportWs.js", "background.js"],
+        "persistent":true
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://runwayml-stable-diffusion-v1-5.hf.space/"],
+            "js": ["bros/diffusion.js", "init-bro.js"]
+        }
+    ]
+}
