@@ -1,9 +1,9 @@
 import React from "react"
-import { Button, View, TextInput, Image } from "react-native"
+import { View, TextInput, Image } from "react-native"
 import { PressableIcon } from "../../components"
 
-import {Provider, useDiffusion} from "./provider"
-
+import Services from "../../components/webview-services"
+const {diffusion:{Provider, useService:useDiffusion}} = Services
 
 export default function HuggingFace(){
     return (
@@ -22,31 +22,17 @@ function Test(){
     return (
         <View style={{flex:1, alignItems:"center"}}>
             <View style={{height:100, marginTop:50,marginBottom:50, flexDirection:"row", justifyContent:"center"}}>
-                <TextInput ref={refInput}
+                <TextInput ref={refInput} value={prompt}
                     multiline={true}
                     style={{padding:5, flexGrow:1, border:1, backgroundColor:"gray"}}
-                    onKeyPress={e=>{
-                        if(e.nativeEvent.key=="Enter"){
-                            refInput.current.blur()
-                        }
-                    }}
-                    onBlur={({nativeEvent:{text}})=>{
-                        setPrompt(text)
-                    }}
-                    onEndEditing={({nativeEvent:{text}})=>{
-                        setPrompt(text)
-                    }}>
-
-                    </TextInput>
+                    onChangeText={text=>setPrompt(text)}
+                    />
                 <View style={{width:100, justifyContent:"center"}}>
                     <PressableIcon name="brunch-dining" 
                         onPress={e=>{
-                            refInput.current?.blur()
-                            return new Promise((resolve,reject)=>{
-                                setTimeout(()=>{
-                                    prompt && service.generate(prompt).then(setImages).then(resolve,reject)
-                                },0)
-                            })
+                            if(prompt){
+                                return service.generate(prompt).then(setImages)
+                            }
                         }}
                         />
                 </View>
@@ -61,3 +47,4 @@ function Test(){
         </View>
     )
 }
+

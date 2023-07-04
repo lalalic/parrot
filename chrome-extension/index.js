@@ -1,4 +1,50 @@
 
+			function diffusion(){
+    const session_hash=Math.random().toString(36).substring(2)
+    const hash={session_hash,fn_index: 2}
+    return {
+        generate(prompt){
+            return new Promise((resolve,reject)=>{
+                const ws=new WebSocket("wss://runwayml-stable-diffusion-v1-5.hf.space/queue/join")
+
+                ws.onmessage=function(event){
+                    const {msg, output} = JSON.parse(event.data);
+                    switch (msg) {
+                    case "send_data":
+                        ws.send(JSON.stringify({
+                            ...hash,
+                            data:[prompt],
+                        }))
+                        break;
+                    case "send_hash":
+                        ws.send(JSON.stringify(hash));
+                        break;
+                    case "process_completed":
+                        resolve(output.data[0])
+                        return;
+                    case "queue_full":
+                        return;
+                    case "estimation":
+                        break;
+                    case "process_generating":
+                        break;
+                    case "process_starts":
+                        break
+                    }
+                }
+            })
+        }
+    }
+}
+			export const uris={
+				
+			}
+			export const services={
+				diffusion
+			}
+
+			export function subscriptAsHelper({helper, chrome, window, Qili }){
+				
 class Service{
 	constructor(props){
 		Object.assign(this, props)
@@ -9,8 +55,8 @@ class Service{
 		if(props.url){
 			const {url}=props
 			function startTab() {
-				chrome.tabs.query({url}, (tabs)=>{
-					if(!tabs || !tabs[0]){
+				chrome.tabs.query({url}, ([activeTab])=>{
+					if(!activeTab){
 						chrome.tabs.create({ url});
 					}
 				})
@@ -357,9 +403,11 @@ subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
 				})({
 					helper,
 					name:"diffusion",
-					//url:"https://runwayml-stable-diffusion-v1-5.hf.space/",
+					url:"https://runwayml-stable-diffusion-v1-5.hf.space/",
 					async handleResponse(images,ask){
 						return await this.batchUpload(images, `temp/diffusion/${ask.session}`)
 					}
 				}),
 })
+			}
+		

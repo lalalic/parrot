@@ -1131,40 +1131,6 @@ export function ChatProvider({children}){
     return children
 }
 
-function SubscribeHelpQueue({children}){
-    const {sendMessage}=useChatGpt()
-    const $sendMessage=React.useRef(sendMessage)
-    $sendMessage.current=sendMessage
-    const {uuid:helper}=useSelector(state=>state.my)
-    React.useEffect(()=>{
-        const unsub=Qili.subscribe({
-            id:"helpQueue",
-            query:`subscription a($helper:String!){
-                helpQueue(helper:$helper)
-            }`,
-            variables:{helper}
-        },function({data:{helpQueue:{message, session}}}){
-            (async ()=>{
-                debugger
-                const response=await $sendMessage.current(message.message||message, message.options)
-                await Qili.fetch({
-                    id:"answer",
-                    query:`query a($session:String!, $response:JSON!){
-                        answerHelp(session:$session, response:$response)
-                    }`,
-                    variables:{
-                        session,
-                        response
-                    }
-                })
-            })();
-        })
-        return unsub
-    },[])
-    
-    return children
-}
-
 export function useChat(){
     const enableChatGPT=useSelector(state=>hasChatGPTAccount(state))
     if(enableChatGPT)
@@ -1222,6 +1188,7 @@ export function Monitor({}){
 }
 
 import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
+import { SubscribeHelpQueue } from './SubscribeHelpQueue';
 export function makeLogger(){
     const options={
         transport:[
@@ -1239,8 +1206,6 @@ export function makeLogger(){
     const log=logger.createLogger(options);
     log.patchConsole()
 }
-
-
 
 export const useStateGlobalSwitch=(()=>{
     let uuid=Date.now()

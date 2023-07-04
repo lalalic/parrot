@@ -1,5 +1,6 @@
 import React from "react";
 import { useAsk } from "../../components";
+import services from "../../components/webview-services"
 import { useStore } from "react-redux";
 
 
@@ -13,16 +14,19 @@ export function useWeChat() {
 }
 export function useAutobot(wechat) {
     const ask = useAsk()
+    const diffusion = services.diffusion.useService()
     let uuid=Date.now()
     const store=useStore()
-    let keyExp=null
+    let keyExp=null, keyImageExp=null
     let last={}
     return React.useCallback(async ({ content, from, to, room, id, type, createdAt}) => {
         id=id||`${uuid++}`
         const {dispatch, getState, state=getState()}=store
-        const { me, key, loginAt, messages, policy, scenarioes, chatbot, enableScenario, enableRole, enableSchedule, enableSelf, schedule } = state.wechat
+        const { me, key, keyImage, loginAt, messages, policy, scenarioes, chatbot, enableScenario, enableRole, enableSchedule, enableSelf, schedule } = state.wechat
         
         keyExp=key && new RegExp(key,"ig")
+        keyImageExp=keyImage && new RegExp(key,"ig")
+
         if (!chatbot) {
             return;
         }
@@ -51,6 +55,12 @@ export function useAutobot(wechat) {
         const keyed=key && keyExp.test(content)
         if(keyed){
             content=content.replace(keyExp, "")
+        }
+
+        //@art
+        const keyedImage= keyImage && keyImageExp.test(content)
+        if(keyedImage){
+            content=content.replace(keyImageExp, "")
         }
 
         if (from.isSelf) {
@@ -91,7 +101,8 @@ export function useAutobot(wechat) {
         const scenario = enableScenario && pickScenario(sendingScenarioes, content, scenarioes);
 
         //@bot or scenario
-        const prompt = (keyed || scenario) && `
+        const prompt = keyedImage ? content : 
+            (keyed || scenario) && `
             ${myRole ? `You are ${myRole}.` : ""}
             ${senderRole ? `I'm ${senderRole}.` : ""} 
             ${scenario ? `The scenario is ${scenario}.` : ""}
@@ -111,7 +122,18 @@ export function useAutobot(wechat) {
         } });
         
         try{
-            const answer = await ask(prompt, room?.id || from.id);
+            const answer = (async ()=>{
+                if(keyedImage){
+                    const images=await diffusion.generate(prompt)
+                    images.map(async image=>await wechat.sendImage(image))
+                    
+
+                }else{
+                    return await ask(prompt, room?.id || from.id);
+                }
+            })();
+            
+                
             last={content:answer, from: room?.id || from.id}
         
             await wechat.send(room?.UserName || from.UserName, answer)

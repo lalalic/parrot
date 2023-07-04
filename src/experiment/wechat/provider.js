@@ -5,6 +5,7 @@ import WechatyBro from "./bro.js";
 import { useAutobot, WeChatContext } from "./use-wechat";
 import { useStore } from "react-redux";
 import ProvideWeb from "../../components/provider-web";
+import services from "../../components/webview-services"
 
 export default function WechatProvider({children, ...props}){
     return (
@@ -208,5 +209,5 @@ function Wechat({children}){
         )
     },[status, barcode, children])
 
-    return (<>{content}</>)
+    return (<services.diffusion.Provider children={content}/>)
 }

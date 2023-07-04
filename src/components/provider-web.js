@@ -1,10 +1,16 @@
 import React, { useRef } from "react";
 import { Platform, View } from "react-native";
 import { WebView } from "react-native-webview";
-import { useStateAndLatest } from ".";
 import { Buffer } from "buffer";
 import { useSelector } from "react-redux";
-import { Qili } from "../store";
+import { Qili } from "../store"
+
+function useStateAndLatest(value){
+	const [a, setA]=React.useState(value)
+    const $a=React.useRef(a)
+    $a.current=a
+	return [a, setA, $a]
+}
 
 export default function WebviewServiceProvider({ id, uri, Context, children, bro, broName, debug: initDebug, ...props }) {
     const webviewRef = useRef(null);
@@ -42,15 +48,16 @@ export default function WebviewServiceProvider({ id, uri, Context, children, bro
         };
 
         const fx = fnKey => (...args) => {
-            console.debug({fnKey, args})
             if(banned){
                 return new Promise((resolve, reject)=>{
+                    const message={fnKey, args, $service: id}
+                    console.debug(message)
                     const unsub=Qili.subscribe({
                         id:"askThenWaitAnswer",
                         query:`subscription a($message:JSON!){
                             askThenWaitAnswer(message:$message)
                         }`,
-                        variables:{ message: {fnKey, args, $service: id} }
+                        variables:{ message }
                     },({data,errors})=>{
                         unsub()
                         if(errors){

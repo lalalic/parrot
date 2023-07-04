@@ -507,6 +507,25 @@ export const Qili=Object.assign(createApi({
 			sub.unsubscribe()
 			client.close()
 		}
+	},
+	askThenWaitAnswer(ask){
+		return new Promise((resolve, reject)=>{
+			const unsub=Qili.subscribe({
+				id:"askThenWaitAnswer",
+				query:`subscription a($message:JSON!){
+					askThenWaitAnswer(message:$message)
+				}`,
+				variables:{ message: ask }
+			},({data,errors})=>{
+				unsub()
+				if(errors){
+					console.error(errors)
+					reject(onError(new Error("Your request can't be processed now.")))
+				}else{
+					resolve(data.askThenWaitAnswer)
+				}
+			})
+		})
 	}
 })
 
@@ -593,7 +612,8 @@ export function createStore(){
 			}
 			return Qili.reducer(...arguments)
 		},
-		wechat(state={key:"@bot", 
+		wechat(state={
+			key:"@bot", keyImage:"@art",
 			amount:0,
 			policy:{}, 
 			schedule:{'*':{start:"20", end:"8"}},

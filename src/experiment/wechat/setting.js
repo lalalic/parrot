@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-native"
 export default function WeChatSetting({}){
     const dispatch=useDispatch()
     const navigate=useNavigate()
-    const {key, roles=[], scenarioes, ...state}=useSelector(state=>state.wechat)
+    const {key, roles=[], scenarioes, keyImage, ...state}=useSelector(state=>state.wechat)
 
     const nameScenarioes=React.useMemo(()=>Object.keys(scenarioes),[scenarioes])
     const [current, setCurrent]=React.useState("")
@@ -33,7 +33,7 @@ export default function WeChatSetting({}){
                                 <Text style={{color:"blue"}}>{k.toUpperCase()}</Text>
                             </Pressable>
                         }
-                        <Switch
+                        <Switch style={{ transform: [{ scale: 0.6 }] }}
                             value={state[`enable${k}`]} 
                             onValueChange={e=>dispatch({type:"wechat/toggle", key: k})}
                             />
@@ -41,11 +41,16 @@ export default function WeChatSetting({}){
                 )}
             </View>
 
-            <View style={{height:50, marginBottom:10}}>
-                <View style={labelStyle}>
-                    <Text>Key: Ask chatgpt if message includes</Text>
+            <View style={{height:80, marginBottom:10}}>
+                <View style={[labelStyle, {flexDirection:"row", alignItems:"baseline"}]}>
+                    <Text style={{width:100}}>Ask chatgpt:</Text>
+                    <TextInput style={[inputStyle,{flexGrow:1,marginLeft:50, marginRight:50}]} defaultValue={key}/>
                 </View>
-                <TextInput style={[inputStyle,{flexGrow:1,marginLeft:50, marginRight:50}]} defaultValue={key}/>
+
+                <View style={[labelStyle, {flexDirection:"row", alignItems:"baseline"}]}>
+                    <Text style={{width:100}}>Request image:</Text>
+                    <TextInput style={[inputStyle,{flexGrow:1,marginLeft:50, marginRight:50}]} defaultValue={keyImage}/>
+                </View>
             </View>
             
 

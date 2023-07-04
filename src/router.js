@@ -34,7 +34,7 @@ import * as Linking from "expo-linking";
 
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home","/account/wechat/contacts", "/account/difussion"]
+        const entries=["/home","/account/wechat/contacts",/* "/account/difussion"*/]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName
