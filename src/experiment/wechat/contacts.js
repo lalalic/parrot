@@ -2,7 +2,9 @@ import React from "react";
 import { SectionList, Button, Text, View, TextInput, Pressable, ImageBackground, Modal, FlatList, DeviceEventEmitter } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useWeChat, getContactGroup, sortGroup, BandGroup } from "./use-wechat";
-import { Loading, PressableIcon, useStateGlobalSwitch } from "../../components"
+import PressableIcon from "use-qili/components/PressableIcon";
+import useStateGlobalSwitch from "use-qili/components/useStateGlobalSwitch";
+import Loading from "use-qili/components/Loading";
 import Avarta from "./avarta";
 
 export default function ContactList() {

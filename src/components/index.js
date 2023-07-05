@@ -1,82 +1,21 @@
-import React, { useEffect } from 'react';
-import { View, Text, TextInput, ActivityIndicator, Pressable, FlatList , Animated, Easing, Button, Image, DeviceEventEmitter,Modal, useWindowDimensions, Keyboard, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
+import React from 'react';
+import { View, Text, Pressable, FlatList , Animated, Easing, Image, DeviceEventEmitter,Modal, useWindowDimensions, Keyboard, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useLocation, useNavigate, useParams} from "react-router-native"
 import { Audio} from "expo-av"
 import Voice from "@react-native-voice/voice"
 import * as FileSystem from "expo-file-system"
-import { useSelector, useDispatch } from "react-redux"
+import { useSelector } from "react-redux"
 import {Mutex} from "async-mutex"
 
-import { ColorScheme, TalkStyle } from './default-style'
+import { ColorScheme, TalkStyle } from 'use-qili/components/default-style'
 import * as Speech from "./speech"
-import { isAlreadyFamiliar, Qili, TalkApi, selectPolicy, isOnlyAudio, hasChatGPTAccount, isUserLogin, isAdmin } from "../store"
-import { ChatGptProvider, useChatGpt } from 'react-native-chatgpt';
+import { Qili, TalkApi, selectPolicy, isOnlyAudio } from "../store"
+import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
+import AutoShrinkNavBar from "use-qili/components/AutoShrinkNavBar";
+import PressableIcon from "use-qili/components/PressableIcon";
+import FlyMessage from "use-qili/components/FlyMessage";
 
-
-const AutoHideDuration=6000
-export const PressableIcon = ({requireLogin, onPress:$onPress, onLongPress:$onLongPress, onPressIn, onPressOut, children, label, labelFade, labelStyle, style,size, ...props }) => {
-    const dispatch=useDispatch()
-    const needLogin=useSelector(state=>requireLogin && !isUserLogin(state))
-    const notNeedLabelAnyMore=useSelector(state=>isAlreadyFamiliar(state))
-    if(labelFade===true)
-        labelFade=AutoHideDuration
-    const opacity = React.useRef(new Animated.Value(1)).current;
-    React.useEffect(()=>{
-        if(labelFade){
-            const timing=Animated.timing(opacity, {
-                toValue: 0,
-                duration:3000,
-                easing: Easing.linear,
-                useNativeDriver:true,
-            })
-            timing.start()
-            return ()=>timing.stop()
-        }
-    },[labelFade])
-    const [running, setRunning]=React.useState(false)
-    const onPress=React.useCallback(async e=>{
-        if($onPress){
-            if(needLogin){
-                dispatch({type:"my", payload:{requireLogin}})
-                return 
-            }
-            try{
-                setRunning(true)
-                e.loading=setRunning
-                await $onPress(e)
-            }catch(e){
-                FlyMessage.error(e.message)
-            }finally{
-                setRunning(false)
-            }
-        }
-    },[$onPress])
-    const onLongPress=React.useCallback(async e=>{
-        if($onLongPress){
-            try{
-                if(needLogin){
-                    dispatch({type:"my", payload:{requireLogin}})
-                    return 
-                }
-                setRunning(true)
-                e.loading=setRunning
-                await $onLongPress(e)
-            }catch(e){
-                FlyMessage.error(e.message)
-            }finally{
-                setRunning(false)
-            }
-        }
-    },[$onLongPress]) 
-    return (
-        <Pressable {...{onPress,onLongPress,onPressIn, onPressOut,style:{justifyContent:"center", alignItems:"center",...style}}}>
-            <MaterialIcons {...props}/>
-            {children || (!notNeedLabelAnyMore && label && <Animated.Text numberOfLines={1} ellipsizeMode="tail" style={[labelStyle,{opacity}]}>{label}</Animated.Text>)}
-            {running && <Loading style={{position:"absolute"}}/>}
-        </Pressable>
-    )
-}
 
 export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, name, ...props}) => {
     const navigate= useNavigate()
@@ -156,26 +95,6 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
             ))}
             {children}
         </AutoShrinkNavBar>
-    )
-}
-
-export function AutoShrinkNavBar({children, label, style, size=4}){
-    children=React.Children.toArray(children).flat().filter(a=>!!a)
-    const popup=(()=>{
-        if(children.length<=size){
-            return null
-        }
-        return (
-            <PopMenu {...{label}}>
-                {children.splice(size-1)}
-            </PopMenu>
-        )
-    })();
-    return (
-        <View style={[{flexDirection:"row",justifyContent:"space-around"},style]}>
-            {children}
-            {popup}
-        </View>
     )
 }
 
@@ -283,7 +202,7 @@ export const SliderIcon=(uuid=>{
 })(Date.now());
 
 
-export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=2000, duration=AutoHideDuration, ...props}){
+export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=2000, duration=6000, ...props}){
     const {sliding}=React.useContext(SliderIcon.Context)
     const opacity = React.useRef(new Animated.Value(1)).current;
     const opacityTimeout=React.useRef()
@@ -359,59 +278,6 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 	)
 }
 
-
-export function Swipeable({children, rightContent, style, ...props}){
-    const [state, setState]=React.useState({swiping:0,x0:0, x1:0,width:0})
-    const left=(()=>{
-        switch(state.swiping){
-            case 0:
-                return 0
-            case 1:
-                return state.x1-state.x0
-            case 2:
-                return -state.width
-        }
-    })();
-    return (
-        <View style={{flex:1}} 
-            onMoveShouldSetResponder={({nativeEvent:{pageX:x0}})=>{
-                if(state.swiping){
-                    return true
-                }
-            }}
-            onResponderRelease={e=>{
-                setState({...state, swiping:2,x0:0, x1:0})
-            }}
-            onResponderMove={({nativeEvent:{pageX:x1}}) => {
-                setState({...state, x1, x0:state.x0||x1})
-            }}
-            >
-            <Pressable style={{height:"100%", width:"100%"}} 
-                onPressIn={e=>{
-                    if(state.swiping==2){
-                        setState({...state, swiping:0})
-                        return 
-                    }
-                    setState({...state, swiping:1})
-                }}
-                {...props}>
-                    <View 
-                        onLayout={e=>{
-                            setState({...state, width: e.nativeEvent.layout.width})
-                        }} 
-                        style={{position:"absolute", height:"100%", right:0}}>
-                        {rightContent}
-                    </View>
-                    <View style={[{ 
-                        position:"absolute",height:"100%", width:"100%", 
-                        justifyContent:"center", left
-                    },style]}>
-                        {children}
-                    </View>
-            </Pressable>
-        </View>
-    )
-}
 
 export const ControlIcons={
     record:"mic",
@@ -818,53 +684,6 @@ export const Recognizer=(()=>{
     return Recognizer
 })();
 
-export function PopMenu({style, triggerIconName="more-vert", label, children, height=50}){
-    const color=React.useContext(ColorScheme)
-    const [listing, setListing]=React.useState(false)
-    return (
-        <View>
-            <PressableIcon name={triggerIconName} label={label} onPress={e=>setListing(!listing)}/>
-            {listing && <View pointerEvents="box-none"
-                onTouchEnd={e=>setListing(false)}
-                style={[
-                    {position:"absolute",right:0,bottom:50, backgroundColor:color.backgroundColor,padding:10, width:50},
-                    {flexDirection:"column", justifyContent:"space-around", height:height*React.Children.toArray(children).length},
-                    style
-                ]}>
-                {children}
-            </View>}
-        </View>
-    )
-}
-
-export const FlyMessage=Object.assign(()=>{
-    const dispatch=useDispatch()
-    const [message, setMessage]=React.useState("")
-
-    useEffect(()=>{
-        FlyMessage.setMessage=setMessage
-        return ()=>FlyMessage.setMessage=()=>null
-    },[])
-    if(message){
-        return (
-            <View style={{position:"absolute", bottom:20,width:"100%", color:"yellow", justifyContent:"center", alignItems:"center"}}>
-                <Text>{message}</Text>
-            </View>
-        )
-    }
-},{
-    show(message){
-        console.debug(message)
-        this.setMessage(message)
-        setTimeout(()=>this.setMessage(""),3000)
-    },
-    error(message){
-        console.error(message)
-        this.setMessage(<Text style={{color:"red"}}>{message}</Text>)
-        setTimeout(()=>this.setMessage(""),3000)
-    }
-})
-
 export const html = (talk, lineHeight, margins, needMy) => `
     <html>
         <style>
@@ -888,164 +707,6 @@ export const html = (talk, lineHeight, margins, needMy) => `
     </html>
 
 `;
-
-export function useLatest(value){
-	const a=React.useRef(value)
-	a.current=value
-	return a
-}
-
-export function useStateAndLatest(value){
-	const [a, setA]=React.useState(value)
-    const $a=React.useRef(a)
-    $a.current=a
-	return [a, setA, $a]
-}
-
-export function ChangableText({text:{value:text, ...textProps},onChange,children, ...props}){
-    const [editing, setEditing]=React.useState(false)
-    return (
-        <Pressable {...props} onLongPress={e=>setEditing(true)}>
-            {editing ? 
-                <TextInput defaultValue={text} autoFocus={true} showSoftInputOnFocus={true}
-                    {...textProps}
-                    onEndEditing={e=>{
-                        if(text!==e.nativeEvent.text){
-                            onChange?.(e.nativeEvent.text)
-                        }
-                        setEditing(false)
-                    }} 
-                    style={[textProps.style, {borderBottomWidth:1, borderBottomColor:"gray"}]}
-                    /> : 
-                <Text {...textProps}>{text}</Text>}
-            {children}
-        </Pressable>
-    )
-}
-
-export const Login=Object.assign(function Login({ }) {
-    const dispatch = useDispatch();
-    const [contact, setContact] = React.useState("");
-    const [authReady, setAuthReady] = React.useState(false);
-    const [code, setCode] = React.useState("");
-    const [tick, setTick] = React.useState();
-
-    const startTick = React.useCallback(() => {
-        let i = 60, doTick;
-        const timer = setInterval(doTick = () => {
-            if (i == 0) {
-                clearInterval(timer);
-                setTick(0);
-            }
-            else
-                setTick(i--);
-        }, 1000);
-
-        doTick();
-    }, []);
-
-    const requestCode = React.useCallback(async (contact) => {
-        try {
-            const data = await Qili.fetch({
-                id: "authentication_requestToken_Mutation",
-                variables: { contact }
-            });
-            data.requestToken = true;
-            setAuthReady(!!data.requestToken);
-            if (!!data.requestToken) {
-                startTick();
-            }
-        } catch (e) {
-            FlyMessage.error(e.message);
-        }
-    }, []);
-
-    const login = React.useCallback(async ({ contact, code }) => {
-        try {
-            const data = await Qili.fetch({
-                id: "authentication_login_Mutation",
-                variables: {
-                    contact,
-                    token: code,
-                    name: "admin"
-                }
-            });
-
-            dispatch({
-                type: "my",
-                payload: {
-                    admin: {
-                        contact,
-                        headers: {
-                            "x-session-token": data.login.token,
-                        }
-                    },
-                    requireLogin:false,
-                }
-            });
-        } catch (e) {
-            FlyMessage.error(e.message);
-        }
-    }, []);
-
-    const textStyle = { height: 40, fontSize: 20, borderWidth: 1, borderColor: "gray", padding: 4 };
-
-    return (
-        <View style={{ backgroundColor: "white", padding: 10, width:"100%"}}>
-            <View style={{ flexDirection: "row", height: 40 }}>
-                <TextInput style={{ flex: 1, ...textStyle }}
-                    editable={!tick}
-                    value={contact}
-                    placeholder="Phone Number"
-                    onChangeText={text => setContact(text)} />
-                <Button style={{ width: 500 }}
-                    disabled={!!tick}
-                    onPress={e => requestCode(contact)}
-                    title={tick ? tick + "" : (tick === 0 ? "Re-Request" : "Request Code")} />
-            </View>
-
-            <TextInput value={code} style={{ ...textStyle, marginTop: 20, marginBottom: 20 }}
-                editable={!!authReady}
-                placeholder="Verification Code"
-                onChangeText={text => setCode(text)} />
-
-            <View style={{flexDirection:"row", height:50, width:"100%"}}>
-                <View style={{flex:1}}>
-                    <Button title="Cancel"
-                        onPress={e => dispatch({type:"my", payload:{requireLogin:false}})}
-                    />
-                </View>
-                <View style={{flex:1}}>
-                    <Button title="Login"
-                        disabled={!authReady}
-                        onPress={e => login({ contact, code })} />
-                </View>
-            </View>
-        </View>
-    );
-},{
-    async updateToken(admin, dispatch){
-        const data=await Qili.fetch({
-            id:"authentication_renewToken_Query",
-        },admin)
-
-        if(data?.errors){
-            dispatch({type:"my",payload:{admin:undefined, requireLogin:true}})
-            return 
-        }
-            
-        if(data?.me?.token){
-            dispatch({type:"my",payload:{admin:{...admin,headers:{...admin.headers,"x-session-token":data.me.token}}}})
-        }
-    }
-})
-
-export function Loading({style, onLongPress, ...props}){
-    const style0={flex:1, alignItems:"center", justifyContent:"center"}
-    return <ActivityIndicator size="large" style={[style0,style]} {...props}/>
-    
-    return !!!onLongPress ? loading : (<Pressable onLongPress={onLongPress} style={{style0}}>{loading}</Pressable>)
-}
 
 export function KeyboardAvoidingView(props){
     return <RNKeyboardAvoidingView {...props} keyboardVerticalOffset={60}/>
@@ -1076,119 +737,10 @@ export function useTalkQuery({api, slug, id, policyName }) {
     return { data, policy, ...status};
 }
 
-/**
- * local: use id to avoid massive session
- * remote: chat session should be kept
- * @returns 
- */
-export function useAsk(xid="random", defaultQuestion, timeout0=60000){
-    const {sendMessage, status, login}=useChat()
-    const dispatch=useDispatch()
-    const sessions=useSelector(state=>state.my.sessions)
-    
-    const ask=React.useCallback(async (prompt=defaultQuestion, id=xid, timeout=timeout0)=>{
-        const session=sessions[id]
-        console.debug({event:"ask", prompt, session, id})
-
-        const timer=setTimeout(()=>{
-            throw new Error("Your request can't be processed now!")
-        }, timeout)
-        
-        const {message, ...newSession}=await sendMessage(prompt, session, id, timeout)
-        clearTimeout(timer)
-
-        if(!message){
-            throw new Error("Your request can't be processed now!")
-        }
-        
-        if(id && Object.keys(newSession).length>0 && (!session 
-                || session.conversationId!=newSession.conversationId 
-                || session.messageId!=newSession.messageId)){
-            dispatch({type:"my/session", payload:{[id]:newSession}})
-        }
-        return message
-    },[sessions, sendMessage])
-
-    if(status=="logged-out"){
-        dispatch({type:"my", sessions:{}})
-        login?.()
-    }
-
-    return ask
-}
-
-export function ChatProvider({children}){
-    const enableChatGPT=useSelector(state=>hasChatGPTAccount(state))
-
-    if(enableChatGPT){
-        return (
-            <ChatGptProvider>
-                <SubscribeHelpQueue>{children}</SubscribeHelpQueue>
-            </ChatGptProvider>
-        )
-    }
-
-    return children
-}
-
-export function useChat(){
-    const enableChatGPT=useSelector(state=>hasChatGPTAccount(state))
-    if(enableChatGPT)
-        return useChatGpt()
-
-    async function sendMessage(message, options, id){
-        const [request, processData=a=>a, onError=a=>a]=(()=>{
-            if(id=="chat"){//no helper then no session
-                if(typeof(message)=="object"){
-                    const {message:prompt, options:$options, onAccumulatedResponse, onError}=message
-                    return [
-                        {message:prompt, options:{...$options,...options}},
-                        data=>{
-                            onAccumulatedResponse?.({...data, isDone:true})
-                            return {...data}
-                        },
-                        onError
-                    ]
-                }else{
-                    return [
-                        {
-                            message, 
-                            options: options?.helper ? options : {}/* empty indicate remote proxy to return session*/
-                        }
-                    ]
-                }
-            }else {
-                return [message.message||message]
-            }
-        })();
-        console.debug({event:"askThenWaitAnswer", message,options, id})
-        return new Promise((resolve, reject)=>{
-            const unsub=Qili.subscribe({
-                id:"askThenWaitAnswer",
-                query:`subscription a($message:JSON!){
-                    askThenWaitAnswer(message:$message)
-                }`,
-                variables:{ message:request }
-            },({data,errors})=>{
-                unsub()
-                if(errors){
-                    reject(onError(new Error("Your request can't be processed now.")))
-                }else{
-                    resolve(processData(data.askThenWaitAnswer))
-                }
-            })
-        })
-    }
-
-    return {sendMessage,status:"proxy"}
-}
-
 export function Monitor({}){
     return null
 }
 
-import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
-import { SubscribeHelpQueue } from './SubscribeHelpQueue';
 export function makeLogger(){
     const options={
         transport:[
@@ -1206,38 +758,3 @@ export function makeLogger(){
     const log=logger.createLogger(options);
     log.patchConsole()
 }
-
-export const useStateGlobalSwitch=(()=>{
-    let uuid=Date.now()
-    return (EventName, initState)=>{
-        const uid=React.useRef({id:uuid++, listener:null})
-    
-        const state = React.useReducer(
-            (status,action)=>{
-                if(action===false)
-                    return false
-                try{
-                    return !status
-                }finally{
-                    if(!status){//going to enable,
-                        DeviceEventEmitter.emit(EventName, uid.current.id)
-                    }
-                }
-            }, 
-            initState
-        )
-    
-        const [, toggleSelecting]=state
-    
-        React.useEffect(()=>{
-            uid.current.fn=DeviceEventEmitter.addListener(EventName,who=>{
-                if(who!==uid.current.id){
-                    setTimeout(()=>toggleSelecting(false),0)
-                }
-            })
-            return ()=>uid.current.fn.remove()
-        },[toggleSelecting])
-    
-        return state
-    }
-})();

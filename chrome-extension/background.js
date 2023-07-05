@@ -318,7 +318,7 @@ async function subscribe({helper, url}, services){
 		variables:{session:ask.session, response}
 	})
 
-	Qili.subscribe({
+	const unsub=Qili.subscribe({
 		id:"helpQueue",
 		query:`subscription a($helper:String!){
 				ask:helpQueue(helper:$helper)
@@ -338,6 +338,9 @@ async function subscribe({helper, url}, services){
 
 		service.enqueue(ask,response=>answer(ask, response))
 	})
+
+	chrome.runtime.onSuspend.addListener(unsub)
+
 	console.log(`subscribed to ${url} as ${helper}\nlistening ....`)
 }
 
@@ -359,6 +362,9 @@ subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
 					name:"diffusion",
 					//url:"https://runwayml-stable-diffusion-v1-5.hf.space/",
 					async handleResponse(images,ask){
+						if(window.isLocal){
+							return images
+						}
 						return await this.batchUpload(images, `temp/diffusion/${ask.session}`)
 					}
 				}),

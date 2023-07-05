@@ -42,7 +42,7 @@ config.resolver.resolveRequest=function(context, moduleName, platform){
 				${services.join(",\n")}
 			}
 
-			export function subscriptAsHelper({helper, chrome, window, Qili }){
+			export function subscriptAsHelper({helper, chrome, window, Qili}){
 				${fs.readFileSync("./chrome-extension/background.js")}
 			}
 		`)

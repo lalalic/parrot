@@ -1,9 +1,11 @@
 import React from "react"
-import {View, Text, Pressable, SectionList, Switch} from "react-native"
+import {View, Text, Pressable, SectionList} from "react-native"
 import { Link, useLocation, useNavigate } from "react-router-native"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useDispatch, useSelector } from "react-redux";
-import { isUserLogin, TalkApi, } from "../store"
+import { TalkApi, } from "../store"
+import { isUserLogin } from "use-qili/store"
+import Switch from "use-qili/components/Switch";
 
 export default ()=>{
     const dispatch=useDispatch()

@@ -1,13 +1,13 @@
 import React from "react"
 import { View, TextInput, Image } from "react-native"
-import { PressableIcon } from "../../components"
+import PressableIcon from "use-qili/components/PressableIcon"
 
-import Services from "../../components/webview-services"
-const {diffusion:{Provider, useService:useDiffusion}} = Services
+import services from "../../components/webview-services"
+const {diffusion:{Provider, useService:useDiffusion}} = services
 
 export default function HuggingFace(){
     return (
-        <Provider debug={true}>
+        <Provider debug={true} banned={false}>
             <Test/>
         </Provider>
     )

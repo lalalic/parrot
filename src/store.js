@@ -17,10 +17,9 @@ import { YoutubeTranscript } from "./experiment/youtube-transcript"
 import ytdl from "react-native-ytdl"
 
 import * as Calendar from "./experiment/calendar"
-import mpegKit, { prepareFolder } from "./experiment/mpeg"
-import { SubscriptionClient } from "subscriptions-transport-ws"
-import uuid from 'react-native-uuid'
+import mpegKit from "./experiment/mpeg"
 
+import {myReducer, Qili as QiliApi} from "use-qili/store"
 
 export const Policy={
 	general: {
@@ -421,112 +420,10 @@ export const Qili=Object.assign(createApi({
 		})
 	})
 }),{
-	//service: "http://localhost:9080/1/graphql",
-	service: "https://api.qili2.com/1/graphql",
-	storage: "https://up.qbox.me",
-	async fetch(request, {headers}={}){
-		const res=await fetch(this.service, {
-            method:"POST",
-            headers:{
-                'Content-Type': 'application/json',
-                "x-application-id":"parrot",
-				...getSession(),
-                ...headers,
-            },
-            body: request instanceof FormData ? request : JSON.stringify(request)
-        })
-        const {data}=await res.json()
-
-        if(!data){
-            throw new Error(res.statusText)
-        }
-
-        if(data.errors){
-            throw new Error(data.errors.map(a=>a.message).join("\n"))
-        }
-            
-        return data
+	...QiliApi,
+	isUploaded(video) {
+		return video.indexOf("qili2.com") != -1;
 	},
-	async upload({file, key, host}, admin){
-		const {token:parameters}=await this.fetch({
-            id:"file_token_Query",
-            variables:{key,host}
-        },admin)
-        await prepareFolder(file)
-        const res=await FileSystem.uploadAsync(this.storage, file, {
-            uploadType:FileSystem.FileSystemUploadType.MULTIPART,
-            fieldName:"file",
-            parameters
-        })
-    
-        const {data, error}=JSON.parse(res.body)
-
-		if(error){
-			throw new Error(error)
-        }
-
-        if(!data){
-            throw new Error(res.statusText)
-        }
-
-        return data?.file_create?.url
-	},
-	isUploaded(video){
-		return video.indexOf("qili2.com")!=-1
-	},
-	subscribe(request, callback){
-		const url=this.service.replace(/^http/, "ws")
-		//@Why: a shared client can't work, is it because close method is changed ???
-		const client=new SubscriptionClient(url,{
-			reconnect:true,
-			connectionParams:{
-				"x-application-id":"parrot",
-				...getSession(),
-				request:{
-					id:request.id,
-					variables: request.variables
-				},
-			},
-			connectionCallback(errors){
-				if(errors){
-					callback?.({errors})
-				}
-			}
-		})
-
-		const sub=client.request({query:"*",...request}).subscribe(
-			function onNext(data){
-				callback?.(data)
-			},
-			function onError(errors){
-				callback?.({errors})
-			}
-		)
-		
-		return ()=>{
-			sub.unsubscribe()
-			client.close()
-		}
-	},
-	askThenWaitAnswer(ask){
-		return new Promise((resolve, reject)=>{
-			const unsub=Qili.subscribe({
-				id:"askThenWaitAnswer",
-				query:`subscription a($message:JSON!){
-					askThenWaitAnswer(message:$message)
-				}`,
-				variables:{ message: ask }
-			},({data,errors})=>{
-				unsub()
-				if(errors){
-					console.error(errors)
-					reject(onError(new Error("Your request can't be processed now.")))
-				}else{
-					resolve(data.askThenWaitAnswer)
-				}
-			})
-		})
-	}
 })
 
 const Services={Ted, Qili, current:'Ted'}
@@ -708,13 +605,9 @@ export function createStore(){
 			return state
 		},
 		my(state = {
-			sessions:{}, uuid:uuid.v4(), 
+			...myReducer(undefined, {}),
 			policy:Policy, 
 			lang:"en",mylang: "zh-cn", tts:{}, 
-			i:0, since:Date.now(),
-			admin:false,
-			widgets:{chatgpt:false},
-			webviewservices:{},
 		}, action) {
 			switch (action.type) {
 				case "lang/PERSIST":
@@ -762,12 +655,8 @@ export function createStore(){
 					return {...state, tts:{...state.tts, ...action.payload}}
 				case "my/api":
 					return {...state, api:(Services.current=action.api)}
-				case "my/session":
-					return {...state, sessions:{...state.sessions, ...action.payload}}
-				case "my":
-					return {...state, ...action.payload}
 			}
-			return state
+			return myReducer(state,action)
 		},
 		message(state=[],action){
 			switch(action.type){
@@ -1149,41 +1038,10 @@ export function selectWidgetTalks(state, slug){
 	return Object.values(state.talks).filter(a=>a.slug==slug && a.id!=slug)
 }
 
-export async function isAdmin(state=globalThis.store.getState()){
-	if(isUserLogin(state)){
-		const data=await Qili.fetch({
-			query:"query{isAdmin}"
-		},state.my.admin)
-		return data.isAdmin
-	}
-	return false
-}
-
 export function getTalkApiState(state){
 	return state[TalkApi.reducerPath]
 }
 
-export function isAlreadyFamiliar(state){
-	return state.my.i>1000
-}
-
 export function isOnlyAudio(url){
 	return typeof(url)=="string" && url.indexOf("video.mp4")!=-1
-}
-
-export function hasChatGPTAccount(state){
-	return !!state.my.widgets?.chatgpt
-}
-
-export function isUserLogin(state){
-	return !!state.my.admin?.headers
-}
-
-export function needLogin(state){
-	return !isUserLogin(state) && state.my.requireLogin
-}
-
-export function getSession(){
-	const {my:{admin}}=globalThis.store.getState()
-	return admin?.headers
 }

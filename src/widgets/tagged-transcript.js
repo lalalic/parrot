@@ -3,8 +3,9 @@ import { FlatList, Pressable, TextInput, View, Text, } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import Select from "react-native-select-dropdown"
-import { PressableIcon, KeyboardAvoidingView } from "../components"
-import { ColorScheme } from "../components/default-style"
+import { KeyboardAvoidingView } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
+import { ColorScheme } from "use-qili/components/default-style"
 import { selectWidgetTalks } from "../store"
 
 export default Wrapper=({})=>{

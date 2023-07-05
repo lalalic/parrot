@@ -4,9 +4,11 @@ import { Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
 
-import { PressableIcon, PolicyChoice, html } from '../components';
+import { PolicyChoice, html } from '../components';
+import PressableIcon from "use-qili/components/PressableIcon";
 import { Subtitles } from "../components/player"
-import mpegKit, {prepareFolder} from "../experiment/mpeg"
+import mpegKit from "../experiment/mpeg"
+import prepareFolder from "use-qili/components/prepareFolder";
 import { Qili, Ted } from "../store"
 
 

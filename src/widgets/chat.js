@@ -1,10 +1,13 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, View , ActivityIndicator, Text, TextInput, Pressable, } from 'react-native';
+import { View , Text, TextInput, Pressable, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
-import { useChatGpt } from "react-native-chatgpt";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Speak, Recognizer, PressableIcon, Recorder, PlaySound, FlyMessage, useStateAndLatest,  KeyboardAvoidingView, useAsk} from "../components"
+import { Speak, Recognizer, Recorder, PlaySound, KeyboardAvoidingView} from "../components"
+import FlyMessage from "use-qili/components/FlyMessage";
+import PressableIcon from "use-qili/components/PressableIcon";
+import useAsk from "use-qili/components/useAsk";
+import useStateAndLatest from "use-qili/components/useStateAndLatest";
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
@@ -23,27 +26,6 @@ export default Object.assign(props=>{
 	React.useEffect(()=>()=>Speak.stop(),[])
 	return (<Chat/>)
 },{defaultProps})
-
-function Navigator(){
-		const {status, login}=useChatGpt()
-		
-		if (status === 'initializing') return null;
-
-		if (status === 'logged-out' || status === 'getting_auth_token') {
-			return (
-				<View style={{ flex: 1 }}>
-					<Button title="Login" onPress={login}/>
-					{status === 'getting_auth_token' && (
-						<View style={{flex:1, justifyContent:"center", padding:32, alignItems: 'center',    backgroundColor: 'rgba(0, 0, 0, 0.5)'}}>
-							<ActivityIndicator size="large" color="white" />
-						</View>
-					)}
-				</View>
-			);
-		}
-
-		return <Chat />;
-}
 
 const CHAT_GPT_ID = 'system';
 const Icons={system:"adb", assistant:"ac-unit", user:"emoji-people"}

@@ -2,8 +2,8 @@ import React from "react"
 import { Image, View } from "react-native"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'
 import { useWeChat } from "./use-wechat"
-import { useStateAndLatest } from "../../components"
-import { prepareFolder } from "../mpeg"
+import useStateAndLatest from "use-qili/components/useStateAndLatest"
+import prepareFolder from "use-qili/components/prepareFolder"
 import * as FileSystem from "expo-file-system"
 
 export default function Avarta({user,size=30}){

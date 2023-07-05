@@ -43,7 +43,7 @@
 				diffusion
 			}
 
-			export function subscriptAsHelper({helper, chrome, window, Qili }){
+			export function subscriptAsHelper({helper, chrome, window, Qili}){
 				
 class Service{
 	constructor(props){
@@ -55,8 +55,8 @@ class Service{
 		if(props.url){
 			const {url}=props
 			function startTab() {
-				chrome.tabs.query({url}, ([activeTab])=>{
-					if(!activeTab){
+				chrome.tabs.query({url}, (tabs)=>{
+					if(!tabs || !tabs[0]){
 						chrome.tabs.create({ url});
 					}
 				})
@@ -364,7 +364,7 @@ async function subscribe({helper, url}, services){
 		variables:{session:ask.session, response}
 	})
 
-	Qili.subscribe({
+	const unsub=Qili.subscribe({
 		id:"helpQueue",
 		query:`subscription a($helper:String!){
 				ask:helpQueue(helper:$helper)
@@ -384,6 +384,9 @@ async function subscribe({helper, url}, services){
 
 		service.enqueue(ask,response=>answer(ask, response))
 	})
+
+	chrome.runtime.onSuspend.addListener(unsub)
+
 	console.log(`subscribed to ${url} as ${helper}\nlistening ....`)
 }
 
@@ -403,8 +406,11 @@ subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
 				})({
 					helper,
 					name:"diffusion",
-					url:"https://runwayml-stable-diffusion-v1-5.hf.space/",
+					//url:"https://runwayml-stable-diffusion-v1-5.hf.space/",
 					async handleResponse(images,ask){
+						if(window.isLocal){
+							return images
+						}
 						return await this.batchUpload(images, `temp/diffusion/${ask.session}`)
 					}
 				}),

@@ -1,7 +1,7 @@
 import React from "react"
 import { Pressable } from "react-native"
 import renderer, {act,} from "react-test-renderer"
-import { PressableIcon } from "../components"
+import { PressableIcon } from "../PressableIcon"
 const {Recorder}=jest.requireActual('../components')
 
 describe("components",()=>{

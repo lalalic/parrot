@@ -27,14 +27,14 @@ import Difussion from "./experiment/diffusion"
 
 import Test from "./account/test"
 
-import { ColorScheme } from "./components/default-style"
+import { ColorScheme } from "use-qili/components/default-style"
 import TaggedTranscript from "./widgets/tagged-transcript"
 import * as Linking from "expo-linking";
 
 
 export default ({scheme=React.useContext(ColorScheme)})=>{
     const initialEntries=React.useMemo(()=>{
-        const entries=["/home","/account/wechat/contacts",/* "/account/difussion"*/]
+        const entries=["/home","/account/wechat/contacts", "/account/difussion"]
         if(globalThis.lastPathName){//chatgpt switch lead to different parent
             entries.push(globalThis.lastPathName)
             delete globalThis.lastPathName

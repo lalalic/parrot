@@ -1,7 +1,9 @@
 import React from "react"
 import { FlatList, View, TextInput} from 'react-native';
-import { ColorScheme, TitleStyle } from "./components/default-style";
-import { Loading, PressableIcon, TalkThumb } from "./components";
+import { ColorScheme, TitleStyle } from "use-qili/components/default-style";
+import { TalkThumb } from "./components";
+import PressableIcon from "use-qili/components/PressableIcon";
+import Loading from "use-qili/components/Loading";
 import { TalkApi, getTalkApiState } from "./store"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";

@@ -1,7 +1,7 @@
 import React from "react"
 import { FlatList, View, Text } from "react-native"
 import { TalkThumb } from "../components"
-import { ColorScheme } from "../components/default-style"
+import { ColorScheme } from "use-qili/components/default-style"
 import AudioBook from "./audio-book"
 import PictureBook from "./picture-book"
 import Chat from "./chat"

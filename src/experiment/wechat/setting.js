@@ -1,7 +1,8 @@
 import React from "react"
-import { Pressable, View, FlatList, TextInput, Text, Switch } from "react-native"
+import { Pressable, View, FlatList, TextInput, Text } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
+import Switch from "use-qili/components/Switch"
 
 export default function WeChatSetting({}){
     const dispatch=useDispatch()
@@ -33,7 +34,7 @@ export default function WeChatSetting({}){
                                 <Text style={{color:"blue"}}>{k.toUpperCase()}</Text>
                             </Pressable>
                         }
-                        <Switch style={{ transform: [{ scale: 0.6 }] }}
+                        <Switch 
                             value={state[`enable${k}`]} 
                             onValueChange={e=>dispatch({type:"wechat/toggle", key: k})}
                             />

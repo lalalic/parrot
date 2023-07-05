@@ -1,5 +1,5 @@
 import React from "react";
-import { useAsk } from "../../components";
+import useAsk from "use-qili/components/useAsk";
 import services from "../../components/webview-services"
 import { useStore } from "react-redux";
 

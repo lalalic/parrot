@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Pressable, Switch, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator } from "react-native";
 import { Bubble, GiftedChat } from "react-native-gifted-chat";
 import { useDispatch, useSelector } from "react-redux";
 import Avarta from "./avarta";
 import { bot } from "./use-wechat";
+import Switch from "use-qili/components/Switch";
 
 
 function Amount(){

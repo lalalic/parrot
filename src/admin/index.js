@@ -1,7 +1,8 @@
 import React from "react"
 import { View, Text, SectionList} from "react-native"
 import { useDispatch } from "react-redux"
-import { PressableIcon, Loading } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
+import Loading from "use-qili/components/Loading"
 import { Qili } from "../store"
 
 export default function Admin(){

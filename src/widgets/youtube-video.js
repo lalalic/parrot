@@ -1,7 +1,7 @@
 import React from "react"
 import { View } from "react-native"
 import YoutubePlayer from "react-native-youtube-iframe"
-import {useStateAndLatest } from "../components"
+import useStateAndLatest from "use-qili/components/useStateAndLatest"
 
 import Video from "./ted-talk"
 

@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Image, Text, Pressable } from "react-native";
-import { Loading } from "../../components";
+import Loading from "use-qili/components/Loading";
 import WechatyBro from "./bro.js";
 import { useAutobot, WeChatContext } from "./use-wechat";
 import { useStore } from "react-redux";
-import ProvideWeb from "../../components/provider-web";
+import ProvideWeb from "use-qili/components/provider-web";
 import services from "../../components/webview-services"
 
 export default function WechatProvider({children, ...props}){

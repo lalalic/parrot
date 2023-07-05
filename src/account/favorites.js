@@ -1,6 +1,7 @@
 import React from "react"
 import { useDispatch } from "react-redux"
-import { PressableIcon, TalkSelector } from "../components"
+import { TalkSelector } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
 
 export default function Favorites({}){
     return (

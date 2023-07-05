@@ -1,11 +1,13 @@
 import React from "react"
 import { Text, Pressable, View , Linking} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
-import { PressableIcon, Speak, useAsk,  } from "../components"
+import { Speak,  } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
+import useAsk from "use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"
 import { TaggedTranscript } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
-import { ColorScheme } from "../components/default-style"
+import { ColorScheme } from "use-qili/components/default-style"
 import { useParams } from "react-router-native"
 
 /**

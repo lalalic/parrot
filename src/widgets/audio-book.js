@@ -2,9 +2,11 @@ import React from "react"
 import * as FileSystem from "expo-file-system"
 import { View, Linking, Text} from "react-native" 
 import { TaggedListMedia,  } from "./media"
-import { ChangableText, PlaySound, PressableIcon, Recorder } from "../components"
+import { PlaySound, Recorder } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
+import ChangableText from "use-qili/components/ChangableText"
 import { TaggedTranscript } from "./tagged-transcript"
-import { ColorScheme } from "../components/default-style"
+import { ColorScheme } from "use-qili/components/default-style"
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 

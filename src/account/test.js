@@ -3,7 +3,7 @@ import { Text , AppState, View, Button, Alert} from "react-native"
 import { TextInput } from "react-native-gesture-handler"
 
 import Select from "react-native-select-dropdown"
-import { PressableIcon } from "../components"
+import PressableIcon from "use-qili/components/PressableIcon"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 export default function Test(){
     const refSelector=React.useRef()

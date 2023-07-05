@@ -6,8 +6,11 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { selectWidgetTalks, TalkApi, Qili } from "../store"
 
 import { Subtitles } from "../components/player"
-import { PressableIcon, PolicyChoice, html, Speak, PlaySound, ChangableText, Loading } from '../components';
-import { ColorScheme } from '../components/default-style';
+import { PolicyChoice, html, Speak, PlaySound } from '../components';
+import PressableIcon from "use-qili/components/PressableIcon";
+import ChangableText from "use-qili/components/ChangableText";
+import Loading from "use-qili/components/Loading";
+import { ColorScheme } from 'use-qili/components/default-style';
 
 class Media extends React.Component {
     /**
