@@ -81,3 +81,5 @@ dist/
 
 cloud/updates
 .env
+backup/
+resources/
