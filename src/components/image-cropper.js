@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Image, TextInput, Text, Animated } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import PressableIcon from "use-qili/components/PressableIcon";
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
 
 export default function ImageCropper({ debug=false,
 	source,

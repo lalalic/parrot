@@ -8,7 +8,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Qili } from "../store"
 import { ControlIcons,  KeyboardAvoidingView} from "../components"
 import Player from "../components/player"
-import { ColorScheme } from "use-qili/components/default-style"
+import { ColorScheme } from "react-native-use-qili/components/default-style"
 
 const slug="punya_mishra_how_to_design_a_school_for_the_future"
 export default function Policy(){

@@ -6,7 +6,7 @@ import * as FileSystem from 'expo-file-system';
 import Video from './widgets/ted-talk';
 
 import { useTalkQuery } from './components';
-import Loading from "use-qili/components/Loading";
+import Loading from "react-native-use-qili/components/Loading";
 
 export default function Talk({autoplay}){
     const navigate= useNavigate()

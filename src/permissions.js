@@ -5,8 +5,8 @@ import * as Calendar from 'expo-calendar';
 import { useDispatch, useSelector } from "react-redux";
 
 import * as Speech from "./components/speech"
-import Login from "use-qili/components/Login";
-import { isUserLogin } from "use-qili/store";
+import Login from "react-native-use-qili/components/Login";
+import { isUserLogin } from "react-native-use-qili/store";
 
 export const Permissions = () => {
     const dispatch=useDispatch()

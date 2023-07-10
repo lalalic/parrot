@@ -7,10 +7,10 @@ import { selectWidgetTalks, TalkApi, Qili } from "../store"
 
 import { Subtitles } from "../components/player"
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
-import PressableIcon from "use-qili/components/PressableIcon";
-import ChangableText from "use-qili/components/ChangableText";
-import Loading from "use-qili/components/Loading";
-import { ColorScheme } from 'use-qili/components/default-style';
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import ChangableText from "react-native-use-qili/components/ChangableText";
+import Loading from "react-native-use-qili/components/Loading";
+import { ColorScheme } from 'react-native-use-qili/components/default-style';
 
 class Media extends React.Component {
     /**

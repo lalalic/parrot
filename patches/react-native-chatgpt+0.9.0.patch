@@ -1,0 +1,33 @@
+diff --git a/node_modules/react-native-chatgpt/src/components/ChatGpt.tsx b/node_modules/react-native-chatgpt/src/components/ChatGpt.tsx
+index f1b3f62..d5202a1 100644
+--- a/node_modules/react-native-chatgpt/src/components/ChatGpt.tsx
++++ b/node_modules/react-native-chatgpt/src/components/ChatGpt.tsx
+@@ -113,6 +113,7 @@ export default function ChatGpt({
+         onAccessTokenChange={(token) => {
+           setIsWaitingForJWT(false);
+           setAccessToken(token); 
++          modalRef?.current?.close();
+         }}
+         onAccumulatedResponse={(result) => callbackRef.current?.(result)}
+         onStreamError={(error) => errorCallbackRef.current?.(error)}
+diff --git a/node_modules/react-native-chatgpt/src/components/ModalWebView.tsx b/node_modules/react-native-chatgpt/src/components/ModalWebView.tsx
+index dba7a4d..f85804d 100644
+--- a/node_modules/react-native-chatgpt/src/components/ModalWebView.tsx
++++ b/node_modules/react-native-chatgpt/src/components/ModalWebView.tsx
+@@ -44,6 +44,7 @@ type Props = PassedProps & PublicProps;
+ 
+ export interface ModalWebViewMethods {
+   open: () => void;
++  close: () => void;
+ }
+ 
+ const ModalWebView = forwardRef<ModalWebViewMethods, Props>(
+@@ -80,7 +81,7 @@ const ModalWebView = forwardRef<ModalWebViewMethods, Props>(
+     useImperativeHandle(ref, () => ({
+       open: () => {
+         animateWebView('show');
+-      },
++      },close:()=>{animateWebView('hide');}
+     }));
+ 
+     useEffect(() => {

@@ -11,8 +11,8 @@ import { useKeepAwake} from "expo-keep-awake"
 
 
 import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
-import PressableIcon from "use-qili/components/PressableIcon";
-import { ColorScheme } from 'use-qili/components/default-style';
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)

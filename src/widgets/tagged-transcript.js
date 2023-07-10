@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import Select from "react-native-select-dropdown"
 import { KeyboardAvoidingView } from "../components"
-import PressableIcon from "use-qili/components/PressableIcon"
-import { ColorScheme } from "use-qili/components/default-style"
+import PressableIcon from "react-native-use-qili/components/PressableIcon"
+import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { selectWidgetTalks } from "../store"
 
 export default Wrapper=({})=>{

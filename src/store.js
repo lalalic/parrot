@@ -19,7 +19,7 @@ import ytdl from "react-native-ytdl"
 import * as Calendar from "./experiment/calendar"
 import mpegKit from "./experiment/mpeg"
 
-import {myReducer, Qili as QiliApi} from "use-qili/store"
+import {myReducer, Qili as QiliApi} from "react-native-use-qili/store"
 
 export const Policy={
 	general: {
@@ -508,101 +508,6 @@ export function createStore(){
 					return {}
 			}
 			return Qili.reducer(...arguments)
-		},
-		wechat(state={
-			key:"@bot", keyImage:"@art",
-			amount:0,
-			policy:{}, 
-			schedule:{'*':{start:"20", end:"8"}},
-			messages:[],
-			enableSelf:true, enableSchedule:true,
-			enableScenario:false, enableRole:false, 
-			roles:["English Tutor"], 
-			scenarioes:{"English Lesson":["Spell", "Pronounce"]}
-		},action){
-			switch(action.type){
-				case "persist/REHYDRATE":
-					if(!!!action.payload?.wechat){
-						return state
-					}
-					action.payload.wechat={...state, ...action.payload.wechat}
-					return state
-				case "wechat/contact/role":
-					return produce(state,$state=>{
-						const {contact, target, role}=action
-						;($state.policy[contact]||($state.policy[contact]={}))[target]=role
-						role.split(",").filter(a=>!!a).forEach(a=>{
-							if($state.roles.indexOf(a)==-1){
-								$state.roles.push(a)
-							}
-						})
-					})
-				case "wechat/contact/scenarioes":
-					return produce(state,$state=>{
-						const {contact, scenarioes}=action
-						;($state.policy[contact]||($state.policy[contact]={})).scenarioes=scenarioes
-					})
-				case "wechat/scenario":
-					return produce(state, $state=>{
-						const {current, name, keys}=action
-						$state.scenarioes[name]=keys
-						if(current){
-							delete $state.scenarioes[current]
-						}
-					})
-				case "wechat/roles":
-					return produce(state, $state=>{
-						const {roles}=action
-						$state.roles=roles
-					})
-				case "wechat/delete/scenario":
-					return produce(state, $state=>{
-						const { name}=action
-						delete $state.scenarioes[name]
-					})
-				case "wechat/schedule":
-					return produce(state, $state=>{
-						const {key, payload}=action
-						$state.schedule[key]={...$state.schedule[key], ...payload}
-					})
-				case "wechat/set":
-					return {...state, ...action.payload}
-				case "wechat/toggle":
-					return produce(state, $state=>{
-						const key=`enable${action.key}`
-						$state[key]=!$state[key]
-					})
-				case "wechat/message/remove":
-					return produce(state, draft=>{
-						const i=draft.messages.findIndex(a=>a._id==action._id)
-						if(i!=-1){
-							draft.messages.splice(i,1)
-						}
-					})
-				case "wechat/message"://reversed order for GiftedChat
-					return produce(state, $state=>{
-						const messages=$state.messages
-						const {message}=action
-						if('answerTo' in message){
-							const i=messages.findIndex(a=>a._id==message.answerTo)
-							if(i==-1){
-								return 
-							}
-							if(i!=-1){
-								delete messages[i].pending
-								message._id=`_${message.answerTo}`
-								delete message.answerTo
-							}
-							if(i>0){
-								messages.splice(i-1,0,message)
-								return 
-							}
-							$state.amount++
-						}
-						messages.unshift(message)
-					})
-			}
-			return state
 		},
 		my(state = {
 			...myReducer(undefined, {}),

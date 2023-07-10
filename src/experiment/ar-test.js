@@ -2,7 +2,7 @@ import React from "react"
 import { View, Text, Image} from "react-native"
 //import {ARFaceMotionView as ARFaceMotion} from "react-native-armotion"
 import { ARMotion } from "./ar"
-import PressableIcon from "use-qili/components/PressableIcon"
+import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from "expo-file-system"
 

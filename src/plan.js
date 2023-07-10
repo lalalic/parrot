@@ -6,8 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
-import PressableIcon from "use-qili/components/PressableIcon";
-import { ColorScheme } from "use-qili/components/default-style";
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import { ColorScheme } from "react-native-use-qili/components/default-style";
 import { selectPlansByDay } from "./store";
 import { useNavigate, useLocation } from "react-router-native";
 import produce from "immer";

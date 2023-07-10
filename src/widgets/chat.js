@@ -4,10 +4,10 @@ import { View , Text, TextInput, Pressable, } from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Speak, Recognizer, Recorder, PlaySound, KeyboardAvoidingView} from "../components"
-import FlyMessage from "use-qili/components/FlyMessage";
-import PressableIcon from "use-qili/components/PressableIcon";
-import useAsk from "use-qili/components/useAsk";
-import useStateAndLatest from "use-qili/components/useStateAndLatest";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import useAsk from "react-native-use-qili/components/useAsk";
+import useStateAndLatest from "react-native-use-qili/components/useStateAndLatest";
 import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"

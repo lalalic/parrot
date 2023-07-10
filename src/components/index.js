@@ -8,13 +8,13 @@ import * as FileSystem from "expo-file-system"
 import { useSelector } from "react-redux"
 import {Mutex} from "async-mutex"
 
-import { ColorScheme, TalkStyle } from 'use-qili/components/default-style'
+import { ColorScheme, TalkStyle } from 'react-native-use-qili/components/default-style'
 import * as Speech from "./speech"
 import { Qili, TalkApi, selectPolicy, isOnlyAudio } from "../store"
 import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
-import AutoShrinkNavBar from "use-qili/components/AutoShrinkNavBar";
-import PressableIcon from "use-qili/components/PressableIcon";
-import FlyMessage from "use-qili/components/FlyMessage";
+import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar";
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 
 export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, name, ...props}) => {

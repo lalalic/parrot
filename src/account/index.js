@@ -4,8 +4,8 @@ import { Link, useLocation, useNavigate } from "react-router-native"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useDispatch, useSelector } from "react-redux";
 import { TalkApi, } from "../store"
-import { isUserLogin } from "use-qili/store"
-import Switch from "use-qili/components/Switch";
+import { isUserLogin } from "react-native-use-qili/store"
+import Switch from "react-native-use-qili/components/Switch";
 
 export default ()=>{
     const dispatch=useDispatch()
@@ -51,8 +51,7 @@ export default ()=>{
         sections.push(
             {title:"Developer", data:[
                 {name:"Test", icon:"file-present"},
-                {name:"Wechat", icon:"file-present", href:"/account/wechat/monitor"},
-                {name:"Admin", icon:"person-pin-circle", href:"/admin"},
+                //{name:"Admin", icon:"person-pin-circle", href:"/admin"},
                 {name:"Files", icon:"file-present"},
                 globalThis.logFile ? {name:"Logs", icon: "av-timer"} : false,
                 {name:"Clear TalkApi", icon: "cleaning-services", onPress:e=>dispatch(TalkApi.util.resetApiState())},

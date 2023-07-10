@@ -1,6 +1,6 @@
 import * as FileSystem from "expo-file-system"
 import { FFmpegKit } from 'ffmpeg-kit-react-native'
-import prepareFolder from "use-qili/components/prepareFolder";
+import prepareFolder from "react-native-use-qili/components/prepareFolder";
 
 export default {
     async generateAudio({source, target:localUri}){
