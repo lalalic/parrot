@@ -29,7 +29,7 @@ jobs:
     - name: deploy cloud code to qili2
       run: | 
           export SSHPASS=${{ secrets.SERVER_PASS }}
-          sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r cloud "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
+          sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r cloud/* "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
           sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "./qili.travis.deploy.sh"
     - run: yarn export-updates
 
