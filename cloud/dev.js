@@ -1,6 +1,5 @@
 module.exports={
-    code:`${__dirname}`,
-    root:`${__dirname}/www`,
+    ...require("./qili.conf.js"),
     appUpdates:{
         UPDATES:`${__dirname}/cloud/www/updates`,
         HOSTNAME({runtimeVersion, platform, assetFilePath}){
@@ -9,8 +8,6 @@ module.exports={
         }
     },
     bucket:"http://localhost:9080/1/parrot/static/upload",
-    isDev:true,
-    canRunInCore:true,
 }
 
 
