@@ -85,9 +85,11 @@
   "devDependencies": {
     "@babel/core": "^7.12.9",
     "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@expo/config": "^8.1.2",
     "async-storage": "^0.1.0",
     "dotenv": "^16.3.1",
-    "html-loader": "^4.2.0",
+    "expo-updates-server": "^1.0.5",
+    "form-data": "^4.0.0",
     "jest": "^26.6.3",
     "jest-expo": "^46.0.1",
     "node-fetch2": "^1.6.3",
