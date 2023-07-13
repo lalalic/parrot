@@ -2,7 +2,7 @@
   "name": "parrot",
   "version": "1.0.0",
   "scripts": {
-    "server":"node --inspect ./cloud/dev.js",
+    "server": "node --inspect ./cloud/dev.js",
     "start": "expo start --dev-client",
     "start1": "EXPO_DEVTOOLS_LISTEN_ADDRESS=172.20.10.4 REACT_NATIVE_PACKAGER_HOSTNAME=172.20.10.4 expo start --dev-client",
     "android": "expo run:android",

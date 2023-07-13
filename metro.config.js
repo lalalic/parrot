@@ -10,7 +10,7 @@ config.resolver.resolveRequest=function(context, moduleName, platform){
 	if (moduleName.endsWith('MaterialCommunityIcons.ttf')) {//asset resolution: {filePaths:[]}
 		original.filePaths[0]=original.filePaths[0].replace('MaterialCommunityIcons.ttf','MaterialIcons.ttf')
 	}else if(moduleName.endsWith("chrome-extension")){
-		require("react-native-use-qili/scripts/chrome-extension-to-services.js")()
+		require("react-native-use-qili/scripts/chrome-extension-to-service.js")()
 	}
 	// Optionally, chain to the standard Metro resolver.
 	return original
