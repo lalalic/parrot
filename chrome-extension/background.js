@@ -173,8 +173,9 @@ class Chatgpt extends Service{
 				return generate()
 		};
 		
-		var accessToken
-		this.getToken=async function getToken(){
+		this.getToken=(()=>{
+			let accessToken
+			return async function getToken(){
 				if(accessToken){
 					return Promise.resolve(accessToken)
 				}
@@ -193,8 +194,8 @@ class Chatgpt extends Service{
 								reject('ERROR')
 						}
 				})
-		
-		}
+			}
+		})();
 		
 		async function getResponse(question, {messageId=uid(), conversationId}={}){
 			const res = await fetch("https://chat.openai.com/backend-api/conversation", {
@@ -222,41 +223,47 @@ class Chatgpt extends Service{
 			})
 			return await read(res.body)
 		}
+
+		function searchLast(chunk, target, searchMaxLength=chunk.length, ignoreLength=0){
+			target=new TextEncoder().encode(target).reverse()
+			for(let len=chunk.length, i=len-1-ignoreLength;i>len-searchMaxLength; i--){
+				if(-1==target.findIndex((a,k)=>chunk[i-k]!==a)){
+					return i-target.length
+				}
+			}
+			return -1
+		}
 		
 		async function read(answer){
-				const resRead = answer.getReader()
-				let text, messageId, conversationId, data=[]
-				while (true) {
-						const {done, value} = await resRead.read()
-						if (done) break
-						if (done === undefined || value === undefined){
-		
-						}
-						const raw=new TextDecoder().decode(value).split("data:").filter(a=>!!a)
-						if(!text){
-							data.push(raw)
-						}
-						for(let i=raw.length-1; i>-1; i--){
-							try{
-								const piece=JSON.parse(raw[i])
-								if(piece.message.author.role=="assistant"){
-									messageId=piece.message.id
-									conversationId=piece.conversation_id
-									text=piece.message.content.parts.join("")
-									if(piece.message.status=="finished_successfully"){
-										return {message:text, messageId, conversationId}
-									}
-									break
+			const resRead = answer.getReader()
+			let text, messageId, conversationId, data=[]
+			while (true) {
+					const {done, value} = await resRead.read()
+					if (done) break
+					const i=searchLast(value, "finished_successfully")!=-1 && searchLast(value, "data:", value.length, 50)
+					if(i==false || i==-1){
+						continue
+					}
+					const raw=new TextDecoder().decode(value.subarray(i)).split("data:").filter(a=>!!a)
+					for(let i=raw.length-1; i>-1; i--){
+						try{
+							const piece=JSON.parse(raw[i])
+							if(piece.message.author.role=="assistant"){
+								messageId=piece.message.id
+								conversationId=piece.conversation_id
+								text=piece.message.content.parts.join("")
+								if(piece.message.status=="finished_successfully"){
+									return {message:text, messageId, conversationId}
 								}
-							}catch(e){
-		
+								break
 							}
+						}catch(e){
+	
 						}
-				}
-				if(!text){
-					console.error(data)
-				}
-				return {message:text, messageId, conversationId}
+					}
+			}
+			
+			return {message:text, messageId, conversationId}
 		}
 		
 		async function deleteConversation({conversationId}){
@@ -284,23 +291,18 @@ class Chatgpt extends Service{
 		}
 
 		this.consume1=async function consume1({message}) {
-			const timer=setTimeout(()=>{throw new Error("Time out")}, 10000)
-			try{
-				const response = await getResponse( message.message || message, getOption(message))
-				
-				if (!message.options) {
-					if(response.conversationId){
-						await deleteConversation(response)
-					}
-					delete response.messageId;
-					delete response.conversationId;
-				}else{
-					response.helper=helper
+			const response = await getResponse( message.message || message, getOption(message))
+			
+			if (!message.options) {
+				if(response.conversationId){
+					deleteConversation(response)
 				}
-				return response
-			}finally{
-				clearTimeout(timer)
+				delete response.messageId;
+				delete response.conversationId;
+			}else{
+				response.helper=helper
 			}
+			return response
 		}
 	}
 }

@@ -1,0 +1,8 @@
+{
+    "name":"parrot-cloud",
+    "main": "index.js",
+    "dependencies": {
+        "graphql-redis-subscriptions": "^2.6.0",
+        "react-native-use-qili": "https://github.com/lalalic/react-native-use-qili"
+    }
+}

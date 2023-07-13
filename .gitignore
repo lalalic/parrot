@@ -83,3 +83,6 @@ cloud/updates
 .env
 backup/
 resources/
+log/
+testdata/
+tsconfig.json
