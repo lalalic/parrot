@@ -1,6 +1,5 @@
 const { RedisPubSub }=require("graphql-redis-subscriptions")
 
-let UUID=Math.floor(Date.now()/1000)
 const Talk_Fields=`
             id:ID!,
             slug:String!,
@@ -42,14 +41,11 @@ Cloud.addModule({
             today:[Talk]
             widgetTalks(slug:String, q:String):[Talk]
             isAdmin:Boolean
-            wechatBotBarcode(shortID:String!):String
         }
 
         extend type Mutation{
             save(talk:JSON!):Boolean
             remove(id:String!, type:String):Boolean
-            wechatBotBarcode(url:String!, uuid:String!):String
-            wechatBotBarcodeRemove(uuid:String!):Boolean
         }
     `, 
     resolver:{
@@ -99,11 +95,6 @@ Cloud.addModule({
             isAdmin(_,{},{app,user}){
                 return app.get1Entity("User",{_id:user._id}).then(user=>user.isAdmin)
             },
-            async wechatBotBarcode(_, {shortID}, {app}){
-                const Type="WechatBotBarcode"
-                const barcode=await app.get1Entity(Type, {shortID})
-                return barcode?.url
-            }
         },
         Mutation:{
             async save(_,{talk},{app}){
@@ -122,22 +113,6 @@ Cloud.addModule({
             remove(_,{id, type="Talk"},{app}){
                 return app.remove1Entity(type, {_id:id})
             },
-            async wechatBotBarcode(_, {url,uuid:_id}, {app}){
-                const Type="WechatBotBarcode"
-                const old=await app.get1Entity(Type,{_id})
-                if(old){
-                    app.updateEntity(Type, {_id}, {$set:{url}})
-                    return old.shortID
-                }else{
-                    const shortID=(UUID++).toString(36)
-                    app.createEntity(Type, {_id, shortID, url})
-                    return shortID
-                }
-            },
-            async wechatBotBarcodeRemove(_, {uuid:_id}, {app}){
-                app.remove1Entity("WechatBotBarcode",{_id})
-                return true
-            }
         },
     },
     persistedQuery:{ 
@@ -203,48 +178,20 @@ Cloud.addModule({
 })
 
 Cloud.addModule(require("react-native-use-qili/cloud/web-proxy")(
-    /*
     new RedisPubSub({
         connection: {
             host:"qili.pubsub",
         }
     })
-    */
 ))
 
 //`https://cdn.qili2.com/${app.apiKey}/${updates}/${runtimeVersion}/${platform}-manifest.json`
 Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
 
-Cloud.addModule({
-    ...require("react-native-use-qili/cloud/expo-updates")("/wechat-bot/updates"),
-    name:"wechat-bot-expo-updates",
-})
-
-/*
 Cloud.addModule(require("react-native-use-qili/cloud/iap-validate")({
     path:"/verifyReceipt",
     callbackURL:"",
     password:""
 }))
 
-Cloud.addModule({
-    ...require("react-native-use-qili/cloud/iap-validate")({
-        path:"/wechat-bot/verifyReceipt",
-        callbackURL:"",
-        password:""
-    }),
-    name:"wechat-bot-iap",
-})
-*/
-
-Cloud.addModule({
-    name:"wechat-bot support",
-    static(service){
-        service
-            .on('/wechat-bot/b',async (req, res)=>{
-                const shortID=req.url.split("/").filter(a=>!!a).pop()
-                const url=await req.app.resolver.Query.wechatBotBarcode({},{shortID},{app:req.app})
-                res.reply(require("./www/wechat-bot/barcode-template.html").toString('utf8').replace("about:blank",url||""))
-            })  
-    }
-})
+require("./wechat-bot")
