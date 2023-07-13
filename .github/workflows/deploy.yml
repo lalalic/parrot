@@ -12,6 +12,9 @@ jobs:
       DEPLOY_USER: ${{ secrets.SERVER_USER }}
       QILI_TOKEN: ${{ secrets.QILI_TOKEN }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      QILI_APP: parrot
+      QILI_UPDATES: updates
+      production: true
 
     steps:
     - run: sudo apt-get install -y sshpass
