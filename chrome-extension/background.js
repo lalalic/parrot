@@ -1,8 +1,15 @@
 
+class MultithreadQueue{
+	then(task){
+		task();
+		return this
+	}
+}
+
 class Service{
 	constructor(props){
 		Object.assign(this, props)
-		this.sequence=Promise.resolve()
+		this.sequence=props.multithread ? new MultithreadQueue() : Promise.resolve()
 		this.stat={helps:0, errors:0}
 		this.run(props)
 		console.log(`service[${props.name}] started...`)
@@ -370,4 +377,10 @@ subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
 						return await this.batchUpload(images, `temp/diffusion/${ask.session}`)
 					}
 				}),
+	download: 	new (class extends WorkService{
+					run({}){
+						super.run(...arguments)
+						this.consume1=async ({message:{args:[url]}})=>this.upload(url)
+					}
+				})({multithread:true})
 })

@@ -98,9 +98,9 @@ react-native-iap@~11.0.0:
   version "11.0.7"
   resolved "https://registry.yarnpkg.com/react-native-iap/-/react-native-iap-11.0.7.tgz#7ea6f9be88f8b51317be6a0fa0b1a9d7efbf8215"
 
-"react-native-use-qili@https://github.com/lalalic/react-native-use-qili":
-  version "1.0.2"
-  resolved "https://github.com/lalalic/react-native-use-qili#4a029a27395625f778835189c18cdae5c4c1af56"
+react-native-use-qili@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.3.tgz#ced81a23d495d576a9ab7a1360a16a54eccfc3c5"
   dependencies:
     graphql-subscriptions "^1.1.0"
     react-native-chatgpt "^0.9.0"

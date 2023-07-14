@@ -1,5 +1,3 @@
-const { RedisPubSub }=require("graphql-redis-subscriptions")
-
 const Talk_Fields=`
             id:ID!,
             slug:String!,
@@ -176,13 +174,19 @@ Cloud.addModule({
     }
     */
 })
-
+ 
 Cloud.addModule(require("react-native-use-qili/cloud/web-proxy")(
-    new RedisPubSub({
-        connection: {
-            host:"qili.pubsub",
+    (()=>{
+        try{
+            return new require("graphql-redis-subscriptions").RedisPubSub({
+                connection: {
+                    host:"qili.pubsub",
+                }
+            })
+        }catch(e){
+            console.warn(`${e.message} when creating redis pubsub.it may be in dev env without redis. fallback to in-memory pubsub.`)
         }
-    })
+    })()
 ))
 
 //`https://cdn.qili2.com/${app.apiKey}/${updates}/${runtimeVersion}/${platform}-manifest.json`

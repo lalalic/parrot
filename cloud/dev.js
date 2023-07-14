@@ -7,7 +7,7 @@ module.exports={
             return `http://localhost:9080/1/parrot/static/updates/${runtimeVersion}${uri}`
         }
     },
-    bucket:"http://localhost:9080/1/parrot/static/upload",
+    //bucket:"http://localhost:9080/1/parrot/static/upload",
 }
 
 
