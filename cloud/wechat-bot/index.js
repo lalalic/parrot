@@ -28,7 +28,7 @@ Cloud.addModule({
                     app.updateEntity(Type, {_id}, {$set:{url}})
                     return old.shortID
                 }else{
-                    const shortID=(UUID++).toString(36)
+                    const shortID=(++UUID).toString(36)
                     app.createEntity(Type, {_id, shortID, url})
                     return shortID
                 }
@@ -44,7 +44,7 @@ Cloud.addModule({
             .on('/wechat-bot/b',async (req, res)=>{
                 const shortID=req.url.split("/").filter(a=>!!a).pop()
                 const url=await req.app.resolver.Query.wechatBotBarcode({},{shortID},{app:req.app})
-                res.reply(require("./www/wechat-bot/barcode-template.html").toString('utf8').replace("about:blank",url||""))
+                res.reply(require("../www/wechat-bot/barcode-template.html").toString('utf8').replace("about:blank",url||""))
             })  
     }
 })
