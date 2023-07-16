@@ -168,5 +168,3 @@ Cloud.addModule(require("react-native-use-qili/cloud/iap-validate")({
     callbackURL:"",
     password:""
 }))
-  
-require("./wechat-bot")
