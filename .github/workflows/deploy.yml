@@ -11,7 +11,6 @@ jobs:
       DEPLOY_HOST: ${{ secrets.SERVER_HOST }}
       DEPLOY_USER: ${{ secrets.SERVER_USER }}
       QILI_TOKEN: ${{ secrets.QILI_TOKEN }}
-      DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       QILI_APP: parrot
       QILI_UPDATES: updates
       production: true
@@ -29,7 +28,7 @@ jobs:
     - name: deploy cloud code to qili2
       run: | 
           export SSHPASS=${{ secrets.SERVER_PASS }}
-          sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r cloud/* "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
+          sshpass -e scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -r cloud/* "$DEPLOY_USER@$DEPLOY_HOST:/data/apps/parrot"
           sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "./qili.travis.deploy.sh"
     - run: yarn export-updates
 
