@@ -158,37 +158,7 @@ Cloud.addModule({
         Widget:[{title:1, slug:1, lang:1, mylang:1}],
         WechatBotBarcode:[{shortID:1}]
     }
-    /*
-    proxy:{
-        chatgpt:{
-            prependPath:false,
-            secure:false,
-            cookiePathRewrite:{
-                "*":"/"
-            },
-            cookieDomainRewrite:{
-                "*":"chat.openai.com"
-            },
-            target:"https://chat.openai.com"
-        }
-    }
-    */
 })
-
-Cloud.addModule(require("react-native-use-qili/cloud/web-proxy")(
-    (()=>{
-        try{
-            return new (require("graphql-redis-subscriptions").RedisPubSub)({
-                connection: {
-                    host:"qili.pubsub",
-                }
-            })
-        }catch(e){
-            console.error(e)
-            console.warn(`${e.message} when creating redis pubsub.it may be in dev env without redis. fallback to in-memory pubsub.`)
-        }
-    })()
-))
     
 //`https://cdn.qili2.com/${app.apiKey}/${updates}/${runtimeVersion}/${platform}-manifest.json`
 Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
@@ -200,4 +170,3 @@ Cloud.addModule(require("react-native-use-qili/cloud/iap-validate")({
 }))
   
 require("./wechat-bot")
-

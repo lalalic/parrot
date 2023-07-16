@@ -214,14 +214,14 @@ class Chatgpt extends Service{
 					body: JSON.stringify({
 							action: "next",
 							messages: [
-									{
-											id: uid(),
-											role: "user",
-											content: {
-													content_type: "text",
-													parts: [question]
-											}
+								{
+									id: uid(),
+									role: "user",
+									content: {
+										content_type: "text",
+										parts: [question]
 									}
+								}
 							],
 							model: "text-davinci-002-render",
 							...(conversationId? {conversation_id: conversationId} : {}),
@@ -314,7 +314,7 @@ class Chatgpt extends Service{
 	}
 }
 
-async function subscribe({helper, url}, services){
+async function subscribe({helper}, services){
 	let helps=await new Promise((resolve)=>chrome.storage.sync.get('helps',data=>resolve(data ? data.helps||0 : 0)))
 	await chrome.browserAction.setBadgeText({text:helps+""})
 	await chrome.browserAction.setBadgeBackgroundColor({color:"#00FF00"})
@@ -350,10 +350,11 @@ async function subscribe({helper, url}, services){
 
 	chrome.runtime.onSuspend.addListener(unsub)
 
-	console.log(`subscribed to ${url} as ${helper}\nlistening ....`)
+	console.log(`subscribed to ${Qili.apiKey} at ${Qili.service} as ${helper}\nlistening ....`)
 }
 
-subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
+const helper="admin"
+subscribe({helper},window.bros={
 	chatgpt:	new Chatgpt({
 					helper,
 					name:"chatgpt",

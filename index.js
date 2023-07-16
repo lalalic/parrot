@@ -2,13 +2,16 @@ import { registerRootComponent } from 'expo';
 import {NativeModules} from "react-native"
 import useQili from "react-native-use-qili"
 
-useQili({apiKey:"parrot"})
-
-import App from "./src"
+useQili({
+    apiKey:"parrot",
+    bridge:{
+        accessToken:""
+    }
+})
 
 
 if (__DEV__){
     NativeModules.DevSettings.setIsDebuggingRemotely(true)
 }
 
-registerRootComponent(App)
+registerRootComponent(require("./src").default)
