@@ -1,15 +1,9 @@
-const token="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NDkzM2M3MzQzMzIwMDAwMmY1NjAzYjIiLCJpYXQiOjE2ODgxMzczOTUsImV4cCI6MTcxOTY5NDk5NX0.BjxVhLbe8N-LoArYq--56DwlHICvs87WhTj0re46x4M"
-const accessToken="270eb9bd-5c4d-4703-b7f3-4b2f0b40d3e0"
-const url="http://localhost:9080/1/graphql"//"https://api.qili2.com/1/graphql"
-
-const apiKey="bridge"
 const headers={
 	"x-application-id":apiKey,
-	//"x-session-token":token,
 	"x-access-token":accessToken
 }
 const Qili={
-	service:url,
+	service:api||"https://api.qili2.com/1/graphql",
 	apiKey,
 	async fetch(request){
 		const res=await fetch(this.service,{

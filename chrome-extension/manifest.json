@@ -15,7 +15,7 @@
         "default_popup": "popup.html"
     },
     "background": {
-        "scripts": ["SubscriptionsTransportWs.js", "env.js", "services/diffusion.js", "background.js"],
+        "scripts": ["env.js","SubscriptionsTransportWs.js", "qili.js", "services/diffusion.js", "background.js"],
         "persistent":true
     },
     "content_scripts": []

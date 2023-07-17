@@ -243,34 +243,24 @@ class Chatgpt extends Service{
 		
 		async function read(answer){
 			const resRead = answer.getReader()
-			let text, messageId, conversationId, data=[]
+			let data=null
 			while (true) {
-					const {done, value} = await resRead.read()
-					if (done) break
-					const i=searchLast(value, "finished_successfully")!=-1 && searchLast(value, "data:", value.length, 50)
-					if(i==false || i==-1){
-						continue
+				const {done, value} = await resRead.read()
+				if(value && value.length>20){//exclude 'data: [DONE]'
+					data=value
+				}
+
+				if (done && data){
+					const raw=new TextDecoder().decode(data).split("data:").filter(a=>!!a && a!='[DONE]')
+					const piece=JSON.parse(raw[raw.length-1])
+					return {
+						message:piece.message.content.parts?.join(""), 
+						messageId:piece.message.id, 
+						conversationId:piece.conversation_id,
+						error: piece.error||undefined
 					}
-					const raw=new TextDecoder().decode(value.subarray(i)).split("data:").filter(a=>!!a)
-					for(let i=raw.length-1; i>-1; i--){
-						try{
-							const piece=JSON.parse(raw[i])
-							if(piece.message.author.role=="assistant"){
-								messageId=piece.message.id
-								conversationId=piece.conversation_id
-								text=piece.message.content.parts.join("")
-								if(piece.message.status=="finished_successfully"){
-									return {message:text, messageId, conversationId}
-								}
-								break
-							}
-						}catch(e){
-	
-						}
-					}
+				}
 			}
-			
-			return {message:text, messageId, conversationId}
 		}
 		
 		async function deleteConversation({conversationId}){
