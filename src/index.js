@@ -71,6 +71,21 @@ export default ()=>{
     )
 }
 
+// import App from "react-native-use-qili/App"
+// import Login from "react-native-use-qili/components/Login"
+// export default function MyApp(){
+//     return (
+//         <App reducers={{}} listeners={{}} colorScheme="dark">
+//             <Login.Required>
+
+//             </Login.Required>
+//             <Permissions/>
+//             <LoginCheck/>
+//             <AdminStatusHinter/>
+//         </App>
+//     )
+// }
+
 function AdminStatusHinter(){
     const hasChatGPT=useSelector(state=>hasChatGPTAccount(state))
     const [bAdmin, setAdmin]=React.useState(false)

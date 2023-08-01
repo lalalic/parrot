@@ -45,10 +45,17 @@
 
 			export function subscriptAsHelper({helper, chrome, window, Qili}){
 				
+class MultithreadQueue{
+	then(task){
+		task();
+		return this
+	}
+}
+
 class Service{
 	constructor(props){
 		Object.assign(this, props)
-		this.sequence=Promise.resolve()
+		this.sequence=props.multithread ? new MultithreadQueue() : Promise.resolve()
 		this.stat={helps:0, errors:0}
 		this.run(props)
 		console.log(`service[${props.name}] started...`)
@@ -253,14 +260,14 @@ class Chatgpt extends Service{
 					body: JSON.stringify({
 							action: "next",
 							messages: [
-									{
-											id: uid(),
-											role: "user",
-											content: {
-													content_type: "text",
-													parts: [question]
-											}
+								{
+									id: uid(),
+									role: "user",
+									content: {
+										content_type: "text",
+										parts: [question]
 									}
+								}
 							],
 							model: "text-davinci-002-render",
 							...(conversationId? {conversation_id: conversationId} : {}),
@@ -270,46 +277,65 @@ class Chatgpt extends Service{
 			return await read(res.body)
 		}
 
-		function searchLast(chunk, target, searchMaxLength=chunk.length, ignoreLength=0){
-			target=new TextEncoder().encode(target).reverse()
-			for(let len=chunk.length, i=len-1-ignoreLength;i>len-searchMaxLength; i--){
-				if(-1==target.findIndex((a,k)=>chunk[i-k]!==a)){
-					return i-target.length
+		async function read1(answer){
+			const resRead = answer.getReader()
+			let datas=[]
+			while (true) {
+				const {done, value} = await resRead.read()
+				if(done)
+				if(value && value.length>20){//exclude 'data: [DONE]'
+					datas.unshift(value)
+					datas.splice(3)
+				}
+
+				if (done && datas.length){
+					for(let data of datas){
+						const raw=new TextDecoder().decode(data).split("data:").map(a=>a.trim()).filter(a=>!!a && a!='[DONE]')
+						try{
+							const piece=JSON.parse(raw[raw.length-1])
+							if(piece.message?.content){
+								return {
+									message:piece.message.content.parts?.join(""), 
+									messageId:piece.message.id, 
+									conversationId:piece.conversation_id,
+									error: piece.error||undefined
+								}
+							}
+						}catch(error){
+							console.error(`${error.message}\n${raw[raw.length-1]}`)
+						}
+					}
 				}
 			}
-			return -1
 		}
 		
 		async function read(answer){
 			const resRead = answer.getReader()
-			let text, messageId, conversationId, data=[]
 			while (true) {
-					const {done, value} = await resRead.read()
-					if (done) break
-					const i=searchLast(value, "finished_successfully")!=-1 && searchLast(value, "data:", value.length, 50)
-					if(i==false || i==-1){
-						continue
-					}
-					const raw=new TextDecoder().decode(value.subarray(i)).split("data:").filter(a=>!!a)
-					for(let i=raw.length-1; i>-1; i--){
-						try{
-							const piece=JSON.parse(raw[i])
-							if(piece.message.author.role=="assistant"){
-								messageId=piece.message.id
-								conversationId=piece.conversation_id
-								text=piece.message.content.parts.join("")
-								if(piece.message.status=="finished_successfully"){
-									return {message:text, messageId, conversationId}
+				const {done, value} = await resRead.read()
+				if (done) break
+				const raw=new TextDecoder().decode(value).split("data:").filter(a=>!!a)
+				for(let i=raw.length-1; i>-1; i--){
+					try{
+						const piece=JSON.parse(raw[i])
+						if(piece.message.author.role=="assistant"){
+							if(piece.message.status=="finished_successfully"){
+								return {
+									message:piece.message.content.parts.join(""), 
+									messageId:piece.message.id, 
+									conversationId:piece.conversation_id,
+									error: piece.error||undefined
 								}
-								break
 							}
-						}catch(e){
-	
+							break
 						}
+					}catch(e){
+
 					}
+				}
 			}
 			
-			return {message:text, messageId, conversationId}
+			return {error:`unknown error`}
 		}
 		
 		async function deleteConversation({conversationId}){
@@ -353,14 +379,14 @@ class Chatgpt extends Service{
 	}
 }
 
-async function subscribe({helper, url}, services){
+async function subscribe({helper}, services){
 	let helps=await new Promise((resolve)=>chrome.storage.sync.get('helps',data=>resolve(data ? data.helps||0 : 0)))
 	await chrome.browserAction.setBadgeText({text:helps+""})
 	await chrome.browserAction.setBadgeBackgroundColor({color:"#00FF00"})
 
 	const answer=(ask, response)=>Qili.fetch({
 		id:"answerHelp",
-		query:`query a($session:String!, $response:JSON!){
+		query:`query($session:String!, $response:JSON!){
 			answerHelp(session:$session, response:$response)
 		}`,
 		variables:{session:ask.session, response}
@@ -368,11 +394,11 @@ async function subscribe({helper, url}, services){
 
 	const unsub=Qili.subscribe({
 		id:"helpQueue",
-		query:`subscription a($helper:String!){
+		query:`subscription($helper:String!){
 				ask:helpQueue(helper:$helper)
 		}`,
 		variables:{helper}
-	}, function onNext({data:{ask}}){//ask: {session, message}
+	}, function onNext({data:{error, ask}}){//ask: {session, message}
 		console.debug({...ask})
 		const service=services[ask.message.$service||"chatgpt"]
 		if(!service){
@@ -389,10 +415,10 @@ async function subscribe({helper, url}, services){
 
 	chrome.runtime.onSuspend.addListener(unsub)
 
-	console.log(`subscribed to ${url} as ${helper}\nlistening ....`)
+	console.log(`subscribed to ${Qili.apiKey} at ${Qili.service} as ${helper}\nlistening ....`)
 }
 
-subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
+subscribe({helper},window.bros={
 	chatgpt:	new Chatgpt({
 					helper,
 					name:"chatgpt",
@@ -416,6 +442,12 @@ subscribe({helper, url:"https://api.qili2.com/1/graphql"},window.bros={
 						return await this.batchUpload(images, `temp/diffusion/${ask.session}`)
 					}
 				}),
+	download: 	new (class extends WorkService{
+					run({}){
+						super.run(...arguments)
+						this.consume1=async ({message:{args:[url]}})=>this.upload(url)
+					}
+				})({multithread:true})
 })
 			}
 		

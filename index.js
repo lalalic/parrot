@@ -4,9 +4,8 @@ import useQili from "react-native-use-qili"
 
 useQili({
     apiKey:"parrot",
-    api: __DEV__ ? "http://localhost:9080/1/graphql" : undefined,
     bridge:{
-        accessToken:""
+        accessToken:"1f3d3deb-c421-422f-bc3d-48e38f2c6c8f"
     }
 })
 

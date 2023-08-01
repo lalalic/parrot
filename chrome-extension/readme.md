@@ -32,6 +32,8 @@ export const services={
 
 export function subscriptAsHelper({helper, chrome, window, Qili}){
     `${fs.readFileSync(`background.js`)}`
+    window.bros={chatgpt, diffusion}//all services, so it can be adapted in react-native side
 }
+
 
 ```

@@ -1,14 +1,25 @@
-module.exports={
-    ...require("./qili.conf.js"),
-    appUpdates:{
-        UPDATES:`${__dirname}/cloud/www/updates`,
-        HOSTNAME({runtimeVersion, platform, assetFilePath}){
-            const [,uri]=assetFilePath.split(runtimeVersion)
-            return `http://localhost:9080/1/parrot/static/updates/${runtimeVersion}${uri}`
-        }
+const qili="../../qili"
+require(`${qili}/dev`)({
+    conf:{
+        ...require("./qili.conf.js"),
+        graphiql:true,
+        isDev:true,
+        testLoginCode:"1234"
     },
-    //bucket:"http://localhost:9080/1/parrot/static/upload",
-}
-
-
-require("../../qili/dev")({conf:module.exports, apiKey:"parrot"})
+    apiKey:"parrot", 
+    vhost:"qili2.com",
+    dbpath:"../qili/test/mongo",
+    credentials:(()=>{
+        const fs=require('fs')
+        const path=require('path')
+        return {
+            key: fs.readFileSync(path.resolve(__dirname,`${qili}/certs/privkey.pem`), 'utf8'), 
+            cert: fs.readFileSync(path.resolve(__dirname,`${qili}/certs/cert.pem`), 'utf8')
+        }
+    })(),
+    services:{
+        bridge:{
+            ...require("../../qili-web-bridge/qili.conf")
+        }
+    }
+})

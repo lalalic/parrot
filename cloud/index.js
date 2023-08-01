@@ -160,11 +160,11 @@ Cloud.addModule({
     }
 })
     
-//`https://cdn.qili2.com/${app.apiKey}/${updates}/${runtimeVersion}/${platform}-manifest.json`
+Cloud.addModule(require("react-native-use-qili/cloud/events"))
+
 Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
 
-Cloud.addModule(require("react-native-use-qili/cloud/iap-validate")({
-    path:"/verifyReceipt",
-    callbackURL:"",
-    password:""
-}))
+// Cloud.addModule(require("react-native-use-qili/cloud/iap")({
+//     path:"/verifyReceipt",
+//     password:""
+// }))

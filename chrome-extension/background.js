@@ -231,36 +231,65 @@ class Chatgpt extends Service{
 			return await read(res.body)
 		}
 
-		function searchLast(chunk, target, searchMaxLength=chunk.length, ignoreLength=0){
-			target=new TextEncoder().encode(target).reverse()
-			for(let len=chunk.length, i=len-1-ignoreLength;i>len-searchMaxLength; i--){
-				if(-1==target.findIndex((a,k)=>chunk[i-k]!==a)){
-					return i-target.length
+		async function read1(answer){
+			const resRead = answer.getReader()
+			let datas=[]
+			while (true) {
+				const {done, value} = await resRead.read()
+				if(done)
+				if(value && value.length>20){//exclude 'data: [DONE]'
+					datas.unshift(value)
+					datas.splice(3)
+				}
+
+				if (done && datas.length){
+					for(let data of datas){
+						const raw=new TextDecoder().decode(data).split("data:").map(a=>a.trim()).filter(a=>!!a && a!='[DONE]')
+						try{
+							const piece=JSON.parse(raw[raw.length-1])
+							if(piece.message?.content){
+								return {
+									message:piece.message.content.parts?.join(""), 
+									messageId:piece.message.id, 
+									conversationId:piece.conversation_id,
+									error: piece.error||undefined
+								}
+							}
+						}catch(error){
+							console.error(`${error.message}\n${raw[raw.length-1]}`)
+						}
+					}
 				}
 			}
-			return -1
 		}
 		
 		async function read(answer){
 			const resRead = answer.getReader()
-			let data=null
 			while (true) {
 				const {done, value} = await resRead.read()
-				if(value && value.length>20){//exclude 'data: [DONE]'
-					data=value
-				}
+				if (done) break
+				const raw=new TextDecoder().decode(value).split("data:").filter(a=>!!a)
+				for(let i=raw.length-1; i>-1; i--){
+					try{
+						const piece=JSON.parse(raw[i])
+						if(piece.message.author.role=="assistant"){
+							if(piece.message.status=="finished_successfully"){
+								return {
+									message:piece.message.content.parts.join(""), 
+									messageId:piece.message.id, 
+									conversationId:piece.conversation_id,
+									error: piece.error||undefined
+								}
+							}
+							break
+						}
+					}catch(e){
 
-				if (done && data){
-					const raw=new TextDecoder().decode(data).split("data:").filter(a=>!!a && a!='[DONE]')
-					const piece=JSON.parse(raw[raw.length-1])
-					return {
-						message:piece.message.content.parts?.join(""), 
-						messageId:piece.message.id, 
-						conversationId:piece.conversation_id,
-						error: piece.error||undefined
 					}
 				}
 			}
+			
+			return {error:`unknown error`}
 		}
 		
 		async function deleteConversation({conversationId}){
@@ -311,7 +340,7 @@ async function subscribe({helper}, services){
 
 	const answer=(ask, response)=>Qili.fetch({
 		id:"answerHelp",
-		query:`query a($session:String!, $response:JSON!){
+		query:`query($session:String!, $response:JSON!){
 			answerHelp(session:$session, response:$response)
 		}`,
 		variables:{session:ask.session, response}
@@ -319,11 +348,11 @@ async function subscribe({helper}, services){
 
 	const unsub=Qili.subscribe({
 		id:"helpQueue",
-		query:`subscription a($helper:String!){
+		query:`subscription($helper:String!){
 				ask:helpQueue(helper:$helper)
 		}`,
 		variables:{helper}
-	}, function onNext({data:{ask}}){//ask: {session, message}
+	}, function onNext({data:{error, ask}}){//ask: {session, message}
 		console.debug({...ask})
 		const service=services[ask.message.$service||"chatgpt"]
 		if(!service){
@@ -343,7 +372,6 @@ async function subscribe({helper}, services){
 	console.log(`subscribed to ${Qili.apiKey} at ${Qili.service} as ${helper}\nlistening ....`)
 }
 
-const helper="admin"
 subscribe({helper},window.bros={
 	chatgpt:	new Chatgpt({
 					helper,

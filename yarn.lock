@@ -1083,15 +1083,15 @@
     mv "~2"
     safe-json-stringify "~1"
 
-"@expo/cli@0.3.2":
-  version "0.3.2"
-  resolved "https://registry.npmmirror.com/@expo/cli/-/cli-0.3.2.tgz#83c8587ec38f9c7361222751bc4bb829520201b8"
+"@expo/cli@0.3.3":
+  version "0.3.3"
+  resolved "https://registry.yarnpkg.com/@expo/cli/-/cli-0.3.3.tgz#797ae9605c0556ba5159f5fbe9844a4e71380fcc"
   dependencies:
     "@babel/runtime" "^7.14.0"
     "@expo/code-signing-certificates" "^0.0.2"
     "@expo/config" "~7.0.1"
     "@expo/config-plugins" "~5.0.1"
-    "@expo/dev-server" "~0.1.120"
+    "@expo/dev-server" "0.1.120"
     "@expo/devcert" "^1.0.0"
     "@expo/json-file" "^8.2.35"
     "@expo/metro-config" "~0.4.0"
@@ -1333,9 +1333,9 @@
     xcode "^3.0.0"
     xml-js "^1.6.11"
 
-"@expo/dev-server@~0.1.120":
+"@expo/dev-server@0.1.120":
   version "0.1.120"
-  resolved "https://registry.npmmirror.com/@expo/dev-server/-/dev-server-0.1.120.tgz#0c7aff4e29d98298214129127f5df951cb7b81dd"
+  resolved "https://registry.yarnpkg.com/@expo/dev-server/-/dev-server-0.1.120.tgz#0c7aff4e29d98298214129127f5df951cb7b81dd"
   dependencies:
     "@expo/bunyan" "4.0.0"
     "@expo/metro-config" "~0.4.0"
@@ -3144,6 +3144,10 @@ ci-info@^3.2.0, ci-info@^3.3.0:
   version "3.5.0"
   resolved "https://registry.npmmirror.com/ci-info/-/ci-info-3.5.0.tgz#bfac2a29263de4c829d806b1ab478e35091e171f"
 
+ci-info@^3.7.0:
+  version "3.8.0"
+  resolved "https://registry.yarnpkg.com/ci-info/-/ci-info-3.8.0.tgz#81408265a5380c929f0bc665d62256628ce9ef91"
+
 cjs-module-lexer@^0.6.0:
   version "0.6.0"
   resolved "https://registry.npmmirror.com/cjs-module-lexer/-/cjs-module-lexer-0.6.0.tgz#4186fcca0eae175970aee870b9fe2d6cf8d5655f"
@@ -3925,9 +3929,9 @@ expo-asset@^8.9.1:
     path-browserify "^1.0.0"
     url-parse "^1.5.9"
 
-expo-asset@~8.6.1:
-  version "8.6.1"
-  resolved "https://registry.npmmirror.com/expo-asset/-/expo-asset-8.6.1.tgz#86355b3e231e8aa6cf68a456ce9746dff1478b48"
+expo-asset@~8.6.3:
+  version "8.6.3"
+  resolved "https://registry.yarnpkg.com/expo-asset/-/expo-asset-8.6.3.tgz#fd8e8e8d9a7bbbe3c202459a17746b923fb9bdda"
   dependencies:
     blueimp-md5 "^2.10.0"
     expo-constants "~13.2.2"
@@ -4044,6 +4048,12 @@ expo-file-system@^14.1.0, expo-file-system@~14.1.0:
     "@expo/config-plugins" "~5.0.0"
     uuid "^3.4.0"
 
+expo-file-system@^15.2.2:
+  version "15.4.2"
+  resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-15.4.2.tgz#f18e9d84f06a50eb4084b4a34ca7ca9c5a42f92e"
+  dependencies:
+    uuid "^3.4.0"
+
 expo-file-system@~15.2.0:
   version "15.2.2"
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-15.2.2.tgz#a1ddf8aabf794f93888a146c4f5187e2004683a3"
@@ -4108,9 +4118,9 @@ expo-modules-autolinking@0.10.3:
     find-up "^5.0.0"
     fs-extra "^9.1.0"
 
-expo-modules-core@0.11.8:
-  version "0.11.8"
-  resolved "https://registry.npmmirror.com/expo-modules-core/-/expo-modules-core-0.11.8.tgz#68de1bc56a148b9a9c03f1268c67e9e264d4d4b9"
+expo-modules-core@0.11.10:
+  version "0.11.10"
+  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-0.11.10.tgz#84800ea62431a3842661966276747260f7e33b37"
   dependencies:
     compare-versions "^3.4.0"
     invariant "^2.2.4"
@@ -4173,23 +4183,23 @@ expo-updates@~0.14.7:
     resolve-from "^5.0.0"
     uuid "^3.4.0"
 
-expo@~46.0.16:
-  version "46.0.16"
-  resolved "https://registry.npmmirror.com/expo/-/expo-46.0.16.tgz#8fe6d10207dabda34a684efac2c45c3c1c089f11"
+expo@~46.0.21:
+  version "46.0.21"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-46.0.21.tgz#83108a8f59c1773fc2bdc3684efcaa5a812a4990"
   dependencies:
     "@babel/runtime" "^7.14.0"
-    "@expo/cli" "0.3.2"
+    "@expo/cli" "0.3.3"
     "@expo/vector-icons" "^13.0.0"
     babel-preset-expo "~9.2.0"
     cross-spawn "^6.0.5"
     expo-application "~4.2.2"
-    expo-asset "~8.6.1"
+    expo-asset "~8.6.3"
     expo-constants "~13.2.4"
     expo-file-system "~14.1.0"
     expo-font "~10.2.1"
     expo-keep-awake "~10.2.0"
     expo-modules-autolinking "0.10.3"
-    expo-modules-core "0.11.8"
+    expo-modules-core "0.11.10"
     fbemitter "^3.0.0"
     getenv "^1.0.0"
     invariant "^2.2.4"
@@ -5913,6 +5923,10 @@ lodash.debounce@4.0.8, lodash.debounce@^4.0.8:
   version "4.0.8"
   resolved "https://registry.npmmirror.com/lodash.debounce/-/lodash.debounce-4.0.8.tgz#82d79bff30a67c4005ffd5e2515300ad9ca4d7af"
 
+lodash.isequal@^4.5.0:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/lodash.isequal/-/lodash.isequal-4.5.0.tgz#415c4478f2bcc30120c22ce10ed3226f7d3e18e0"
+
 lodash.throttle@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmmirror.com/lodash.throttle/-/lodash.throttle-4.1.1.tgz#c23e91b710242ac70c37f1e1cda9274cc39bf2f4"
@@ -6860,6 +6874,25 @@ patch-package@^6.5.0:
     tmp "^0.0.33"
     yaml "^1.10.2"
 
+patch-package@^7.0.0:
+  version "7.0.2"
+  resolved "https://registry.yarnpkg.com/patch-package/-/patch-package-7.0.2.tgz#c01589bb6964854b5210506a5845d47900641f5a"
+  dependencies:
+    "@yarnpkg/lockfile" "^1.1.0"
+    chalk "^4.1.2"
+    ci-info "^3.7.0"
+    cross-spawn "^7.0.3"
+    find-yarn-workspace-root "^2.0.0"
+    fs-extra "^9.0.0"
+    klaw-sync "^6.0.0"
+    minimist "^1.2.6"
+    open "^7.4.2"
+    rimraf "^2.6.3"
+    semver "^7.5.3"
+    slash "^2.0.0"
+    tmp "^0.0.33"
+    yaml "^2.2.2"
+
 path-browserify@^1.0.0:
   version "1.0.1"
   resolved "https://registry.npmmirror.com/path-browserify/-/path-browserify-1.0.1.tgz#d98454a9c3753d5790860f16f68867b9e46be1fd"
@@ -7023,7 +7056,7 @@ prop-types@15.7.2:
     object-assign "^4.1.1"
     react-is "^16.8.1"
 
-prop-types@^15.5.10, prop-types@^15.7.2, prop-types@^15.7.x:
+prop-types@^15.5.10, prop-types@^15.7.2, prop-types@^15.7.x, prop-types@^15.8.1:
   version "15.8.1"
   resolved "https://registry.npmmirror.com/prop-types/-/prop-types-15.8.1.tgz#67d87bf1a694f48435cf332c24af10214a3140b5"
   dependencies:
@@ -7224,9 +7257,17 @@ react-native-gradle-plugin@^0.0.7:
   version "0.0.7"
   resolved "https://registry.npmmirror.com/react-native-gradle-plugin/-/react-native-gradle-plugin-0.0.7.tgz#96602f909745239deab7b589443f14fce5da2056"
 
-react-native-iap@~11.0.0:
-  version "11.0.7"
-  resolved "https://registry.yarnpkg.com/react-native-iap/-/react-native-iap-11.0.7.tgz#7ea6f9be88f8b51317be6a0fa0b1a9d7efbf8215"
+react-native-iaphub-ui@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/react-native-iaphub-ui/-/react-native-iaphub-ui-1.2.3.tgz#19c596ad0e5754b8239c9db804d702cfee60d51e"
+  dependencies:
+    lodash.isequal "^4.5.0"
+    prop-types "^15.8.1"
+    react-native-material-ripple "^0.9.1"
+
+react-native-iaphub@^8.4.2:
+  version "8.4.2"
+  resolved "https://registry.yarnpkg.com/react-native-iaphub/-/react-native-iaphub-8.4.2.tgz#de7c2d1b76d16015109e72454ced6dc29d251920"
 
 react-native-iphone-x-helper@1.3.1:
   version "1.3.1"
@@ -7239,6 +7280,12 @@ react-native-lightbox-v2@0.9.0:
 react-native-logs@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/react-native-logs/-/react-native-logs-5.0.1.tgz#53665919587b499e22f514e50cb6a834cedba1ce"
+
+react-native-material-ripple@^0.9.1:
+  version "0.9.1"
+  resolved "https://registry.yarnpkg.com/react-native-material-ripple/-/react-native-material-ripple-0.9.1.tgz#db1ad9dd7cf97011e4cd8475ae2041ade0f891cb"
+  dependencies:
+    prop-types "^15.5.10"
 
 react-native-parsed-text@0.0.22:
   version "0.0.22"
@@ -7262,13 +7309,26 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.0.4:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.4.tgz#a6f136879fa18fe445b93007fdc9c1287603c32b"
-  dependencies:
+react-native-use-qili@^1.0.56:
+  version "1.0.56"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.56.tgz#70e3d46ecce850852ccb5cd89f276493e6427538"
+  optionalDependencies:
+    "@reduxjs/toolkit" "^1.8.6"
+    expo-file-system "^15.2.2"
+    expo-splash-screen "~0.16.2"
+    expo-status-bar "~1.4.0"
+    expo-updates "~0.14.7"
     graphql-subscriptions "^1.1.0"
+    patch-package "^7.0.0"
     react-native-chatgpt "^0.9.0"
-    react-native-iap "~11.0.0"
+    react-native-iaphub "^8.4.2"
+    react-native-iaphub-ui "^1.2.3"
+    react-native-webview "11.23.0"
+    react-redux "^8.0.4"
+    react-router-native "^6.4.2"
+    redux "^4.2.0"
+    redux-persist "^6.0.0"
+    redux-persist-expo-filesystem "^2.0.0"
     subscriptions-transport-ws "^0.11.0"
 
 react-native-uuid@^2.0.1:
@@ -9008,6 +9068,10 @@ yallist@^4.0.0:
 yaml@^1.10.2:
   version "1.10.2"
   resolved "https://registry.npmmirror.com/yaml/-/yaml-1.10.2.tgz#2301c5ffbf12b467de8da2333a459e29e7920e4b"
+
+yaml@^2.2.2:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.3.1.tgz#02fe0975d23cd441242aa7204e09fc28ac2ac33b"
 
 yargs-parser@^18.1.2:
   version "18.1.3"

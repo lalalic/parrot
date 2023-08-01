@@ -36,9 +36,10 @@ const Qili={
 					variables: request.variables
 				},
 			},
-			connectionCallback(errors){
-				if(errors){
-					callback?.({errors})
+			connectionCallback(error){
+				if(error){
+					console.error(`subscription failed: ${error.message}`)
+					client.close()
 				}
 			}
 		})
@@ -47,8 +48,8 @@ const Qili={
 			function onNext(data){
 				callback?.(data)
 			},
-			function onError(errors){
-				callback?.({data:{errors}})
+			function onError(error){
+				callback?.({data:{error}})
 			}
 		)
 		
