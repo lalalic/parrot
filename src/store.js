@@ -1,25 +1,15 @@
-import React from "react"
-import { combineReducers } from "redux"
-import { configureStore, isPlain, createListenerMiddleware } from "@reduxjs/toolkit";
-import { setupListeners } from "@reduxjs/toolkit/query";
+import { myReducer, Qili as QiliApi } from "react-native-use-qili/store";
 import { createApi } from "@reduxjs/toolkit/query/react";
-import ExpoFileSystemStorage from "redux-persist-expo-filesystem"
-import {XMLParser} from 'fast-xml-parser'
+import { XMLParser } from 'fast-xml-parser';
+import * as FileSystem from "expo-file-system";
+import { produce } from "immer";
+import cheerio from "cheerio";
 
-import { Provider as ReduxProvider} from "react-redux"
-import { PersistGate } from 'redux-persist/integration/react'
-import { persistStore,persistReducer, FLUSH,REHYDRATE,PAUSE,PERSIST,PURGE,REGISTER } from 'redux-persist'
-import * as FileSystem from "expo-file-system"
-import cheerio from "cheerio"
-import { produce } from "immer"
+import ytdl from "react-native-ytdl";
+import { YoutubeTranscript } from "./experiment/youtube-transcript";
+import * as Calendar from "./experiment/calendar";
+import mpegKit from "./experiment/mpeg";
 
-import { YoutubeTranscript } from "./experiment/youtube-transcript"
-import ytdl from "react-native-ytdl"
-
-import * as Calendar from "./experiment/calendar"
-import mpegKit from "./experiment/mpeg"
-
-import {myReducer, Qili as QiliApi} from "react-native-use-qili/store"
 
 export const Policy={
 	general: {
@@ -433,8 +423,25 @@ export const TalkApi=new Proxy(Services,{
 	}
 })
 
-export function createStore(){
-	const checkAction=(action,keys)=>{
+export const reducers=(()=>{
+	function nullClear(o, key, returnEmpty){
+		o={...o}
+		delete o[key]
+		if(returnEmpty)
+			return o
+		return Object.keys(o).length==0 ? null : o
+	}
+
+	function immutableSet(o, keys, value, returnEmpty=true){
+		if(keys.length==1){
+			return value===null ? nullClear(o,keys[0], returnEmpty) : {...o, [keys[0]]:value}
+		}
+		const first=keys.shift()
+		const firstValue=immutableSet({...o[first]}, keys ,value, false)
+		return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
+	}
+
+	function checkAction(action,keys){
 		const missing=keys.filter(a=>!(a in action))
 		if(missing.length>0){
 			throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`)
@@ -442,59 +449,7 @@ export function createStore(){
 		return true
 	}
 
-	const listener=createListenerMiddleware()
-	listener.startListening({
-		type:"talk/toggle/favorited",
-		async effect(action, {getState, dispatch}){
-			const state=getState()
-			const {id,favorited, ...talk}=state.talks[action.talk.id]
-			if(!favorited || talk.slug==id)
-				return
-
-			if(!(await isAdmin(state)))
-				return 
-
-			try{
-				const unwrap=(({general, shadowing, retelling, dictating, challenging, ...talk})=>talk)(talk);
-				;(globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite?.({id, talk:{...unwrap,_id:id}, state, dispatch});
-			}catch(e){
-				dispatch({type:"message/error",message:e.message})
-			}
-		}
-	})
-	listener.startListening({
-		type:"my/lang",
-		async effect(action, api){
-			const originalState=api.getOriginalState()
-			if(action.lang==originalState.my.lang)
-				return 
-			//save current for last lang
-			try{
-				const originalLangData=Object.keys(reducers).reduce((data, k)=>{
-					data[k]=reducers[k](originalState[k],{type:"lang/PERSIST"})
-					return data
-				},{});
-
-				await FileSystem.writeAsStringAsync(
-					`${FileSystem.documentDirectory}${originalState.my.lang}.json`, 
-					JSON.stringify(originalLangData)
-				)
-				console.info(`saved store for ${originalState.my.lang}`)
-			}catch(e){
-				console.error(e)
-			}
-
-			//rehydrate for current lang
-			try{
-				const currentLangData=await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.json`)
-				api.dispatch({type:'lang/REHYDRATE', payload:JSON.parse(currentLangData)})
-			}catch(e){
-				console.warn(e)
-			}
-		}
-	})
-
-	const reducers={
+	return {
 		[Ted.reducerPath](state, action){
 			switch(action.type){
 				case "lang/PERSIST":
@@ -843,73 +798,62 @@ export function createStore(){
 			return state
 		},	
 	}
+})();
 
-	const store = globalThis.store=configureStore({
-		/** reducer can't directly change any object in state, instead shallow copy and change */
-		reducer:
-			persistReducer(
-				{key:"root",version:1,blacklist:[],storage:ExpoFileSystemStorage},
-				combineReducers(reducers)
-			),
+export const listeners=[
+	{
+		type:"talk/toggle/favorited",
+		async effect(action, {getState, dispatch}){
+			const state=getState()
+			const {id,favorited, ...talk}=state.talks[action.talk.id]
+			if(!favorited || talk.slug==id)
+				return
 
-		middleware: (getDefaultMiddleware) =>getDefaultMiddleware({
-				serializableCheck:{
-					ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-					isSerializable(value){
-						return isPlain(value)||value?.constructor===Date
-					}
-				},
-				immutableCheck:{
-					warnAfter:100,
-				},
-			}).prepend([Ted.middleware,Qili.middleware, listener.middleware]),
-	})
+			if(!(await isAdmin(state)))
+				return 
 
-	setupListeners(store)
-	return {store, persistor:persistStore(store)}
-}
-
-export const Provider=({children, onReady, loading})=>{
-	const {store, persistor}=React.useMemo(()=>{
-		const data=createStore()
-		const unsub=data.store.subscribe(async ()=>{
-			const state=data.store.getState()
-			if(!('api' in state.my)){
-				await Ted.testNetwork(state)
-					.then(()=>data.store.dispatch({type:"my/api",api:"Ted"}))
-					.catch(e=>data.store.dispatch({type:"my/api",api:"Qili"}))
+			try{
+				const unwrap=(({general, shadowing, retelling, dictating, challenging, ...talk})=>talk)(talk);
+				;(globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite?.({id, talk:{...unwrap,_id:id}, state, dispatch});
+			}catch(e){
+				dispatch({type:"message/error",message:e.message})
 			}
-			unsub()
-			onReady?.()
-		})
+		}
+	},
+	{
+		type:"my/lang",
+		async effect(action, api){
+			const originalState=api.getOriginalState()
+			if(action.lang==originalState.my.lang)
+				return 
+			//save current for last lang
+			try{
+				const originalLangData=Object.keys(reducers).reduce((data, k)=>{
+					data[k]=reducers[k](originalState[k],{type:"lang/PERSIST"})
+					return data
+				},{});
 
-		return data
-	},[])
-	return (
-		<ReduxProvider store={store}>
-			<PersistGate {...{loading, persistor}}>
-				{children}
-			</PersistGate>
-		</ReduxProvider>
-	)
-}
+				await FileSystem.writeAsStringAsync(
+					`${FileSystem.documentDirectory}${originalState.my.lang}.json`, 
+					JSON.stringify(originalLangData)
+				)
+				console.info(`saved store for ${originalState.my.lang}`)
+			}catch(e){
+				console.error(e)
+			}
 
-function nullClear(o, key, returnEmpty){
-	o={...o}
-	delete o[key]
-	if(returnEmpty)
-		return o
-	return Object.keys(o).length==0 ? null : o
-}
-
-function immutableSet(o, keys, value, returnEmpty=true){
-	if(keys.length==1){
-		return value===null ? nullClear(o,keys[0], returnEmpty) : {...o, [keys[0]]:value}
+			//rehydrate for current lang
+			try{
+				const currentLangData=await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.json`)
+				api.dispatch({type:'lang/REHYDRATE', payload:JSON.parse(currentLangData)})
+			}catch(e){
+				console.warn(e)
+			}
+		}
 	}
-	const first=keys.shift()
-	const firstValue=immutableSet({...o[first]}, keys ,value, false)
-	return firstValue===null ? nullClear(o, first, returnEmpty) : {...o, [first]: firstValue}
-}
+]
+
+export const middlewares=[Ted.middleware,Qili.middleware,]
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];

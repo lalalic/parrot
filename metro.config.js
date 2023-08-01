@@ -11,8 +11,7 @@ config.resolver.resolveRequest=function(context, moduleName, platform){
 		original.filePaths[0]=original.filePaths[0].replace('MaterialCommunityIcons.ttf','MaterialIcons.ttf')
 	}else if(moduleName.endsWith("chrome-extension")){
 		require("react-native-use-qili/scripts/chrome-extension-to-service.js")(require('path').dirname(original.filePath))
-	}
-	else if(moduleName=="react-native-iaphub"){
+	}else if(moduleName=="react-native-iaphub"){
 		original.filePath=require.resolve("react-native-use-qili/components/iaphub-iap")//require('path').resolve(__dirname,"./src/iaphub/index.js")
 	}
 	

@@ -8,7 +8,7 @@ import * as Speech from "./components/speech"
 import Login from "react-native-use-qili/components/Login";
 import { isUserLogin } from "react-native-use-qili/store";
 
-export const Permissions = () => {
+export default function Permissions(){
     const dispatch=useDispatch()
     const [, requestCameraPermission] = ImagePicker.useCameraPermissions();
     const [, requestMediaLibPermission] = ImagePicker.useMediaLibraryPermissions();

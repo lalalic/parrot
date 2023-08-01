@@ -1,0 +1,36 @@
+diff --git a/node_modules/react-native-iaphub-ui/src/paywall-subscription-group/index.js b/node_modules/react-native-iaphub-ui/src/paywall-subscription-group/index.js
+index ab70dc8..c568de5 100644
+--- a/node_modules/react-native-iaphub-ui/src/paywall-subscription-group/index.js
++++ b/node_modules/react-native-iaphub-ui/src/paywall-subscription-group/index.js
+@@ -39,12 +39,12 @@ class PaywallSubscriptionGroup extends React.Component {
+ 			<Paywall
+         {...props}
+         style={styles.root}
+-				Product={DefaultProduct || Product}
+-        ProductContent={DefaultProductContent || ProductContent}
+-        ProductContentSingleMonthlySubscription={DefaultProductContentSingleMonthlySubscription || ProductContentSingleMonthlySubscription}
+-        ProductTitle={DefaultProductTitle || ProductTitle}
+-        ProductPrice={DefaultProductPrice || ProductPrice}
+-        ProductPricePerMonth={DefaultProductPricePerMonth || ProductPricePerMonth}
++				Product={Product||DefaultProduct}
++        ProductContent={ProductContent||DefaultProductContent}
++        ProductContentSingleMonthlySubscription={ProductContentSingleMonthlySubscription||DefaultProductContentSingleMonthlySubscription}
++        ProductTitle={ProductTitle||DefaultProductTitle}
++        ProductPrice={ProductPrice||DefaultProductPrice}
++        ProductPricePerMonth={ProductPricePerMonth||DefaultProductPricePerMonth}
+ 			/>
+     );
+   }
+diff --git a/node_modules/react-native-iaphub-ui/src/paywall/index.js b/node_modules/react-native-iaphub-ui/src/paywall/index.js
+index 5240867..6f0efa1 100644
+--- a/node_modules/react-native-iaphub-ui/src/paywall/index.js
++++ b/node_modules/react-native-iaphub-ui/src/paywall/index.js
+@@ -89,7 +89,7 @@ export default class PaywallWrapper extends React.Component {
+ 				IntroPhase={(IntroPhase === undefined) ? DefaultIntroPhase : IntroPhase}
+ 				SubscriptionTerms={(SubscriptionTerms === undefined) ? DefaultSubscriptionTerms : SubscriptionTerms}
+ 				Restore={(Restore === undefined) ? DefaultRestore : Restore}
+-				Buy={(Restore === undefined) ? DefaultBuy: Buy}
++				Buy={(Buy === undefined) ? DefaultBuy: Buy}
+ 				Loading={(Loading === undefined) ? DefaultLoading: Loading}
+ 			/>
+     );

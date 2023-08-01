@@ -5900,6 +5900,10 @@ loader-utils@^2.0.0:
     emojis-list "^3.0.0"
     json5 "^2.1.2"
 
+localized-strings@^0.2.0:
+  version "0.2.4"
+  resolved "https://registry.yarnpkg.com/localized-strings/-/localized-strings-0.2.4.tgz#9d61c06b60cc7b5edf7c46e6c7f2d1ecb84aeb2c"
+
 locate-path@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmmirror.com/locate-path/-/locate-path-3.0.0.tgz#dbec3b3ab759758071b58fe59fc41871af21400e"
@@ -7174,6 +7178,12 @@ react-is@^17.0.1:
   version "17.0.2"
   resolved "https://registry.npmmirror.com/react-is/-/react-is-17.0.2.tgz#e691d4a8e9c789365655539ab372762b0efb54f0"
 
+react-localization@^1.0.17:
+  version "1.0.19"
+  resolved "https://registry.yarnpkg.com/react-localization/-/react-localization-1.0.19.tgz#b65a7fa58096cff6aa38bc3a0c4817ec97469ef0"
+  dependencies:
+    localized-strings "^0.2.0"
+
 react-native-bundle-visualizer@^3.1.3:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/react-native-bundle-visualizer/-/react-native-bundle-visualizer-3.1.3.tgz#afac782d0170b002cd74a0ce111c4f6dd6e15f52"
@@ -7257,6 +7267,10 @@ react-native-gradle-plugin@^0.0.7:
   version "0.0.7"
   resolved "https://registry.npmmirror.com/react-native-gradle-plugin/-/react-native-gradle-plugin-0.0.7.tgz#96602f909745239deab7b589443f14fce5da2056"
 
+react-native-iap@~10.0.0:
+  version "10.0.7"
+  resolved "https://registry.yarnpkg.com/react-native-iap/-/react-native-iap-10.0.7.tgz#7f979a633f1fb7f924ce23db40e30870fe89d503"
+
 react-native-iaphub-ui@^1.2.3:
   version "1.2.3"
   resolved "https://registry.yarnpkg.com/react-native-iaphub-ui/-/react-native-iaphub-ui-1.2.3.tgz#19c596ad0e5754b8239c9db804d702cfee60d51e"
@@ -7276,6 +7290,12 @@ react-native-iphone-x-helper@1.3.1:
 react-native-lightbox-v2@0.9.0:
   version "0.9.0"
   resolved "https://registry.yarnpkg.com/react-native-lightbox-v2/-/react-native-lightbox-v2-0.9.0.tgz#b97be4d892ebb959069c451948b11da390bc46d8"
+
+react-native-localization@^2.3.2:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/react-native-localization/-/react-native-localization-2.3.2.tgz#ac82089519681a8e53fa39dcf7a9f5b6be2c5cb6"
+  dependencies:
+    react-localization "^1.0.17"
 
 react-native-logs@^5.0.1:
   version "5.0.1"
@@ -7309,9 +7329,9 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.0.56:
-  version "1.0.56"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.56.tgz#70e3d46ecce850852ccb5cd89f276493e6427538"
+react-native-use-qili@^1.0.59:
+  version "1.0.59"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.59.tgz#b2037502d0ecd5471ca7c8d608899cf5f802c455"
   optionalDependencies:
     "@reduxjs/toolkit" "^1.8.6"
     expo-file-system "^15.2.2"
