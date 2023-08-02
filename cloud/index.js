@@ -44,6 +44,7 @@ Cloud.addModule({
         extend type Mutation{
             save(talk:JSON!):Boolean
             remove(id:String!, type:String):Boolean
+            crashReport(crash:JSON!):Boolean
         }
     `, 
     resolver:{
@@ -111,6 +112,10 @@ Cloud.addModule({
             remove(_,{id, type="Talk"},{app}){
                 return app.remove1Entity(type, {_id:id})
             },
+            crashReport(_,{crash:{message}},{}){
+                console.error(`crash report: ${message}`)
+                return true
+            }
         },
     },
     persistedQuery:{ 
