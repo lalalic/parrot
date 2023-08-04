@@ -38,7 +38,8 @@ export default function MyRouter(){
     
     return (
         <Router initialEntries={initialEntries} 
-            navs={[["/home","home"],["/plan","date-range"],["/account","account-circle"] ]}>
+            navs={[["/home","home"],["/plan","date-range"],["/account","account-circle"] ]}
+            >
             <Route path="talks" element={<Talks/>} />
             <Route path="home" element={<Home/>} />
 
@@ -77,13 +78,15 @@ export default function MyRouter(){
             </Route>
 
             <Route path="plan" element={<Scheduler/>}/>
-            <Route path="talk" element={<WithBackButton/>}>
+
+            
+            <Route path="/talk" element={<WithBackButton/>}>
                 <Route path=":slug" element={<Talk/>}/>
                 <Route path=":slug/:policy" element={<Talk/>}/>
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
             </Route>
 
-            <Route path="widget" element={<WithBackButton/>}>
+            <Route path="/widget" element={<WithBackButton/>}>
                 <Route path=":slug" element={React.createElement(()=>{
                         const {slug,}=useParams()
                         const Widget=globalThis.Widgets[slug]
