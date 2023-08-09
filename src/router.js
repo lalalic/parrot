@@ -23,7 +23,6 @@ import Test from "./account/test"
 import { TalkApi } from "./store"
 
 import TaggedTranscript from "./widgets/tagged-transcript"
-import l10n from "./l10n"
 
 export default function MyRouter(){
     const dispatch=useDispatch()
@@ -44,7 +43,7 @@ export default function MyRouter(){
             <Route path="home" element={<Home/>} />
 
             <Route path="account">
-                <Route path="" element={<Account l10n={l10n}
+                <Route path="" element={<Account
                     settings={[
                         {name:"Policy", icon:"policy"},
                         {name:"Favorites", icon:"favorite"},

@@ -95,7 +95,7 @@ function isTextMessage(message){
  * @returns 
  */
 const Chat = () => {
-	const sendMessage = useAsk("chat")
+	const sendMessage = useAsk({id:"chat"})
 	const talk=useSelector(state=>state.talks[defaultProps.id])
 	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput, $audioInput]=useStateAndLatest(false)

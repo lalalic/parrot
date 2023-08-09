@@ -70,7 +70,7 @@ export default class PictureBook extends TaggedListMedia {
 
         const [visible, setVisible]=React.useState(true)
 
-        const ask=useAsk("randomPicture","response one or two words to describe a random scene with comma as seperator")
+        const ask=useAsk({id:"randomPicture",prompt:"response one or two words to describe a random scene with comma as seperator"})
         return (
             <TaggedTranscript {...props}
                 actions={(tag,id)=>([

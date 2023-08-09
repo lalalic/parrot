@@ -1,3 +1,4 @@
+import "./l10n"
 import React from "react"
 import { View } from "react-native"
 import { useSelector } from "react-redux"
@@ -12,12 +13,11 @@ import Router from "./router"
 import Permissions from "./permissions"
 import services from "./components/webview-services"
 import { listeners, middlewares, reducers } from "./store"
-import l10n from "./l10n"
 
 export default function Parrot(){
     return (
         <App {...{reducers, listeners, middlewares, colorScheme:"dark"}}>
-            <Login.Required l10n={l10n}>
+            <Login.Required>
                 <ChatProvider services={services}>
                     <Router/>
                 </ChatProvider>
