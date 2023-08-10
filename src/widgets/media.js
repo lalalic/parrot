@@ -422,11 +422,12 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     renderItem:renderItem0=function({item, id=item.id}){
         const text=renderItemText(item)
         const textStyle={fontSize:16, color:"white"}
-        const onPress=e=>navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)
         const containerStyle={height:50, justifyContent:"center", border:1, borderBottomColor:color.inactive}
-        if(item.isLocal!==true){ 
+        if(item.isLocal!==true){//remote
             return (
-                <Pressable style={[containerStyle,{flexDirection:"row",alignItems:"center", marginTop:2}]} onPress={onPress} key={id}>
+                <Pressable style={[containerStyle,{flexDirection:"row",alignItems:"center", marginTop:2}]} 
+                    onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)} 
+                    key={id}>
                     <View style={{width:iconWidth, alignItems:"center"}}>
                         <MaterialIcons name="cloud-circle"/>
                     </View>
@@ -436,12 +437,12 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
             )
         }
 
-        return (
+        return (//local
             <View style={{flexDirection:"row", marginTop:2}} key={id} >
                 <PressableIcon name="remove-circle-outline" onPress={e=>dispatch({type:"talk/clear", id})} style={{width:iconWidth}}/>
                 <ChangableText style={[containerStyle,{flexGrow:1}]}
                     text={{style:textStyle, value:text}}
-                    onPress={onPress} 
+                    onPress={e=>navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)} 
                     onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
                     />
                 {renderItemExtra?.(...arguments)}

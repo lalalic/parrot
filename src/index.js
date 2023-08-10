@@ -11,14 +11,13 @@ import App from "react-native-use-qili/App"
 
 import Router from "./router"
 import Permissions from "./permissions"
-import services from "./components/webview-services"
 import { listeners, middlewares, reducers } from "./store"
 
 export default function Parrot(){
     return (
         <App {...{reducers, listeners, middlewares, colorScheme:"dark"}}>
             <Login.Required>
-                <ChatProvider services={services}>
+                <ChatProvider>
                     <Router/>
                 </ChatProvider>
             </Login.Required>
