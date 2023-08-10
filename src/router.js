@@ -7,6 +7,7 @@ import { Route, useLocation, useNavigate, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
+import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
 
 import Home from "./home"
@@ -52,6 +53,7 @@ export default function MyRouter(){
                     ]}
                     information={[
                         ...(__DEV__ ? [
+                            {name:"Reset", icon:"settings", onPress:e=>dispatch(Reset)},
                             {name:"Ted Service", icon:"electrical-services", children: <SwitchTed/>},
                             {name:"Files", icon:"file-present"},
                             {name:"Clear TalkApi", icon: "cleaning-services", onPress:e=>dispatch(TalkApi.util.resetApiState())},

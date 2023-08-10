@@ -17,7 +17,7 @@ const defaultProps={
 	isMedia:false,
 	id: "chatgpt",
 	slug: "chatgpt",
-	title: "Chat Bot",
+	title: "Chat",
 	thumb: require("../../assets/widget-chat-bot.png"),
 	description: "Make a conversation with bot",
 }

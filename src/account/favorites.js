@@ -9,6 +9,7 @@ export default function Favorites({}){
             thumbStyle={{height:120,width:"48%"}}
             titleStyle={{height:40}}
             columnWrapperStyle={{justifyContent:"space-between"}}
+            emptyTitle="No favorite yet!"
             numColumns={2}>
             <SetFavorite/>
         </TalkSelector>

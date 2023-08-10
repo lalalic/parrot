@@ -11,6 +11,7 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import ChangableText from "react-native-use-qili/components/ChangableText";
 import Loading from "react-native-use-qili/components/Loading";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
+const l10n=globalThis.l10n
 
 class Media extends React.Component {
     /**
@@ -376,7 +377,7 @@ export class TaggedListMedia extends ListMedia{
     }
 
     static TagManagement(props){
-        return <TagManagement talk={this.defaultProps} placeholder={`Tag: to categorize ${this.defaultProps.title}`} {...props}/>
+        return <TagManagement talk={this.defaultProps} {...props}/>
     }
 
     static async onFavorite({id, talk, state, dispatch}){
@@ -405,7 +406,11 @@ export class TaggedListMedia extends ListMedia{
 export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), children, iconWidth=50,
     renderItemExtra=({item})=>{
         if(item.isLocal!==true){
-            return null
+            return (
+                <View style={{width:iconWidth,alignContent:"center",alignItems:"center"}}>
+                    <MaterialIcons name="keyboard-arrow-right"/>
+                </View>
+            )
         }
         return (
             <PressableIcon name="keyboard-arrow-right" 
@@ -417,12 +422,15 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     renderItem:renderItem0=function({item, id=item.id}){
         const text=renderItemText(item)
         const textStyle={fontSize:16, color:"white"}
-        const onPress=e=>navigate(`/talk/${slug}/shadowing/${id}`)
-        const containerStyle={height:50, justifyContent:"center", paddingLeft:20, border:1, borderBottomColor:color.inactive}
+        const onPress=e=>navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)
+        const containerStyle={height:50, justifyContent:"center", border:1, borderBottomColor:color.inactive}
         if(item.isLocal!==true){ 
             return (
                 <Pressable style={[containerStyle,{flexDirection:"row",alignItems:"center", marginTop:2}]} onPress={onPress} key={id}>
-                    <Text style={[{paddingLeft:iconWidth, flexGrow:1}, textStyle]}>{text}</Text>
+                    <View style={{width:iconWidth, alignItems:"center"}}>
+                        <MaterialIcons name="cloud-circle"/>
+                    </View>
+                    <Text style={[{flexGrow:1}, textStyle]}>{text}</Text>
                     {renderItemExtra?.(...arguments)}
                 </Pressable>
             )
@@ -462,7 +470,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
     return (
         <View style={[{flex:1, marginTop:10, minHeight:200},style]} {...props}>
             <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
-                style={[{height:50, backgroundColor:color.inactive, paddingLeft:10, fontSize:16},inputStyle]}
+                style={[{height:50, backgroundColor:color.text, color:color.backgroundColor, paddingLeft:10, fontSize:16,borderRadius:5},inputStyle]}
                 {...inputProps}
                 />
             <FlatList data={all} style={{flex:1, flexGrow:1}}
@@ -480,7 +488,7 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
     const talks=useSelector(state=>selectWidgetTalks(state, slug))
     return (
         <TagList  
-            data={talks} slug={slug}  placeholder={placeholder}
+            data={talks} slug={slug}  placeholder={l10n[placeholder||`Create new ${talk.title}`]}
             onEndEditing={({nativeEvent:{text:title}})=>{
                 title=title.trim()
                 if(!title || -1!==talks.findIndex(a=>a.title==title)){

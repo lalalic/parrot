@@ -9,6 +9,7 @@ import { Qili } from "../store"
 import { ControlIcons,  KeyboardAvoidingView} from "../components"
 import Player from "../components/player"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
+const l10n=globalThis.l10n
 
 const slug="punya_mishra_how_to_design_a_school_for_the_future"
 export default function Policy(){
@@ -40,13 +41,13 @@ export default function Policy(){
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(
                         <Pressable key={a} onPress={e=>setTarget(a)}>
-                            <Text style={{color:a==target ? color.active : color.inactive}}>{a.toUpperCase()}</Text>
+                            <Text style={{color:a==target ? color.active : color.inactive}}>{l10n[a].toUpperCase()}</Text>
                         </Pressable>
                     ))}
                 </View>
 
                 <ScrollView style={{flexGrow:1,padding:20}}>
-                    <Text style={{paddingBottom:20}}>{policy[target].desc}</Text>
+                    <Text style={{paddingBottom:20}}>{l10n[policy[target].desc]}</Text>
                     {JSON.stringify((({desc,...props})=>props)(policy[target]), null, "\t").replace(/[\{\}\",]/g,"").split("\n")
                         .filter(a=>!!a)
                         .map(a=>{
@@ -56,7 +57,7 @@ export default function Policy(){
                                     return (
                                         <Pressable
                                             onPress={e=>dispatch({type:"policy", target, payload:{[key]:!value}})}>
-                                            <Text style={{color:color.primary}}>{String(value)}</Text>     
+                                            <Text style={{color:color.primary}}>{l10n[String(value)]}</Text>     
                                         </Pressable>
                                     )
                                 }else{
@@ -81,7 +82,7 @@ export default function Policy(){
                             return (
                                 <View key={key} style={{flexDirection:"row", borderBottomWidth:1, borderBottomColor:"gray", height:40, alignItems:"center"}}>
                                     <MaterialIcons name={ControlIcons[key]||""} size={24} />
-                                    <Text style={{width:120, textAlign:"right", marginRight:5}} numberOfLines={1}>{key.replace(/([A-Z])/g, " $1")}:</Text>
+                                    <Text style={{width:120, textAlign:"right", marginRight:5}} numberOfLines={1}>{l10n[key.replace(/([A-Z])/g, " $1")]}:</Text>
                                     {text}
                                 </View>
                             )

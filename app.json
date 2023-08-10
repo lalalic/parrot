@@ -23,6 +23,7 @@
       "silentLaunch": true
     },
     "ios": {
+      "buildNumber":"1",
       "supportsTablet": true,
       "bundleIdentifier": "com.lalalic.parrot",
       "infoPlist": {
@@ -70,9 +71,5 @@
         "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004"
       }
     }
-  },
-  "react-native-google-mobile-ads": {
-    "android_app_id": "ca-app-pub-4303160366764980~4182198331",
-    "ios_app_id": "ca-app-pub-4303160366764980~4182198331"
   }
 }

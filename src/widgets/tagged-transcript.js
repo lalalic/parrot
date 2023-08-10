@@ -2,11 +2,10 @@ import React, { useMemo } from "react"
 import { FlatList, Pressable, TextInput, View, Text, } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
-import Select from "react-native-select-dropdown"
-import { KeyboardAvoidingView } from "../components"
+import { KeyboardAvoidingView, useTalkQuery } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { selectWidgetTalks } from "../store"
+const l10n=globalThis.l10n
 
 export default Wrapper=({})=>{
     const {slug, id}=useParams()
@@ -28,12 +27,12 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
         const {data=[], title}=useSelector(state=>state.talks[id])
         const showingData=React.useMemo(()=>data.filter(a=>!q || a.text.indexOf(q)!=-1),[data, q])
 
-        const inputStyle={height:50, fontSize:20,color:color.text, backgroundColor:color.inactive,paddingLeft:10}
+        const inputStyle={height:50, fontSize:16,color:color.backgroundColor, backgroundColor:color.text,paddingLeft:10, borderRadius:5}
         const {renderItem:WidgetItem=renderItem}=listProps
 
         return (
-            <KeyboardAvoidingView style={{flex:1,marginTop:20}} behavior="padding">
-                <TextInput style={inputStyle} onChangeText={search=>setSearch(search)}/>
+            <KeyboardAvoidingView style={{flex:1,marginTop:10}} behavior="padding">
+                <TextInput style={inputStyle} placeholder={l10n["Filter"]} onChangeText={search=>setSearch(search)}/>
                 <View style={{flexGrow:1,flex:1}}>
                     {children ? React.cloneElement(children, {id, filter:q}) : <FlatList data={showingData} 
                         extraData={`${q}-${title}-${data.length}`}

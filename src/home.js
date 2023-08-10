@@ -6,8 +6,8 @@ import { Monitor } from "./components"
 
 export default ()=>(
     <View style={{flex:1}}>
-        <Talks style={{flex:1}}/>
-        <Monitor/>
-        <Widgets style={{flex:1}}/>
+        {/* <Talks style={{flex:1}}/>
+        <Monitor/> */}
+        <Widgets style={{flex:1}} horizontal={false}/>
     </View>
 )

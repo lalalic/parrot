@@ -1,8 +1,52 @@
 import makeLocalized from "react-native-use-qili/tools/make-localized"
 
 
-export default makeLocalized({
+export default globalThis.l10n=makeLocalized({
     zh:{
+        "Widgets":"功能件",
+        "Help practice particular language skills":"帮助练习特定语言技能",
+        "Chat":"聊天",
+        "Dialog Book":"对话集锦",
+        "Picture Book":"看图识物",
+        "Audio Book":"语音集锦",
+        "Vocabulary Book":"单词集锦",
+        "Policy":"策略配置",
+        "Favorites":"我的集锦",
+        "Language":"语言设置",
+        "Has ChatGPT Account?":"有ChatGPT账号？",
+        "general":"常用",
+        "options to control player and reaction":"播放器常用配置",
+        "options when shadowing chunk by chunk":"常用跟读单句配置",
+        "options when shadowing chunks by chunks":"常用跟读多句配置",
+        "options when shadowing paragraph by paragraph":"常用跟读段落配置",
+        "shadowing":"单句跟读",
+        "dictating":"多句跟读",
+        "retelling":"段落跟读",
+        "record":"录音",
+        "whitespace":"间隔时间",
+        "chunk":"音块",
+        "visible":"视频",
+        "caption":"字幕",
+        "caption Delay":"字幕延迟",
+        "auto Challenge":"自动挑战分",
+        "speed":"速度",
+        "fullscreen":"全屏",
+        "auto Hide":"自动隐藏",
+        "false":"否",
+        "true":"是",
+        "Mother Language":"母语",
+        "Learning Language":"外语",
+        "It's empty!":"还没有呢！",
+        "No favorite yet!":"你的集锦会显示在这里！",
+        "Foreign Language and TTS":"语言和语音设置",
+        
+        "Create new Vocabulary Book":"新增词汇集锦",
+        "Create new Audio Book":"新增语音集锦",
+        "Create new Dialog Book":"新增对话集锦",
+        "Create new Picture Book":"新增看图识物",
+        "Filter":"快速查找",
+        "":"",
+        "":"",
         
     }
 },"zh")

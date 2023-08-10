@@ -3,9 +3,12 @@ import { SectionList, Pressable, Text, View,  } from "react-native"
 import { useDispatch, useSelector } from "react-redux"
 import Select from "react-native-select-dropdown"
 import TTS from "react-native-tts"
+import { ColorScheme } from "react-native-use-qili/components/default-style"
+const l10n=globalThis.l10n
 
 export default function SpeechSetting({}){
     const dispatch=useDispatch()
+    const color=React.useContext(ColorScheme)
     const [voices, setVoices]=React.useState([])
     const {lang="en",mylang, tts={}}=useSelector(state=>state.my)
     const textStyle={flex:1, paddingLeft:75}
@@ -24,11 +27,16 @@ export default function SpeechSetting({}){
         const langs=Array.from(new Set(locales.map(a=>a.split("-")[0])))
         return [locales, langs]
     },[voices]) 
+    const TitleStyle={width:"40%", fontSize:20, color:color.primary}
     return (
         <>
+            <View style={{alignItems:"center",marginBottom:10}}>
+                <Text style={{fontSize:20}}>{l10n["Foreign Language and TTS"]}</Text>
+            </View>
             <View style={{flexDirection:"row", alignItems:"center", justifyContent:"center",  marginTop:10, marginBottom:10}}>
-                <Text style={{width:"40%"}}>Mother Language</Text>
-                <Select style={{flex:1}} data={locales} defaultValueByIndex={locales.indexOf(mylang)} 
+                <Text style={TitleStyle}>{l10n["Mother Language"]}</Text>
+                <Select style={{flex:1}} data={locales} 
+                    defaultValueByIndex={locales.indexOf(mylang)} 
                     onSelect={value=>dispatch({type:"my", payload:{mylang:value}})}/>
             </View>
             <SectionList sections={voices.filter(a=>a.language==mylang)} extraData={tts[mylang]} style={{flex:1}}
@@ -48,8 +56,9 @@ export default function SpeechSetting({}){
                 }}/>
 
             <View style={{flexDirection:"row", marginTop:10, alignItems:"center", justifyContent:"center", marginBottom:10}}>
-                <Text style={{width:"40%"}}>Learning Language</Text>
-                <Select style={{flex:1}} data={langs} defaultValueByIndex={langs.indexOf(lang)} 
+                <Text style={TitleStyle}>{l10n["Learning Language"]}</Text>
+                <Select style={{flex:1}} data={langs} 
+                    defaultValueByIndex={langs.indexOf(lang)} 
                     onSelect={value=>dispatch({type:"my/lang", lang:value.split("-")[0]})}/>
             </View>
 

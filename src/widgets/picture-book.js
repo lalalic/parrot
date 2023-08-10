@@ -118,13 +118,13 @@ export default class PictureBook extends TaggedListMedia {
         )
     }
 
-    static TagManagement({talk=this.defaultProps, placeholder=`recognize your world`, ...props}){
+    static TagManagement({talk=this.defaultProps, ...props}){
         const dispatch=useDispatch()
         const navigate=useNavigate()
         return (
             <View style={{flex:1}}>
                 <TagManagement {...{
-                    talk, placeholder,
+                    talk, 
                     ...props,
                     renderItemExtra({item}){
                         return ( 

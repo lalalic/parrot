@@ -13,7 +13,7 @@ import mpegKit from "./experiment/mpeg";
 
 export const Policy={
 	general: {
-		desc: "General options to control player and reaction.",
+		desc: "options to control player and reaction",
 		record: false,//record my audio
 		visible: true,//show video or not
 		caption: true,//show caption or not
@@ -26,20 +26,20 @@ export const Policy={
 		autoHide: true,//hide action bar or not
 	},
 	shadowing: {
-		desc: "options when you learn language by shadowing chunck by chunck",
+		desc: "options when shadowing chunk by chunk",
 		record: true,
 		whitespace: 1,
 		chunk: 0,
 	},
 	dictating: {
-		desc: "options when you learn language by dictating chuncks by chunks",
+		desc: "options when shadowing chunks by chunks",
 		record: true,
 		captionDelay: 1,
 		whitespace: 1,
 		chunk: 1, //1s
 	},
 	retelling: {
-		desc: "options when you lean language by retelling the story paragraph by paragraph",
+		desc: "options when shadowing paragraph by paragraph",
 		record: true,
 		captionDelay: 1,
 		whitespace: 1,

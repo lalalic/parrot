@@ -14,7 +14,8 @@ import { Qili, TalkApi, selectPolicy, isOnlyAudio } from "../store"
 import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
 import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import FlyMessage from "react-native-use-qili/components/FlyMessage";
+import FlyMessage from "react-native-use-qili/components/FlyMessage"
+const l10n=globalThis.l10n
 
 
 export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, name, ...props}) => {
@@ -271,7 +272,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
                     <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
                 </Pressable>
                 {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
-                {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{title}</Text>}
+                {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{l10n[title]}</Text>}
             </View>
             {children && React.cloneElement(children,{talk:item})}
 		</View>
@@ -293,16 +294,24 @@ export const ControlIcons={
     autoHide: "transit-enterexit"
 }
 
-export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), ...props}){
+export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), emptyTitle="", style, ...props}){
     const talks=useSelector(({talks={}})=>{
         return Object.keys(talks).map(id=>{
             return filter(talks[id])
         }).filter(a=>!!a)
     })
 
+    if(talks.length==0){
+        return (
+            <View style={[{flex:1,alignContent:"center", alignItems:"center", margin:50},style]}>
+                <Text style={{color:"gray"}}>{l10n[emptyTitle||"It's empty!"]}</Text>
+            </View>
+        )
+    }
+
     return (
         <FlatList 
-            data={talks}
+            data={talks} style={style}
             getItemLayout={(data,index)=>({length:thumbStyle.width, offset: thumbStyle.width*index, index})}
             renderItem={props=><TalkThumb {...props} style={thumbStyle} children={children}/>}
             keyExtractor={item=>item?.id}
