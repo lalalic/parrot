@@ -1,8 +1,8 @@
-import React, { useMemo } from "react"
-import { FlatList, Pressable, TextInput, View, Text, } from "react-native"
-import { useDispatch, useSelector } from "react-redux"
+import React from "react"
+import { FlatList, TextInput, View, } from "react-native"
+import { useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
-import { KeyboardAvoidingView, useTalkQuery } from "../components"
+import { KeyboardAvoidingView, } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 const l10n=globalThis.l10n
@@ -43,8 +43,8 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
                 </View>
                 {!!id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                     {actions?.(title, id)}
-                    <PressableIcon name="read-more"
-                        onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)}/>
+                    {data.length>0 && <PressableIcon name="read-more"
+                        onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)}/>}
                 </View>}
             </KeyboardAvoidingView>
         )

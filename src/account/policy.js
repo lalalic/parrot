@@ -21,7 +21,7 @@ export default function Policy(){
     
     return (
         <KeyboardAvoidingView style={{flex:1}} behavior="padding">
-            <Player key={target} style={{flex:1}} id={"example"}
+            <Player key={target} style={{height:170}} id={"example"}
                 media={<Video 
                     posterSource={{uri:talk?.thumb}} 
                     source={{uri:talk?.video}} 
@@ -36,7 +36,7 @@ export default function Policy(){
                 onPolicyChange={({name, desc, ...policy})=>dispatch({type:"policy",target, payload:policy})}
                 onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 
-            <View style={{flex:1, padding:10}}>
+            <View style={{flex:2, padding:10}}>
                 <View style={{flexDirection:"row",justifyContent:"space-between", 
                     borderBottomWidth:1, borderColor:"black"}}>
                     {"general,shadowing,dictating,retelling".split(",").map(a=>(

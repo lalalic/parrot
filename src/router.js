@@ -38,7 +38,7 @@ export default function MyRouter(){
     
     return (
         <Router initialEntries={initialEntries} 
-            navs={[["/home","home"],["/plan","date-range"],["/account","account-circle"] ]}
+            navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
             >
             <Route path="talks" element={<Talks/>} />
             <Route path="home" element={<Home/>} />
@@ -67,8 +67,11 @@ export default function MyRouter(){
                     <Route path="policy" element={<Policy/>}/>
                     <Route path="favorites" element={<Favorites/>}/>
                     <Route path="language" element={<Lang/>}/>
-                    <Route path="privacy" element={<WebView style={{flex:1}} source={{uri:"https://parrot.qili2.com/privacy.html"}}/>}/>
-                    <Route path="about" element={<WebView style={{flex:1}} source={{uri:"https://parrot.qili2.com"}}/>}/>
+                    <Route path="privacy" element={<WebView style={{flex:1}} 
+                        source={{uri:"https://parrot.qili2.com/privacy.html"}}/>}/>
+                    <Route path="about" element={<WebView style={{flex:1}} 
+                        source={{uri:"https://parrot.qili2.com/about.html"}}/>}/>
+                    
                     {__DEV__ &&(
                         <>
                             <Route path="files" element={<Explorer exclude={["appData"]} title="File Explorer"/>}/>

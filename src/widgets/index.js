@@ -1,5 +1,5 @@
 import React from "react"
-import { FlatList, View, Text } from "react-native"
+import { FlatList, View, Text, useWindowDimensions } from "react-native"
 import { TalkThumb } from "../components"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import AudioBook from "./audio-book"
@@ -8,7 +8,6 @@ import Chat from "./chat"
 import DialogBook from "./dialog-book"
 import VocabularyBook from "./vocabulary-book"
 import YouTubeVideo from "./youtube-video"
-import { useSelector } from "react-redux"
 import TedTalk from "./ted-talk"
 const l10n=globalThis.l10n
 
@@ -23,6 +22,8 @@ export default ({horizontal=true,...props})=>{
     const imageStyle={height:180}
     const durationStyle={bottom:40,top:undefined}
     const titleStyle={height:40}
+    const { width, height }=useWindowDimensions()
+    const widgets=React.useMemo(()=>Object.values(Widgets).filter(a=>!!a.defaultProps?.thumb))
     return (
         <View {...props} style={{marginTop:20}}>
             <Text style={[{fontSize:20,backgroundColor:color.inactive, paddingLeft:5, overflow:"hidden",paddingLeft:10,
@@ -31,7 +32,7 @@ export default ({horizontal=true,...props})=>{
                 <Text style={{fontSize:12}}>{l10n["Help practice particular language skills"]}</Text>
             </Text>
             <FlatList
-                data={Object.values(Widgets)/*.filter(a=>widgets[a.defaultProps.slug]!==false)*/}
+                data={widgets}
                 renderItem={({item:Widget,index})=>(
                     <TalkThumb item={Widget.defaultProps} 
                         getLinkUri={({slug})=>`/widget/${slug}`}

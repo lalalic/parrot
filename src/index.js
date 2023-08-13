@@ -15,7 +15,7 @@ import { listeners, middlewares, reducers } from "./store"
 
 export default function Parrot(){
     return (
-        <App {...{reducers, listeners, middlewares, colorScheme:"dark"}}>
+        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials}}>
             <Login.Required>
                 <ChatProvider>
                     <Router/>
@@ -47,5 +47,24 @@ function AdminStatusHinter(){
         height:2
     }}></View>
 }
+
+const tutorials=[
+    {
+        title:"A player for language learner",
+        desc:"This app is based on a professional player for language learner. It can control speed,",
+        image:require('../assets/icon.png')
+    },
+    {
+        title:"Widgets",
+        desc:"Dialog Book, Picture Book, Vocabulary Book, Chat and more",
+        image:require("../assets/widget-audio-book.jpeg") 
+    },
+    {
+        title:"Plan your study",
+        desc:"You can quickly plan for 1 day, week, month just by copy",
+        image:require("../assets/widget-picture-book.png")
+    }
+]
+ 
 
 

@@ -4,12 +4,12 @@ import makeLocalized from "react-native-use-qili/tools/make-localized"
 export default globalThis.l10n=makeLocalized({
     zh:{
         "Widgets":"功能件",
-        "Help practice particular language skills":"帮助练习特定语言技能",
+        "Help practice particular language skills":"帮助学习特定的语言技能",
         "Chat":"聊天",
-        "Dialog Book":"对话集锦",
+        "Dialog Book":"练习对话",
         "Picture Book":"看图识物",
         "Audio Book":"语音集锦",
-        "Vocabulary Book":"单词集锦",
+        "Vocabulary Book":"记单词",
         "Policy":"策略配置",
         "Favorites":"我的集锦",
         "Language":"语言设置",
