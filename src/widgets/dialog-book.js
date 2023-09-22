@@ -124,6 +124,6 @@ const Paste=({id})=>{
     const dispatch=useDispatch()
     return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
         const dialog=DialogBook.parse(text)
-        dispatch({type:"talk/toggle", talk:{id, data:dialog}})
+        dispatch({type:"talk/set", talk:{id, data:dialog}})
     })}/>
 }

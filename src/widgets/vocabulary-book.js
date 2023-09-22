@@ -118,7 +118,7 @@ export default class VocabularyBook extends TaggedListMedia{
 
         return (
             <>
-            <Text style={{padding:10}}>{[text,explanation,example].filter(a=>!!a).join("\n")}</Text>
+            <Text style={{padding:10, color:"white"}}>{[text,explanation,example].filter(a=>!!a).join("\n")}</Text>
             {this.speak({locale, text:ask})}
             </>
         )
@@ -185,14 +185,14 @@ const Paste=({id})=>{
     const dispatch=useDispatch()
     return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
         const words=VocabularyBook.parse(text)
-        dispatch({type:"talk/toggle",talk:{id, data:words}})
+        dispatch({type:"talk/set",talk:{id, data:words}})
     })}/>
 }
 
 const Locale=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const {locale}=useSelector(state=>state.talks[id]||{})
-    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/toggle",talk, payload:{locale:!locale}})}/>
+    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/set",talk:{id,locale:!locale}})}/>
 }
 
 const Sentense=({talk, id=talk?.id})=>{

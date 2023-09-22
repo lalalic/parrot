@@ -1,4 +1,4 @@
-import { myReducer, Qili as QiliApi } from "react-native-use-qili/store";
+import { myReducer, Qili as QiliApi, isAdmin} from "react-native-use-qili/store";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { XMLParser } from 'fast-xml-parser';
 import * as FileSystem from "expo-file-system";
@@ -454,6 +454,8 @@ export const reducers=(()=>{
 			switch(action.type){
 				case "lang/PERSIST":
 					return {}
+				case "persist/REHYDRATE":
+					return {...Ted.reducer(...arguments), config:state.config}
 			}
 			return Ted.reducer(...arguments)
 		},
@@ -461,6 +463,8 @@ export const reducers=(()=>{
 			switch(action.type){
 				case "lang/PERSIST":
 					return {}
+				case "persist/REHYDRATE":
+					return {...Qili.reducer(...arguments), config:state.config}
 			}
 			return Qili.reducer(...arguments)
 		},
@@ -749,6 +753,8 @@ export const reducers=(()=>{
 					const removed=immutableSet(plans, [y,w,d,h], null)
 					return removed||{}
 				}
+				case "plan/clear":
+					return {calendar:plans.calendar}
 				case "plan/copy/1":{
 					checkAction(action, ["replacements","day","templateDay"])
 					const {replacements, day, templateDay}=action
@@ -853,7 +859,7 @@ export const listeners=[
 	}
 ]
 
-export const middlewares=[Ted.middleware,Qili.middleware,]
+export const middlewares=[ Qili.middleware, Ted.middleware,]
 
 export function selectPlansByDay(state,day){
 	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];

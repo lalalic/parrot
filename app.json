@@ -7,6 +7,10 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "parrot",
+    "urlPrivacy":"https://parrot.qili2.com/privacy.html",
+    "urlAbout":"https://parrot.qili2.com/about.html",
+    "urlTerms":"https://parrot.qili2.com/terms.html",
+    "description":"",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",

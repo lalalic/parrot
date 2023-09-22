@@ -443,7 +443,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
                 <ChangableText style={[containerStyle,{flexGrow:1}]}
                     text={{style:textStyle, value:text}}
                     onPress={e=>navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)} 
-                    onChange={title=>dispatch({type:"talk/toggle", talk:{id, title}})}
+                    onChange={title=>dispatch({type:"talk/set", talk:{id, title}})}
                     />
                 {renderItemExtra?.(...arguments)}
             </View>

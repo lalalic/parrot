@@ -11,12 +11,10 @@ import {Mutex} from "async-mutex"
 import { ColorScheme, TalkStyle } from 'react-native-use-qili/components/default-style'
 import * as Speech from "./speech"
 import { Qili, TalkApi, selectPolicy, isOnlyAudio } from "../store"
-import { logger, fileAsyncTransport , consoleTransport} from "react-native-logs"
 import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 const l10n=globalThis.l10n
-
 
 export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, name, ...props}) => {
     const navigate= useNavigate()
@@ -30,7 +28,7 @@ export const PlayButton = ({size=24, style, color, showPolicy=false, onPress, na
         <View {...props}>
             <View style={{
                 width:squareSize,height:squareSize,borderRadius:squareSize/2,borderWidth:1,
-                borderColor:scheme.inactive,justifyContent:"center",alignItems:"center"
+                borderColor:"white",justifyContent:"center",alignItems:"center"
                 }}>
                 {showPolicy && !!policy && policy!="general" && (
                     <View style={{position:"absolute",width:"100%", height:"100%",justifyContent:"center",alignItems:"center"}}>
@@ -77,8 +75,8 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, labelFade,children, excludes=[], deselectable=true})=>{
-    const color=React.useContext(ColorScheme)
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, activeColor, color, labelFade,children, excludes=[], deselectable=true})=>{
+    const Color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
         setValue(defaultValue)
@@ -89,7 +87,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
             {"shadowing,dictating,retelling".split(",")
                 .filter(a=>excludes.indexOf(a)==-1).map(k=>(
                 <PressableIcon key={k} 
-                    color={value==k ? color.primary : undefined}
+                    color={value==k ? activeColor||Color.primary : color}
                     name={PolicyIcons[k]} labelFade={labelFade}
                     label={!!label && k.toUpperCase()}
                     onPress={e=>change(value==k && deselectable ? "general" : k)}/>
@@ -102,12 +100,12 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, lab
 export const SliderIcon=(uuid=>{
     const Context = React.createContext({});
 
-    function SliderIcon({ onToggle, onSlide, onSlideFinish, slider, icon, ...props }){
+    function SliderIcon({ onToggle, onSlide, onSlideFinish, slider, icon,color="gray", ...props }){
         const [id] = React.useState(uuid++);
         const { setSliding, sliding} = React.useContext(Context);
 
         return (
-            <PressableIcon onPress={onToggle} name={icon}
+            <PressableIcon onPress={onToggle} name={icon} color={color}
                 onLongPress={e => setSliding({ id, onSlide, onSlideFinish, props: slider })}
                 onPressOut={e => sliding?.id == id && !sliding.started && setSliding()}
                 {...props} />
@@ -744,26 +742,4 @@ export function useTalkQuery({api, slug, id, policyName }) {
 
     const { general, shadowing, dictating, retelling, ...data } = talk;
     return { data, policy, ...status};
-}
-
-export function Monitor({}){
-    return null
-}
-
-export function makeLogger(){
-    const options={
-        transport:[
-            consoleTransport,
-            fileAsyncTransport
-        ],
-        transportOptions:{
-            FS: FileSystem,
-            fileName: `logs.txt`
-        }
-    }
-    
-    globalThis.logFile=`${FileSystem.documentDirectory}logs.txt`
-    console.info(`logs at ${logFile}`)
-    const log=logger.createLogger(options);
-    log.patchConsole()
 }

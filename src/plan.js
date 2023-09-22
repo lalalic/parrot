@@ -2,7 +2,7 @@ import React from "react";
 import { Text, View, Modal, Pressable, ScrollView} from "react-native";
 import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
-
+import Select from "react-native-select-dropdown"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
@@ -11,6 +11,7 @@ import { ColorScheme } from "react-native-use-qili/components/default-style";
 import { selectPlansByDay } from "./store";
 import { useNavigate, useLocation } from "react-router-native";
 import produce from "immer";
+const l10n=globalThis.l10n
 
 export default function Scheduler() {
     const color=React.useContext(ColorScheme)
@@ -64,7 +65,7 @@ export default function Scheduler() {
                 
                 planed[ywd]={
                     dots: Array.from(Object.values(dayPlan).reduce((types, a)=>{
-                        types.add(PlanPolicyDots[a.policy])
+                        types.add(PlanPolicyDots[a.policy||'*'])
                         return types
                     },new Set())).sort((a,b)=>a.key.charCodeAt(0)-b.key.charCodeAt(0))
                 }
@@ -92,21 +93,23 @@ export default function Scheduler() {
                 showNowIndicator={true}
                 timelineLeftInset={72}
                 renderEvent={({plan,talk, width})=>{
+                    const uri=`/talk/${talk.slug}${plan.policy ? `/${plan.policy}` : ""}`
                     return (
                         <Pressable style={{width, flex:1, flexDirection:"row"}} 
                             onPress={e=>dispatch({type:"plan/slot",time:plan.start})}
                             onLongPress={e=>dispatch({type:"plan/remove",time:plan.start})}
                             >
-                            <Pressable onPress={e=>navigate(`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`)}>  
-                                <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} text={false} 
-                                        getLinkUri={e=>`/talk/${talk.slug}${!!plan.policy&&"/"}${plan.policy}`}>
+                            <Pressable onPress={e=>navigate(uri)}>  
+                                <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} 
+                                    text={false} getLinkUri={e=>uri}>
+                                    {plan.policy && 
                                     <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
                                         <MaterialIcons name={PolicyIcons[plan.policy]} color={PlanPolicyDots[plan.policy].color} size={24}/>
-                                    </View>
+                                    </View>}
                                 </TalkThumb>
                             </Pressable>  
                             <Text style={{paddingLeft:10,flex:1,flexGrow:1,color:"black"}}>
-                                {`${plan.policy?.toUpperCase()||""}\n${talk?.title||""}`}
+                                {`${plan.policy?.toUpperCase()||" "}\n${talk?.title||""}`}
                             </Text>
                         </Pressable>
                     )
@@ -258,28 +261,37 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
         <Modal  animationType="fade" transparent={true} {...props}>
             <View style={[{padding:4, overflow:"hidden", position:"absolute", top:200, height:400, flex:1, width:"100%"}]}>
                 <View style={{backgroundColor:"black"}}>
-                    <View style={rowStyle}>
-                        <TimeSelector selectedValue={i} style={{flexGrow:1}} enabled={false}/>
-                    </View>
-                    <View style={rowStyle}>
-                        <TimeSelector min={i+1} style={{flexGrow:1}} 
+                    <View style={[rowStyle,{padding:30, justifyContent:"space-evenly"}]}>
+                        <TimeSelector 
+                            buttonStyle={{backgroundColor:"gray"}}
+                            selectedValue={i} 
+                            defaultButtonText={l10n["Start Time"]}
+                            disabled={true}/>
+                        
+                        <TimeSelector min={i+1} 
+                            defaultButtonText={l10n["End Time"]}
                             max={nextPlan?.start.getHalfHour()||48} 
                             selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
-                    <PolicyChoice style={rowStyle} value={plan.policy} excludes={["general"]}
+                    <PolicyChoice style={rowStyle} 
+                        color="white"
+                        value={plan.policy} 
+                        excludes={["general"]}
                         onValueChange={policy=>setPlan({...plan, policy})}
                         />
                     <TalkSelector style={[rowStyle, {height:130, topMargin:10, alignItems:undefined}]}>
                         <TalkSelectedIndicator 
                             selected={plan.id} 
                             activeColor={color.primary} 
+                            backgroundColor={color.backgroundColor}
                             setSelected={id=>setPlan({...plan, id: id==plan.id ? null : id})}/>
                     </TalkSelector>
                     <View style={[rowStyle, {flexDirection:"row", justifyContent:"space-around"}]}>
-                        <PressableIcon name="add-task" size={32} 
+                        <PressableIcon name="add-task" size={32} color="white"
                             onPress={e=>dispatch({type:"plan/save", plan})}/>
-                        <PressableIcon name="cancel" size={32} onPress={e=>dispatch({type:"plan/cancel"})}/>
+                        <PressableIcon name="cancel" size={32} color="white"
+                            onPress={e=>dispatch({type:"plan/cancel"})}/>
                     </View>
                 </View>
             </View>
@@ -287,32 +299,32 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
     )
 }
 
+const AllTime=new Array(49).fill(0).map((a,index)=>({
+    label:`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`,
+    value:index,
+}))
+
 const TimeSelector=({style, min=0, max=48, selectedValue, onValueChange, ...props})=>{
-    const color=React.useContext(ColorScheme)
-    const all=React.memo(()=>
-        new Array(49).fill(0).map((a,index)=>({
-            label:`${String(Math.floor(index/2)).padStart(2,"0")}:${String(index%2*30).padStart(2,"0")}`,
-            value:index,
-        }))
-    ,[])
-    const data=React.memo(()=>all.filter((a,index)=>index>=min && index<=max),[all, min, max])
-    const i=React.memo(()=>data.findIndex(a=>a.value==selectedValue),[selectedValue, data])
+    const data=React.useMemo(()=>AllTime.filter((a,index)=>index>=min && index<=max),[min, max])
+    const i=React.useMemo(()=>data.findIndex(a=>a.value==selectedValue),[selectedValue, data])
     return (
         <Select 
             data={data}
             buttonStyle={style} 
             defaultValueByIndex={i}
-            rowTextForSelection={a=>a.lable}
+            rowTextForSelection={a=>a.label}
+            buttonTextAfterSelection={a=>a.label}
             onSelect={a=>onValueChange(a.value)}
             {...props}
             />
     ) 
 }
 
-const TalkSelectedIndicator=({talk, selected, activeColor, setSelected})=>{
+const TalkSelectedIndicator=({talk, selected, activeColor,backgroundColor, setSelected})=>{
     return (
         <View style={{position:"absolute",width:"100%", height:"100%", justifyContent:"center", alignItems:"center"}}>
             <PressableIcon color={talk.id==selected ? activeColor : undefined} 
+                style={{backgroundColor}}
                 name="check-circle-outline" size={32}
                 onPress={e=>setSelected?.(talk.id)}
                 />
@@ -323,5 +335,6 @@ const TalkSelectedIndicator=({talk, selected, activeColor, setSelected})=>{
 const PlanPolicyDots={
     shadowing:{key:"shadowing", color:"red"},
     dictating:{key:"dictating",color:"blue"},
-    retelling:{key:"retelling", color:"green"}
+    retelling:{key:"retelling", color:"green"},
+    '*':{key:"NA", color:"gray"}
 }

@@ -11,11 +11,13 @@ import { useKeepAwake} from "expo-keep-awake"
 
 
 import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
-import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffScore, diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
+
+const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
 /**
  * 2 models: with or without transcript
 @TODO: 
@@ -310,6 +312,8 @@ export default function Player({
 
     const onRecord=React.useCallback(props=>{
             const {i, chunk=chunks[i], recognized=props.recognized}=status
+            if(!chunk)
+                return 
             const score=diffScore(chunk.text,recognized)
             if(policy.autoChallenge){    
                 if(score<policy.autoChallenge){
@@ -356,7 +360,7 @@ export default function Player({
                         controls,isChallenged,
                         dispatch,status,
                         navable:chunks?.length>=2,
-                        size:32, style:[{flexGrow: policy.fullscreen ? 0 : 1, opacity:0.5, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
+                        size:32, style:[{flexGrow: policy.fullscreen ? 0 : 1, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
                 
                 <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
@@ -418,28 +422,24 @@ export default function Player({
                         }}/>}
                 </AutoHide>
 
-                {showSubtitle && policy.caption && false!=controls.subtitle && <Subtitle 
-                    testID="subtitle"
-                    i={status.i} 
-                    selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
-                    style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20, ...subtitleStyle}}
-                    title={chunks[status.i]?.text||""}
-                    my={chunks[status.i]?.my}
-                    autoChallenge={policy.autoChallenge}
-                    numberOfLines={4}
-                    adjustsFontSizeToFit={true}
-                    delay={policy.captionDelay}/>}
-
-                {policy.fullscreen && status.i==-1 && 
-                    <View style={{justifyContent:"center", bottom:50, position:"absolute", width:"100%"}}>
-                        <Text style={{color:"red", fontWeight:"bold", fontSize:30,textAlign:"center"}}>
-                            {`每天2分钟\n跟读TED\n自动暂停\n听说自由`}
-                        </Text>
-                    </View>
+                {showSubtitle && policy.caption && false!=controls.subtitle && 
+                <View style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20,}}>
+                    <Subtitle 
+                        testID="subtitle"
+                        i={status.i} 
+                        selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
+                        style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20, ...subtitleStyle}}
+                        title={chunks[status.i]?.text||""}
+                        my={chunks[status.i]?.my}
+                        autoChallenge={policy.autoChallenge}
+                        numberOfLines={4}
+                        adjustsFontSizeToFit={true}
+                        delay={policy.captionDelay}/>
+                </View>
                 }
 
                 {status.whitespacing && <Recognizer key={status.i} i={status.i} locale={chunks[status.i]?.recogLocale}
-                    onRecord={onRecord}  uri={onRecordChunkUri?.(chunks[status.i])} />}
+                    onRecord={onRecord}  uri={chunks[status.i] && onRecordChunkUri?.(chunks[status.i])} />}
 
                 <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                     <ProgressBar {...{
@@ -509,7 +509,7 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
             <PlayButton size={size}  testID="play"
                 whitespacing={status.whitespace} 
                 disabled={status.whitespacing || controls.play===false}
-                color={status.whitespacing ? color.warn : undefined}
+                color={status.whitespacing ? color.warn : "white"}
                 name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
                 onPress={e=>dispatch({type:"nav/play"})}/>
             
@@ -550,12 +550,10 @@ export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...
     },[i])
 
     return (
-        <Pressable>
-            <Text {...props} style={style}>
-                {$title||""} {"\n"}
-                <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
-            </Text>
-        </Pressable>
+        <Text {...props} style={style}>
+            {$title||""} {"\n"}
+            <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
+        </Text>
     )
 }
 
@@ -577,7 +575,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 
     React.useEffect(()=>{
         setShowSubtitle(false)
-        return setShowSubtitle(true)
+        return ()=>setShowSubtitle(true)
     },[])
 
     return (

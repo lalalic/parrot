@@ -1,7 +1,6 @@
 import React from "react"
 import { Switch } from "react-native"
 import * as Linking from "expo-linking"
-import WebView from "react-native-webview"
 import { useDispatch, useSelector } from "react-redux"
 import { Route, useLocation, useNavigate, useParams } from "react-router-native"
 
@@ -15,7 +14,6 @@ import Scheduler from "./plan"
 import Talk from "./talk"
 import Talks from "./talks"
 
-import Favorites from "./account/favorites"
 import Explorer from "./account/file-explorer"
 import Lang from "./account/lang"
 import Policy from "./account/policy"
@@ -47,30 +45,22 @@ export default function MyRouter(){
                 <Route path="" element={<Account
                     settings={[
                         {name:"Policy", icon:"policy"},
-                        {name:"Favorites", icon:"favorite"},
                         {name:"Language", icon:"compass-calibration"}, 
-                        {name:"Has ChatGPT Account?",  icon:"chat-bubble-outline", children: <SwitchChatGPT/>}
+                        {name:"Has ChatGPT Account?",  icon:"chat-bubble-outline", children: <SwitchChatGPT/>},
+                        {name:"Ted", icon:"electrical-services", children: <SwitchTed/>},
                     ]}
                     information={[
                         ...(__DEV__ ? [
                             {name:"Reset", icon:"settings", onPress:e=>dispatch(Reset)},
-                            {name:"Ted Service", icon:"electrical-services", children: <SwitchTed/>},
                             {name:"Files", icon:"file-present"},
                             {name:"Clear TalkApi", icon: "cleaning-services", onPress:e=>dispatch(TalkApi.util.resetApiState())},
                             {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
                         ] : []).filter(a=>!!a),
-                        {name:"Privacy Policy", icon:"privacy-tip", href:"/account/privacy"},
-                        {name:"About", icon:"info-outline", href:"/account/about"},
                     ]}
                     />}/>
                 <Route element={<WithBackButton/>}>
                     <Route path="policy" element={<Policy/>}/>
-                    <Route path="favorites" element={<Favorites/>}/>
                     <Route path="language" element={<Lang/>}/>
-                    <Route path="privacy" element={<WebView style={{flex:1}} 
-                        source={{uri:"https://parrot.qili2.com/privacy.html"}}/>}/>
-                    <Route path="about" element={<WebView style={{flex:1}} 
-                        source={{uri:"https://parrot.qili2.com/about.html"}}/>}/>
                     
                     {__DEV__ &&(
                         <>
@@ -83,7 +73,6 @@ export default function MyRouter(){
 
             <Route path="plan" element={<Scheduler/>}/>
 
-            
             <Route path="/talk" element={<WithBackButton/>}>
                 <Route path=":slug" element={<Talk/>}/>
                 <Route path=":slug/:policy" element={<Talk/>}/>

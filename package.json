@@ -34,7 +34,6 @@
     "@types/react-native": "~0.69.1",
     "async-mutex": "^0.4.0",
     "cheerio": "^1.0.0-rc.12",
-    "deprecated-react-native-prop-types": "^4.2.1",
     "expo": "~46.0.21",
     "expo-asset": "^8.9.1",
     "expo-av": "^12.0.4",
@@ -61,6 +60,7 @@
     "react-dom": "18.0.0",
     "react-native": "0.69.9",
     "react-native-calendars": "^1.1291.0",
+    "react-native-exception-handler": "^2.10.10",
     "react-native-fs": "^2.20.0",
     "react-native-gesture-handler": "~2.5.0",
     "react-native-gifted-chat": "^2.0.1",
@@ -69,7 +69,7 @@
     "react-native-logs": "^5.0.1",
     "react-native-select-dropdown": "^3.3.3",
     "react-native-tts": "^4.1.0",
-    "react-native-use-qili": "^1.0.92",
+    "react-native-use-qili": "^1.0.96",
     "react-native-web": "~0.18.7",
     "react-native-webview": "11.23.0",
     "react-native-youtube-iframe": "^2.2.2",
@@ -102,6 +102,9 @@
     "typescript": "^4.6.3",
     "webpack": "^5.88.1",
     "webpack-cli": "^5.1.4"
+  },
+  "resolutions": {
+    "expo-config-plugin-ios-share-extension/@expo/config-plugins": "5.0.1"
   },
   "private": true,
   "main": "./index.js"

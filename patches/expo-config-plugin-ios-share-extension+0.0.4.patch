@@ -1,0 +1,33 @@
+diff --git a/node_modules/expo-config-plugin-ios-share-extension/build/withShareExtensionXcodeTarget.js b/node_modules/expo-config-plugin-ios-share-extension/build/withShareExtensionXcodeTarget.js
+index d5d454d..9c3f874 100644
+--- a/node_modules/expo-config-plugin-ios-share-extension/build/withShareExtensionXcodeTarget.js
++++ b/node_modules/expo-config-plugin-ios-share-extension/build/withShareExtensionXcodeTarget.js
+@@ -20,7 +20,13 @@ const withShareExtensionXcodeTarget = (config) => {
+         const storyboardFilePath = (0, writeShareExtensionFiles_1.getShareExtensionStoryboardFilePath)(platformProjectRoot);
+         await (0, writeShareExtensionFiles_1.writeShareExtensionFiles)(platformProjectRoot, scheme, appIdentifier);
+         const pbxProject = config.modResults;
++        
++        if(!!pbxProject.pbxTargetByName(extensionName)){
++            return config
++        }
++
+         const target = pbxProject.addTarget(extensionName, 'app_extension', extensionName);
++        
+         // Add a new PBXSourcesBuildPhase for our ShareViewController
+         // (we can't add it to the existing one because an extension is kind of an extra app)
+         pbxProject.addBuildPhase([], 'PBXSourcesBuildPhase', 'Sources', target.uuid);
+diff --git a/node_modules/expo-config-plugin-ios-share-extension/src/withShareExtensionXcodeTarget.ts b/node_modules/expo-config-plugin-ios-share-extension/src/withShareExtensionXcodeTarget.ts
+index 4cbdfd2..9b770b4 100644
+--- a/node_modules/expo-config-plugin-ios-share-extension/src/withShareExtensionXcodeTarget.ts
++++ b/node_modules/expo-config-plugin-ios-share-extension/src/withShareExtensionXcodeTarget.ts
+@@ -28,6 +28,10 @@ export const withShareExtensionXcodeTarget: ConfigPlugin = (config) => {
+ 
+     const pbxProject = config.modResults;
+ 
++    if(!!pbxProject.pbxTargetByName(extensionName)){
++      return config
++    }
++
+     const target = pbxProject.addTarget(extensionName, 'app_extension', extensionName);
+ 
+     // Add a new PBXSourcesBuildPhase for our ShareViewController
