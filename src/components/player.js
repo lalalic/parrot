@@ -355,12 +355,16 @@ export default function Player({
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
-                {false!=controls.nav && <NavBar {...{
+                {false!=controls.nav && 
+                <View style={{flex:1, flexDirection:"column", justifyContent:"center"}}>
+                    <NavBar {...{
                         testID: "navBar",
                         controls,isChallenged,
                         dispatch,status,
                         navable:chunks?.length>=2,
-                        size:32, style:[{flex:1, minHeight:150, backgroundColor:"black"},navStyle] }}/>}
+                        size:32, style:navStyle }}/>
+                </View>
+                }
                 
                 <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
