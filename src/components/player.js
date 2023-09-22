@@ -231,7 +231,7 @@ export default function Player({
             ..._controls,
             ...(chunks.length==0 && {subtitle:false, record:false,video:false,caption:false,chunk:false, slow:false,prev:false,next:false,select:false}),
             ...(challenging && {chunk:false}),
-            ...(policy.fullscreen && {slow:false,prev:false,next:false,select:false})
+//            ...(policy.fullscreen && {slow:false,prev:false,next:false,select:false})
         }
     },[_controls,chunks, policy.fullscreen, challenging,])
 
@@ -360,7 +360,7 @@ export default function Player({
                         controls,isChallenged,
                         dispatch,status,
                         navable:chunks?.length>=2,
-                        size:32, style:[{flexGrow: policy.fullscreen ? 0 : 1, backgroundColor:"black",marginTop:40,marginBottom:40},navStyle] }}/>}
+                        size:32, style:[{flex:1, minHeight:150, backgroundColor:"black"},navStyle] }}/>}
                 
                 <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
                     {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
@@ -421,35 +421,41 @@ export default function Player({
                             changePolicy("fullscreen", !policy.fullscreen)
                         }}/>}
                 </AutoHide>
+                
+                <View style={{position:"absolute",bottom:0, width:"100%"}}>
+                    {status.whitespacing && 
+                        <Recognizer key={status.i} i={status.i} 
+                            locale={chunks[status.i]?.recogLocale}
+                            onRecord={onRecord}  
+                            style={{width:"100%",textAlign:"center",fontSize:16}}
+                            uri={chunks[status.i] && onRecordChunkUri?.(chunks[status.i])} 
+                            />
+                    }
 
-                {showSubtitle && policy.caption && false!=controls.subtitle && 
-                <View style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20,}}>
+                    {showSubtitle && policy.caption && false!=controls.subtitle && 
                     <Subtitle 
                         testID="subtitle"
                         i={status.i} 
                         selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
-                        style={{width:"100%",textAlign:"center",position:"absolute", fontSize:16, bottom:20, ...subtitleStyle}}
+                        style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
                         title={chunks[status.i]?.text||""}
                         my={chunks[status.i]?.my}
                         autoChallenge={policy.autoChallenge}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
                         delay={policy.captionDelay}/>
+                    }
+
+                    <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                        <ProgressBar {...{
+                            onProgress,
+                            duration:status.durationMillis,
+                            onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
+                            onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
+                            onSlidingComplete:e=>setAutoHide(Date.now())
+                        }}/> 
+                    </AutoHide>
                 </View>
-                }
-
-                {status.whitespacing && <Recognizer key={status.i} i={status.i} locale={chunks[status.i]?.recogLocale}
-                    onRecord={onRecord}  uri={chunks[status.i] && onRecordChunkUri?.(chunks[status.i])} />}
-
-                <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
-                    <ProgressBar {...{
-                        onProgress,
-                        duration:status.durationMillis,
-                        onValueChange:time=>dispatch({type:"media/time", time:Math.floor(time)}),
-                        onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
-                        onSlidingComplete:e=>setAutoHide(Date.now())
-                    }}/> 
-                </AutoHide>
             </View>
         </SliderIcon.Container>
         {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, onRecordChunkUri, policy:policyName, $policy:policy}}>

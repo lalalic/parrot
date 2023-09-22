@@ -642,7 +642,7 @@ export const Recognizer=(()=>{
 
         return !DeviceEventEmitter.listenerCount('recognized') && (
             <Text style={{color:scheme.primary, ...style}} {...props}>
-                {recognized||"..."}
+                {recognized||" "}
             </Text>
         )
     }

@@ -18,7 +18,7 @@ export default function Talk({autoplay}){
     const {data:talk={}, policy={}, isLoading}=useTalkQuery({slug, id, policyName})
     const {challenging}=policy
     
-    const style=policy.visible&&!talk.miniPlayer ? {flex:1}: {height:200}
+    const style=policy.fullscreen || (policy.visible&&!talk.miniPlayer) ? {flex:1}: {height:200}
 
     const [info, actions]=React.useMemo(()=>([
         Media.Info({talk, policyName, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
