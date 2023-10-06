@@ -9,7 +9,9 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { Subtitles } from "../components/player"
 import mpegKit from "../experiment/mpeg"
 import prepareFolder from "react-native-use-qili/components/prepareFolder";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import { Qili, Ted } from "../store"
+const l10n=globalThis.l10n
 
 
 export default class extends React.Component{
@@ -104,15 +106,17 @@ export default class extends React.Component{
         
         const {lang, mylang}=state.my
         const file=`${FileSystem.documentDirectory}${id}/video.mp4`
+        FlyMessage.show(l10n["Downloading..."])
         await prepareFolder(file)
+        FlyMessage.show(l10n["Generating audio..."])
         await mpegKit.generateAudio({source:talk.video, target:file})
-        console.info(`Downloaded talk audio`)
+        FlyMessage.show(`Generated audio, uploading to qili2...`)
         
         dispatch({type:"talk/set", talk:{id, localVideo:file}})
 
         const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
 
-        console.info(`Uploaded talk video`)
+        FlyMessage.show(`Uploaded, cloning talk...`)
 
         await Qili.fetch({
             id:"save",
@@ -128,6 +132,6 @@ export default class extends React.Component{
 
         dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
 
-        console.info(`Cloned the talk to Qili`)
+        FlyMessage.show(`Cloned`)
     }
 }

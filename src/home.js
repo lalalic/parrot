@@ -12,10 +12,7 @@ export default ()=>(
     <View style={{flex:1}}>
         <Talks style={{flex:1}}/>
         <View  style={{height:100}}>
-            <TalkSelector 
-                thumbStyle={{height:90, width:90}}  
-                titleStyle={{height:0}}
-                >
+            <TalkSelector durationStyle={false} titleStyle={false} thumbStyle={{height:90, width:90}}  >
                 <Toggle/>
             </TalkSelector>
         </View>

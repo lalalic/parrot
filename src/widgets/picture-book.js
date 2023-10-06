@@ -215,11 +215,14 @@ function IdentifiedObject({uri,text}){
         <View style={{
                 position:"absolute",left,top, width, height, 
                 //borderWidth:1, 
-                borderColor:"gray", 
+                //borderColor:"gray", 
                 justifyContent:"center", 
                 alignItems:"center",
             }} pointerEvents="none">
-            <Text textAlign="center">{text}</Text>
+            <Text textAlign="center" 
+                style={{color:"white",fontSize:20,backgroundColor:"black",opacity:0.8}}>
+                {text}
+            </Text>
         </View>
     )
 }

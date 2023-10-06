@@ -254,6 +254,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
     const {thumb,duration,title, slug, isMedia}=item
     const navigate=useNavigate()
     const location=useLocation()
+    const source=typeof(thumb)=="string" ? {uri:thumb} : thumb
     return (
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
@@ -267,10 +268,10 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
                         navigate(getLinkUri(item))
                     }
                 }}>
-                    <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={typeof(thumb)=="string" ? {uri:thumb} : thumb}/>
+                    <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={source}/>
                 </Pressable>
-                {!!text && !!duration && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
-                {!!text && !!title && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{l10n[title]}</Text>}
+                {!!text && !!duration && durationStyle!==false && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
+                {!!text && !!title && (titleStyle!==false || !source) && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{l10n[title]}</Text>}
             </View>
             {children && React.cloneElement(children,{talk:item})}
 		</View>
@@ -292,7 +293,7 @@ export const ControlIcons={
     autoHide: "transit-enterexit"
 }
 
-export function TalkSelector({thumbStyle={height:110,width:140}, selected, children, filter=a=>(a.favorited && a), emptyTitle="", style, ...props}){
+export function TalkSelector({thumbStyle={height:110,width:140}, durationStyle, titleStyle, imageStyle, selected, children, filter=a=>(a.favorited && a), emptyTitle="", style, ...props}){
     const talks=useSelector(({talks={}})=>{
         return Object.keys(talks).map(id=>{
             return filter(talks[id])
@@ -311,7 +312,7 @@ export function TalkSelector({thumbStyle={height:110,width:140}, selected, child
         <FlatList 
             data={talks} style={style}
             getItemLayout={(data,index)=>({length:thumbStyle.width, offset: thumbStyle.width*index, index})}
-            renderItem={props=><TalkThumb {...props} style={thumbStyle} children={children}/>}
+            renderItem={props=><TalkThumb {...props} style={thumbStyle} children={children} {...{durationStyle, titleStyle, imageStyle}}/>}
             keyExtractor={item=>item?.id}
             horizontal={true}
             initialScrollIndex={talks.indexOf(a=>a.id==selected)}

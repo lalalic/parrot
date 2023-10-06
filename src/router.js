@@ -2,9 +2,10 @@ import React from "react"
 import { Switch } from "react-native"
 import * as Linking from "expo-linking"
 import { useDispatch, useSelector } from "react-redux"
-import { Route, useLocation, useNavigate, useParams } from "react-router-native"
+import { Route, useNavigate, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
+import { SwitchChatGPT } from "eact-native-use-qili/components/ChatProvider"
 import Router from "react-native-use-qili/router"
 import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
@@ -98,20 +99,6 @@ export default function MyRouter(){
                 <Route path=":slug/:id" element={<TaggedTranscript/>}/>
             </Route>
         </Router>
-    )
-}
-
-function SwitchChatGPT(){
-    const dispatch=useDispatch()
-    const {widgets}=useSelector(state=>state.my)
-    const {pathname}=useLocation()
-    return (
-        <Switch value={widgets.chatgpt} style={{transform:[{scale:0.5}], alignSelf:"center"}}
-            onValueChange={e=>{
-                dispatch({type:"my", payload:{sessions:{},widgets:{...widgets, chatgpt:!widgets.chatgpt}}})
-                globalThis.lastPathName=pathname
-            }}
-            />
     )
 }
 

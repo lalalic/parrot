@@ -30,22 +30,23 @@ export default function Parrot(){
 
 function AdminStatusHinter(){
     const hasChatGPT=useSelector(state=>hasChatGPTAccount(state))
-    const [bAdmin, setAdmin]=React.useState(false)
+    const tedEnabled=useSelector(state=>state.my.api=="Ted")
+    const [bAdmin, setAdmin]=React.useState(true)
     React.useEffect(()=>{
         (async ()=>setAdmin(await isAdmin()))();
     },[])
-    
-    if(!bAdmin)
-        return null
 
     return <View style={{
-        postion:"absolute",bottom:0,
-        backgroundColor:bAdmin ? "red" : "transparent", 
-        borderWidth:1,
-        borderColor:hasChatGPT ? "green" : "transparent",
         width:"100%",
+        position:"absolute",
+        bottom:0,
+        flexDirection:"row",
         height:2
-    }}></View>
+    }}>
+        <View style={{flex:1, backgroundColor:bAdmin ? "red" : "green",}}/>
+        <View style={{flex:1, backgroundColor:hasChatGPT ? "green" : "transparent",}}/>
+        <View style={{flex:1, backgroundColor:tedEnabled ? "green" : "transparent",}}/>
+    </View>
 }
 
 const tutorials=[

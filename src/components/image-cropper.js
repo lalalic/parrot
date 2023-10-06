@@ -80,7 +80,7 @@ export default function ImageCropper({ debug=false,
 	const locatorXY = React.useMemo(
 		() => ({
 			left: (containerSize.width - viewerSize) / 2,
-			top: (containerSize.height - viewerSize) / 2,
+			top: 50,//(containerSize.height - viewerSize) / 2,
 		}),
 		[viewerSize, containerSize]
 	);
@@ -109,7 +109,11 @@ export default function ImageCropper({ debug=false,
 		<GestureDetector gesture={Gesture.Race(pan, pinch)}>
 			<View
 				style={{ flex: 1, overflow: "hidden"}}
-				onLayout={({ nativeEvent: { layout } }) =>setContainerSize({ ...layout})}
+				onLayout={({ nativeEvent: { layout } }) =>{
+					if(containerSize.width==0){
+						setContainerSize({ ...layout})
+					}
+				}}
 				>
 				{debug && <Info refUpdate={refInfoUpdate}/>}
 				<Animated.View style={imageContainerStyle}>
@@ -159,6 +163,13 @@ function ViewPort({ style, onLocate }) {
 			}}
 			pointerEvents="box-none"
 		>
+			<View style={{
+				position:"absolute",
+				width:"100%",height:"100%",
+				justifyContent: "center",flexDirection:"row",
+				alignContent: "center",}}>
+				<PressableIcon color="yellow" name="add"/>
+			</View>
 			<View style={{ flexDirection: "row" }}>
 				<TextInput
 					ref={refEditor}
@@ -166,23 +177,14 @@ function ViewPort({ style, onLocate }) {
 					style={{
 						flex: 1,
 						height: 20,
-						marginLeft: 20,
-						marginRight: 2,
-						borderBottomWidth: 2,
-						borderColor: "yellow",
-						color: "yellow",
+						fontSize:20
 					}}
 					onEndEditing={({ nativeEvent: { text } }) => {
 						if (!text) return;
 						onLocate?.(text);
 						refEditor.current.clear();
 					}}
-				/>
-				<PressableIcon
-					color="yellow"
-					name="check"
-					style={{ width: 20 }}
-					onPress={(e) => refEditor.current.blur()}
+					enterKeyHint="done"
 				/>
 			</View>
 		</View>

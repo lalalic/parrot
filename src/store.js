@@ -820,6 +820,9 @@ export const listeners=[
 
 			try{
 				const unwrap=(({general, shadowing, retelling, dictating, challenging, ...talk})=>talk)(talk);
+				// if((globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite){
+				// 	dispatch({type:"favorite/queue", talk:{...unwrap,_id:id}})
+				// }
 				;(globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite?.({id, talk:{...unwrap,_id:id}, state, dispatch});
 			}catch(e){
 				dispatch({type:"message/error",message:e.message})
