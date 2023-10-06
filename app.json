@@ -29,6 +29,7 @@
     "ios": {
       "buildNumber":"1",
       "supportsTablet": true,
+      "bitcode": false,
       "bundleIdentifier": "com.lalalic.parrot",
       "infoPlist": {
         "UIBackgroundModes": [
