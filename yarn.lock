@@ -4046,7 +4046,7 @@ expo-updates@~0.14.7:
     resolve-from "^5.0.0"
     uuid "^3.4.0"
 
-expo@~46.0.16, expo@~46.0.21:
+expo@~46.0.21:
   version "46.0.21"
   resolved "https://registry.yarnpkg.com/expo/-/expo-46.0.21.tgz#83108a8f59c1773fc2bdc3684efcaa5a812a4990"
   dependencies:
@@ -7210,16 +7210,13 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.0.109:
-  version "1.0.109"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.109.tgz#c9c863d4cb86d731b53163a7adcc917324c88c0f"
+react-native-use-qili@^1.0.113:
+  version "1.0.113"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.0.113.tgz#893f1e4410f62dc48390209405962eef55caab5c"
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
-    expo "~46.0.16"
     expo-constants "~13.2.4"
     expo-linking "~3.2.4"
-    react "18.0.0"
-    react-native "0.69.9"
     react-native-snap-carousel "^3.9.1"
   optionalDependencies:
     "@reduxjs/toolkit" "^1.8.6"

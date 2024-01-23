@@ -140,6 +140,7 @@ export default class VocabularyBook extends TaggedListMedia{
         
         const Item=React.useCallback(({item, id, index, word=item.word})=>{
             const [playing, setPlaying] = React.useState(false)
+            const [editing, setEditing] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             const text=getShowText(item)
             return (
@@ -148,7 +149,7 @@ export default class VocabularyBook extends TaggedListMedia{
                         onPress={e=>setPlaying(!playing)}/>
                     <Pressable 
                         onPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${word}`)}
-                        onLongPress={e=>setEditing(true)}
+                        //onLongPress={e=>setEditing(true)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                             <Text style={textStyle}>{text}</Text>
                             {playing && <Speak text={word} onEnd={e=>setPlaying(false)}/>}
@@ -170,7 +171,7 @@ export default class VocabularyBook extends TaggedListMedia{
     static parse(text){
         return text.split(/[\n;]/).filter(a=>!!a)
             .map(line=>{
-                const [word="", translated=word]=line.split(":").map(a=>a.trim())
+                const [word="", translated]=line.split(":").map(a=>a.trim())
                 if(word){
                     return {word, translated}
                 }
@@ -233,3 +234,9 @@ function getShowText({word, pronunciation, translated, classification, explanati
     extra = extra ? `- ${extra}` : ""
     return `${word}${pronunciation}${translated} ${extra}`
 }
+
+/**
+example:
+Bonjour: hello
+
+ */

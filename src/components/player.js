@@ -440,7 +440,7 @@ export default function Player({
                     <Subtitle 
                         testID="subtitle"
                         i={status.i} 
-                        selectRecognized={(state,i)=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
+                        selectRecognized={(state,i, a=chunks[i])=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
                         title={chunks[status.i]?.text||""}
                         my={chunks[status.i]?.my}

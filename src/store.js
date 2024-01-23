@@ -127,6 +127,16 @@ async function fetchTedTalk({slug},{lang, mylang}){
 	})))();
 	return talk
 }
+
+const widgetTalks_queryFn=async (variables,api)=>{
+	const data=await Qili.fetch({
+		id:"widgetTalks",
+		variables:{...variables, lang: api.getState().my.lang}
+	})
+	data.talks.reverse()
+	return {data}
+}
+
 export const Ted=Object.assign(createApi({
 	reducerPath:"ted",
 	endpoints:builder=>({
@@ -223,6 +233,7 @@ export const Ted=Object.assign(createApi({
 		}),
 		talks:builder.query({
 			queryFn:async ({q, page}, api)=>{
+				const {lang}=api.getState().my
 				let minutes=0
 				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
 
@@ -314,13 +325,10 @@ export const Ted=Object.assign(createApi({
 			},
 		}),
 		widgetTalks:builder.query({
-			queryFn:async (variables,api)=>{
-				const data=await Qili.fetch({
-					id:"widgetTalks",
-					variables
-				})
-				data.talks.reverse()
-				return {data}
+			queryFn:widgetTalks_queryFn,
+			serializeQueryArgs({queryArgs},b){
+				debugger
+				return queryArgs
 			}
 		})
 	})
@@ -356,12 +364,13 @@ export const Qili=Object.assign(createApi({
 		}),
 		talks:builder.query({
 			queryFn:async ({q="", page}, api)=>{
+				const {lang}=api.getState().my
 				let minutes=0
 				q=q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2)=>(minutes=parseInt($2),"")).trim()
 				
 				const data=await Qili.fetch({
 					id:"talks",
-					variables:{q}
+					variables:{q, lang}
 				})
 				data.talks.reverse()
 				return {data}
@@ -399,14 +408,7 @@ export const Qili=Object.assign(createApi({
 			providesTags:()=>[{type:"Talk", id:"today"}]
 		}),
 		widgetTalks:builder.query({
-			queryFn:async (variables,api)=>{
-				const data=await Qili.fetch({
-					id:"widgetTalks",
-					variables
-				})
-				data.talks.reverse()
-				return {data}
-			}
+			queryFn:widgetTalks_queryFn
 		})
 	})
 }),{
@@ -902,4 +904,8 @@ export function getTalkApiState(state){
 
 export function isOnlyAudio(url){
 	return typeof(url)=="string" && url.indexOf("video.mp4")!=-1
+}
+
+export function getLang(){
+
 }

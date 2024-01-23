@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux"
 import { Route, useNavigate, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
-import { SwitchChatGPT } from "eact-native-use-qili/components/ChatProvider"
+import { SwitchChatGPT } from "react-native-use-qili/components/ChatProvider"
 import Router from "react-native-use-qili/router"
 import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"

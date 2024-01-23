@@ -43,3 +43,13 @@ design
 todo
 ====
 > remove reanimated 10%
+> use ai.qili2 to provide service
+    > create random image
+    > generate vocabulary
+    > generate dialog
+    > generate idioms
+
+deploy
+=====
+> build: eas build
+> submit: 

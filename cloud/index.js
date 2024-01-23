@@ -33,11 +33,11 @@ Cloud.addModule({
 
         extend type Query{
             talk(slug:String, id:String):Talk
-            talks(q:String, duration: Int):[Talk]
+            talks(q:String, duration: Int, lang:String):[Talk]
             people(q:String):[Talk]
             speakerTalks(speaker:String):[Talk]
             today:[Talk]
-            widgetTalks(slug:String, q:String):[Talk]
+            widgetTalks(slug:String, q:String, lang:String):[Talk]
             isAdmin:Boolean
         }
 
@@ -67,8 +67,8 @@ Cloud.addModule({
                 }
                 return app.get1Entity("Talk", filter)
             },
-            talks(_,{q, duration},{app}){
-                const cond={$regex:q, $options:'i'}
+            talks(_,{q, duration, lang="en"},{app}){
+                const cond={$regex:q, $options:'i', lang}
                 return app.findEntity("Talk", {$or:[{title:cond},{description:cond}]})
             },
             people(_,{q},{app}){
@@ -81,11 +81,12 @@ Cloud.addModule({
             today(_,{},{app}){
                 return app.findEntity("Talk")
             },
-            widgetTalks(_,{slug,q},{app}){
+            widgetTalks(_,{slug,q, lang="en"},{app}){
+                const props={lang}
                 if(!slug)
-                    return app.findEntity("Widget")
+                    return app.findEntity("Widget", props)
 
-                const props={slug}
+                props.slug=slug
                 if(q){
                     props.title={$regex:q, $options:"i"}
                 }
@@ -127,8 +128,8 @@ Cloud.addModule({
                 ${Talk_Fields_Fragment}
             }
         }`,
-        talks:`query talks_Query($q:String!){
-            talks(q:$q){
+        talks:`query talks_Query($q:String!, $lang:String){
+            talks(q:$q, lang:$lang){
                 ${Talk_Fields_Fragment}
             }
         }`,
@@ -147,8 +148,8 @@ Cloud.addModule({
                 ${Talk_Fields_Fragment}
             }
         }`,
-        widgetTalks:`query talks_Query($slug:String, $q:String){
-            talks:widgetTalks(slug:$slug, q:$q){
+        widgetTalks:`query talks_Query($slug:String, $q:String, $lang:String){
+            talks:widgetTalks(slug:$slug, q:$q, lang:$lang){
                 id
                 title
                 slug
@@ -159,8 +160,8 @@ Cloud.addModule({
         }`
     },
     indexes:{
-        Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}],
-        Widget:[{title:1, slug:1, lang:1, mylang:1}],
+        Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}, {lang:1}],
+        Widget:[{title:1, slug:1, lang:1, mylang:1}, {lang:1}],
         WechatBotBarcode:[{shortID:1}]
     }
 })
