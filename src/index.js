@@ -15,7 +15,7 @@ import { listeners, middlewares, reducers } from "./store"
 
 export default function Parrot(){
     return (
-        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials}}>
+        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:[]}}>
             <Login.Required iconSource={require("../assets/icon.png")}>
                 <ChatProvider>
                     <Router/>

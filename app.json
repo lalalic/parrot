@@ -2,7 +2,8 @@
   "expo": {
     "name": "Parrot Talk",
     "slug": "parrot",
-    "version": "1.0.0",
+    "version": "1.0.1",
+    "runtimeVersion": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -27,7 +28,7 @@
       "silentLaunch": true
     },
     "ios": {
-      "buildNumber":"1",
+      "buildNumber":"3",
       "supportsTablet": true,
       "bitcode": false,
       "bundleIdentifier": "com.lalalic.parrot",
