@@ -48,20 +48,26 @@ export default class DialogBook extends TaggedListMedia{
                 "Scene":"Discuss a message queue solution",
             }, 
             prompt:(a,store)=>{
-                const {lang}=store.getState().my
-                return ` I'm learning language of locale ${lang}.
-                    Please make a short dialog to practise the language.
-                    Your role is ${a["Your Role"]} called Joe. 
-                    My role is ${a["My Role"]} called Ray.
-                    the scene: ${a["Scene"]}.
-                    you must return all response in one time. 
-                    `
+                const {my:{lang}}=store.getState()
+                return `
+                Please make a short ${lang} language dialog to help learn language ${lang}. 
+                One role is ${a["Your Role"]} called Joe. 
+                Another role is ${a["My Role"]} called Ray. 
+                the scene: ${a["Scene"]}. 
+                -------------
+                Response Should only contains the dialog. 
+                Response MUST be able to directly be parsed by following js code:
+                <code>
+                const {title, dialog=[]}=JSON.parse(response)
+                const {user, text}=dialog[0]
+                </code>
+                `
             },
             onSuccess({response, store}){
                 const {Scene:title}=this.params
-                const {lang}=store.getState().my
-                
-                const data=DialogBook.parse(response)
+                const {my:{lang}}=store.getState()
+                const {dialog=[]}=JSON.parse(response)
+                const data=DialogBook.parse(dialog)
                 const id=DialogBook.create({title, data, params:this.params, generator:"Dialog", lang}, store.dispatch)
                 return `save to @#${id}`
             }
@@ -104,12 +110,17 @@ export default class DialogBook extends TaggedListMedia{
         )
     }
 
-    static parse(text){
-        return text.split("\n").filter(a=>!!a)
-            .map(a=>{
-                const [user, ask=user]=a.split(":")
-                return {ask, text:" "}
-            }).reduce((data,a, i)=>{
+    static parse(dialog){
+        if(typeof(dialog)=="string"){
+            dialog=dialog.split("\n").filter(a=>!!a)
+                .map(a=>{
+                    const [user, ask=user]=a.split(":")
+                    return {ask, text:" "}
+                })
+        }else{
+            dialog=dialog.map(({user, text})=>({ask:text, text:" "}))
+        }
+        return dialog.reduce((data,a, i)=>{
                 if(0 === i%2){
                     data.push(a)
                 }else{

@@ -15,8 +15,8 @@ import { useKeepAwake } from "expo-keep-awake"
 
 const defaultProps={
 	isMedia:false,
-	id: "chatgpt",
-	slug: "chatgpt",
+	id: "chat",
+	slug: "chat",
 	title: "Chat",
 	thumb: require("../../assets/widget-chat-bot.png"),
 	description: "Make a conversation with bot",
@@ -38,7 +38,7 @@ const createBotMessage = Object.assign((text) => {
 		createdAt: new Date(),
 		user: {
 			_id: CHAT_GPT_ID,
-			name: 'react-native-chatgpt',
+			name: 'bot',
 		}
 	};
 },{
@@ -174,6 +174,7 @@ const Chat = () => {
 						return newMessages;
 					});
 				},
+				history: !isPrompt ? messages.slice(1).reverse() : []
 			});
 		}else if(!createBotMessage.is(lastMessage) && typeof(lastMessage.text)!="object"){
 			setMessages((prevMessages) => [createBotMessage('...'), ...prevMessages]);

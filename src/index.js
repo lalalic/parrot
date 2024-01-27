@@ -3,8 +3,7 @@ import React from "react"
 import { View } from "react-native"
 import { useSelector } from "react-redux"
 
-import { hasChatGPTAccount, isAdmin } from "react-native-use-qili/store"
-import ChatProvider from "react-native-use-qili/components/ChatProvider"
+import { isAdmin } from "react-native-use-qili/store"
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import Login from "react-native-use-qili/components/Login"
 import App from "react-native-use-qili/App"
@@ -17,9 +16,7 @@ export default function Parrot(){
     return (
         <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:[]}}>
             <Login.Required iconSource={require("../assets/icon.png")}>
-                <ChatProvider>
-                    <Router/>
-                </ChatProvider>
+                <Router/>
             </Login.Required>
             <FlyMessage/>
             <Permissions/>
@@ -29,7 +26,6 @@ export default function Parrot(){
 }
 
 function AdminStatusHinter(){
-    const hasChatGPT=useSelector(state=>hasChatGPTAccount(state))
     const tedEnabled=useSelector(state=>state.my.api=="Ted")
     const [bAdmin, setAdmin]=React.useState(true)
     React.useEffect(()=>{
@@ -44,7 +40,6 @@ function AdminStatusHinter(){
         height:2
     }}>
         <View style={{flex:1, backgroundColor:bAdmin ? "red" : "green",}}/>
-        <View style={{flex:1, backgroundColor:hasChatGPT ? "green" : "transparent",}}/>
         <View style={{flex:1, backgroundColor:tedEnabled ? "green" : "transparent",}}/>
     </View>
 }

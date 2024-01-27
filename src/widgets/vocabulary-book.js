@@ -46,18 +46,27 @@ export default class VocabularyBook extends TaggedListMedia{
                     .map(b=>b.data.map(b=>b.word).join(","))
                     .join(",")
 
-                return `list ${a.amount} words of locale ${lang} about ${a.category} with translation to locale ${mylang}.
-                    Each must format like word:translation , and You must put all words in one paragraph using ; to seperate.
-                    You can't respond anything else.
-                    ${existings ? `I already know these words: ${existings}` : ''}`
+                return `list ${a.amount} words of ${lang} language about ${a.category} with translation to ${mylang} language.
+                    ${existings ? `I already know these words: ${existings}` : ''}
+                    Response MUST be able to be parsed with following js code:
+                    <code>
+                        const {words=[]}=JSON.parse(response)
+                        const {word, translated}=words[0]
+                    </code>
+                    `
             },
 
             onSuccess({response,store}){
                 const {category}=this.params
-                const {mylang,lang}=store.getState().my
-                const words=response.split(";").map(VocabularyBook.parse).filter(a=>!!a).flat()
-                const id=VocabularyBook.create({data:words,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
-                return `save to @#${id}`
+                const {my:{mylang,lang}}=store.getState()
+
+                try{
+                    const {words=[]}=JSON.parse(response)
+                    const id=VocabularyBook.create({data:words,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
+                    return `save to @#${id}`
+                }catch(e){
+                    return e.message
+                }
             }
         },{
             label:"Idioms", name:"category",
@@ -71,18 +80,26 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {mylang, lang}=state.my
                 a.lang=lang
                 a.mylang=mylang
-                return `list ${a.amount} idioms of locale ${lang} used in ${a.category} with explanation, an example and translation to locale ${mylang}. 
-                    your response should only contain the idioms, 
-                    and its format must be json format with keys: idiom,explanation,example, translated.`
+                return `list ${a.amount} idioms of ${lang} language used in ${a.category} with ${mylang} language translation, and an example.
+                ------------ 
+                    Response MUST be able to be parsed by following javascript code.
+                    <code>
+                        const {idioms=[]}=JSON.parse(response);
+                        const {word,translated, example}=idioms[0]
+                    </code>`
             },
 
             onSuccess({response,store}){
                 const {category}=this.params
                 const {lang, mylang}=store.getState()
-                const {idioms}=JSON.parse(response.replace(/\"idiom\"\:/g, '"word":').replace(/\"translation\"\:/,'"translated":'))
-                const title=`idioms - ${category}`
-                const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
-                return `save to @#${id}`
+                try{
+                    const {idioms}=JSON.parse(response)
+                    const title=`idioms - ${category}`
+                    const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
+                    return `save to @#${id}`
+                }catch(e){
+                    return e.message
+                }
             }
         }
     ]
@@ -201,7 +218,7 @@ const Sentense=({talk, id=talk?.id})=>{
     const ask=useAsk()
     const { policy } = useParams()
     const {challenges=[]}=useSelector(state=>state.talks[id][policy]||{})
-    const {widgets={}, mylang}=useSelector(state=>state.my)
+    const {widgets={}, mylang, lang}=useSelector(state=>state.my)
     const words=challenges.map(a=>a.ask).join(",")
     if(widgets.chat===false || !words)
         return null
@@ -210,17 +227,28 @@ const Sentense=({talk, id=talk?.id})=>{
         <PressableIcon name="support" 
             onPress={e=>{
                 (async()=>{
-                    const response=await ask(`
-                        use the following words to make a sentence to memorize them: ${words}. 
-                        Your response should only include the sentence and translation to ${mylang}. 
-                        the format must be json.
-                    `)
-                    dispatch({
-                        type:"talk/challenge", 
-                        talk, 
-                        chunk:JSON.parse(response.replace(/\"sentence\"\:/ig, '"word":').replace(/\"translation\"\:/ig,'"translated":')), 
-                        policy
-                    })
+                    try{
+                        const response=await ask(`
+                            use the following ${lang} language words to make one sentence or paragraph, and translate to ${mylang} language. 
+                            ---------word start------
+                            ${words}
+                            ---------word end------- 
+                            Response MUST be able to be parsed by following js code:
+                            <code>
+                                const {word:sentence, translated}=JSON.parse(response)
+                            </code>
+                            .
+                        `)
+                        
+                        dispatch({
+                            type:"talk/challenge", 
+                            talk, 
+                            chunk:JSON.parse(response), 
+                            policy
+                        })
+                    }catch(e){
+                        console.error(e)
+                    }
                 })();
             }}/>
     )

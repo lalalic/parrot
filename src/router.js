@@ -1,11 +1,11 @@
 import React from "react"
 import { Switch } from "react-native"
 import * as Linking from "expo-linking"
+import * as FileSystem from "expo-file-system"
 import { useDispatch, useSelector } from "react-redux"
 import { Route, useNavigate, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
-import { SwitchChatGPT } from "react-native-use-qili/components/ChatProvider"
 import Router from "react-native-use-qili/router"
 import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
@@ -26,17 +26,9 @@ import TaggedTranscript from "./widgets/tagged-transcript"
 
 export default function MyRouter(){
     const dispatch=useDispatch()
-    const initialEntries=React.useMemo(()=>{
-        const entries=["/home"]
-        if(globalThis.lastPathName){//chatgpt switch lead to different parent
-            entries.push(globalThis.lastPathName)
-            delete globalThis.lastPathName
-        }
-        return entries
-    },[])
     
     return (
-        <Router initialEntries={initialEntries} 
+        <Router initialEntries={["/home"]} 
             navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
             >
             <Route path="talks" element={<Talks/>} />
@@ -47,7 +39,6 @@ export default function MyRouter(){
                     settings={[
                         {name:"Policy", icon:"policy"},
                         {name:"Language", icon:"compass-calibration"}, 
-                        {name:"Has ChatGPT Account?",  icon:"chat-bubble-outline", children: <SwitchChatGPT/>},
                         {name:"Ted", icon:"electrical-services", children: <SwitchTed/>},
                     ]}
                     information={[
@@ -58,6 +49,15 @@ export default function MyRouter(){
                             {name:"Clear Talk", icon: "cleaning-services", onPress:e=>dispatch({type:"talk/clear/all"})},
                         ] : []).filter(a=>!!a),
                     ]}
+                    onDeleteAccount={async ()=>{
+                        const docs=await FileSystem.readDirectoryAsync(FileSystem.documentDirectory)
+                        const accountData=docs.filter(a=>a.indexOf('.account.')!=-1)
+                        const all=[]
+                        for (const dir of accountData) {
+                            all.push(FileSystem.deleteAsync(`${FileSystem.documentDirectory}${dir}`))
+                        }
+                        return Promise.all(all)
+                    }}
                     />}/>
                 <Route element={<WithBackButton/>}>
                     <Route path="policy" element={<Policy/>}/>

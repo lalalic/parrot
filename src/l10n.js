@@ -13,7 +13,6 @@ export default globalThis.l10n=makeLocalized({
         "Policy":"策略配置",
         "Favorites":"我的集锦",
         "Language":"语言设置",
-        "Has ChatGPT Account?":"有ChatGPT账号?",
         "general":"常用",
         "options to control player and reaction":"播放器常用配置",
         "options when shadowing chunk by chunk":"常用跟读单句配置",

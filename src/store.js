@@ -845,7 +845,7 @@ export const listeners=[
 				},{});
 
 				await FileSystem.writeAsStringAsync(
-					`${FileSystem.documentDirectory}${originalState.my.lang}.json`, 
+					`${FileSystem.documentDirectory}${originalState.my.lang}.account.json`, 
 					JSON.stringify(originalLangData)
 				)
 				console.info(`saved store for ${originalState.my.lang}`)
@@ -855,8 +855,9 @@ export const listeners=[
 
 			//rehydrate for current lang
 			try{
-				const currentLangData=await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.json`)
+				const currentLangData=await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.account.json`)
 				api.dispatch({type:'lang/REHYDRATE', payload:JSON.parse(currentLangData)})
+				api.dispatch(TalkApi.util.resetApiState())
 			}catch(e){
 				console.warn(e)
 			}

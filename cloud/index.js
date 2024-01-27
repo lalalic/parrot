@@ -170,29 +170,10 @@ Cloud.addModule(require("react-native-use-qili/cloud/events"))
 
 Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
 
-Cloud.addModule((
-    ({apiKey, path=/^\/ai(\/(?<chatflowid>.*))/, })=>({
-        name:"ai",
-        static(service){
-            service.on(path,async (req, res)=>{
-                const {chatflowid="f4193b69-6c88-4b64-8138-df5df742b3b4"}=req.params
-                const prediction=await fetch(
-                    `https://ai.qili2.com/api/v1/prediction/${chatflowid}`,
-                    {
-                        method:"post",
-                        headers:{
-                            "Content-Type":"application/json",
-                            "Authorization":"Bearer "+apiKey
-                        },
-                        body: JSON.stringify(req.body)
-                    }
-                )
-                const result=await prediction.JSON()
-                return result
-            })
-        }
-    })
-)())
+Cloud.addModule(require("react-native-use-qili/cloud/predict")({
+    apiKey:"8a58f914-a76f-46fc-81b9-d6801eab5f95",
+    chatflowId:"f4193b69-6c88-4b64-8138-df5df742b3b4",
+}))
 
 // Cloud.addModule(require("react-native-use-qili/cloud/iap")({
 //     path:"/verifyReceipt",

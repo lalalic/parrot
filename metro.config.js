@@ -12,6 +12,9 @@ config.resolver.resolveRequest=function(context, moduleName, platform){
 	}else if(moduleName=="react-native-iaphub"){
 		original.filePath=require.resolve("react-native-use-qili/components/iaphub-iap")//require('path').resolve(__dirname,"./src/iaphub/index.js")
 	}
+	// else if(moduleName=="react-native-use-qili/components/useAsk"){
+	// 	original.filePath=require('path').resolve(__dirname,"./src/components/useAsk.js")
+	// }
 	
 	// Optionally, chain to the standard Metro resolver.
 	return original

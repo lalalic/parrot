@@ -70,7 +70,14 @@ export default class PictureBook extends TaggedListMedia {
 
         const [visible, setVisible]=React.useState(true)
 
-        const ask=useAsk({id:"randomPicture",prompt:"response one or two words to describe a random scene with comma as seperator"})
+        const ask=useAsk({
+            id:"randomPicture",
+            prompt:`Give 2 words to describe a random scene. 
+            Response must be able to be parsed with following js code:
+            <code>
+            const [word0, word1]=JSON.parse(response)
+            </code>`
+        })
         return (
             <TaggedTranscript {...props}
                 actions={(tag,id)=>([
@@ -97,7 +104,8 @@ export default class PictureBook extends TaggedListMedia {
                                 dispatch({type:"talk/set", talk:{id, thumb:source}})
                             }}
                             onPress={async e=>{
-                                const words=(await ask()).toLowerCase()
+                                const response=await ask()
+                                const words=JSON.parse(response).join(",")
                                 const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${words}`)
                                 dispatch({type:"talk/set", talk:{id, thumb:res.url, tags:words.split(",")}})
                             }}
