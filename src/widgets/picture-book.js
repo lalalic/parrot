@@ -43,7 +43,7 @@ export default class PictureBook extends TaggedListMedia {
 
     static remoteSave=false
     
-    static TaggedTranscript=props=>{
+    static TaggedTranscript=({id, ...props})=>{
         const dispatch=useDispatch()
         const {width,height}=useWindowDimensions()
 
@@ -70,48 +70,40 @@ export default class PictureBook extends TaggedListMedia {
 
         const [visible, setVisible]=React.useState(true)
 
-        const ask=useAsk({
-            id:"randomPicture",
-            prompt:`Give 2 words to describe a random scene. 
-            Response must be able to be parsed with following js code:
-            <code>
-            const [word0, word1]=JSON.parse(response)
-            </code>`
-        })
-        return (
-            <TaggedTranscript {...props}
-                actions={(tag,id)=>([
-                        <PressableIcon name="apps" key="visible"
-                            color={visible ? "yellow" : "gray"} 
-                            onPress={e=>setVisible(!visible)}/>,
+        const ask=useAsk({id:"randomPicture", timeout:2*60*1000 })
 
-                        <Uploader name="360" key="objects" 
-                            requireLogin="generate a scenario picture"
-                            options={{
-                                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                                allowsMultipleSelection:false,
-                                quality: 0.8
-                            }}
-                            upload={async select=>{
-                                let source=select.uri
-                                const path=`${FileSystem.documentDirectory}${id}/thumb.png`
-                                if(select.width>select.height){
-                                    const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
-                                    source=result.uri
-                                    //await FileSystem.moveAsync({from:source.replace("file://",""), to:path.replace("file://","")})
-                                }
-                                
-                                dispatch({type:"talk/set", talk:{id, thumb:source}})
-                            }}
-                            onPress={async e=>{
-                                const response=await ask()
-                                const words=JSON.parse(response).join(",")
-                                const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${words}`)
-                                dispatch({type:"talk/set", talk:{id, thumb:res.url, tags:words.split(",")}})
-                            }}
-                            />
-                    ]
-                )}
+        return (
+            <TaggedTranscript {...props} id={id}
+                actions={[
+                    <PressableIcon name="apps" key="visible"
+                        color={visible ? "yellow" : "gray"} 
+                        onPress={e=>setVisible(!visible)}/>,
+
+                    <Uploader name="360" key="objects" 
+                        requireLogin="generate a scenario picture"
+                        options={{
+                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                            allowsMultipleSelection:false,
+                            quality: 0.8
+                        }}
+                        upload={async select=>{
+                            let source=select.uri
+                            const path=`${FileSystem.documentDirectory}${id}/thumb.png`
+                            if(select.width>select.height){
+                                const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
+                                source=result.uri
+                                //await FileSystem.moveAsync({from:source.replace("file://",""), to:path.replace("file://","")})
+                            }
+                            
+                            dispatch({type:"talk/set", talk:{id, thumb:source}})
+                        }}
+                        onPress={async e=>{
+                            const words=await ask({message:"response one or two words to describe a random scene with comma as seperator", })
+                            const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${words}`)
+                            dispatch({type:"talk/set", talk:{id, thumb:res.url, tags:words.split(",")}})
+                        }}
+                        />
+                ]}
                 renderItem={PictureItem}
                 listProps={{numColumns:2}}
             >

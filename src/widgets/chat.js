@@ -1,6 +1,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View , Text, TextInput, Pressable, } from 'react-native';
+import { View , Text, TextInput, Pressable, ActivityIndicator} from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Speak, Recognizer, Recorder, PlaySound, KeyboardAvoidingView} from "../components"
@@ -12,6 +12,7 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useNavigate } from 'react-router-native';
 import * as FileSystem from "expo-file-system"
 import { useKeepAwake } from "expo-keep-awake"
+const l10n=globalThis.l10n
 
 const defaultProps={
 	isMedia:false,
@@ -31,7 +32,7 @@ const CHAT_GPT_ID = 'system';
 const Icons={system:"adb", assistant:"ac-unit", user:"emoji-people"}
 const user=Object.freeze({_id: "user", name:"You"})
 
-const createBotMessage = Object.assign((text) => {
+const createBotMessage = Object.assign((text, props={}) => {
 	return {
 		_id: String(Date.now()),
 		text,
@@ -39,7 +40,8 @@ const createBotMessage = Object.assign((text) => {
 		user: {
 			_id: CHAT_GPT_ID,
 			name: 'bot',
-		}
+		},
+		...props
 	};
 },{
 	is(message, expectedText){
@@ -81,7 +83,7 @@ const createPromptMessage=Object.assign(props=>{
 	submitParams({message, params, setMessages,store}){
 		const {prompt}=message.text.props
 		message.text=React.cloneElement(message.text, {prompt:{...prompt,params, settled:prompt.prompt(params,store)}})
-		setMessages(prevs=>prevs[0]==message ? [createBotMessage("..."),...prevs] : prevs)
+		setMessages(prevs=>prevs[0]==message ? [createBotMessage("...",{pending:true}),...prevs] : prevs)
 	}
 })
 
@@ -95,7 +97,7 @@ function isTextMessage(message){
  * @returns 
  */
 const Chat = () => {
-	const sendMessage = useAsk({id:"chat"})
+	const sendMessage = useAsk({id:"chat", timeout:10*60*1000})
 	const talk=useSelector(state=>state.talks[defaultProps.id])
 	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput, $audioInput]=useStateAndLatest(false)
@@ -106,13 +108,17 @@ const Chat = () => {
 
 	const options=useRef()
 
-	useEffect(()=>()=>{
+	useEffect(()=>()=>{//clean messages when unmount	
 		dispatch({type:"talk/set", talk:{
 			...defaultProps, 
 			messages:$messages.current.map(a=>{
 				a.speak?.cancel()
 				delete a.speak
 				if(typeof(a.text)!="object"){
+					if(a.text==="..."){
+						a.text="Cancelled"
+						a.system=true
+					}
 					return a
 				}
 
@@ -124,11 +130,11 @@ const Chat = () => {
 		}})
 	},[])
 
-	useEffect(() => {
+	useEffect(() => {//trigger sending message
 		const lastMessage = messages[0]
-		if(!lastMessage){
+		if(!lastMessage){//empty 
 			setMessages([createBotMessage('Ask me anything :)')]);
-		}else if (createBotMessage.is(lastMessage, "...")) {
+		}else if (createBotMessage.is(lastMessage, "...")) {//send chat message
 			const current=messages[1], isPrompt=createPromptMessage.is(current)
 			const speak=(!!$audioInput.current && isPrompt?.speakable!==false) ? Speak.session(voice) : null
 			sendMessage({
@@ -137,8 +143,8 @@ const Chat = () => {
 				onAccumulatedResponse: ({messageId, conversationId, message,isDone}) => {
 					options.current={messageId, conversationId}
 					// Attach to last message
-					setMessages(([placeholder, ...prevs]) => {
-						if(prevs[0]==current){
+					setMessages(([placeholder, a,  ...prevs]) => {
+						if(a==current){
 							placeholder = {
 								...placeholder,
 								text: speak||!isPrompt ? message : (placeholder.text||"receiving data ")+".",
@@ -155,11 +161,15 @@ const Chat = () => {
 								}
 								delete isPrompt?.onSuccess
 								delete isPrompt?.prompt
+								delete placeholder.pending
+								if(isPrompt){
+									return [placeholder, ...prevs]
+								}
 							}else{
 								speak?.(message)
 							}
 							
-							return [placeholder, ...prevs]
+							return [placeholder, current, ...prevs]
 						}
 					});
 				},
@@ -167,6 +177,7 @@ const Chat = () => {
 					FlyMessage.show(`${e.statusCode} ${e.message}`);
 					setMessages((previousMessages) => {
 						const newMessages = [...previousMessages];
+						delete previousMessages[0].pending
 						newMessages[0] = {
 							...previousMessages[0],
 							text: "Sorry, I couldn't process your request right now.",
@@ -174,10 +185,10 @@ const Chat = () => {
 						return newMessages;
 					});
 				},
-				history: !isPrompt ? messages.slice(1).reverse() : []
+				history: !isPrompt ? messages.filter(a=>!a.system).slice(1).reverse() : []
 			});
-		}else if(!createBotMessage.is(lastMessage) && typeof(lastMessage.text)!="object"){
-			setMessages((prevMessages) => [createBotMessage('...'), ...prevMessages]);
+		}else if(!createBotMessage.is(lastMessage) && typeof(lastMessage.text)!="object"){//user just commit message
+			setMessages((prevMessages) => [createBotMessage('...',{pending:true}), ...prevMessages]);//add trigger
 		}
 	}, [messages]);
 
@@ -226,6 +237,12 @@ const Chat = () => {
 			return 
 		}
 		setMessages(()=>[])
+
+		dispatch({type:"talk/set", talk:{
+			...defaultProps,
+			messages:[]
+		}})
+
 		if(!needSaveToDialog){
 			return
 		}
@@ -235,7 +252,7 @@ const Chat = () => {
 			let {text, audio, user:{_id}}=message
 			text=createPromptMessage.is(message)?.settled||text
 			return text
-		}).filter(a=>!!a).reverse()
+		}).filter(a=>!!a && !a.system).reverse()
 		if(messages.length % 2){
 			messages.shift()
 		}
@@ -246,6 +263,8 @@ const Chat = () => {
 		}, dispatch)
 		FlyMessage.show("saved to dialog book!")
 	},[])
+
+	const disabled=!!createBotMessage.is(messages[0],'...')
 	
 	return (
 		<KeyboardAvoidingView style={{flex:1}} behavior="padding">
@@ -269,6 +288,7 @@ const Chat = () => {
 				showAvatarForEveryMessage={true}
 				renderAvatar={({currentMessage:{user}})=><Avatar user={user}/>}
 				renderComposer={({onSend,...data})=><MessageComposer style={{flex:0, flexGrow:0, flexShrink:1, flexBasis:'auto'}}
+					disabled={disabled}
 					locale={{locale, toggle:()=>setLocale(!locale), lang: locale ? mylang : lang}}
 					submit={message=>message && onSend(message)}
 					ask={params=>{
@@ -288,6 +308,18 @@ const Chat = () => {
 					}
 
 					return <MessageText {...props}/>
+				}}
+
+				renderTicks={({ pending }) => {
+					if (!pending) return null;
+					return (
+						<View pointerEvents="none" 
+							style={{width:10, height:10, overflow:"hidden",marginRight:2}}>
+							<ActivityIndicator 
+								style={{width:"100%",height:"100%"}} 
+								color="blue"/>
+						</View>
+					)
 				}}
 
 				renderMessageAudio={props=><PlayAudioMessage {...props} setMessages={setMessages}/>}
@@ -323,7 +355,7 @@ function Avatar({user}){
 	return <MaterialIcons name={Icons[user._id]} size={30} style={{backgroundColor:"black", borderRadius:4,marginRight:4}} />
 }
 
-function MessageComposer({submit, style, ask, forget, setDialog, locale, clearDialog, audioInput, setAudioInput}){
+function MessageComposer({submit, disabled, style, ask, forget, setDialog, locale, clearDialog, audioInput, setAudioInput}){
 	const [actions, setActions]=useState(false)
 	const props={
 		submit,
@@ -338,7 +370,7 @@ function MessageComposer({submit, style, ask, forget, setDialog, locale, clearDi
 	},[globalThis.Widgets])
 
 	return (
-		<View style={[{width:"100%", minHeight:50},style]}>
+		<View style={[{width:"100%", minHeight:50},style, disabled ? {pointerEvents: 'none', opacity:0.5} : null]}>
 			<View style={{
 					flex:1, height:50, flexDirection:"row", padding:4,
 					alignItems: 'center', justifyContent: 'center'
@@ -366,7 +398,7 @@ function MessageComposer({submit, style, ask, forget, setDialog, locale, clearDi
 				{audioInput ? <InputAudio {...props} autoSubmit={audioInput==2} locale={locale.locale}/> : <InputText {...props}/> }
 
 				<PressableIcon name="add-circle-outline" size={36} style={{marginLeft:10}} onPress={()=>setActions(!actions)}/>
-				<PressableIcon name="delete-outline" size={36}  style={{}} onPress={clearDialog} onLongPress={e=>clearDialog(true)}/>
+				<PressableIcon name="delete-outline" size={36}  style={{}} onPress={e=>clearDialog(false)} onLongPress={e=>clearDialog(true)}/>
 			</View>
 			{actions && (
 			<View style={{borderTopWidth:1, padding:5,width:"100%", flex:1, flexDirection:"row", flexWrap:"wrap", justifyContent:"space-around"}}>
@@ -445,18 +477,19 @@ const PromptMessage=({ask, forget, prompt:{params, label, settled}})=>{
 		const ui=[]
 		for (const key in params) {
 			if (Object.hasOwnProperty.call(params, key)) {
-				const value = params[key];
+				const value = values[key];
 				ui.push(
 					<View style={{flex:1, flexDirection:"row", margin:5, borderBottomWidth:1, borderBottomColor:"gray",alignItems: 'baseline'}} key={key}>
 						<Text style={{width:100, color:"yellow"}} textAlign="right">{key.toUpperCase()}</Text>
 						{(()=>{
 							if(typeof(value)!="object"){
-								return <TextInput name={key} 
+								return <TextInput name={key}
 										disabled={!!settled}
 										style={inputStyle}
 										placeholder={key} 
-										defaultValue={value}
-										onEndEditing={({nativeEvent:{text}})=>setValues({...values, [key]:text})}/>
+										value={value}
+										onChangeText={text=>setValues({...values, [key]:text})}
+										/>
 							}else{
 								return React.cloneElement(value,{disabled:!!settled,setValue:value=>setValues({...values, [key]:value})})
 							}
@@ -466,7 +499,7 @@ const PromptMessage=({ask, forget, prompt:{params, label, settled}})=>{
 			}
 		}
 		return ui
-	},[!!settled])
+	},[!!settled, values])
 	return (
 		<View style={{width:250, border:"1px solid", borderRadius:5,padding:5}}>
 			<View style={{flex:1, alignItems:"center"}}><Text style={{color:"white"}}>{label.toUpperCase()}</Text></View>

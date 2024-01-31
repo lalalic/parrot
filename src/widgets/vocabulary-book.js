@@ -1,5 +1,5 @@
 import React from "react"
-import { Text, Pressable, View , Linking} from "react-native"
+import { Text, Pressable, View , Linking, TextInput} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
 import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
@@ -9,9 +9,15 @@ import { TaggedTranscript } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
+const l10n=globalThis.l10n
 
 /**
- * {word, translated, pronunciation, classification, explanation, example}
+ * {text:word, translated, pronunciation, classification, explanation, example}
+ * cue: {ask:player speak, text: display, recognize, and compare}
+ * 
+ * usage:
+ * for pronunciation: text -> text (tts:lang, recognize:lang)
+ * for memoization: lang->mylang (tts:lang, recognize:mylang), mylang->lang (tts:mylang, recognize:lang)
  */
 export default class VocabularyBook extends TaggedListMedia{
     static defaultProps={
@@ -21,12 +27,12 @@ export default class VocabularyBook extends TaggedListMedia{
         title:"Vocabulary Book",
         description:"Remember Every Word",
         thumb:require("../../assets/widget-vocabulary-book.png"),
-        locale:false,
+        usage:0,
     }
 
     static ExtendActions({talk}){
         return [
-            <Locale key="locale" talk={talk}/>,
+            <Usage key="usage" talk={talk}/>,
             <Sentense key="support" talk={talk}/>
         ]
     }
@@ -43,27 +49,29 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {mylang, lang}=state.my
                 const existings=Object.values(state.talks)
                     .filter(b=>b.slug=="vocabulary" && b.category==a.category)
-                    .map(b=>b.data.map(b=>b.word).join(","))
+                    .map(b=>b.data.map(b=>b.text).join(","))
                     .join(",")
 
                 return `list ${a.amount} words of ${lang} language about ${a.category} with translation to ${mylang} language.
                     ${existings ? `I already know these words: ${existings}` : ''}
-                    Response MUST be able to be parsed with following js code:
-                    <code>
-                        const {words=[]}=JSON.parse(response)
-                        const {word, translated}=words[0]
-                    </code>
+                    -------
+                    Response should NOT have anything else. 
+                    Each line for a word as following example:
+                    ----
+                    word1 : translated1
+                    word2 : translated2
+                    ---
                     `
             },
 
             onSuccess({response,store}){
-                const {category}=this.params
+                const {category, amount}=this.params
                 const {my:{mylang,lang}}=store.getState()
 
                 try{
-                    const {words=[]}=JSON.parse(response)
-                    const id=VocabularyBook.create({data:words,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
-                    return `save to @#${id}`
+                    const data=VocabularyBook.parse(response)
+                    const id=VocabularyBook.create({data,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
+                    return `${amount} ${category} Vocabulary save to @#${id}`
                 }catch(e){
                     return e.message
                 }
@@ -80,23 +88,22 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {mylang, lang}=state.my
                 a.lang=lang
                 a.mylang=mylang
-                return `list ${a.amount} idioms of ${lang} language used in ${a.category} with ${mylang} language translation, and an example.
+                return `list ${a.amount} idioms of ${lang} language used in ${a.category} with ${mylang} language explaination, and an ${lang} example.
                 ------------ 
-                    Response MUST be able to be parsed by following javascript code.
-                    <code>
-                        const {idioms=[]}=JSON.parse(response);
-                        const {word,translated, example}=idioms[0]
-                    </code>`
+                    Response should NOT have anything else.
+                    Response should be json format with keys: idiom,explanation,example.
+                ------
+                `
             },
 
             onSuccess({response,store}){
-                const {category}=this.params
-                const {lang, mylang}=store.getState()
+                const {category, amount}=this.params
+                const {lang, mylang}=store.getState().my
                 try{
-                    const {idioms}=JSON.parse(response)
+                    const idioms=JSON.parse(response.replace(/\"idiom\"\:/g, '"text":').replace(/\"explanation\"\:/,'"translated":'))
                     const title=`idioms - ${category}`
                     const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
-                    return `save to @#${id}`
+                    return `${amount} ${category} idioms save to @#${id}`
                 }catch(e){
                     return e.message
                 }
@@ -106,7 +113,7 @@ export default class VocabularyBook extends TaggedListMedia{
 
     constructor(){
         super(...arguments)
-        this.state.locale=this.props.locale
+        this.state.usage=this.props.usage
     }
 
     /**
@@ -115,35 +122,40 @@ export default class VocabularyBook extends TaggedListMedia{
      */
     createTranscript(){
         const {data=[]}=this.props
-        const {locale}=this.state
-            
-        return data.reduce((cues,{word="", translated=word}, i)=>{
-            cues.push(!locale ? {text:translated, ask:word, recogLocale:true} : {text:word, ask:translated})
-            return cues
-        },[])
+        const {usage}=this.state
+        return data.map(({text="", translated=text})=>{
+            switch(usage){
+                case 0://lang -> mylang
+                    return {text:translated, ask:text, recogMyLocale:true}
+                case 1://mylang->lang
+                    return {text, ask:translated, speakMyLocale:true}
+                case 2://pronouncing
+                    return {text, ask:text}
+            }
+        })
     }
 
-    renderAt({ask, label},i){
+    renderAt({ask, speakMyLocale},i){
         const {data=[]}=this.props
-        const {locale}=this.state
-        let {word, pronunciation, translated, classification, explanation,example}=data[i]
+        let {text, pronunciation, translated, classification, explanation,example}=data[i]
         
         pronunciation=pronunciation ? `[${pronunciation}]` : ""
         translated= translated? `: ${translated}` : ""
         classification= classification ? `- ${classification}.` : ""
-        const text=`${word} ${pronunciation} ${classification}`
+        const title=`${text} ${pronunciation} ${classification}`
 
         return (
             <>
-            <Text style={{padding:10, color:"white"}}>{[text,explanation,example].filter(a=>!!a).join("\n")}</Text>
-            {this.speak({locale, text:ask})}
+            <Text style={{padding:10, color:"white"}}>{[title,explanation,example].filter(a=>!!a).join("\n")}</Text>
+            {this.speak({locale:speakMyLocale, text:ask})}
             </>
         )
     }
 
-    shouldComponentUpdate(props, state){
-        if((!!this.props.locale)!=(!!props.locale)){
-            this.setState({locale:props.locale},()=>{
+    shouldComponentUpdate({usage:next=0}){
+        const {usage:current=0}=this.props
+        if(current!=next){
+            this.setState({usage:next},()=>{
                 this.reset()
                 this.doCreateTranscript()
             })
@@ -151,46 +163,56 @@ export default class VocabularyBook extends TaggedListMedia{
         return super.shouldComponentUpdate(...arguments)
     }
 
-    static TaggedTranscript(props){
+    static TaggedTranscript({id, ...props}){
+        const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
         
-        const Item=React.useCallback(({item, id, index, word=item.word})=>{
+        const Item=React.useCallback(({item, id, index, text=item.text})=>{
             const [playing, setPlaying] = React.useState(false)
-            const [editing, setEditing] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
-            const text=getShowText(item)
+            const title=React.useMemo(()=>getShowText(item),[item])
             return (
                 <View style={{ flexDirection: "row", height: 50 }}>
                     <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
                     <Pressable 
-                        onPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${word}`)}
-                        //onLongPress={e=>setEditing(true)}
+                        onPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${text}`)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                            <Text style={textStyle}>{text}</Text>
-                            {playing && <Speak text={word} onEnd={e=>setPlaying(false)}/>}
+                            <Text style={textStyle}>{title}</Text>
+                            {playing && <Speak text={text} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
+                    <PressableIcon name="remove-circle-outline" 
+                        onPress={e=>dispatch({type:"talk/book/remove/index", index, id})}/>
                 </View>
             )
         },[])
         return (
-            <TaggedTranscript {...props}
-                actions={(title,id)=><Paste id={id}/>}
+            <TaggedTranscript 
+                {...props}
+                id={id}
+                actions={<Paste id={id}/>}
                 listProps={{
                     renderItem:Item,
-                    keyExtractor:a=>a.word
+                    keyExtractor:a=>a.text
+                }}
+                editor={{
+                    placeholder:l10n["hello:你好"],
+                    onAdd(text){
+                        const appending=VocabularyBook.parse(text)
+                        dispatch({type:"talk/book/add", id, appending})
+                    }
                 }}
             />
         )
     }
 
-    static parse(text){
-        return text.split(/[\n;]/).filter(a=>!!a)
+    static parse(input){
+        return input.split(/[\n;]/).filter(a=>!!a)
             .map(line=>{
-                const [word="", translated]=line.split(":").map(a=>a.trim())
-                if(word){
-                    return {word, translated}
+                const [text="", translated]=line.split(":").map(a=>a.trim())
+                if(text){
+                    return {text, translated}
                 }
             }).filter(a=>!!a)
     }
@@ -207,19 +229,22 @@ const Paste=({id})=>{
     })}/>
 }
 
-const Locale=({talk, id=talk?.id})=>{
+const Usage=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
-    const {locale}=useSelector(state=>state.talks[id]||{})
-    return <PressableIcon name="translate" onPress={e=>dispatch({type:"talk/set",talk:{id,locale:!locale}})}/>
+    const {usage=0}=useSelector(state=>state.talks[id]||{})
+    return <PressableIcon 
+        name={UsageIcons[usage]} 
+        color={UsageColors[usage]}
+        onPress={e=>dispatch({type:"talk/set",talk:{id,usage:(usage+1)%3}})}/>
 }
 
 const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
-    const ask=useAsk()
+    const ask=useAsk({timeout:2*60*1000})
     const { policy } = useParams()
     const {challenges=[]}=useSelector(state=>state.talks[id][policy]||{})
-    const {widgets={}, mylang, lang}=useSelector(state=>state.my)
-    const words=challenges.map(a=>a.ask).join(",")
+    const {widgets={}, lang}=useSelector(state=>state.my)
+    const words=challenges.map(({recogMyLocale, ask, text})=>recogMyLocale ? ask : text).join(",")
     if(widgets.chat===false || !words)
         return null
 
@@ -229,21 +254,17 @@ const Sentense=({talk, id=talk?.id})=>{
                 (async()=>{
                     try{
                         const response=await ask(`
-                            use the following ${lang} language words to make one sentence or paragraph, and translate to ${mylang} language. 
+                            use the following ${lang} language words to make one sentence or paragraph. 
                             ---------word start------
                             ${words}
                             ---------word end------- 
-                            Response MUST be able to be parsed by following js code:
-                            <code>
-                                const {word:sentence, translated}=JSON.parse(response)
-                            </code>
-                            .
-                        `)
+                            Response should NOT have anything else.
+                        `,3*60*1000)
                         
                         dispatch({
                             type:"talk/challenge", 
                             talk, 
-                            chunk:JSON.parse(response), 
+                            chunk:{text:response}, 
                             policy
                         })
                     }catch(e){
@@ -254,14 +275,17 @@ const Sentense=({talk, id=talk?.id})=>{
     )
 }
 
-function getShowText({word, pronunciation, translated, classification, explanation}){
+function getShowText({text, pronunciation, translated, classification, explanation}){
     pronunciation=pronunciation ? `[${pronunciation}]` : ""
     translated= translated? `: ${translated}` : ""
     classification= classification ? `${classification}. ` : ""
     let extra = [classification,explanation||""].filter(a=>!!a).join("")
     extra = extra ? `- ${extra}` : ""
-    return `${word}${pronunciation}${translated} ${extra}`
+    return `${text}${pronunciation}${translated} ${extra}`
 }
+
+const UsageIcons=["translate", "translate", "graphic-eq"]
+const UsageColors=[, "yellow", "white"]
 
 /**
 example:

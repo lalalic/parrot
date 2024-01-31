@@ -1,7 +1,7 @@
 import { registerRootComponent } from 'expo';
 import {NativeModules} from "react-native"
 import useQili from "react-native-use-qili"
-
+import "symbol-observable"
 useQili({
     apiKey:"parrot",
     bridge:{

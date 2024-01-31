@@ -651,6 +651,22 @@ export const reducers=(()=>{
 							talk.data.splice(i,1)
 						}
 					})
+				case "talk/book/remove/index":
+					return produce(talks, $talks=>{
+						const {id, index:i}=action
+						const talk=$talks[id]
+						if(i!=-1){
+							talk.data.splice(i,1)
+						}
+					})
+				case "talk/book/add":
+					return produce(talks, $talks=>{
+						const {id, appending}=action
+						if(appending.length>0){
+							const talk=$talks[id]
+							talk.data=[...talk.data, ...appending]
+						}
+					})
 				case "talk/book/set":
 					return produce(talks, $talks=>{
 						const {id, uri, type, ...props}=action

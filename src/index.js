@@ -20,7 +20,6 @@ export default function Parrot(){
             </Login.Required>
             <FlyMessage/>
             <Permissions/>
-            <AdminStatusHinter/>
         </App>
     )
 }

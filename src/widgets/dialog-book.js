@@ -55,21 +55,16 @@ export default class DialogBook extends TaggedListMedia{
                 Another role is ${a["My Role"]} called Ray. 
                 the scene: ${a["Scene"]}. 
                 -------------
-                Response Should only contains the dialog. 
-                Response MUST be able to directly be parsed by following js code:
-                <code>
-                const {title, dialog=[]}=JSON.parse(response)
-                const {user, text}=dialog[0]
-                </code>
+                Response should NOT have anything else. 
+                Response should return whole dialog in one time
                 `
             },
             onSuccess({response, store}){
                 const {Scene:title}=this.params
                 const {my:{lang}}=store.getState()
-                const {dialog=[]}=JSON.parse(response)
-                const data=DialogBook.parse(dialog)
+                const data=DialogBook.parse(response)
                 const id=DialogBook.create({title, data, params:this.params, generator:"Dialog", lang}, store.dispatch)
-                return `save to @#${id}`
+                return `dialog(${title}) save to @#${id}`
             }
         },
     ]
@@ -78,8 +73,9 @@ export default class DialogBook extends TaggedListMedia{
         return this.speak({text:ask})
     }
 
-    static TaggedTranscript(props){
+    static TaggedTranscript({id, ...props}){
         const color=React.useContext(ColorScheme)
+        const dispatch=useDispatch()
         
         const Item=React.useCallback(({item:{ask, text}, id, index})=>{
             const [playing, setPlaying] = React.useState(false)
@@ -95,16 +91,25 @@ export default class DialogBook extends TaggedListMedia{
                             <Text style={{...textStyle, color:"gray"}}>{text}</Text>
                             {playing && <Speak text={ask} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
+                    <PressableIcon name="remove-circle-outline" 
+                        onPress={e=>dispatch({type:"talk/book/remove/index", index, id})}/>
                 </View>
             )
         },[])
 
         return (
-            <TaggedTranscript {...props}
-                actions={(title,id)=><Paste id={id}/>}
+            <TaggedTranscript {...props} id={id}
+                actions={<Paste id={id}/>}
                 listProps={{
                     renderItem:Item,
                     keyExtractor:a=>a.ask
+                }}
+                editor={{
+                    placeholder:"how're you? > fine.",
+                    onAdd(text){
+                        const appending=DialogBook.parse(text.replace(">","\n"))
+                        dispatch({type:"talk/book/add", id, appending})
+                    }
                 }}
                 />
         )

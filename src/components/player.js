@@ -429,7 +429,7 @@ export default function Player({
                 <View style={{position:"absolute",bottom:0, width:"100%"}}>
                     {status.whitespacing && 
                         <Recognizer key={status.i} i={status.i} 
-                            locale={chunks[status.i]?.recogLocale}
+                            locale={chunks[status.i]?.recogMyLocale}
                             onRecord={onRecord}  
                             style={{width:"100%",textAlign:"center",fontSize:16}}
                             uri={chunks[status.i] && onRecordChunkUri?.(chunks[status.i])} 

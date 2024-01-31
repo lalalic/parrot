@@ -35,7 +35,7 @@ export default class AudioBook extends TaggedListMedia {
 
     static removeSave=false
 
-    static TaggedTranscript=props=>{
+    static TaggedTranscript=({id, ...props})=>{
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
@@ -59,9 +59,9 @@ export default class AudioBook extends TaggedListMedia {
             )
         },[])
         return (
-            <TaggedTranscript {...props}
+            <TaggedTranscript {...props} id={id}
                 renderItem={AudioItem}
-                actions={(tag,id)=>[
+                actions={[
                     <PressableIcon name="file-upload" key="file"
                         onPress={e=>DocumentPicker.getDocumentAsync({type:"audio/*",copyToCacheDirectory:false}).then(file=>{
                             if(file.type=="cancel")
