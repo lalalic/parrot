@@ -694,6 +694,14 @@ export const reducers=(()=>{
 							Object.assign(item, props)
 						}
 					})
+				case "talk/book/replace":
+					return produce(talks, $talks=>{
+						const {id, i, appending}=action
+						if(appending.length>0){
+							const talk=$talks[id]
+							talk.data.splice(i,1,...appending)
+						}
+					})
 				/////////
 				case "talk/clear/history":
 					return produce(talks, $talks=>{

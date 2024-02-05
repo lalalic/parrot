@@ -77,16 +77,17 @@ export default class DialogBook extends TaggedListMedia{
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         
-        const Item=React.useCallback(({item:{ask, text}, id, index})=>{
+        const Item=React.useCallback(({item:{ask, text}, id, index, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             
             return (
-                <View style={{ flexDirection: "row", marginTop:10}}>
-                    <PressableIcon style={{ alignSelf: "flex-start" }}
-                        name={playing ? "pause-circle-outline" : "play-circle-outline"} 
+                <View style={{ flexDirection: "row", height: 50, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,}}>
+                    <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
-                    <Pressable style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                    <Pressable 
+                        onPress={e=>setActive(isActive ? -1 : index)}
+                        style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                             <Text style={textStyle}>{ask}</Text>
                             <Text style={{...textStyle, color:"gray"}}>{text}</Text>
                             {playing && <Speak text={ask} onEnd={e=>setPlaying(false)}/>}
@@ -109,6 +110,13 @@ export default class DialogBook extends TaggedListMedia{
                     onAdd(text){
                         const appending=DialogBook.parse(text.replace(">","\n"))
                         dispatch({type:"talk/book/add", id, appending})
+                    },
+                    onChange(text, i){
+                        const appending=DialogBook.parse(text.replace(">","\n"))
+                        dispatch({type:"talk/book/replace", id, i, appending})
+                    },
+                    getItemText({ask, text}){
+                        return `${ask} > ${text}`
                     }
                 }}
                 />
@@ -120,7 +128,7 @@ export default class DialogBook extends TaggedListMedia{
             dialog=dialog.split("\n").filter(a=>!!a)
                 .map(a=>{
                     const [user, ask=user]=a.split(":")
-                    return {ask, text:" "}
+                    return {ask: ask.trim(), text:" "}
                 })
         }else{
             dialog=dialog.map(({user, text})=>({ask:text, text:" "}))

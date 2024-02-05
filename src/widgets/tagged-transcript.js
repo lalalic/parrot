@@ -27,8 +27,10 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
     const {data=[], title}=useSelector(state=>state.talks[id])
     const showingData=React.useMemo(()=>data.filter(a=>!q || a.text.indexOf(q)!=-1),[data, q])
 
-    const inputStyle={height:50, fontSize:16,color:color.backgroundColor, backgroundColor:color.text,paddingLeft:10, borderRadius:5}
+    const inputStyle={height:50, fontSize:16,color:color.backgroundColor, backgroundColor:color.text,paddingLeft:10, borderRadius:5, marginBottom:2}
     const {renderItem:WidgetItem=renderItem}=listProps
+    const [active, setActive]=React.useState(-1)
+    const $setActive=React.useCallback(i=>setActive(i),[setActive])
     
     return (
         <KeyboardAvoidingView style={{flex:1,marginTop:10}} behavior="padding">
@@ -36,12 +38,18 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
             <View style={{flexGrow:1,flex:1}}>
                 {children ? React.cloneElement(children, {id, filter:q}) : <FlatList data={showingData} 
                     extraData={`${q}-${title}-${data.length}`}
-                    keyExtractor={a=>`${a.uri}-${a.text}`}
+                    keyExtractor={(a,i)=>`${a.uri}-${a.text}${i==active ? '-active':''}`}
                     {...listProps}
-                    renderItem={props=><WidgetItem {...{...props,id, slug}}/>}
+                    renderItem={props=><WidgetItem {...{...props,id, slug, isActive:active==props.index, setActive:$setActive}}/>}
                     />}
             </View>
-            {editor && (React.isValidElement(editor) ? editor : <Editor {...{style:inputStyle, ...editor}}/>)}
+            {editor && React.cloneElement(
+                React.isValidElement(editor) ? editor : <Editor {...{style:inputStyle, ...editor}}/>, 
+                {
+                    index:active, 
+                    data: showingData[active]
+                }
+            )}
             {!!id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                 {actions}
                 {data.length>0 && <PressableIcon name="read-more"
@@ -51,8 +59,26 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
     )
 }
 
-function Editor({onAdd, style, ...props}){
+function Editor({onAdd, style, onChange, index, data, getItemText, ...props}){
     const [value, setValue]=React.useState("")
+    React.useEffect(()=>{
+        if(index>-1 && data && getItemText){
+            setValue(getItemText(data))
+        }
+        if(index==-1){
+            setValue("")
+        }
+    },[index, data, getItemText])
+    const submit=React.useCallback(function({value, index, data}){
+        if(index>-1){
+            onChange?.(value, index, data)
+        }else if(onAdd){
+            onAdd(value)
+        }
+        setValue("")
+    })
+    if(!onAdd && index==-1)
+        return null
     return (
         <View style={{flexDirection:"row", borderRadius:5, justifyContent:"center", alignItems:"center", backgroundColor:"white"}}>
             <TextInput 
@@ -60,12 +86,13 @@ function Editor({onAdd, style, ...props}){
                 placeholder={l10n["Append Item"]}
                 {...props}
                 value={value} 
-                onChangeText={text=>setValue(text)}/>
-            <PressableIcon name="add-circle-outline" style={{}} 
-                onPress={e=>{
-                    onAdd(value)
-                    setValue("")
-                }}/>
+                onChangeText={text=>setValue(text)}
+                returnKeyType="done"
+                onSubmitEditing={e=>submit({value, index, data})}
+                />
+            <PressableIcon 
+                name={index>-1 ? "blur-circular" : (onAdd ? "add-circle-outline" : "")}
+                onPress={e=>submit({value, index, data})}/>
         </View>
     )
 }

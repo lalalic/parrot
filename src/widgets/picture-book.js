@@ -1,18 +1,21 @@
 import React from "react"
-import { View, Text, Pressable, Image, ImageBackground, useWindowDimensions, TextInput} from "react-native"
+import { View, Text, Pressable, Image, useWindowDimensions, Alert} from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
-import * as FileSystem from "expo-file-system"
 
 import { TaggedListMedia, TagManagement } from "./media"
 import { useTalkQuery } from "../components"
+import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedTranscript } from "./tagged-transcript"
-import { useDispatch, } from "react-redux"
+import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
+import { Speak } from "../components"
+const l10n=global.l10n
+
 /**
  * some may not have audio, but the image is able to be shown
  * data:[{uri,text}]
@@ -44,29 +47,31 @@ export default class PictureBook extends TaggedListMedia {
     static remoteSave=false
     
     static TaggedTranscript=({id, ...props})=>{
+        const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         const {width,height}=useWindowDimensions()
 
-        const PictureItem=React.useCallback(({item:{uri, text}, id})=>{
+        const PictureItem=React.useCallback(({item:{uri, text}, index, id, isActive, setActive})=>{
+            const [playing, setPlaying] = React.useState(false)
+            const textStyle={color: playing ? color.primary : color.text}
+            
             return (
-                <Pressable key={uri} style={[{flex:1,flexDirection:"row", justifyContent:"center",paddingBottom:40},thumbStyle]}
-                    onLongPress={e=>dispatch({type:`talk/book/remove`,id, uri})}>
-                    <ImageBackground source={{uri}} style={{flex:1}}>
-                        <TextInput defaultValue={text} selectTextOnFocus={true}
-                            style={{position:"absolute",left:5, top: 5, 
-                                backgroundColor:"black",opacity:0.5,width:"80%",
-                                padding:2,color:"yellow",fontSize:20
-                            }}
-                            onEndEditing={({nativeEvent:e})=>{
-                                if(text!=e.text){
-                                    dispatch({type:`talk/book/set`, id, uri, text:e.text})
-                                }
-                            }}/>
-                    </ImageBackground>
-                </Pressable>
+                <View style={{ flexDirection: "row", height: 50, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,}}>
+                    <PressableIcon  name={playing ? "pause-circle-outline" : "play-circle-outline"} 
+                        onPress={e=>setPlaying(!playing)}/>
+                    <Pressable 
+                        onPress={e=>setActive(isActive ? -1 : index)}
+                        style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                            <Text style={textStyle}>{text}</Text>
+                            {playing && <Speak text={text} onEnd={e=>setPlaying(false)}/>}
+                    </Pressable>
+                    <PressableIcon name="remove-circle-outline" 
+                        onPress={e=>dispatch({type:"talk/book/remove/index", index, id})}/>
+                </View>
             )
         },[])
-        const thumbStyle={flex:1,height:width/2, padding:10}
+
+        const hasData=useSelector(({talks})=>!!talks[id].data?.length)
 
         const [visible, setVisible]=React.useState(true)
 
@@ -75,45 +80,52 @@ export default class PictureBook extends TaggedListMedia {
         return (
             <TaggedTranscript {...props} id={id}
                 actions={[
-                    <PressableIcon name="apps" key="visible"
+                    hasData && <PressableIcon name="apps" key="visible"
                         color={visible ? "yellow" : "gray"} 
                         onPress={e=>setVisible(!visible)}/>,
 
-                    <Uploader name="360" key="objects" 
+                    !hasData && <PressableIcon name="auto-fix-high" key="auto" 
                         requireLogin="generate a scenario picture"
-                        options={{
-                            mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                            allowsMultipleSelection:false,
-                            quality: 0.8
-                        }}
-                        upload={async select=>{
-                            let source=select.uri
-                            const path=`${FileSystem.documentDirectory}${id}/thumb.png`
-                            if(select.width>select.height){
-                                const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
-                                source=result.uri
-                                //await FileSystem.moveAsync({from:source.replace("file://",""), to:path.replace("file://","")})
-                            }
-                            
-                            dispatch({type:"talk/set", talk:{id, thumb:source}})
-                        }}
                         onPress={async e=>{
                             const words=await ask({message:"response one or two words to describe a random scene with comma as seperator", })
                             const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${words}`)
                             dispatch({type:"talk/set", talk:{id, thumb:res.url, tags:words.split(",")}})
                         }}
-                        />
+                        />,
+                    
+                    !hasData && <Uploader name="camera-alt"
+                        allowsMultipleSelection={false}
+                        upload={async select=>{
+                            const source=await (async ()=>{
+                                if(select.width>select.height){
+                                    const result=await ImageManipulator.manipulateAsync(select.uri,[{rotate:90}], {compress:1,format:"png"})
+                                    return result.uri
+                                }
+                                return select.uri
+                            })();
+                            dispatch({type:"talk/set", talk:{id, thumb: source}})
+                        }}/>
                 ]}
                 renderItem={PictureItem}
-                listProps={{numColumns:2}}
-            >
-                <PictureIdentifier {...{
-                    visible,
-                    onLocate({rect:{x,y,width,height}, ...identified}){
-                        dispatch({type:"talk/book/record", ...identified, uri:`${x},${y},${width},${height}`})
+
+                editor={!visible ? {
+                    placeholder: l10n["Change object name"],
+                    onChange(text, i, {uri}){
+                        dispatch({type:"talk/book/set", id, uri, text})
                     },
-                    viewerSize:200,
-                }}/>
+                    getItemText({text}){
+                        return text
+                    }
+                } : undefined}
+            >
+                {visible && <PictureIdentifier {...{
+                        visible:true,
+                        onLocate({rect:{x,y,width,height}, ...identified}){
+                            dispatch({type:"talk/book/record", ...identified, uri:`${x},${y},${width},${height}`})
+                        },
+                        viewerSize:200,
+                    }}/>
+                }
             </TaggedTranscript>
         )
     }
@@ -163,7 +175,7 @@ export default class PictureBook extends TaggedListMedia {
     }
 }
 
-function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, upload=a=>a, ...props}) {
+function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, upload=a=>a, allowsMultipleSelection=true, ...props}) {
     return <PressableIcon name="add-a-photo"
         onPress={e => {
             (async () => {
@@ -175,7 +187,7 @@ function Uploader({options={mediaTypes: ImagePicker.MediaTypeOptions.Images}, up
         } }
         onLongPress={e => {
             (async () => {
-                const select = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, ...options })
+                const select = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection, ...options })
                 if (!select.cancelled) {
                     if(select.selected){
                         select.selected.forEach(upload)
@@ -233,7 +245,6 @@ function IdentifiedObjects({visible, objects}){
     
     return <>{(objects||[]).map(a=><IdentifiedObject key={a.uri} {...a}/>)}</>
 }
-
 
 function AreaImage({ src, size, area }){
     const [imageSize, setImageSize]=React.useState({width:100,height:100})

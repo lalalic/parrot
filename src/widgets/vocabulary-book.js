@@ -1,5 +1,5 @@
 import React from "react"
-import { Text, Pressable, View , Linking, TextInput} from "react-native"
+import { Text, Pressable, View , Linking} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
 import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
@@ -168,16 +168,17 @@ export default class VocabularyBook extends TaggedListMedia{
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
         
-        const Item=React.useCallback(({item, id, index, text=item.text})=>{
+        const Item=React.useCallback(({item, id, index, text=item.text, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             const title=React.useMemo(()=>getShowText(item),[item])
             return (
-                <View style={{ flexDirection: "row", height: 50 }}>
+                <View style={{ flexDirection: "row", height: 50, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,}}>
                     <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
                     <Pressable 
-                        onPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${text}`)}
+                        onPress={e=>setActive(isActive ? -1 : index)}
+                        onLongPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${text}`)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                             <Text style={textStyle}>{title}</Text>
                             {playing && <Speak text={text} onEnd={e=>setPlaying(false)}/>}
@@ -201,6 +202,13 @@ export default class VocabularyBook extends TaggedListMedia{
                     onAdd(text){
                         const appending=VocabularyBook.parse(text)
                         dispatch({type:"talk/book/add", id, appending})
+                    },
+                    onChange(text, i){
+                        const appending=VocabularyBook.parse(text)
+                        dispatch({type:"talk/book/replace", id, i, appending})
+                    },
+                    getItemText({text, translated}){
+                        return `${text}${translated ? `:${translated}`:''}`
                     }
                 }}
             />
