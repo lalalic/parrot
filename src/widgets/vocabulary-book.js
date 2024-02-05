@@ -212,6 +212,14 @@ export default class VocabularyBook extends TaggedListMedia{
             .map(line=>{
                 const [text="", translated]=line.split(":").map(a=>a.trim())
                 if(text){
+                    const i=text.indexOf('[')
+                    if(i!=-1){
+                        return {
+                            text:text.substring(0,i), 
+                            pronunciation:text.substring(i+1,text.lastIndexOf(']')), 
+                            translated
+                        }
+                    }
                     return {text, translated}
                 }
             }).filter(a=>!!a)

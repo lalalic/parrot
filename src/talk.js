@@ -15,8 +15,7 @@ export default function Talk({autoplay}){
     
     const Media=globalThis.Widgets[slug]||Video
 
-    const {data:talk={}, policy={}, isLoading}=useTalkQuery({slug, id, policyName})
-    const {challenging}=policy
+    const {data:talk={}, policy={}, challenging,  isLoading}=useTalkQuery({slug, id, policyName})
     
     const style=policy.fullscreen || (policy.visible&&!talk.miniPlayer) ? {flex:1}: {height:200}
 
@@ -34,8 +33,11 @@ export default function Talk({autoplay}){
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>dispatch({type:"talk/toggle/challenging",talk, policy: policyName, value: !challenging ? true : undefined})}
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
-            onCheckChunk={chunk=>dispatch({type:"talk/challenge",talk, policy: policyName, chunk})}
-            onChallengePass={chunk=>dispatch({type:"talk/challenge/remove",talk, policy: policyName, chunk})}
+            
+            addChallengeChunk={chunk=>dispatch({type:"talk/challenge/add",talk, policy: policyName, chunk})}
+            removeChallengeChunk={chunk=>dispatch({type:"talk/challenge/remove",talk, policy: policyName, chunk})}
+            toggleChallengeChunk={chunk=>dispatch({type:"talk/challenge/toggle",talk, policy: policyName, chunk})}
+            
             onRecordChunk={({chunk:{time,end},recognized, score})=>dispatch({type:"talk/recording",talk, policy: policyName,score, record:{[`${time}-${end}`]:recognized}})}
             onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             {...{id:talk.id, challenging, key:`${policyName}-${talk.id}`, policyName, policy, 

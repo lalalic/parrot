@@ -168,7 +168,7 @@ function ViewPort({ style, onLocate }) {
 				width:"100%",height:"100%",
 				justifyContent: "center",flexDirection:"row",
 				alignContent: "center",}}>
-				<PressableIcon color="yellow" name="add"/>
+				<PressableIcon color="yellow" name="add" style={{opacity:0.5}}/>
 			</View>
 			<View style={{ flexDirection: "row" }}>
 				<TextInput
@@ -177,7 +177,10 @@ function ViewPort({ style, onLocate }) {
 					style={{
 						flex: 1,
 						height: 20,
-						fontSize:20
+						fontSize:20,
+						backgroundColor:"white",
+						color:"black",
+						opacity:0.3,
 					}}
 					onEndEditing={({ nativeEvent: { text } }) => {
 						if (!text) return;

@@ -31,7 +31,8 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    onPolicyChange, onCheckChunk, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
+    toggleChallengeChunk,addChallengeChunk, removeChallengeChunk, 
+    onPolicyChange, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -63,7 +64,7 @@ export default function Player({
      */
     const chunks=React.useMemo(()=>{
         if(challenging){
-            return (challenges||[]).filter(a=>a.score??0 <= policy.autoChallenge??0)
+            return challenges||[]
         }else if(transcript && typeof(policy.chunk)=="number"){
             const paragraphs=transcript
             switch(policy.chunk){        
@@ -181,12 +182,9 @@ export default function Player({
                     },{}, action.callback)
                 case "nav/challenge":{
                     const i=action.i ?? state.i
-                    i!=-1 && asyncCall(()=>onCheckChunk?.(chunks[i]))
+                    i!=-1 && asyncCall(()=>toggleChallengeChunk?.(chunks[i]))
                     break
                 }
-                case "nav/challenge/pass":
-                    asyncCall(()=>onChallengePass?.(chunks[action.i]))
-                    break
                 case "speed/toggle":
                     setVideoStatusAsync({rate:rate==0.75 ? 1 : 0.75})
                         .then(a=>changePolicy("speed",a.rate))
@@ -315,21 +313,19 @@ export default function Player({
             if(!chunk)
                 return 
             const score=diffScore(chunk.text,recognized)
-            if(policy.autoChallenge){    
+            
+            if(policy.autoChallenge){
                 if(score<policy.autoChallenge){
                     if(!challenging){
-                        if(!challenges?.find(a=>a.time==chunk.time)){
-                            onCheckChunk?.(chunk)
-                        }
-                    }else {
-                        
+                        addChallengeChunk?.(chunk)
                     }
                 }else {
                     if(challenging){
-                        onChallengePass?.(chunk)
+                        removeChallengeChunk?.(chunk)
                     }
                 }
             }
+
             if(recognized){
                 policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
             }
@@ -545,8 +541,8 @@ export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...
 
     const $title=React.useMemo(()=>{
         if(recognized){
-            const diffs=diffPretty(title, recognized)
-            return diffs[0]
+            const [label, , score]=diffPretty(title, recognized)
+            return (score&&score!=100 ? `${score}: ` : '')+label
         }
         return text
     },[recognized, text])
@@ -632,7 +628,7 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
 
     const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
 
-    const [$text, $recognized]=React.useMemo(()=>diffPretty(item.text, recognized),[item.text, recognized])
+    const [$text, $recognized, score]=React.useMemo(()=>diffPretty(item.text, recognized),[item.text, recognized])
     return (
         <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
                 flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
@@ -660,7 +656,7 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                         style={{
                             ...textProps.style, 
                             color: playing ? "red" : color.primary
-                        }}>{$recognized}</Recognizer.Text>
+                        }}>{score&&score!=100 ? `${score}: ` : ''}{$recognized}</Recognizer.Text>
                     {!!playing && !!audio && <PlaySound audio={audio} onEnd={e=>setPlaying(false)} />}
                 </Pressable>
             </View>

@@ -1,9 +1,8 @@
 import React from "react"
 import { Switch } from "react-native"
-import * as Linking from "expo-linking"
 import * as FileSystem from "expo-file-system"
 import { useDispatch, useSelector } from "react-redux"
-import { Route, useNavigate, useParams } from "react-router-native"
+import { Route, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
@@ -25,8 +24,7 @@ import { TalkApi } from "./store"
 import TaggedTranscript from "./widgets/tagged-transcript"
 
 export default function MyRouter(){
-    const dispatch=useDispatch()
-    
+    const dispatch=useDispatch()    
     return (
         <Router initialEntries={["/home"]} 
             navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
@@ -116,24 +114,3 @@ function SwitchTed(){
     )
 }
  
-function ShareMointor(){
-    //Linking.useURL()//
-    const url="parrot://share/?url=https://www.youtube.com/watch?v=gOqitVsRYRE"
-    const navigate=useNavigate()
-    const getVideoId=React.useCallback(url=>{
-        url=url.split("?url=")[1]
-        const parsed=Linking.parse(decodeURIComponent(url))
-        if(!["youtu.be","www.youtube.com","youtube.com"].includes(parsed.hostname))
-            return 
-        return parsed.queryParams.v || parsed.path
-    },[])
-    React.useEffect(()=>{
-        if(!url)
-            return
-        const videoId=getVideoId(url)
-        if(!videoId)
-            return 
-        navigate(`/talk/youtube/general/${videoId}`)
-    },[])
-    return null
-}

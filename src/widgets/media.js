@@ -172,8 +172,12 @@ class Media extends React.Component {
         Speak.stop()
     }
 
-    setStatusSync({ shouldPlay, positionMillis }, shouldTriggerUpdate=true) {
+    setStatusSync({ shouldPlay, positionMillis, rate }, shouldTriggerUpdate=true) {
         shouldTriggerUpdate && console.debug(arguments[0])
+        if(rate){
+            this.status.rate=rate
+        }
+
         if (positionMillis != undefined) {
             const lastShouldPlay=this.status.shouldPlay
             this.setStatusSync({shouldPlay:false}, false)//stop to reset
@@ -227,9 +231,8 @@ class Media extends React.Component {
             }catch(e){
                 console.error(e)
             }finally{
-                resolve()
+                resolve(this.status)
             }
-            
         })
     }
 
@@ -359,7 +362,7 @@ export class ListMedia extends Media{
             const {audio}=props.text
             return <PlaySound key={this.state.i} {...{...props, audio, text:undefined}}/>
         }
-        return <Speak key={this.state.i} {...props}/>
+        return <Speak key={this.state.i} rate={this.status.rate} {...props}/>
     }
 
     renderAt(cue,i){

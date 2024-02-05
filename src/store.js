@@ -588,7 +588,37 @@ export const reducers=(()=>{
 						}
 						talk[target]={...talk[target], ...payload}
 					})
-				case "talk/challenge":
+				case "talk/challenge/add":
+					return produce(talks, $talks=>{
+						checkAction(action, ["chunk","talk","policy"])
+						const {talk, policy="general", chunk}=getTalk(action, $talks)
+						
+						const {challenges=[]}=talk[policy]||(talk[policy]={})
+						talk[policy].challenges=challenges
+						const i=challenges.findIndex(a=>a.time==chunk.time)
+						console.assert(i==-1)
+						if(i==-1){
+							challenges.push(chunk)
+						}
+					})	
+				case "talk/challenge/remove":
+					return produce(talks, $talks=>{
+						checkAction(action, ["chunk","talk","policy"])
+						const {talk, policy="general", chunk}=getTalk(action, $talks)
+
+						const {challenges=[]}=talk[policy]||(talk[policy]={})
+						talk[policy].challenges=challenges
+						const i=challenges.findIndex(a=>a.time==chunk.time)
+						if(i!==-1){
+							challenges.splice(i,1)
+						}
+						if(challenges.length==0){
+							delete talk[policy].challenging
+							delete talk[policy].records
+							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+						}
+					})
+				case "talk/challenge/toggle":
 					return produce(talks, $talks=>{
 						checkAction(action, ["chunk","talk","policy"])
 						const {talk, policy="general", chunk}=getTalk(action, $talks)
@@ -605,21 +635,8 @@ export const reducers=(()=>{
 						}
 						if(challenges.length==0){
 							delete talk[policy].challenging
-						}
-					})
-				case "talk/challenge/remove":
-					return produce(talks, $talks=>{
-						checkAction(action, ["chunk","talk","policy"])
-						const {talk, policy="general", chunk}=getTalk(action, $talks)
-
-						const {challenges=[]}=talk[policy]||(talk[policy]={})
-						talk[policy].challenges=challenges
-						const i=challenges.findIndex(a=>a.time==chunk.time)
-						if(i!==-1){
-							challenges.splice(i,1)
-						}
-						if(challenges.length==0){
-							delete talk[policy].challenging
+							delete talk[policy].records
+							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
 						}
 					})
 				case "talk/recording":
@@ -627,8 +644,9 @@ export const reducers=(()=>{
 						checkAction(action, ["record","talk","policy"])
 						const {talk, policy:policyName, record, score}=getTalk(action, $talks)
 
-						const {records={}, challenges, challenging}=(talk[policyName]||(talk[policyName]={}));
-						(talk[policyName].records=records)[Object.keys(record)[0]]=Object.values(record)[0]
+						const {records={}}=(talk[policyName]||(talk[policyName]={}));
+						const time=Object.keys(record)[0];
+						(talk[policyName].records=records)[time]=record[time]
 						records.changed=Date.now()
 					})
 				////unify : id, uri
@@ -846,8 +864,7 @@ export const listeners=[
 				dispatch({type:"message/error",message:e.message})
 			}
 		}
-	},
-	{
+	},{
 		type:"my/lang",
 		async effect(action, api){
 			const originalState=api.getOriginalState()

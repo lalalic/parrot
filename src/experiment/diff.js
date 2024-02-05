@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text } from "react-native";
+import memoize from "memoize-one"
 
 import WordDiff from "word-diff";
 
@@ -11,7 +12,7 @@ function trim(text){
     return text.replace(/\s+/g, " ").toLowerCase().trim()
 }
 
-export function diffScore(text, recognized, data) {
+export const diffScore=memoize(function (text, recognized, data) {
     text = trim(text)
     if(!text)
         return 110
@@ -23,7 +24,8 @@ export function diffScore(text, recognized, data) {
         data.diffs=diffs
     }
     return Math.ceil(100 * correctWords / text.split(/\s+/).length);
-}
+})
+
 export function diffPretty(text, recognized) {
     if(typeof(text)=="undefined"){
         debugger
@@ -33,7 +35,8 @@ export function diffPretty(text, recognized) {
     if(score==100){
         return [
             text.replace(/\n/, " "), 
-            <Text style={{ width:"100%", color:"green"}}>Perfect Passed</Text>
+            <Text style={{ width:"100%", color:"green"}}>Perfect Passed</Text>,
+            score
         ]
     }
     
@@ -52,6 +55,7 @@ export function diffPretty(text, recognized) {
             return (!!text && <Text key={i}>{text}</Text>)
                 || (!!add && <Text key={i} style={{ color: "red" }}>{add}</Text>)
                 || (!!remove && !add && <Text key={i} style={{ color: "red", textDecorationLine:"line-through" }}>{remove}</Text>)
-        })
+        }),
+        score
     ];
 }
