@@ -241,10 +241,11 @@ class Media extends React.Component {
     }
 
     render() {
-        const { posterSource, source, title, ...props } = this.props
+        const { posterSource, source, title, children, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
+                    {children}
                     {this.doRenderAt()}
                 </ImageBackground>
             </View>

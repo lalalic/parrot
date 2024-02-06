@@ -596,7 +596,6 @@ export const reducers=(()=>{
 						const {challenges=[]}=talk[policy]||(talk[policy]={})
 						talk[policy].challenges=challenges
 						const i=challenges.findIndex(a=>a.time==chunk.time)
-						console.assert(i==-1)
 						if(i==-1){
 							challenges.push(chunk)
 						}

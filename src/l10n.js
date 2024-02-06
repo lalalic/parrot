@@ -1,12 +1,4 @@
 import makeLocalized from "react-native-use-qili/tools/make-localized"
-const lang=(()=>{
-    try{
-        const {my:{mylang}}=globalThis.store.getState()
-        return mylang
-    }catch(e){
-
-    }
-})();
 const obMap=(keys,values)=>keys.reduce((ob,k,i)=>(ob[k]=values[i],ob),{})
 
 export default globalThis.l10n=makeLocalized({
@@ -71,4 +63,4 @@ export default globalThis.l10n=makeLocalized({
             ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']),
         
     }
-}, lang)
+})

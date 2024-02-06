@@ -20,6 +20,7 @@ const asyncCall=fn=>setTimeout(fn, 0)
 const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
 /**
  * 2 models: with or without transcript
+ * cue: {text(audio, caption, subtitles), test=text(recognze, diff), time, end}
 @TODO: 
 1. why is it constantly rerendered although status is not changed 
  */
@@ -444,7 +445,9 @@ export default function Player({
                         autoChallenge={policy.autoChallenge}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
-                        delay={policy.captionDelay}/>
+                        delay={policy.captionDelay}
+                        children={null}
+                        />
                     }
 
                     <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
@@ -550,6 +553,7 @@ export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...
 
     React.useEffect(()=>{
         if(delay){
+            setText("")
             setTimeout(()=>setText(title),delay*1000)
         }else{
             setText(title)

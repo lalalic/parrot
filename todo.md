@@ -4,6 +4,8 @@ bug
 > <Loadding/> covers widget content list
 > auto shrink menu too far away from border
 > widget auto play when challenging
+> caption delay: previous caption still displays after next cue start
+> [done]subtitle sometimes shows [object] (caused by suspend #2)
 
 
 enhancement
@@ -18,6 +20,9 @@ enhancement
 
 
 
-Suspend
+known issues
 ===
 > [done]should records be cleared when challenging complete?
+> unsynced challenge data with changed book data.
+> caption never display if caption delay > whitespace
+
