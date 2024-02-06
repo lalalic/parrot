@@ -88,7 +88,8 @@ export default function Player({
                     }))
                 case 10:
                     return ([{
-                        text:paragraphs.map(a=>a.cues.map(b=>b.text).join("")).join("\n"),
+                        text:paragraphs.map(a=>a.cues.map(b=>b.text).join(" ")).join("\n"),
+                        test:paragraphs.map(a=>a.cues.map(b=>b.test||"").join(" ").trim()).filter(a=>!!a).join("\n")||undefined,
                         time:paragraphs[0].cues[0].time,
                         end:status.durationMillis
                     }])
@@ -102,7 +103,8 @@ export default function Player({
                                 return chunks
                             },[])
                             .map(a=>({
-                                text:a.map(a=>a.text).join(),
+                                text:a.map(a=>a.text).join(" "),
+                                test:a.map(a=>a.test||"").join(" ").trim()||undefined,
                                 time:a[0].time,
                                 end:a[a.length-1].end
                             }))
@@ -349,7 +351,7 @@ export default function Player({
                 rate:policy.rate,
                 style:{flex:1, minHeight:150},
                 positionMillis: positionMillisHistory,
-                fullscreen: policy.fullscreen,
+                fullscreen: policy.fullscreen
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
@@ -438,15 +440,12 @@ export default function Player({
                     <Subtitle 
                         testID="subtitle"
                         i={status.i} 
-                        selectRecognized={(state,i, a=chunks[i])=>state.talks[id]?.[policyName]?.records?.[`${a?.time}-${a?.end}`]}
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
                         title={chunks[status.i]?.text||""}
                         my={chunks[status.i]?.my}
-                        autoChallenge={policy.autoChallenge}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
                         delay={policy.captionDelay}
-                        children={null}
                         />
                     }
 
@@ -539,18 +538,8 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...props}){
+export function Subtitle({i,delay,title,my, style,  ...props}){
     const [text, setText]=React.useState(title)
-    const recognized=useSelector(state=>selectRecognized(state, i))
-
-    const $title=React.useMemo(()=>{
-        if(recognized){
-            const [label, , score]=diffPretty(title, recognized)
-            return (score&&score!=100 ? `${score}: ` : '')+label
-        }
-        return text
-    },[recognized, text])
-
     React.useEffect(()=>{
         if(delay){
             setText("")
@@ -562,7 +551,7 @@ export function Subtitle({i,delay,title,my, selectRecognized, style, score,  ...
 
     return (
         <Text {...props} style={style}>
-            {$title||""} {"\n"}
+            {text||""} {"\n"}
             <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
         </Text>
     )
@@ -633,7 +622,7 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
 
     const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
 
-    const [$text, $recognized, score]=React.useMemo(()=>diffPretty(item.text, recognized),[item.text, recognized])
+    const [$text, $recognized, score]=React.useMemo(()=>diffPretty(item.test||item.text, recognized),[item.test||item.text, recognized])
     return (
         <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
                 flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
@@ -642,14 +631,14 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                 <PressableIcon size={20} color={color.text}
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
                     name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
-                <Text style={{textAlign: "center",fontSize:10}}>{!!recognized ? diffScore(item.text, recognized) : ""}</Text>
+                <Text style={{textAlign: "center",fontSize:10}}>{score||""}</Text>
             </View>
             <View style={{flex:1, flexGrow:1 }}>
                 <Pressable style={{flex:1}}
                     onPressOut={e=>!$shouldCaption && setShouldCaption(false)}
                     onLongPress={e=>!$shouldCaption && setShouldCaption(true)}
                     onPress={e => dispatch({ type: "media/time", time:item.time , shouldPlay:true})}>
-                    <Text {...textProps}>{shouldCaption ? $text : ""}</Text>
+                    <Text {...textProps}>{shouldCaption ? item.text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end", }}
                     onPress={e => {

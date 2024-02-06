@@ -9,6 +9,7 @@ import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
+import SmartRecognizedText from "../components/smart-recognized-text"
 const l10n=globalThis.l10n
 
 /**
@@ -125,25 +126,26 @@ export default class VocabularyBook extends TaggedListMedia{
         return data.map(({text="", translated=text})=>{
             switch(usage){
                 case 0://lang -> mylang
-                    return {text:translated, ask:text, recogMyLocale:true}
+                    return {test:translated, text, recogMyLocale:true}
                 case 1://mylang->lang
-                    return {text, ask:translated, speakMyLocale:true}
+                    return {test:text, text:translated, speakMyLocale:true}
                 case 2://pronouncing
-                    return {text, ask:text}
+                    return {text}
             }
         })
     }
 
-    renderAt({ask, speakMyLocale},i){
-        const {data=[], fullscreen}=this.props
+    renderAt(cue,i){
+        const {text, speakMyLocale}=cue
+        const {data=[], fullscreen, policy, id}=this.props
         return (
             <>
                 <Text style={{padding:10, color:"white"}}>
-                    {getItemText(data[i],fullscreen, "\n")}
+                    {fullscreen && getItemText({text:"",...data[i]}, fullscreen, "\n")}
                 </Text>
-                {this.speak({locale:speakMyLocale, text:ask})}
+                {this.speak({locale:speakMyLocale, text})}
             </>
-        )
+        ) 
     }
 
     shouldComponentUpdate({usage:next=0}){
