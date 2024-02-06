@@ -2,6 +2,8 @@ import React from "react"
 import { FlatList, TextInput, View, } from "react-native"
 import { useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
+import * as Clipboard from 'expo-clipboard';
+
 import { KeyboardAvoidingView, } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
@@ -59,11 +61,13 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
     )
 }
 
-function Editor({onAdd, style, onChange, index, data, getItemText, ...props}){
+function Editor({onAdd, style, onChange, index, data, getItemText, editingStyle=style, ...props}){
     const [value, setValue]=React.useState("")
     React.useEffect(()=>{
         if(index>-1 && data && getItemText){
-            setValue(getItemText(data))
+            const text=getItemText(data)
+            setValue(text)
+            Clipboard.setStringAsync(text)
         }
         if(index==-1){
             setValue("")
@@ -80,19 +84,41 @@ function Editor({onAdd, style, onChange, index, data, getItemText, ...props}){
     if(!onAdd && index==-1)
         return null
     return (
-        <View style={{flexDirection:"row", borderRadius:5, justifyContent:"center", alignItems:"center", backgroundColor:"white"}}>
+        <View style={[{flexDirection:"row", borderRadius:5, justifyContent:"center", alignItems:"center", backgroundColor:"white"}]}>
             <TextInput 
-                style={[{flex:1,paddingRight:30},style]} 
+                style={[{flex:1,paddingLeft:5},index>-1 ? editingStyle : style]} 
                 placeholder={l10n["Append Item"]}
+                returnKeyType="done"
+                onSubmitEditing={e=>submit({value, index, data})}
                 {...props}
                 value={value} 
                 onChangeText={text=>setValue(text)}
-                returnKeyType="done"
-                onSubmitEditing={e=>submit({value, index, data})}
                 />
             <PressableIcon 
                 name={index>-1 ? "blur-circular" : (onAdd ? "add-circle-outline" : "")}
                 onPress={e=>submit({value, index, data})}/>
         </View>
     )
+}
+
+
+export function clean(ob){
+    const keys=Object.keys(ob)
+    Object.values(ob).forEach((value, i)=>{
+        if(value===undefined){
+            delete ob[keys[i]]
+        }
+    })
+    return ob
+}
+
+export function getItemText({text, pronunciation, translated, classification, explanation},showAll=true, sep=" "){
+    if(!showAll)
+        return text
+    pronunciation=pronunciation ? `[${pronunciation}]` : ""
+    translated= translated? `(${translated})` : ""
+    classification= classification ? `${classification}. ` : ""
+    let extra = [classification,explanation||""].filter(a=>!!a).join("")
+    extra = extra ? `${sep}- ${extra}` : ""
+    return `${text}${sep}${pronunciation}${sep}${translated}${extra}`
 }

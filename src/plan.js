@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View, Modal, Pressable, ScrollView} from "react-native";
-import { Timeline, CalendarProvider,  ExpandableCalendar} from "react-native-calendars";
+import { Timeline, CalendarProvider,  ExpandableCalendar, LocaleConfig} from "react-native-calendars";
 import { useDispatch, useSelector } from "react-redux";
 import Select from "react-native-select-dropdown"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -143,11 +143,11 @@ const Shortcuts=({day,setCopyMode, style})=>{
     return (
         <View style={[{justifyContent:"space-around"},style]}>
             <PressableIcon name="filter-1" 
-                label="Day Copy" labelStyle={labelStyle} labelFade={true}
+                label={l10n["Day Copy"]} labelStyle={labelStyle} labelFade={true}
                 onPress={e=>setCopyMode(1)}/>
 
             <PressableIcon name="filter-7" 
-                label="Week Copy" labelStyle={labelStyle} labelFade={true}
+                label={l10n["Week Copy"]} labelStyle={labelStyle} labelFade={true}
                 onPress={e=>setCopyMode(7)}/>
         </View>
     )
@@ -193,7 +193,7 @@ const Copy=({cancel, mode, ...props})=>{
                     <Pressable onPress={e=>showDatePicker(!datePickerVisible)}
                         style={{padding:5,height:LabelHeight, justifyContent:"center",  borderBottomWidth:1, borderBottomColor:color.inactive}}>
                         <AutoHide style={{position:"absolute"}}>
-                            <Text>{`Template ${mode==1 ? 'Day' : "Week"}:`}</Text>
+                            <Text>{l10n[`Template ${mode==1 ? 'Day' : "Week"}:`]}</Text>
                         </AutoHide>
                         <Text style={{textAlign:"center"}}>
                            {day.asDateString()} {"\u{B7}".repeat(3)}
@@ -338,3 +338,18 @@ const PlanPolicyDots={
     retelling:{key:"retelling", color:"green"},
     '*':{key:"NA", color:"gray"}
 }
+
+;(()=>{
+    const lang=l10n.getLanguage()
+    const Default=LocaleConfig.locales[""]
+    LocaleConfig.locales[lang]={
+        monthNames:Default.monthNames.map(a=>l10n[a]),
+        monthNamesShort:Default.monthNamesShort.map(a=>l10n[a]),
+        dayNames:Default.dayNames.map(a=>l10n[a]),
+        dayNamesShort:Default.dayNamesShort.map(a=>l10n[a]),
+        today:l10n.today,
+        amDesignator:l10n[Default.amDesignator],
+        pmDesignator:l10n[Default.pmDesignator],
+    }
+    LocaleConfig.defaultLocale=lang
+})();

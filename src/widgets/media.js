@@ -481,7 +481,7 @@ export const TagList=({data, slug, onEndEditing, navigate=useNavigate(), childre
                 keyExtractor={({id, isLocal})=>`${id}-${isLocal}`}
                 renderItem={renderItem}
                 />
-            {isLoading && <Loading/>}
+            {isLoading && <Loading style={{backgroundColor:"transparent"}}/>}
             {children}
         </View>
     )

@@ -1,5 +1,13 @@
 import makeLocalized from "react-native-use-qili/tools/make-localized"
+const lang=(()=>{
+    try{
+        const {my:{mylang}}=globalThis.store.getState()
+        return mylang
+    }catch(e){
 
+    }
+})();
+const obMap=(keys,values)=>keys.reduce((ob,k,i)=>(ob[k]=values[i],ob),{})
 
 export default globalThis.l10n=makeLocalized({
     zh:{
@@ -44,8 +52,23 @@ export default globalThis.l10n=makeLocalized({
         "Create new Dialog Book":"新增对话集锦",
         "Create new Picture Book":"新增看图识物",
         "Filter":"快速查找",
-        "":"",
-        "":"",
+        "Day Copy":"日拷贝",
+        "Week Copy":"周拷贝",
+        "Template Day":"日模版",
+        "Template Week":"周模版",
+        
+        //calendar
+        "AM":"上午",
+        "PM":"下午",
+        today:"今天",
+        ...obMap(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            ['周日','周一','周二','周三','周四','周五','周六']),
+        ...obMap(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+            ['日','一','二','三','四','五','六']),
+        ...obMap(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+            ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月']),
+        ...obMap(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']),
         
     }
-})
+}, lang)

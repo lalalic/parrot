@@ -347,7 +347,8 @@ export default function Player({
                 },
                 rate:policy.rate,
                 style:{flex:1, minHeight:150},
-                positionMillis: positionMillisHistory
+                positionMillis: positionMillisHistory,
+                fullscreen: policy.fullscreen,
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>

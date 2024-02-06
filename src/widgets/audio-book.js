@@ -1,17 +1,16 @@
 import React from "react"
 import * as FileSystem from "expo-file-system"
-import { View, Linking, Text} from "react-native" 
+import { View, Linking, Text, Pressable} from "react-native" 
 import { TaggedListMedia,  } from "./media"
 import { PlaySound, Recorder } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
-import ChangableText from "react-native-use-qili/components/ChangableText"
-import { TaggedTranscript } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
 /**
- * data:[{text}]
+ * data:[{text, pronunciation, translated}]
  */
 export default class AudioBook extends TaggedListMedia {
     static defaultProps = {
@@ -33,6 +32,24 @@ export default class AudioBook extends TaggedListMedia {
         )
     }
 
+    static parse(input){
+        return input.split(/[\n;]/).filter(a=>!!a)
+            .map(a=>{
+                let pronunciation, translated;
+                a=a.replace(/\[(?<pronunciation>.*)\]/,(a,p1)=>{
+                    pronunciation=p1.trim()
+                    return ""
+                }).trim();
+                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                    translated=p1.trim()
+                    return ""
+                }).trim()
+                if(a){
+                    return clean({text:a, pronunciation, translated})
+                }
+            }).filter(a=>!!a)
+    }
+
     static removeSave=false
 
     static TaggedTranscript=({id, ...props})=>{
@@ -40,21 +57,25 @@ export default class AudioBook extends TaggedListMedia {
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
             
-        const AudioItem=React.useCallback(({item:{text, uri}, id})=>{
+        const AudioItem=React.useCallback(({item, text=item.text, uri=item.uri, id, index, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
+            const textStyle={color: playing ? color.primary : color.text}
+
             return (
-                <View style={{ flexDirection: "row", height: 50 }}>
+                <View style={{ flexDirection: "row", height: 70, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5, }}>
                     <PressableIcon name={!!uri ? (playing ? "pause-circle-outline" : "play-circle-outline") : "radio-button-unchecked"} 
                         onPress={e=>uri && setPlaying(!playing)}
                         onLongPress={e=>dispatch({type:`talk/book/remove`, id, uri})}
                         />
-                    <ChangableText 
-                        onPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
-                        onChange={value=>dispatch({type:`talk/book/set`,id, uri, text:value})}
-                        text={{style:{color: playing ? color.primary : color.text}, value:text}}
+                    <Pressable 
+                        onPress={e=>setActive(isActive ? -1 : index)}
+                        onLongPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
+                        <Text style={textStyle}>{React.useMemo(()=>getItemText(item),[item])}</Text>
                         {playing && <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/>}
-                    </ChangableText>
+                    </Pressable>
+                    <PressableIcon name="remove-circle-outline" 
+                        onPress={e=>dispatch({type:"talk/book/remove/index", index, id})}/>
                 </View>
             )
         },[])
@@ -74,6 +95,15 @@ export default class AudioBook extends TaggedListMedia {
                         />,
                     
                 ]}
+                editor={{
+                    onChange(text, i, {uri}){
+                        const [item]=AudioBook.parse(text)
+                        dispatch({type:"talk/book/set", id, uri, ...item})
+                    },
+                    getItemText,
+                    multiline:true,
+                    editingStyle: {height:150}
+                }}
             />
         )
     }

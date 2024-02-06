@@ -4,11 +4,16 @@ import { TaggedListMedia } from "./media"
 import { Speak } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { TaggedTranscript } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
-//[{ask, text:answer}]
+/*
+[{
+    ask, pronunciation, translated, user,        
+    text:answer, pronunciation1, translated1, user1,   
+}]
+*/
 export default class DialogBook extends TaggedListMedia{
     static defaultProps={
         ...super.defaultProps,
@@ -48,15 +53,19 @@ export default class DialogBook extends TaggedListMedia{
                 "Scene":"Discuss a message queue solution",
             }, 
             prompt:(a,store)=>{
-                const {my:{lang}}=store.getState()
+                const {my:{lang, mylang}}=store.getState()
                 return `
-                Please make a short ${lang} language dialog to help learn language ${lang}. 
+                Please make a short ${lang} language dialog to help learn ${lang} language. 
                 One role is ${a["Your Role"]} called Joe. 
                 Another role is ${a["My Role"]} called Ray. 
                 the scene: ${a["Scene"]}. 
-                -------------
+                --
                 Response should NOT have anything else. 
-                Response should return whole dialog in one time
+                Response should provide the entire dialog at once.
+                Each dialog should have [pronunciation] at end, then (translation).
+                Prounciation should use International Phonetic Alphabets. 
+                Translation target language should be ${mylang}.
+                --
                 `
             },
             onSuccess({response, store}){
@@ -77,19 +86,21 @@ export default class DialogBook extends TaggedListMedia{
         const color=React.useContext(ColorScheme)
         const dispatch=useDispatch()
         
-        const Item=React.useCallback(({item:{ask, text}, id, index, isActive, setActive})=>{
+        const Item=React.useCallback(({item:{ask, text, pronunciation, translated, pronunciation1, translated1, }, id, index, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             
             return (
-                <View style={{ flexDirection: "row", height: 50, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,}}>
+                <View style={{ flexDirection: "row", height: 100, overflow:'hidden',
+                    backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,
+                    }}>
                     <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}/>
                     <Pressable 
                         onPress={e=>setActive(isActive ? -1 : index)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                            <Text style={textStyle}>{ask}</Text>
-                            <Text style={{...textStyle, color:"gray"}}>{text}</Text>
+                            <Text style={textStyle}>{getItemText({text:ask, pronunciation, translated,},false)}</Text>
+                            <Text style={{...textStyle, color:"gray"}}>{getItemText({text, pronunciation:pronunciation1, translated:translated1,},false)}</Text>
                             {playing && <Speak text={ask} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
                     <PressableIcon name="remove-circle-outline" 
@@ -100,13 +111,13 @@ export default class DialogBook extends TaggedListMedia{
 
         return (
             <TaggedTranscript {...props} id={id}
-                actions={<Paste id={id}/>}
+                actions={<Paste id={id} key="paste"/>}
                 listProps={{
                     renderItem:Item,
                     keyExtractor:a=>a.ask
                 }}
                 editor={{
-                    placeholder:"how're you? > fine.",
+                    placeholder:"how're you?\n\nfine.",
                     onAdd(text){
                         const appending=DialogBook.parse(text.replace(">","\n"))
                         dispatch({type:"talk/book/add", id, appending})
@@ -115,9 +126,16 @@ export default class DialogBook extends TaggedListMedia{
                         const appending=DialogBook.parse(text.replace(">","\n"))
                         dispatch({type:"talk/book/replace", id, i, appending})
                     },
-                    getItemText({ask, text}){
-                        return `${ask} > ${text}`
-                    }
+
+                    getItemText({ask, text, pronunciation, translated, pronunciation1, translated1}){
+                        return `${getItemText({text:ask, pronunciation, translated})}\n\n${getItemText({text,pronunciation:pronunciation1,translated:translated1})}`
+                    },
+
+                    multiline:true,
+
+                    editingStyle: {height:200},
+
+                    onSubmitEditing:e=>e,
                 }}
                 />
         )
@@ -127,17 +145,34 @@ export default class DialogBook extends TaggedListMedia{
         if(typeof(dialog)=="string"){
             dialog=dialog.split("\n").filter(a=>!!a)
                 .map(a=>{
-                    const [user, ask=user]=a.split(":")
-                    return {ask: ask.trim(), text:" "}
+                    let user, pronunciation, translated;
+                    a=a.replace(/\[(?<pronunciation>.*)\]/,(a,p1)=>{
+                        pronunciation=p1
+                        return ""
+                    }).trim();
+                    a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                        translated=p1
+                        return ""
+                    }).trim();
+                    const ask=a.replace(/^(?<user>\w+)\s*\:\s*/,(a,p1)=>{
+                        user=p1
+                        return ""
+                    }).trim();
+                    return {ask, text:" ", pronunciation, translated, user}
                 })
         }else{
-            dialog=dialog.map(({user, text})=>({ask:text, text:" "}))
+            dialog=dialog.map(({text, ...props})=>({...props, ask:text, text:" "}))
         }
         return dialog.reduce((data,a, i)=>{
                 if(0 === i%2){
                     data.push(a)
                 }else{
-                    data[data.length-1].text=a.ask
+                    clean(Object.assign(data[data.length-1], {
+                        text:a.ask,
+                        pronunciation1: a.pronunciation,
+                        translated1:a.translated,
+                        user1: a.user
+                    }))
                 }
                 return data
             },[])

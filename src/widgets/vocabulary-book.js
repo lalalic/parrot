@@ -5,7 +5,7 @@ import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"
-import { TaggedTranscript } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
@@ -41,7 +41,7 @@ export default class VocabularyBook extends TaggedListMedia{
         {label:"Vocabulary", name:"menu-book",
             params:{
                 "category":"Kitchen",
-                "amount": "50",
+                "amount": "10",
             }, 
             speakable:false,
             prompt(a,store){
@@ -52,15 +52,14 @@ export default class VocabularyBook extends TaggedListMedia{
                     .map(b=>b.data.map(b=>b.text).join(","))
                     .join(",")
 
-                return `list ${a.amount} words of ${lang} language about ${a.category} with translation to ${mylang} language.
+                return `list ${a.amount} words of ${lang} language about ${a.category}.
                     ${existings ? `I already know these words: ${existings}` : ''}
                     -------
                     Response should NOT have anything else. 
-                    Each line for a word as following example:
-                    ----
-                    word1 : translated1
-                    word2 : translated2
-                    ---
+                    Each word should have [pronunciation] at end, then (translation).
+                    Prounciation should use International Phonetic Alphabets. 
+                    Translation target language should be ${mylang}.
+                    Translation should NOT have prounciation.
                     `
             },
 
@@ -88,10 +87,10 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {mylang, lang}=state.my
                 a.lang=lang
                 a.mylang=mylang
-                return `list ${a.amount} idioms of ${lang} language used in ${a.category} with ${mylang} language explaination, and an ${lang} example.
+                return `list ${a.amount} idioms of ${lang} language used in ${a.category} with ${mylang} language translation, and an ${lang} example.
                 ------------ 
                     Response should NOT have anything else.
-                    Response should be json format with keys: idiom,explanation,example.
+                    Response should be json format with keys: idiom,pronunciation,translation,example.
                 ------
                 `
             },
@@ -100,7 +99,7 @@ export default class VocabularyBook extends TaggedListMedia{
                 const {category, amount}=this.params
                 const {lang, mylang}=store.getState().my
                 try{
-                    const idioms=JSON.parse(response.replace(/\"idiom\"\:/g, '"text":').replace(/\"explanation\"\:/,'"translated":'))
+                    const idioms=JSON.parse(response.replace(/\"idiom\"\:/g, '"text":').replace(/\"translation\"\:/,'"translated":'))
                     const title=`idioms - ${category}`
                     const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
                     return `${amount} ${category} idioms save to @#${id}`
@@ -136,18 +135,13 @@ export default class VocabularyBook extends TaggedListMedia{
     }
 
     renderAt({ask, speakMyLocale},i){
-        const {data=[]}=this.props
-        let {text, pronunciation, translated, classification, explanation,example}=data[i]
-        
-        pronunciation=pronunciation ? `[${pronunciation}]` : ""
-        translated= translated? `: ${translated}` : ""
-        classification= classification ? `- ${classification}.` : ""
-        const title=`${text} ${pronunciation} ${classification}`
-
+        const {data=[], fullscreen}=this.props
         return (
             <>
-            <Text style={{padding:10, color:"white"}}>{[title,explanation,example].filter(a=>!!a).join("\n")}</Text>
-            {this.speak({locale:speakMyLocale, text:ask})}
+                <Text style={{padding:10, color:"white"}}>
+                    {getItemText(data[i],fullscreen, "\n")}
+                </Text>
+                {this.speak({locale:speakMyLocale, text:ask})}
             </>
         )
     }
@@ -171,7 +165,6 @@ export default class VocabularyBook extends TaggedListMedia{
         const Item=React.useCallback(({item, id, index, text=item.text, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
-            const title=React.useMemo(()=>getShowText(item),[item])
             return (
                 <View style={{ flexDirection: "row", height: 50, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5,}}>
                     <PressableIcon name={playing ? "pause-circle-outline" : "play-circle-outline"} 
@@ -180,7 +173,7 @@ export default class VocabularyBook extends TaggedListMedia{
                         onPress={e=>setActive(isActive ? -1 : index)}
                         onLongPress={e=>lang=="en" && Linking.openURL(`https://www.synonym.com/synonyms/${text}`)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                            <Text style={textStyle}>{title}</Text>
+                            <Text style={textStyle}>{React.useMemo(()=>getItemText(item),[item])}</Text>
                             {playing && <Speak text={text} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
                     <PressableIcon name="remove-circle-outline" 
@@ -207,9 +200,7 @@ export default class VocabularyBook extends TaggedListMedia{
                         const appending=VocabularyBook.parse(text)
                         dispatch({type:"talk/book/replace", id, i, appending})
                     },
-                    getItemText({text, translated}){
-                        return `${text}${translated ? `:${translated}`:''}`
-                    }
+                    getItemText
                 }}
             />
         )
@@ -217,18 +208,19 @@ export default class VocabularyBook extends TaggedListMedia{
 
     static parse(input){
         return input.split(/[\n;]/).filter(a=>!!a)
-            .map(line=>{
-                const [text="", translated]=line.split(":").map(a=>a.trim())
-                if(text){
-                    const i=text.indexOf('[')
-                    if(i!=-1){
-                        return {
-                            text:text.substring(0,i), 
-                            pronunciation:text.substring(i+1,text.lastIndexOf(']')), 
-                            translated
-                        }
-                    }
-                    return {text, translated}
+            .map(a=>{
+                a=a.replace(/^\d+\.\s+/, "").trim()
+                let pronunciation, translated;
+                a=a.replace(/\[(?<pronunciation>.*)\]/,(a,p1)=>{
+                    pronunciation=p1.trim()
+                    return ""
+                }).trim();
+                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                    translated=p1.trim()
+                    return ""
+                }).trim()
+                if(a){
+                    return clean({text:a, pronunciation, translated})
                 }
             }).filter(a=>!!a)
     }
@@ -289,15 +281,6 @@ const Sentense=({talk, id=talk?.id})=>{
                 })();
             }}/>
     )
-}
-
-function getShowText({text, pronunciation, translated, classification, explanation}){
-    pronunciation=pronunciation ? `[${pronunciation}]` : ""
-    translated= translated? `: ${translated}` : ""
-    classification= classification ? `${classification}. ` : ""
-    let extra = [classification,explanation||""].filter(a=>!!a).join("")
-    extra = extra ? `- ${extra}` : ""
-    return `${text}${pronunciation}${translated} ${extra}`
 }
 
 const UsageIcons=["translate", "translate", "graphic-eq"]

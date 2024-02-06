@@ -9,7 +9,7 @@ import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
-import { TaggedTranscript } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
@@ -51,7 +51,7 @@ export default class PictureBook extends TaggedListMedia {
         const dispatch=useDispatch()
         const {width,height}=useWindowDimensions()
 
-        const PictureItem=React.useCallback(({item:{uri, text}, index, id, isActive, setActive})=>{
+        const PictureItem=React.useCallback(({item, text=item.text, index, id, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
             
@@ -62,7 +62,7 @@ export default class PictureBook extends TaggedListMedia {
                     <Pressable 
                         onPress={e=>setActive(isActive ? -1 : index)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                            <Text style={textStyle}>{text}</Text>
+                            <Text style={textStyle}>{React.useMemo(()=>getItemText(item),[item])}</Text>
                             {playing && <Speak text={text} onEnd={e=>setPlaying(false)}/>}
                     </Pressable>
                     <PressableIcon name="remove-circle-outline" 
@@ -111,10 +111,11 @@ export default class PictureBook extends TaggedListMedia {
                 editor={!visible ? {
                     placeholder: l10n["Change object name"],
                     onChange(text, i, {uri}){
-                        dispatch({type:"talk/book/set", id, uri, text})
+                        const [item]=PictureBook.parse(text)
+                        dispatch({type:"talk/book/set", id, uri, ...item})
                     },
-                    getItemText({text}){
-                        return text
+                    getItemText({text, translated, pronunciation}){
+                        return `${text}${pronunciation ? `[${pronunciation}]`:''}${translated ? `:${translated}`:''}`
                     }
                 } : undefined}
             >
@@ -129,6 +130,26 @@ export default class PictureBook extends TaggedListMedia {
             </TaggedTranscript>
         )
     }
+
+
+    static parse(input){
+        return input.split(/[\n;]/).filter(a=>!!a)
+            .map(a=>{
+                let pronunciation, translated;
+                a=a.replace(/\[(?<pronunciation>.*)\]/,(a,p1)=>{
+                    pronunciation=p1.trim()
+                    return ""
+                }).trim();
+                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                    translated=p1.trim()
+                    return ""
+                }).trim()
+                if(a){
+                    return clean({text:a, pronunciation, translated})
+                }
+            }).filter(a=>!!a)
+    }
+
 
     static TagManagement({talk=this.defaultProps, ...props}){
         const dispatch=useDispatch()
