@@ -34,7 +34,7 @@ export default function Policy(){
                 autoHide={false}
                 transcript={talk?.languages?.mine?.transcript}
                 onPolicyChange={({name, desc, ...policy})=>dispatch({type:"policy",target, payload:policy})}
-                onRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
+                getRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 
             <View style={{flex:2, padding:10}}>
                 <View style={{flexDirection:"row",justifyContent:"space-between", 

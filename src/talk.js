@@ -33,13 +33,11 @@ export default function Talk({autoplay}){
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
             onFinish={e=>dispatch({type:"talk/toggle/challenging",talk, policy: policyName, value: !challenging ? true : undefined})}
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
+            onRecordChunk={({chunk,record})=>dispatch({type:"talk/recording",talk, policy, policyName, chunk, record})}
             
-            addChallengeChunk={chunk=>dispatch({type:"talk/challenge/add",talk, policy: policyName, chunk})}
-            removeChallengeChunk={chunk=>dispatch({type:"talk/challenge/remove",talk, policy: policyName, chunk})}
-            toggleChallengeChunk={chunk=>dispatch({type:"talk/challenge/toggle",talk, policy: policyName, chunk})}
+            toggleChallengeChunk={chunk=>dispatch({type:"talk/challenge/toggle",talk, policy:policyName, chunk})}
             
-            onRecordChunk={({chunk:{time,end},recognized, score})=>dispatch({type:"talk/recording",talk, policy: policyName,score, record:{[`${time}-${end}`]:recognized}})}
-            onRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
+            getRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             {...{id:talk.id, challenging, key:`${policyName}-${talk.id}`, policyName, policy, 
                 style,
                 title:talk.title,

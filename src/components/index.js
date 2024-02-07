@@ -626,8 +626,9 @@ export const Recognizer=(()=>{
                     await Voice.stop()
                     await Voice.destroy()
                     if(recognized){
-                        DeviceEventEmitter.emit("recognized.done",[recognized,i])
+                        DeviceEventEmitter.emit("recognized.done",[recognized,i, locale])
                         onRecord?.({
+                            lang:locale,
                             recognized, 
                             uri:`file://${audioUri}`, 
                             duration:Date.now()-start
@@ -726,7 +727,7 @@ export function useTalkQuery({api, slug, id, policyName }) {
     //const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
     const { data: remote = {}, ...status } = (api=="Qili"||!!Widget ? Qili : TalkApi).useTalkQuery({slug:!!Widget ? "Widget" : slug, id });
     const local = useSelector(state => state.talks[id||remote?.id]);
-    const policy = useSelector(state => selectPolicy(state, policyName, id));
+    const policy = useSelector(state => selectPolicy({state, policyName, id}));
 
     const talk = React.useMemo(() => {
         const video = local?.localVideo || remote?.video;

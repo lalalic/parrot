@@ -1,8 +1,7 @@
 import React from 'react';
 import { Text } from "react-native";
+import * as Diff from "diff";
 import memoize from "memoize-one"
-
-import WordDiff from "word-diff";
 
 function trim(text){
     text=text.replace(/\n/g, " ")
@@ -12,50 +11,53 @@ function trim(text){
     return text.replace(/\s+/g, " ").toLowerCase().trim()
 }
 
-export const diffScore=memoize(function (text, recognized, data) {
+export function diffScore(text, recognized, data) {
     text = trim(text)
     if(!text)
         return 110
     if(!recognized)
         return 10
-    const diffs = WordDiff.diffString(text, recognized.toLowerCase());
-    const correctWords = diffs.reduce((score, { text }) => score + (text?.trim().split(" ").length ?? 0), 0)
+
+    const [diffs, score]=(lang=>{
+        const opt={ignoreCase:true}
+        
+        if(['zh','jp','kr'].find(a=>lang.indexOf(a)!=-1)){
+            const diffs=Diff.diffChars(text, recognized, opt)
+            return [
+                diffs,
+                Math.ceil(100 * 
+                    text.length /
+                        diffs.reduce((score, { count=0 }) => score + count, 0)
+                )
+            ]
+        }else{
+            const diffs=Diff.diffWords(text, recognized,opt)
+            return [
+                diffs,
+                Math.ceil(100 *
+                    text.split(/\s+/).length /
+                        diffs.reduce((score, { value , count=0 }) => score + (count ? value.split(/\s+/).length : 0), 0)
+                )
+            ]
+        }
+    })(data?.lang||'en')
+    
     if(data){
         data.diffs=diffs
-    }
-    return Math.ceil(100 * correctWords / text.split(/\s+/).length);
-})
-
-export function diffPretty(text, recognized) {
-    if(typeof(text)=="undefined"){
-        debugger
-    }
-    const data={}
-    const score=diffScore(text, recognized, data)
-    if(score==100){
-        return [
-            text.replace(/\n/, " "), 
-            <Text style={{ width:"100%", color:"green"}}>Perfect Passed</Text>,
-            score
-        ]
+        data.score=score
     }
     
-    if(!recognized){
-        return [text.replace(/\n/, " "), ]
-    }
-
-    const diffs=data.diffs
-    
-    return [
-        diffs.map(({ remove, add, text }, i) => {
-            return (!!text && <Text key={i}>{text}</Text>)
-                || (!!remove && <Text key={i} style={{ color: "yellow" }}>{remove}</Text>);
-        }),
-        diffs.map(({ remove, add, text }, i) => {
-            return (!!text && <Text key={i}>{text}</Text>)
-                || (!!add && <Text key={i} style={{ color: "red" }}>{add}</Text>)
-                || (!!remove && !add && <Text key={i} style={{ color: "red", textDecorationLine:"line-through" }}>{remove}</Text>)
-        }),
-        score
-    ];
+    return score
 }
+
+export const diffPretty=memoize(function(diffs){
+    if(!diffs || diffs.length==0)
+        return ""    
+    return diffs.map(({ removed, added, value:text }, i) => {
+        return [
+            (!!text && !removed && !added && <Text>{text}</Text>),
+            (!!added && <Text style={{ color: "red" }}>{text}</Text>),
+            (!!removed && <Text style={{ color: "red", textDecorationLine:"line-through" }}>{text}</Text>),
+        ].filter(a=>!!a)
+    }).flat().map((a,i)=>React.cloneElement(a,{key:i}))
+})

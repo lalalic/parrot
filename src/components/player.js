@@ -13,7 +13,7 @@ import { useKeepAwake} from "expo-keep-awake"
 import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
 import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
-import { diffScore, diffPretty } from '../experiment/diff';
+import { diffPretty } from '../experiment/diff';
 const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
 
@@ -33,7 +33,7 @@ export default function Player({
     policy,
     challenging,
     toggleChallengeChunk,addChallengeChunk, removeChallengeChunk, 
-    onPolicyChange, onRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
+    onPolicyChange, getRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -62,6 +62,7 @@ export default function Player({
     /**
      * why not in Talk?
      * > Widget set transcript by itself
+     * > chunk has cue protocole {text, test=text, time, end}
      */
     const chunks=React.useMemo(()=>{
         if(challenging){
@@ -311,28 +312,11 @@ export default function Player({
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
 
-    const onRecord=React.useCallback(props=>{
-            const {i, chunk=chunks[i], recognized=props.recognized}=status
-            if(!chunk)
-                return 
-            const score=diffScore(chunk.text,recognized)
-            
-            if(policy.autoChallenge){
-                if(score<policy.autoChallenge){
-                    if(!challenging){
-                        addChallengeChunk?.(chunk)
-                    }
-                }else {
-                    if(challenging){
-                        removeChallengeChunk?.(chunk)
-                    }
-                }
-            }
-
-            if(recognized){
-                policy.record && onRecordChunk?.({type:"record",score,chunk,...props})
-            }
-    },[status.i,chunks,policy.record, policy.autoChallenge])
+    const onRecord=React.useCallback(record=>{
+            const {i, chunk=chunks[i]}=status
+            console.assert(!!chunk)
+            onRecordChunk?.({chunk, record})
+    },[status.i,chunks])
     
     const [showSubtitle, setShowSubtitle]=React.useState(true)
     useKeepAwake()
@@ -433,7 +417,7 @@ export default function Player({
                             locale={chunks[status.i]?.recogMyLocale}
                             onRecord={onRecord}  
                             style={{width:"100%",textAlign:"center",fontSize:16}}
-                            uri={chunks[status.i] && onRecordChunkUri?.(chunks[status.i])} 
+                            uri={chunks[status.i] && getRecordChunkUri?.(chunks[status.i])} 
                             />
                     }
 
@@ -462,7 +446,7 @@ export default function Player({
                 </View>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, onRecordChunkUri, policy:policyName, $policy:policy}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy:policyName, $policy:policy}}>
             {children}
         </Context.Provider>}
         </>
@@ -559,18 +543,14 @@ export function Subtitle({i,delay,title,my, style,  ...props}){
 }
 
 export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
-    const {id, status, i=status.i, chunks, onRecordChunkUri, setShowSubtitle}=React.useContext(Context)
-    const {challenges=[],records=[]}=useSelector(state=>({
-        challenges:state.talks[id]?.[policy]?.challenges, 
-        records:state.talks[id]?.[policy]?.records,
-    }))
-
+    const {id, status, i=status.i, chunks, setShowSubtitle}=React.useContext(Context)
     const shouldCaption=policy=="shadowing"
-    
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
-        if(i>=0 && subtitleRef.current && i<chunks.length-1){
-            subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
+        if(chunks && subtitleRef.current){
+            if(i>=0 && i<chunks.length-1){
+                subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
+            }
         }
     },[i])
 
@@ -581,28 +561,25 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 
     return (
         <View {...props} style={[{padding:4},style]}>
-            {height && <FlatList data={chunks} 
+            <FlatList data={chunks} 
                 ref={subtitleRef}
-                extraData={`${i}-${challenges.length}-${records?.changed}`} 
+                extraData={chunks.length} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({time,end})=>`${time}-${end}-${records[`${time}-${end}`]}`}
-                renderItem={({ index, item })=><SubtitleItem {...{
-                    style:{height}, shouldCaption,
-                    index, item, 
-                    audio:onRecordChunkUri?.(item),
-                    recognized:records[`${item.time}-${item.end}`],
-                    isChallenged: !!challenges.find(a=>a.time==item.time)
-                }}/>}
-                />}
-            {!height && testHeight}
+                keyExtractor={({time,end}, i)=>`${time}-${end}`}
+                renderItem={({ index, item })=><SubtitleItem {...{ style:{height}, shouldCaption, index, item,}}/>}
+                />
         </View>
     )
 }
 
-function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, item, isChallenged, style}) {
-    const {dispatch, status, current=status.i}=React.useContext(Context)
+function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
+    const {id, dispatch, status, current=status.i, getRecordChunkUri, policy}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
+    const {recognized, diffs, score}=useSelector(state=>state.talks[id]?.[policy]?.records?.[`${item.time}-${item.end}`])||React.useMemo(a=>({}),[])
+    const isChallenged= useSelector(state=>!!(state.talks[id]?.[policy]?.challenges?.find(a=>a.time==item.time)))
+    const audio=getRecordChunkUri?.(item)
+
     const [playing, setPlaying] = React.useState(false);
     const [audioExists, setAudioExists]=React.useState(false)
     React.useEffect(()=>{
@@ -622,12 +599,11 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
     }
 
     const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
-    const test=item.test||item.text
-    const [, $recognized, score]=React.useMemo(()=>diffPretty(test, recognized),[test, recognized])
+
     return (
         <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
                 flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
-            <View style={{width:20, justifyContent:"space-between", alignItems:"center"}}>
+            <View style={{width:22, justifyContent:"space-between", alignItems:"center"}}>
                 <Text style={{ textAlign: "center", fontSize:10 }}>{index + 1}</Text>
                 <PressableIcon size={20} color={color.text}
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
@@ -651,7 +627,9 @@ function SubtitleItem({audio, recognized, shouldCaption:$shouldCaption, index, i
                         style={{
                             ...textProps.style, 
                             color: playing ? "red" : color.primary
-                        }}>{score&&score!=100 ? `${score}: ` : ''}{$recognized}</Recognizer.Text>
+                        }}>
+                        {diffPretty(diffs)}
+                    </Recognizer.Text>
                     {!!playing && !!audio && <PlaySound audio={audio} onEnd={e=>setPlaying(false)} />}
                 </Pressable>
             </View>

@@ -6,6 +6,7 @@ bug
 > widget auto play when challenging
 > caption delay: previous caption still displays after next cue start
 > [done]subtitle sometimes shows [object] (caused by suspend #2)
+> media should restart after clear policy history
 
 
 enhancement

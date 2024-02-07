@@ -9,6 +9,8 @@ import ytdl from "react-native-ytdl";
 import { YoutubeTranscript } from "./experiment/youtube-transcript";
 import * as Calendar from "./experiment/calendar";
 import mpegKit from "./experiment/mpeg";
+import { diffScore } from "./experiment/diff";
+const l10n=globalThis.l10n
 
 
 export const Policy={
@@ -473,7 +475,7 @@ export const reducers=(()=>{
 		my(state = {
 			...myReducer(undefined, {}),
 			policy:Policy, 
-			lang:"en",mylang: "zh-cn", tts:{}, 
+			lang:"en", mylang: l10n.getLanguage(), tts:{}, 
 		}, action) {
 			switch (action.type) {
 				case "lang/PERSIST":
@@ -596,18 +598,6 @@ export const reducers=(()=>{
 						}
 						talk[target]={...talk[target], ...payload}
 					})
-				case "talk/challenge/add":
-					return produce(talks, $talks=>{
-						checkAction(action, ["chunk","talk","policy"])
-						const {talk, policy="general", chunk}=getTalk(action, $talks)
-						
-						const {challenges=[]}=talk[policy]||(talk[policy]={})
-						talk[policy].challenges=challenges
-						const i=challenges.findIndex(a=>a.time==chunk.time)
-						if(i==-1){
-							challenges.push(chunk)
-						}
-					})	
 				case "talk/challenge/remove":
 					return produce(talks, $talks=>{
 						checkAction(action, ["chunk","talk","policy"])
@@ -644,13 +634,43 @@ export const reducers=(()=>{
 					})
 				case "talk/recording":
 					return produce(talks, $talks=>{
-						checkAction(action, ["record","talk","policy"])
-						const {talk, policy:policyName, record, score}=getTalk(action, $talks)
+						checkAction(action, ["record","talk","policy", "chunk"])
+						const {talk, policy, policyName, record, chunk}=getTalk(action, $talks)
+						const current=(talk[policyName]||(talk[policyName]={}))
 
-						const {records={}}=(talk[policyName]||(talk[policyName]={}));
-						const time=Object.keys(record)[0];
-						(talk[policyName].records=records)[time]=record[time]
-						records.changed=Date.now()
+						const score=diffScore(chunk.test||chunk.text,record.recognized, record)	
+						//1. add/remove chunk to challenges according to score
+						;(()=>{
+							if(policy.autoChallenge){
+								const challenges=(current.challenges || (current.challenges= []))
+								if(score<policy.autoChallenge){
+									if(!current.challenging){
+										if(-1==challenges.findIndex(a=>a.time==chunk.time)){
+											challenges.push(chunk)
+										}
+									}
+								}else {
+									if(current.challenging){
+										const i=challenges.findIndex(a=>a.time==chunk.time)
+										if(i!=-1){
+											challenges.splice(i,1)
+											if(challenges.length==0){
+												clearPolicyHistory({talk, policy:policyName})
+											}
+										}
+									}
+								}
+							}
+						})();
+						
+						//2. save recognized to records
+						;(()=>{
+							if(record.recognized && policy.record){
+								const records=(policy.records || (policy.records={}))
+								records[`${chunk.time}-${chunk.end}`]=record
+								records.changed=Date.now()
+							}
+						})();
 					})
 				////unify : id, uri
 				case "talk/book/record":
@@ -912,7 +932,21 @@ export const listeners=[
 				console.warn(e)
 			}
 		}
-	}
+	},
+	// {
+	// 	type:"persist/REHYDRATE",
+	// 	async effect(action, api){
+	// 		const {my:{mylang}}=api.getState()
+	// 		const currentUILang=l10n.getLanguage()
+	// 		if(mylang){
+	// 			l10n.setLanguage(mylang)
+	// 			const nextUILang=l10n.getLanguage()
+	// 			if(currentUILang!=nextUILang){
+	// 				api.dispatch({type:"my/uilang", uilang:nextUILang})
+	// 			}
+	// 		}
+	// 	}
+	// }
 ]
 
 export const middlewares=[ Qili.middleware, Ted.middleware,]
@@ -933,7 +967,7 @@ export function selectPlansByDay(state,day){
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 
-export function selectPolicy(state,policyName,id){
+export function selectPolicy({state=globalThis.store.getState(),policyName,id}){
 	const Policy=state.my.policy
 	if(!policyName)
 		return Policy
@@ -959,6 +993,12 @@ export function isOnlyAudio(url){
 	return typeof(url)=="string" && url.indexOf("video.mp4")!=-1
 }
 
-export function getLang(){
-
+/*******unsafe, only works after store loaded*******/
+export function _getLang(state=globalThis.store?.getState()){
+	return state?.my.lang
 }
+
+export function _getMyLang(state=globalThis.store?.getState()){
+	return state?.my.mylang
+}
+/*****end unsafe ************/
