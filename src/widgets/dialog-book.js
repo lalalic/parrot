@@ -92,7 +92,7 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     renderAt(cue,i){
-        const {data=[], whitespacing, policy}=this.props
+        const {data=[], whitespacing, policy, id}=this.props
         const {fullscreen, captionDelay}=this.state
         const {text, test}=cue
         const title=(()=>{
@@ -101,11 +101,13 @@ export default class DialogBook extends TaggedListMedia{
             }
 
             if(fullscreen){
+                const {pronunciation1:pronunciation, translated1:translated}=data[i]
+        
                 return (
                     <>
                         <SmartRecognizedText {...{id, policy, cue}}/>
                         {"\n\n"}
-                        {getItemText(data[i], {translated:false})}
+                        {getItemText({text:test, pronunciation, translated}, {text:false,}, "\n\n")}
                     </>
                 )
             }else{

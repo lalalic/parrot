@@ -118,6 +118,7 @@ export function getItemText({text, pronunciation, translated, classification, ex
     if(!showAll)
         return text
     
+    text=showAll.text!=false ? text : ""
     pronunciation=pronunciation && showAll.pronunciation!=false ? `[${pronunciation}]` : ""
     translated= translated&&showAll.translated!=false ? `(${translated})` : ""
     const extra=showAll.extra!=false ? 

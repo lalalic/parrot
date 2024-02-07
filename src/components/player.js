@@ -351,7 +351,7 @@ export default function Player({
                 rate:policy.rate,
                 style:{flex:1, minHeight:150},
                 positionMillis: positionMillisHistory,
-                policyObject:policy,
+                policy,
                 whitespacing: status.whitespacing,
             })}
             <View pointerEvents='box-none'
