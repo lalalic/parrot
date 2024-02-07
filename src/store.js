@@ -550,6 +550,14 @@ export const reducers=(()=>{
 					payload, policy, ...others
 				}
 			}
+			function clearPolicyHistory({talk, policy}){
+				delete talk[policy].challenges
+				delete talk[policy].challenging
+				delete talk[policy].records
+				delete talk[policy].history
+				FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+			}
+
 			switch(action.type){
 				case "lang/PERSIST":
 					return talks
@@ -612,9 +620,7 @@ export const reducers=(()=>{
 							challenges.splice(i,1)
 						}
 						if(challenges.length==0){
-							delete talk[policy].challenging
-							delete talk[policy].records
-							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+							clearPolicyHistory({talk, policy})
 						}
 					})
 				case "talk/challenge/toggle":
@@ -633,9 +639,7 @@ export const reducers=(()=>{
 							challenges.splice(i,0,chunk)
 						}
 						if(challenges.length==0){
-							delete talk[policy].challenging
-							delete talk[policy].records
-							FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`,{idempotent:true})
+							clearPolicyHistory({talk, policy})
 						}
 					})
 				case "talk/recording":
@@ -714,6 +718,12 @@ export const reducers=(()=>{
 								talk[policy]= Widget?.defaultProps[policy]
 							})
 						}
+					})
+				case "talk/clear/policy/history":
+					return produce(talks, $talks=>{
+						checkAction(action, ["id", "policy"])
+						const {id, policy}=action
+						clearPolicyHistory({talk:$talks[id], policy})
 					})
 				case "talk/clear":
 					return produce(talks, $talks=>{
@@ -927,11 +937,13 @@ export function selectPolicy(state,policyName,id){
 	const Policy=state.my.policy
 	if(!policyName)
 		return Policy
-	const {desc,...policy}={
+	const Widget=globalThis.Widgets[state.talks[id]?.slug]
+	const {desc,...policy}=extract({
 		...Policy.general,
 		...Policy[policyName],
-		...extract(globalThis.Widgets[state.talks[id]?.slug]?.defaultProps[policyName],Policy.general),
-		...extract(state.talks[id]?.[policyName],Policy.general)}
+		...Widget?.defaultProps?.[policyName],
+		...state.talks[id]?.[policyName]
+	},{...Policy.general, ...Widget?.getDerivedStateFromProps?.(Widget?.defaultProps)})
 	return policy
 }
 

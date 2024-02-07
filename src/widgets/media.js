@@ -32,7 +32,7 @@ class Media extends React.Component {
                 
                 {talk.hasLocal && <PressableIcon name="delete-sweep" 
                     onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
-                    onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
+                    onPress={e => dispatch({ type: "talk/clear/policy/history", id: talk.id, policy:policyName })} 
                 />}
 
                 {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
@@ -241,7 +241,7 @@ class Media extends React.Component {
     }
 
     render() {
-        const { posterSource, source, title, ...props } = this.props
+        const { posterSource, source, title, id, policy, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
@@ -509,4 +509,10 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
             {...props}
         />
     )
+}
+
+function PolicyState({setState, id, policy:policyName, toState}){
+    const policy=useSelector(({talks})=>talks[id]?.[policyName])
+    React.useEffect(()=>policy && setState(toState(policy)),[policy])
+    return null
 }

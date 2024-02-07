@@ -5,11 +5,10 @@ import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"
-import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay, SmartRecognizedText } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
-import SmartRecognizedText from "../components/smart-recognized-text"
 const l10n=globalThis.l10n
 
 /**
@@ -31,10 +30,14 @@ export default class VocabularyBook extends TaggedListMedia{
         usage:0,
     }
 
-    static ExtendActions({talk}){
+    policyToState({usage}={}){
+        return {...super.policy2State(...arguments),usage}
+    }
+
+    static ExtendActions({talk, policyName}){
         return [
-            <Usage key="usage" talk={talk}/>,
-            <Sentense key="support" talk={talk}/>
+            <Usage key="usage" talk={talk} policy={policyName}/>,
+            <Sentense key="support" talk={talk} policy={policyName}/>
         ]
     }
 
@@ -111,9 +114,8 @@ export default class VocabularyBook extends TaggedListMedia{
         }
     ]
 
-    constructor(){
-        super(...arguments)
-        this.state.usage=this.props.usage
+    static getDerivedStateFromProps({policy:{fullscreen, captionDelay, usage=0}={}}){
+        return {fullscreen, captionDelay, usage}
     }
 
     /**
@@ -126,9 +128,9 @@ export default class VocabularyBook extends TaggedListMedia{
         return data.map(({text="", translated=text})=>{
             switch(usage){
                 case 0://lang -> mylang
-                    return {test:translated, text, recogMyLocale:true}
+                    return {text, test:translated, recogMyLocale:true}
                 case 1://mylang->lang
-                    return {test:text, text:translated, speakMyLocale:true}
+                    return {text:translated, test:text, speakMyLocale:true}
                 case 2://pronouncing
                     return {text}
             }
@@ -136,20 +138,41 @@ export default class VocabularyBook extends TaggedListMedia{
     }
 
     renderAt(cue,i){
-        const {text, speakMyLocale}=cue
-        const {data=[], fullscreen, policy, id}=this.props
+        const {data=[], policy, id, whitespacing}=this.props
+        const {text, test, speakMyLocale}=cue
+        
+        const {fullscreen, captionDelay}=this.state
+
+        const title=(()=>{
+            if(!whitespacing){
+                return null
+            }
+
+            if(fullscreen){
+                return (
+                    <>
+                        <SmartRecognizedText {...{id, policy, cue}}/>
+                        {"\n\n"}
+                        {getItemText(data[i], {translated:false})}
+                    </>
+                )
+            }else{
+                return test||text
+            }
+        })();
+
         return (
             <>
-                <Text style={{padding:10, color:"white"}}>
-                    {fullscreen && getItemText({text:"",...data[i]}, fullscreen, "\n")}
+                <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
+                    <Delay seconds={captionDelay}>{title}</Delay>
                 </Text>
                 {this.speak({locale:speakMyLocale, text})}
             </>
         ) 
     }
 
-    shouldComponentUpdate({usage:next=0}){
-        const {usage:current=0}=this.props
+    shouldComponentUpdate(props, {usage:next=0}){
+        const {usage:current=0}=this.state
         if(current!=next){
             this.setState({usage:next},()=>{
                 this.reset()
@@ -239,13 +262,16 @@ const Paste=({id})=>{
     })}/>
 }
 
-const Usage=({talk, id=talk?.id})=>{
+const Usage=({talk, id=talk?.id, policy})=>{
     const dispatch=useDispatch()
-    const {usage=0}=useSelector(state=>state.talks[id]||{})
+    const {usage=0}=useSelector(state=>state.talks[id]?.[policy]||{})
     return <PressableIcon 
         name={UsageIcons[usage]} 
         color={UsageColors[usage]}
-        onPress={e=>dispatch({type:"talk/set",talk:{id,usage:(usage+1)%3}})}/>
+        onPress={e=>{
+            dispatch({type:"talk/clear/policy/history", id, policy})
+            dispatch({type:"talk/policy",talk:{id}, target:policy, payload:{usage:(usage+1)%3}})
+        }}/>
 }
 
 const Sentense=({talk, id=talk?.id})=>{

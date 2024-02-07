@@ -5,6 +5,8 @@ import { useNavigate, useParams } from "react-router-native"
 import * as Clipboard from 'expo-clipboard';
 
 import { KeyboardAvoidingView, } from "../components"
+import { diffPretty } from '../experiment/diff'
+
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 const l10n=globalThis.l10n
@@ -115,10 +117,37 @@ export function clean(ob){
 export function getItemText({text, pronunciation, translated, classification, explanation},showAll=true, sep=" "){
     if(!showAll)
         return text
-    pronunciation=pronunciation ? `[${pronunciation}]` : ""
-    translated= translated? `(${translated})` : ""
-    classification= classification ? `${classification}. ` : ""
-    let extra = [classification,explanation||""].filter(a=>!!a).join("")
-    extra = extra ? `${sep}- ${extra}` : ""
-    return `${text}${sep}${pronunciation}${sep}${translated}${extra}`
+    
+    pronunciation=pronunciation && showAll.pronunciation!=false ? `[${pronunciation}]` : ""
+    translated= translated&&showAll.translated!=false ? `(${translated})` : ""
+    const extra=showAll.extra!=false ? 
+        (()=>{
+            classification= classification ? `${classification}. ` : ""
+            const extra = [classification,explanation||""].filter(a=>!!a).join("")
+            return extra ? `${sep}- ${extra}` : ""
+        })() : ""
+    return `${text}${sep}${pronunciation}${sep}${translated}${extra}`.trim()
+}
+
+export function Delay({children, seconds}){
+    const [content, setContent]=React.useState(null)
+    
+    React.useEffect(()=>{
+        if(seconds){
+            setContent(null)
+            setTimeout(()=>setContent(children), seconds*1000)
+        }else{
+            setContent(children)
+        }
+    },[children, seconds])
+    return content
+}
+
+export function SmartRecognizedText({cue:{text, test=text, time, end}, id, policy}){
+    const recognized=useSelector(({talks})=>talks[id]?.[policy]?.records?.[`${time}-${end}`])
+    if(recognized){
+        const [label, full , score]=diffPretty(test, recognized)
+        return label
+    }
+    return test
 }
