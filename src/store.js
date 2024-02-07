@@ -578,16 +578,21 @@ export const reducers=(()=>{
 					return produce(talks, $talks=>{
 						checkAction(action, ["policy"])
 						const {talk, policy}=getTalk(action, $talks)
-
-						const hasChallenges=talk[policy]?.challenges?.length>0
-						if(action.value==undefined){
-							(talk[policy]||(talk[policy]={})).challenging=hasChallenges
-						}else if(action.value===true && hasChallenges){
-							(talk[policy]||(talk[policy]={})).challenging=true
-						}
-						if(talk[policy]){
-							delete talk[policy].history
-						}
+						const talkPolicy=talk[policy]||(talk[policy]={})
+						const challenges=talkPolicy.challenges || (talkPolicy.challenges=[])
+						talkPolicy.challenging=challenges.length>0
+						delete talkPolicy.history
+						//record history, challenge++
+						const Widget=globalThis.Widgets[talk.slug]
+						challenges.forEach(cue=>{
+							const item=talk.data.find(a=>Widget.cueEqualData(cue, a))
+							if(item){
+								if(item.challenged==undefined){
+									item.challenged=0
+								}
+								item.challenged++
+							}
+						})
 					})
 				case "talk/policy":
 					return produce(talks, $talks=>{

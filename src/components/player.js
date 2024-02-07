@@ -543,7 +543,7 @@ export function Subtitle({i,delay,title,my, style,  ...props}){
 }
 
 export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
-    const {id, status, i=status.i, chunks, setShowSubtitle}=React.useContext(Context)
+    const {status, i=status.i, chunks, setShowSubtitle}=React.useContext(Context)
     const shouldCaption=policy=="shadowing"
     const subtitleRef=React.useRef()
     React.useEffect(()=>{
@@ -566,7 +566,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
                 extraData={chunks.length} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({time,end}, i)=>`${time}-${end}`}
+                keyExtractor={({time,end}, i)=>`${time}-${end}-${i}`}
                 renderItem={({ index, item })=><SubtitleItem {...{ style:{height}, shouldCaption, index, item,}}/>}
                 />
         </View>

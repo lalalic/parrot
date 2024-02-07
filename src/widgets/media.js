@@ -256,6 +256,10 @@ class Media extends React.Component {
  * create a list of transcripts, and render state.i cue
  */
 export class ListMedia extends Media{
+    static cueEqualData(cue, data){
+        return !!["text","translated","ask"].find(k=>cue.text==data[k])
+    }
+
     reset(){
         super.reset()
         if(this.cues){
