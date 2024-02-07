@@ -78,29 +78,24 @@ export default class DialogBook extends TaggedListMedia{
         },
     ]
 
-    static getDerivedStateFromProps({policy:{fullscreen, captionDelay}={}}){
-        return {fullscreen, captionDelay}
-    }
-
     createTranscript(){
-        const {data=[], fullscreen}=this.props
-        return data.map(({ask, text, pronunciation1, translated1})=>({
+        const {data=[]}=this.props
+        return data.map(({ask, text, translated1})=>({
             text: ask,
             test: text,
-            my: getItemText({text:translated1, pronunciation:pronunciation1}, fullscreen, "\n\n")
+            my: translated1
         }))
     }
 
     renderAt(cue,i){
         const {data=[], whitespacing, policy, id}=this.props
-        const {fullscreen, captionDelay}=this.state
         const {text, test}=cue
         const title=(()=>{
             if(!whitespacing){
                 return null
             }
 
-            if(fullscreen){
+            if(policy.fullscreen){
                 const {pronunciation1:pronunciation, translated1:translated}=data[i]
         
                 return (
@@ -117,15 +112,15 @@ export default class DialogBook extends TaggedListMedia{
         return (
             <>
                 <Text style={{padding:10, color:"white"}}>
-                    <Delay seconds={captionDelay}>{title}</Delay>
+                    <Delay seconds={policy.captionDelay}>{title}</Delay>
                 </Text>
                 {this.speak({text})}
             </>
         )
     }
 
-    shouldComponentUpdate({fullscreen:next=false}){
-        const {fullscreen:current=false}=this.props
+    shouldComponentUpdate({policy:{fullscreen:next=false}}){
+        const {policy:{fullscreen:current=false}}=this.props
         if(current!=next){
             this.setState({fullscreen:next},()=>{
                 this.reset()
@@ -203,7 +198,7 @@ export default class DialogBook extends TaggedListMedia{
                         pronunciation=p1
                         return ""
                     }).trim();
-                    a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                    a=a.replace(/[\(（](?<translated>.*)[\)）]/,(a,p1)=>{
                         translated=p1
                         return ""
                     }).trim();

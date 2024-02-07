@@ -9,7 +9,7 @@ import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
-import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText,SmartRecognizedText, Delay } from "./tagged-transcript"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
@@ -18,7 +18,7 @@ const l10n=global.l10n
 
 /**
  * some may not have audio, but the image is able to be shown
- * data:[{uri,text}]
+ * data:[{uri,text, pronunciation, translated}]
  */
 export default class PictureBook extends TaggedListMedia {
     static defaultProps = {
@@ -34,12 +34,38 @@ export default class PictureBook extends TaggedListMedia {
         miniPlayer:false
     }
 
-    renderAt({uri,text}){
-        const {thumb}=this.props
-        const [left,top,width,height]=uri.split(",").map(a=>parseInt(a))
+    createTranscript(){
+        const {data=[]}=this.props
+        return data.map(({uri, text})=>({
+            text: "",
+            test: text,
+            uri
+        }))
+    }
+
+    renderAt(cue,i){
+        const {data=[], thumb, id, policy}=this.props
+        const [left,top,width,height]=cue.uri.split(",").map(a=>parseInt(a))
+        const title=(()=>{
+            if(policy.fullscreen){
+                return (
+                    <>
+                        <SmartRecognizedText {...{id, policy, cue}}/>
+                        {getItemText(data[i], {text:false})}
+                    </>
+                )
+            }else{
+                return cue.test
+            }
+        })();
         return (
-            <View style={{flex:1, alignItems:"center", justifyContent:"center"}}>
+            <View style={{flex:1, alignItems:"center", justifyContent:"center", paddingTop: 20}}>
                 <AreaImage src={thumb} size={200} area={{left,top,width,height}}/>
+                <View style={{width:"100%", position:"absolute", top:0, left:0}}>
+                    <Text style={{color:"white", textAlign:"center", fontSize:20}}>
+                        <Delay seconds={policy.captionDelay}>{title}</Delay>
+                    </Text>
+                </View>
             </View>
         )
     }
@@ -114,9 +140,7 @@ export default class PictureBook extends TaggedListMedia {
                         const [item]=PictureBook.parse(text)
                         dispatch({type:"talk/book/set", id, uri, ...item})
                     },
-                    getItemText({text, translated, pronunciation}){
-                        return `${text}${pronunciation ? `[${pronunciation}]`:''}${translated ? `:${translated}`:''}`
-                    }
+                    getItemText,
                 } : undefined}
             >
                 {visible && <PictureIdentifier {...{
@@ -140,7 +164,7 @@ export default class PictureBook extends TaggedListMedia {
                     pronunciation=p1.trim()
                     return ""
                 }).trim();
-                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                a=a.replace(/[\(（](?<translated>.*)[\)）]/,(a,p1)=>{
                     translated=p1.trim()
                     return ""
                 }).trim()

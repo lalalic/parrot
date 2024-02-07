@@ -17,7 +17,7 @@ enhancement
 > [done]dialog book editor expand 
 > localization follows mother language
 > [done]localize calendar
-> subtitle(caption) is what audio is sounding, cue:{text, test, time, end}
+> [done]subtitle(caption) is what audio is sounding, cue:{text, test, time, end}
  >> A(audio)B(test, recognized, diff(test, recognized)): subtitle(A), 
  >> vocabulary->A, translated->B
  >> dialog: Ask->A, text->B

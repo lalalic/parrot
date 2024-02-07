@@ -30,10 +30,6 @@ export default class VocabularyBook extends TaggedListMedia{
         usage:0,
     }
 
-    policyToState({usage}={}){
-        return {...super.policy2State(...arguments),usage}
-    }
-
     static ExtendActions({talk, policyName}){
         return [
             <Usage key="usage" talk={talk} policyName={policyName}/>,
@@ -114,8 +110,8 @@ export default class VocabularyBook extends TaggedListMedia{
         }
     ]
 
-    static getDerivedStateFromProps({policy:{fullscreen, captionDelay, usage=0}={}}){
-        return {fullscreen, captionDelay, usage}
+    static getDerivedStateFromProps({policy:{usage=0}={}}){
+        return {usage}
     }
 
     /**
@@ -141,14 +137,12 @@ export default class VocabularyBook extends TaggedListMedia{
         const {data=[], policy, id, whitespacing}=this.props
         const {text, test, speakMyLocale}=cue
         
-        const {fullscreen, captionDelay}=this.state
-
         const title=(()=>{
             if(!whitespacing){
                 return null
             }
 
-            if(fullscreen){
+            if(policy.fullscreen){
                 return (
                     <>
                         <SmartRecognizedText {...{id, policy, cue}}/>
@@ -164,7 +158,7 @@ export default class VocabularyBook extends TaggedListMedia{
         return (
             <>
                 <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
-                    <Delay seconds={captionDelay}>{title}</Delay>
+                    <Delay seconds={policy.captionDelay}>{title}</Delay>
                 </Text>
                 {this.speak({locale:speakMyLocale, text})}
             </>
@@ -240,7 +234,7 @@ export default class VocabularyBook extends TaggedListMedia{
                     pronunciation=p1.trim()
                     return ""
                 }).trim();
-                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                a=a.replace(/[\(（](?<translated>.*)[\)）]/,(a,p1)=>{
                     translated=p1.trim()
                     return ""
                 }).trim()

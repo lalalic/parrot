@@ -26,7 +26,6 @@ export default class AudioBook extends TaggedListMedia {
         const {rate, volume}=this.status
         return (
             <>
-                <Text style={{color:"yellow"}}>{text}</Text>
                 {this.speak({rate,volume,text:uri ? {audio:uri} : text})}
             </>
         )
@@ -40,7 +39,7 @@ export default class AudioBook extends TaggedListMedia {
                     pronunciation=p1.trim()
                     return ""
                 }).trim();
-                a=a.replace(/\((?<translated>.*)\)/,(a,p1)=>{
+                a=a.replace(/[\(（](?<translated>.*)[\)）]/,(a,p1)=>{
                     translated=p1.trim()
                     return ""
                 }).trim()
@@ -102,7 +101,10 @@ export default class AudioBook extends TaggedListMedia {
                     },
                     getItemText,
                     multiline:true,
-                    editingStyle: {height:150}
+                    editingStyle: {height:70},
+                    onChangeText(text){
+                        return text.replace(/[\r\n]/g,'')
+                    }
                 }}
             />
         )
@@ -118,16 +120,16 @@ export default class AudioBook extends TaggedListMedia {
             }, 
             prompt:(a,store)=>{
                 const {lang}=store.getState().my
-                return ` Please make ${a.Target} in language of locale ${lang} for Ray, 
-                as ${a.Role}, for ${a.Scene}. 
-                your response should only include the introduction with a few paragraphs.
-                    `
+                return ` Make ${a.Target} in ${lang} language for Ray,  as ${a.Role}, for scenario: ${a.Scene}.
+                ---
+                Response should NOT have anything else.
+                `
             },
             onSuccess({response, store}){
                 const {Role, Target}=this.params
                 const {lang}=store.getState().my
                 const title=`${Target} for ${Role}`
-                const data=response.split(/[\n]/g).filter(a=>!!a).map(text=>({text}))
+                const data=response.split(/[\r\n]/g).map(a=>a.trim()).filter(a=>!!a).map(text=>({text}))
                 const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
                 return `save to @#${id}`
             }

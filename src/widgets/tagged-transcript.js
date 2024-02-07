@@ -63,7 +63,7 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
     )
 }
 
-function Editor({onAdd, style, onChange, index, data, getItemText, editingStyle=style, ...props}){
+function Editor({onAdd, style, onChange, index, data, getItemText, editingStyle=style,onChangeText=a=>a, ...props}){
     const [value, setValue]=React.useState("")
     React.useEffect(()=>{
         if(index>-1 && data && getItemText){
@@ -94,7 +94,7 @@ function Editor({onAdd, style, onChange, index, data, getItemText, editingStyle=
                 onSubmitEditing={e=>submit({value, index, data})}
                 {...props}
                 value={value} 
-                onChangeText={text=>setValue(text)}
+                onChangeText={text=>setValue(onChangeText(text))}
                 />
             <PressableIcon 
                 name={index>-1 ? "blur-circular" : (onAdd ? "add-circle-outline" : "")}
