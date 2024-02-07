@@ -36,8 +36,8 @@ export default class VocabularyBook extends TaggedListMedia{
 
     static ExtendActions({talk, policyName}){
         return [
-            <Usage key="usage" talk={talk} policy={policyName}/>,
-            <Sentense key="support" talk={talk} policy={policyName}/>
+            <Usage key="usage" talk={talk} policyName={policyName}/>,
+            <Sentense key="support" talk={talk} policyName={policyName}/>
         ]
     }
 
@@ -262,23 +262,23 @@ const Paste=({id})=>{
     })}/>
 }
 
-const Usage=({talk, id=talk?.id, policy})=>{
+const Usage=({talk, id=talk?.id, policyName})=>{
     const dispatch=useDispatch()
-    const {usage=0}=useSelector(state=>state.talks[id]?.[policy]||{})
+    const {usage=0}=useSelector(state=>state.talks[id]?.[policyName]||{})
     return <PressableIcon 
         name={UsageIcons[usage]} 
         color={UsageColors[usage]}
         onPress={e=>{
-            dispatch({type:"talk/clear/policy/history", id, policy})
-            dispatch({type:"talk/policy",talk:{id}, target:policy, payload:{usage:(usage+1)%3}})
+            dispatch({type:"talk/clear/policy/history", id, policy: policyName})
+            dispatch({type:"talk/policy",talk:{id}, target:policyName, payload:{usage:(usage+1)%3}})
         }}/>
 }
 
 const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const ask=useAsk({timeout:2*60*1000})
-    const { policy } = useParams()
-    const {challenges=[]}=useSelector(state=>state.talks[id][policy]||{})
+    const { policy: policyName } = useParams()
+    const {challenges=[]}=useSelector(state=>state.talks[id][policyName]||{})
     const {widgets={}, lang}=useSelector(state=>state.my)
     const words=challenges.map(({recogMyLocale, ask, text})=>recogMyLocale ? ask : text).join(",")
     if(widgets.chat===false || !words)
@@ -301,7 +301,7 @@ const Sentense=({talk, id=talk?.id})=>{
                             type:"talk/challenge", 
                             talk, 
                             chunk:{text:response}, 
-                            policy
+                            policy: policyName
                         })
                     }catch(e){
                         console.error(e)

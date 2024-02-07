@@ -22,7 +22,7 @@ class Media extends React.Component {
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]} deselectable={false}
-                onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
+                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}`, { replace: true })}>
                     
                 {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
                 
@@ -68,7 +68,7 @@ class Media extends React.Component {
 
      static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
         const Widget=this
-        const media = <Widget shouldPlay={autoplay} {...talk} policy={policyName}/>
+        const media = <Widget shouldPlay={autoplay} {...talk} policyName={policyName}/>
         return { media, controls: media.props };
      }
 
@@ -241,7 +241,7 @@ class Media extends React.Component {
     }
 
     render() {
-        const { posterSource, source, title, id, policy, ...props } = this.props
+        const { posterSource, source, title, ...props } = this.props
         return (
             <View {...props} style={{width:"100%",height:"100%",paddingTop:50, paddingBottom:50}}>
                 <ImageBackground source={posterSource} style={{width:"100%",height:"100%"}}>
@@ -509,10 +509,4 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
             {...props}
         />
     )
-}
-
-function PolicyState({setState, id, policy:policyName, toState}){
-    const policy=useSelector(({talks})=>talks[id]?.[policyName])
-    React.useEffect(()=>policy && setState(toState(policy)),[policy])
-    return null
 }

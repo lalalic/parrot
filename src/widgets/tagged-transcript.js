@@ -143,8 +143,8 @@ export function Delay({children, seconds}){
     return content
 }
 
-export function SmartRecognizedText({cue:{text, test=text, time, end}, id, policy}){
-    const recognized=useSelector(({talks})=>talks[id]?.[policy]?.records?.[`${time}-${end}`])
+export function SmartRecognizedText({cue:{text, test=text, time, end}, id, policyName}){
+    const recognized=useSelector(({talks})=>talks[id]?.[policyName]?.records?.[`${time}-${end}`])
     if(recognized){
         const [label, full , score]=diffPretty(test, recognized)
         return label

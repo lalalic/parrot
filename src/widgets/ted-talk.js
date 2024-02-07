@@ -21,7 +21,7 @@ export default class extends React.Component{
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
                 excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
-                onValueChange={policy => navigate(`/talk/${slug}/${policy}`, { replace: true })}>
+                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}`, { replace: true })}>
 
                 {hasTranscript && <PressableIcon name="print"
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}

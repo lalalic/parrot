@@ -4,7 +4,7 @@ import { TaggedListMedia } from "./media"
 import { Speak } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, SmartRecognizedText, Delay } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
@@ -78,23 +78,46 @@ export default class DialogBook extends TaggedListMedia{
         },
     ]
 
+    static getDerivedStateFromProps({policy:{fullscreen, captionDelay}={}}){
+        return {fullscreen, captionDelay}
+    }
+
     createTranscript(){
         const {data=[], fullscreen}=this.props
         return data.map(({ask, text, pronunciation1, translated1})=>({
-            text,
-            ask,
+            text: ask,
+            test: text,
             my: getItemText({text:translated1, pronunciation:pronunciation1}, fullscreen, "\n\n")
         }))
     }
 
-    renderAt({ask},i){
-        const {fullscreen, data=[]}=this.props
+    renderAt(cue,i){
+        const {data=[], whitespacing, policy}=this.props
+        const {fullscreen, captionDelay}=this.state
+        const {text, test}=cue
+        const title=(()=>{
+            if(!whitespacing){
+                return null
+            }
+
+            if(fullscreen){
+                return (
+                    <>
+                        <SmartRecognizedText {...{id, policy, cue}}/>
+                        {"\n\n"}
+                        {getItemText(data[i], {translated:false})}
+                    </>
+                )
+            }else{
+                return test
+            }
+        })();
         return (
             <>
                 <Text style={{padding:10, color:"white"}}>
-                    {getItemText({...data[i], text:ask},fullscreen, "\n\n")}
+                    <Delay seconds={captionDelay}>{title}</Delay>
                 </Text>
-                {this.speak({text:ask})}
+                {this.speak({text})}
             </>
         )
     }
