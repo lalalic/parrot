@@ -10,7 +10,7 @@ import {Mutex} from "async-mutex"
 
 import { ColorScheme, TalkStyle } from 'react-native-use-qili/components/default-style'
 import * as Speech from "./speech"
-import { Qili, TalkApi, selectPolicy, isOnlyAudio } from "../store"
+import { selectPolicy, isOnlyAudio, Qili, TalkApi } from "../store"
 import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
@@ -75,7 +75,7 @@ export const PolicyIcons={
     retelling:"contact-mail",
 }
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, activeColor, color, labelFade,children, excludes=[], deselectable=true})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, style, label, activeColor, color, labelFade,children, excludes=[], deselectable=true, ...props})=>{
     const Color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
@@ -83,7 +83,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, act
     },[defaultValue])
     const change=k=>(setValue(k),onValueChange?.(k));
     return (
-        <AutoShrinkNavBar style={style} label={label && "  "}>
+        <AutoShrinkNavBar style={style} label={label && "  "} {...props}>
             {"shadowing,dictating,retelling".split(",")
                 .filter(a=>excludes.indexOf(a)==-1).map(k=>(
                 <PressableIcon key={k} 
@@ -687,7 +687,7 @@ export const Recognizer=(()=>{
             }
         },[])
 
-        return <Text style={{color:recognized!=children ? color.primary : color.text, ...style}} {...props}>{recognized}</Text>
+        return <Text style={style} {...props}>{recognized}</Text>
     }
 
     return Recognizer

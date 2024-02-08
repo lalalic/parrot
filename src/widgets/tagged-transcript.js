@@ -9,6 +9,9 @@ import { diffPretty } from '../experiment/diff'
 
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
+
+export * from "../components/delay"
+
 const l10n=globalThis.l10n
 
 export default Wrapper=({})=>{
@@ -19,7 +22,6 @@ export default Wrapper=({})=>{
     }
     return <TaggedTranscript slug={slug} id={id}/>
 }
-
 
 /**
  * it's for audio item {text, uri}
@@ -128,20 +130,6 @@ export function getItemText({text, pronunciation, translated, classification, ex
             return extra ? `${sep}- ${extra}` : ""
         })() : ""
     return `${text}${sep}${pronunciation}${sep}${translated}${extra}`.trim()
-}
-
-export function Delay({children, seconds}){
-    const [content, setContent]=React.useState(null)
-    
-    React.useEffect(()=>{
-        if(seconds){
-            setContent(null)
-            setTimeout(()=>setContent(children), seconds*1000)
-        }else{
-            setContent(children)
-        }
-    },[children, seconds])
-    return content
 }
 
 export function SmartRecognizedText({cue:{text, test=text, time, end}, id, policyName}){

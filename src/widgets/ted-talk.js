@@ -10,7 +10,7 @@ import { Subtitles } from "../components/player"
 import mpegKit from "../experiment/mpeg"
 import prepareFolder from "react-native-use-qili/components/prepareFolder";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
-import { Qili, Ted } from "../store"
+import { Qili, Ted } from "../store";
 const l10n=globalThis.l10n
 
 

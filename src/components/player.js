@@ -1,4 +1,4 @@
-import React, {} from 'react';
+import React from 'react';
 import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
@@ -10,10 +10,12 @@ import * as ImagePicker from "expo-image-picker"
 import { useKeepAwake} from "expo-keep-awake"
 
 
-import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, Recorder } from '../components';
 import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffPretty } from '../experiment/diff';
+import { Delay } from "../components/delay"
+import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from '../components';
+
 const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
 
@@ -424,7 +426,6 @@ export default function Player({
                     {showSubtitle && policy.caption && false!=controls.subtitle && 
                     <Subtitle 
                         testID="subtitle"
-                        i={status.i} 
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
                         title={chunks[status.i]?.text||""}
                         my={chunks[status.i]?.my}
@@ -446,7 +447,7 @@ export default function Player({
                 </View>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy:policyName, $policy:policy}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy, policyName}}>
             {children}
         </Context.Provider>}
         </>
@@ -523,20 +524,11 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitle({i,delay,title,my, style,  ...props}){
-    const [text, setText]=React.useState(title)
-    React.useEffect(()=>{
-        if(delay){
-            setText("")
-            setTimeout(()=>setText(title),delay*1000)
-        }else{
-            setText(title)
-        }
-    },[i])
-
+export function Subtitle({delay,title, my, style,  ...props}){
     return (
         <Text {...props} style={style}>
-            {text||""} {"\n"}
+            <Delay seconds={delay}>{title}</Delay>
+            {"\n"}
             <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
         </Text>
     )
@@ -563,7 +555,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
         <View {...props} style={[{padding:4},style]}>
             <FlatList data={chunks} 
                 ref={subtitleRef}
-                extraData={chunks.length} 
+                //extraData={`${chunks.length}`} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
                 keyExtractor={({time,end}, i)=>`${time}-${end}-${i}`}
@@ -574,10 +566,13 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 }
 
 function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
-    const {id, dispatch, status, current=status.i, getRecordChunkUri, policy}=React.useContext(Context)
+    const {id, dispatch, status, current=status.i, getRecordChunkUri, policyName}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
-    const {recognized, diffs, score}=useSelector(state=>state.talks[id]?.[policy]?.records?.[`${item.time}-${item.end}`])||React.useMemo(a=>({}),[])
-    const isChallenged= useSelector(state=>!!(state.talks[id]?.[policy]?.challenges?.find(a=>a.time==item.time)))
+    const {recognized, diffs, score}=useSelector(state=>state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`])||React.useMemo(a=>({}),[])
+    const isChallenged= useSelector(state=>{
+        const exist=state.talks[id]?.[policyName]?.challenges?.find(a=>a.time==item.time)
+        return exist && !exist.pass
+    })
     const audio=getRecordChunkUri?.(item)
 
     const [playing, setPlaying] = React.useState(false);
@@ -623,13 +618,16 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                             dispatch({type:"nav/pause", callback:()=>setPlaying(true)})
                         }
                     }}>
-                    <Recognizer.Text i={index} {...textProps} 
+                    <Recognizer.Text 
+                        key={recognized}//
+                        i={index} 
+                        {...textProps} 
                         style={{
                             ...textProps.style, 
                             color: playing ? "red" : color.primary
-                        }}>
-                        {diffPretty(diffs)}
-                    </Recognizer.Text>
+                        }}
+                        children={diffPretty(diffs)}
+                        />
                     {!!playing && !!audio && <PlaySound audio={audio} onEnd={e=>setPlaying(false)} />}
                 </Pressable>
             </View>

@@ -22,7 +22,7 @@ class Media extends React.Component {
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]} deselectable={false}
-                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}`, { replace: true })}>
+                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
                     
                 {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
                 

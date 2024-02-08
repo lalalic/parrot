@@ -31,7 +31,7 @@ export default function Talk({autoplay}){
     return (
         <Player
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
-            onFinish={e=>dispatch({type:"talk/toggle/challenging",talk, policy: policyName, value: !challenging ? true : undefined})}
+            onFinish={e=>dispatch({type:"talk/toggle/challenging",talk, policy: policyName})}
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
             onRecordChunk={({chunk,record})=>dispatch({type:"talk/recording",talk, policy, policyName, chunk, record})}
             
