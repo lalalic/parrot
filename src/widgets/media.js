@@ -144,7 +144,6 @@ class Media extends React.Component {
             ...particular,
             positionMillis: this.progress.current,
         }
-        console.debug(status)
         this.props.onPlaybackStatusUpdate?.(status);
     }
 
@@ -217,6 +216,7 @@ class Media extends React.Component {
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
+                    this.setState({isPlaying:false})
                     this.status.shouldPlay = false
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 }
@@ -335,27 +335,31 @@ export class ListMedia extends Media{
     }
 
     doRenderAt(){
-        const {i=-1}=this.state
+        const {i=-1, }=this.state
         if(i==-1)
             return
         const cue=this.cues[Math.floor(i)]
         if(!cue)
             return 
 
+
         return this.renderAt(cue, Math.floor(i))
     }
 
     speak(props){
+        if(!this.status.shouldPlay)
+            return null
+
         if(!this.cueHasDuration){
             const cue=this.cues[this.state.i]
             props={
                 ...props,
                 onStart:()=>{
-                    console.debug("start speak "+this.state.i)
+                    console.info("start speak "+this.state.i)
                     this.setStatusSync({shouldPlay:false},false)
                 },
                 onEnd:(duration)=>{
-                    console.debug("end speak "+this.state.i)
+                    console.info("end speak "+this.state.i)
                     cue.duration=duration
                     this.setStatusSync({shouldPlay:true},false)
                 }

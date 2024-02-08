@@ -27,6 +27,7 @@ const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color=
 1. why is it constantly rerendered although status is not changed 
  */
 export default function Player({
+    debug=false,
     id, //talk id 
     media,
     style, title,
@@ -121,7 +122,7 @@ export default function Player({
 
     const stopOnMediaStatus=React.useRef(false)
     const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
-        console.debug(status)
+        debug && console.debug(status)
         stopOnMediaStatus.current=true
         const done = await video.current?.setStatusAsync(status)
         stopOnMediaStatus.current=false
@@ -163,14 +164,14 @@ export default function Player({
                         {canReplay:state.canReplay-1}
                     )
                 case "nav/prevSlow":
-                    return (i=>terminateWhitespace(
-                        {positionMillis:CurrentChunkPositionMillis(i), rate:Math.max(0.25,rate-0.25)},
-                        {lastRate:rate, i}
+                    return (prev=>terminateWhitespace(
+                        {positionMillis:CurrentChunkPositionMillis(prev), rate:Math.max(0.25,rate-0.25)},
+                        {lastRate:rate, i: prev}
                     ))(Math.max(i-1,0))
                 case "nav/prev":
-                    return (i=>terminateWhitespace(
-                        {positionMillis:CurrentChunkPositionMillis(i)},
-                        {i}
+                    return (prev=>terminateWhitespace(
+                        {positionMillis:CurrentChunkPositionMillis(prev)},
+                        {i: prev}
                     ))(Math.max(i-1,0))
                 case "nav/play":
                     return terminateWhitespace({
@@ -179,10 +180,11 @@ export default function Player({
                     })
                 case "whitespace/end":
                 case "nav/next":
-                    return (i=>terminateWhitespace(
-                        {positionMillis:CurrentChunkPositionMillis(i)}, 
-                        {i}
-                    ))((i+1)%chunks.length)
+                    return (next=>terminateWhitespace(
+                                    {positionMillis:CurrentChunkPositionMillis(next)}, 
+                                    {i: next}
+                                )
+                            )((i+1)%chunks.length)
                 case "nav/pause":
                     return terminateWhitespace({
                         shouldPlay:false, 
@@ -223,8 +225,8 @@ export default function Player({
 
             return state
         })();
-        if(!shallowEqual(nextState, state)){
-            console.debug(`${action.type}: ${chunks[nextState.i]?.time||""}-${chunks[nextState.i]?.end||""}\n${JSON.stringify(nextState)}`)
+        if(!shallowEqual(nextState, state) && debug){
+            debug && console.debug(`status: ${action.type}: next[${chunks[nextState.i]?.time||""}-${chunks[nextState.i]?.end||""}]\n${JSON.stringify(nextState)}`)
         }
         return nextState
     },{isLoaded:false, i:-1, durationMillis:0});
@@ -279,10 +281,10 @@ export default function Player({
                     || isLast)//last 
                     ){//current is over
                 if(policy.whitespace){
-                    console.debug('whitespace/start')
+                    console.info('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
                     setVideoStatusAsync({shouldPlay:false})
-                    const whitespacing=setTimeout(()=>dispatch({type:!isLast ? "whitespace/end" : "media/finished"}),whitespace+1000)
+                    const whitespacing=setTimeout(()=>dispatch({type: !isLast ? "whitespace/end" : "media/finished"}),whitespace+1000)
                     return {...state, whitespace, whitespacing}
                 }
             }
@@ -304,9 +306,6 @@ export default function Player({
             console.assert(!!chunk)
             const isLastChunk = i>=chunks.length-1
             onRecordChunk?.({chunk, record, isLastChunk})
-            if(isLastChunk){
-                asyncCall(()=>dispatch({type:"media/finished"}))
-            }
     },[status.i,chunks])
     
     const [showSubtitle, setShowSubtitle]=React.useState(true)
@@ -321,6 +320,7 @@ export default function Player({
             {React.cloneElement(media, {
                 ref:video,
                 onPlaybackStatusUpdate:mediaStatus =>{
+                    debug && console.debug(`medis status: ${JSON.stringify(mediaStatus)}`)
                     onMediaStatus(status, {type:"media/status", status: mediaStatus})
                 },
                 rate:policy.rate,
