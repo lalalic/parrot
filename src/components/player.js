@@ -34,8 +34,10 @@ export default function Player({
     policyName="general", //used to get history of a policy
     policy,
     challenging,
-    toggleChallengeChunk,addChallengeChunk, removeChallengeChunk, 
-    onPolicyChange, getRecordChunkUri, onRecordChunk, onFinish, onQuit,onChallengePass,
+    
+    toggleChallengeChunk,getRecordChunkUri,  
+    onPolicyChange, onRecordChunk,
+
     controls:_controls,
     transcript:_transcript,
     layoverStyle, navStyle, subtitleStyle, progressStyle,
@@ -210,9 +212,6 @@ export default function Player({
                     )
                 }
                 case "media/finished":
-                    if(!policy.fullscreen){
-                        asyncCall(()=>onFinish?.())
-                    }
                     asyncCall(()=>onProgress.current?.(0))
                     return terminateWhitespace(
                         {shouldPlay:false, positionMillis:chunks[0]?.time},
@@ -288,10 +287,6 @@ export default function Player({
                 }
             }
 
-            if(didJustFinish || isLast){
-                asyncCall(()=>dispatch({type:"media/finished"}))
-            }
-
             return current
         })();
 
@@ -300,16 +295,6 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
-    const saveHistory=React.useRef(0)
-    saveHistory.current=chunks[status.i]?.time
-    React.useEffect(()=>{
-        return ()=>{
-            if(saveHistory.current && !policy.fullscreen){
-                onQuit?.({time:saveHistory.current})
-            }
-        }
-    },[])
-
     const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
 
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
@@ -317,7 +302,11 @@ export default function Player({
     const onRecord=React.useCallback(record=>{
             const {i, chunk=chunks[i]}=status
             console.assert(!!chunk)
-            onRecordChunk?.({chunk, record})
+            const isLastChunk = i>=chunks.length-1
+            onRecordChunk?.({chunk, record, isLastChunk})
+            if(isLastChunk){
+                asyncCall(()=>dispatch({type:"media/finished"}))
+            }
     },[status.i,chunks])
     
     const [showSubtitle, setShowSubtitle]=React.useState(true)

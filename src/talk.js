@@ -31,10 +31,8 @@ export default function Talk({autoplay}){
     return (
         <Player
             onPolicyChange={changed=>dispatch({type:"talk/policy",talk, target:policyName,payload:changed})}
-            onFinish={e=>dispatch({type:"talk/toggle/challenging",talk, policy: policyName})}
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
-            onRecordChunk={({chunk,record})=>dispatch({type:"talk/recording",talk, policy, policyName, chunk, record})}
-            
+            onRecordChunk={props=>dispatch({type:"talk/recording",talk, policy, policyName, ...props})}
             toggleChallengeChunk={chunk=>dispatch({type:"talk/challenge/toggle",talk, policy:policyName, chunk})}
             
             getRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}

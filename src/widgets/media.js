@@ -31,8 +31,8 @@ class Media extends React.Component {
 
                 
                 {talk.hasLocal && <PressableIcon name="delete-sweep" 
-                    onLongPress={e => dispatch({ type: `talk/clear`, id: talk.id, slug, tag:talk.tag})}
-                    onPress={e => dispatch({ type: "talk/clear/policy/history", id: talk.id, policy:policyName })} 
+                    onLongPress={e => dispatch({ type: `talk/clear/policy`, talk})}
+                    onPress={e => dispatch({ type: "talk/clear/policy/history", talk, policy:policyName })} 
                 />}
 
                 {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}

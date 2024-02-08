@@ -2,13 +2,14 @@ import * as FileSystem from "expo-file-system";
 import { myReducer} from "react-native-use-qili/store";
 import { produce } from "immer";
 
-import Policy from "./policy"
-import { Qili, Ted, Services, TalkApi } from "./services";
-import { listeners } from "./listeners"; 
 
+import { Qili, Ted, Services, TalkApi } from "./services";
+export {Qili, Ted, TalkApi}
+
+import Policy from "./policy"
 import history from "./reducers/history"
 import plan from "./reducers/plan"
-import talks from "./reducers/talks"
+import talks, {listeners as TalksListeners} from "./reducers/talks"
 import message from "./reducers/message"
 
 const l10n=globalThis.l10n
@@ -88,38 +89,55 @@ export const reducers={
 	}	
 }
 
-listeners.push({
-	type: "my/lang",
-	async effect(action, api) {
-		const originalState = api.getOriginalState();
-		if (action.lang == originalState.my.lang)
-			return;
-		//save current for last lang
-		try {
-			const originalLangData = Object.keys(reducers).reduce((data, k) => {
-				data[k] = reducers[k](originalState[k], { type: "lang/PERSIST" });
-				return data;
-			}, {});
+export const listeners=[
+	...TalksListeners,
+	{
+		type: "my/lang",
+		async effect(action, api) {
+			const originalState = api.getOriginalState();
+			if (action.lang == originalState.my.lang)
+				return;
+			//save current for last lang
+			try {
+				const originalLangData = Object.keys(reducers).reduce((data, k) => {
+					data[k] = reducers[k](originalState[k], { type: "lang/PERSIST" });
+					return data;
+				}, {});
 
-			await FileSystem.writeAsStringAsync(
-				`${FileSystem.documentDirectory}${originalState.my.lang}.account.json`,
-				JSON.stringify(originalLangData)
-			);
-			console.info(`saved store for ${originalState.my.lang}`);
-		} catch (e) {
-			console.error(e);
-		}
+				await FileSystem.writeAsStringAsync(
+					`${FileSystem.documentDirectory}${originalState.my.lang}.account.json`,
+					JSON.stringify(originalLangData)
+				);
+				console.info(`saved store for ${originalState.my.lang}`);
+			} catch (e) {
+				console.error(e);
+			}
 
-		//rehydrate for current lang
-		try {
-			const currentLangData = await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.account.json`);
-			api.dispatch({ type: 'lang/REHYDRATE', payload: JSON.parse(currentLangData) });
-			api.dispatch(TalkApi.util.resetApiState());
-		} catch (e) {
-			console.warn(e);
+			//rehydrate for current lang
+			try {
+				const currentLangData = await FileSystem.readAsStringAsync(`${FileSystem.documentDirectory}${action.lang}.account.json`);
+				api.dispatch({ type: 'lang/REHYDRATE', payload: JSON.parse(currentLangData) });
+				api.dispatch(TalkApi.util.resetApiState());
+			} catch (e) {
+				console.warn(e);
+			}
 		}
-	}
-})
+	},
+	// {
+	// 	type:"persist/REHYDRATE",
+	// 	async effect(action, api){
+	// 		const {my:{mylang}}=api.getState()
+	// 		const currentUILang=l10n.getLanguage()
+	// 		if(mylang){
+	// 			l10n.setLanguage(mylang)
+	// 			const nextUILang=l10n.getLanguage()
+	// 			if(currentUILang!=nextUILang){
+	// 				api.dispatch({type:"my/uilang", uilang:nextUILang})
+	// 			}
+	// 		}
+	// 	}
+	// }
+]
 
 export const middlewares=[ Qili.middleware, Ted.middleware,]
 
@@ -174,6 +192,3 @@ export function _getMyLang(state=globalThis.store?.getState()){
 	return state?.my.mylang
 }
 /*****end unsafe ************/
-
-export {listeners, Qili, Ted, TalkApi}
-

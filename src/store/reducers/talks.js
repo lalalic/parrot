@@ -1,25 +1,38 @@
 import * as FileSystem from "expo-file-system";
 import { produce } from "immer";
+import { isAdmin } from "react-native-use-qili/store";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
+
 import { diffScore } from "../../experiment/diff";
 import Policy from "../policy";
+const l10n=globalThis.l10n
+
+function checkAction(action, keys) {
+	const missing = keys.filter(a => !(a in action));
+	if (missing.length > 0) {
+		throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`);
+	}
+	return true;
+}
+
+function getTalk(action, talks){
+	checkAction(action, ["talk"]);
+	const { id:_id, talk: { slug, id, ...$payload }={id:_id}, key, value, policy, payload = key ? { [key]: value } : $payload, ...others } = action;
+	const { talk: { title, thumb, duration, link, video, data, languages } } = action;
+	return {
+		talk: talks[id] || (talks[id] = { slug, title, thumb, duration, link, id, video, data, languages }),
+		payload, policy, ...others
+	}
+}
+
+function clearPolicyHistory({ talk, policy: policyName }) {
+	delete talk[policyName].challenges;
+	delete talk[policyName].records;
+	delete talk[policyName].history;
+	FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
+}
 
 export default function talks(talks = {}, action) {
-	const getTalk = (action, $talks) => {
-		checkAction(action, ["talk"]);
-		const { talk: { slug, id, ...$payload }, key, value, policy, payload = key ? { [key]: value } : $payload, ...others } = action;
-		const { talk: { title, thumb, duration, link, video, data, languages } } = action;
-		return {
-			talk: $talks[id] || ($talks[id] = { slug, title, thumb, duration, link, id, video, data, languages }),
-			payload, policy, ...others
-		};
-	};
-	function clearPolicyHistory({ talk, policy }) {
-		delete talk[policy].challenges;
-		delete talk[policy].records;
-		delete talk[policy].history;
-		FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`, { idempotent: true });
-	}
-
 	switch (action.type) {
 		case "lang/PERSIST":
 			return talks;
@@ -121,6 +134,7 @@ export default function talks(talks = {}, action) {
 				checkAction(action, ["record", "talk", "policy", "chunk"]);
 				const { talk, policy, policyName, record, chunk } = getTalk(action, $talks);
 				const current = (talk[policyName] || (talk[policyName] = {}));
+				current.history=chunk.time
 
 				const score = diffScore(chunk.test || chunk.text, record.recognized, record); (() => {
 					if (policy.autoChallenge) {
@@ -209,22 +223,13 @@ export default function talks(talks = {}, action) {
 		/////////
 		case "talk/clear/history":
 			return produce(talks, $talks => {
-				checkAction(action, ["id"]);
-				const talk = $talks[action.id];
-
-				if (talk) {
-					const Widget = globalThis.Widgets[talk.slug];
-					Object.keys(Policy).forEach(policy => {
-						FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policy}`, { idempotent: true });
-						talk[policy] = Widget?.defaultProps[policy];
-					});
-				}
+				const {talk}=getTalk(action, $talks)
+				Object.keys(Policy).forEach(policy => clearPolicyHistory({ talk, policy }))
 			});
 		case "talk/clear/policy/history":
 			return produce(talks, $talks => {
-				checkAction(action, ["id", "policy"]);
-				const { id, policy } = action;
-				clearPolicyHistory({ talk: $talks[id], policy });
+				const {talk, policy}=getTalk(action, $talks)
+				clearPolicyHistory({ talk, policy });
 			});
 		case "talk/clear":
 			return produce(talks, $talks => {
@@ -255,16 +260,67 @@ export default function talks(talks = {}, action) {
 				Object.values($talks).forEach(clear);
 			});
 		}
-		default:
-			return talks;
 	}
 	return talks;
 }
 
-function checkAction(action, keys) {
-	const missing = keys.filter(a => !(a in action));
-	if (missing.length > 0) {
-		throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`);
-	}
-	return true;
-}
+export const listeners=[
+	{
+		type: "talk/recording",
+		async effect(action, api) {
+			const {talk, policyName}=getTalk(action, api.getOriginalState().talks)
+			if(action.isLastChunk){
+				api.dispatch({type:"talk/toggle/challenging", talk:{id:talk.id}, policy:policyName})
+			}
+		}
+	},
+	{
+		type: "talk/toggle/favorited",
+		async effect(action, { getState, dispatch }) {
+			const state = getState();
+			const { id, favorited, ...talk } = state.talks[action.talk.id];
+			if (!favorited || talk.slug == id)
+				return;
+
+			if (!(await isAdmin(state)))
+				return;
+
+			try {
+				const unwrap = (({ general, shadowing, retelling, dictating, challenging, ...talk }) => talk)(talk);
+				// if((globalThis.Widgets[talk.slug]||globalThis.TedTalk).onFavorite){
+				// 	dispatch({type:"favorite/queue", talk:{...unwrap,_id:id}})
+				// }
+				; (globalThis.Widgets[talk.slug] || globalThis.TedTalk).onFavorite?.({ id, talk: { ...unwrap, _id: id }, state, dispatch });
+			} catch (e) {
+				dispatch({ type: "message/error", message: e.message });
+			}
+		}
+	}, 
+	{
+		type: "talk/toggle/challenging",
+		async effect({ talk: { id }, policy }, api) {
+			try {
+				const getTalkPolicy = state => state.talks[id][policy] || {};
+				const state = api.getState();
+				const talk = state.talks[id];
+				const lastTalkPolicy = getTalkPolicy(api.getOriginalState());
+				const talkPolicy = getTalkPolicy(state);
+				if (!lastTalkPolicy.challenging && !talkPolicy.challenging) { //pass all at first run
+					//@Todo: play
+					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]);
+				} else if (!lastTalkPolicy.challenging && talkPolicy.challenging) { //start
+					FlyMessage.show(l10n[`${talkPolicy.challenges.length} left`]);
+				} else if (lastTalkPolicy.challenging && !talkPolicy.challenging) { //complete
+					//@Todo: play
+					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]);
+				} else { //in progress
+					const passed=lastTalkPolicy.challenges.length - talkPolicy.challenges.length
+					if(passed){
+						FlyMessage.show(l10n[`${passed} more passed`]);
+					}
+				}
+			} catch (e) {
+			}
+		}
+	},
+]
