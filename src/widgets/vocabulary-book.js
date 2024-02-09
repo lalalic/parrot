@@ -266,7 +266,7 @@ const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const ask=useAsk({timeout:2*60*1000})
     const { policy: policyName } = useParams()
-    const {challenges=[]}=useSelector(state=>state.talks[id][policyName]||{})
+    const {challenges=[]}=useSelector(state=>state.talks[id]?.[policyName]||{})
     const {widgets={}, lang}=useSelector(state=>state.my)
     const words=challenges.map(({recogMyLocale, ask, text})=>recogMyLocale ? ask : text).join(",")
     if(widgets.chat===false || !words)
