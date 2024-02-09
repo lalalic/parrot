@@ -10,18 +10,37 @@ import App from "react-native-use-qili/App"
 
 import Router from "./router"
 import Permissions from "./permissions"
+import PreloadSound from "./components/preload-sound"
 import { listeners, middlewares, reducers } from "./store"
 
 export default function Parrot(){
     return (
         <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:[]}}>
             <Login.Required iconSource={require("../assets/icon.png")}>
-                <Router/>
+                <MotherLang>
+                    <Router/>
+                </MotherLang>
             </Login.Required>
             <FlyMessage/>
             <Permissions/>
+            <PreloadSound 
+                ding={require("../assets/ding.mp3")} 
+                pop={require("../assets/pop.mp3")}/>
+            <MotherLang/>
         </App>
     )
+}
+
+function MotherLang({children}){
+    const mylang=useSelector(state=>state.my.mylang)
+    const [uiLang, setUILang]=React.useState(globalThis.l10n.getLanguage())
+    React.useEffect(()=>{
+        if(!mylang)
+            return 
+        globalThis.l10n.setLanguage(mylang)
+        setUILang(globalThis.l10n.getLanguage())
+    },[mylang])
+    return !!children && React.cloneElement(children,{key:uiLang})
 }
 
 function AdminStatusHinter(){

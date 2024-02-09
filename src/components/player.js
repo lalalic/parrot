@@ -14,7 +14,7 @@ import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffPretty } from '../experiment/diff';
 import { Delay } from "../components/delay"
-import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound } from '../components';
+import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, useSound} from '../components';
 
 const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
@@ -307,8 +307,8 @@ export default function Player({
                 if(policy.whitespace){
                     console.info('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
-                    setVideoStatusAsync({shouldPlay:false})
-                    const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+1000)
+                    setVideoStatusAsync({shouldPlay:false}, globalThis.sounds.ding)
+                    const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+1500)
                     return {...state, whitespace, whitespacing}
                 }
             }
@@ -428,7 +428,9 @@ export default function Player({
                 
                 <View style={{position:"absolute",bottom:0, width:"100%"}}>
                     {status.whitespacing && 
-                        <Recognizer key={status.i} i={status.i} 
+                        <Recognizer 
+                            key={chunks[status.i].text} 
+                            id={chunks[status.i].text} 
                             locale={chunks[status.i]?.recogMyLocale}
                             onRecord={onRecord}  
                             style={{width:"100%",textAlign:"center",fontSize:16}}
@@ -440,7 +442,7 @@ export default function Player({
                     <Subtitle 
                         testID="subtitle"
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
-                        id={id}  i={status.i}  item={chunks[status.i]} policyName={policyName}
+                        id={id} item={chunks[status.i]} policyName={policyName}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
                         delay={chunks[status.i]?.test ? 0 : policy.captionDelay/*delay for test*/}
@@ -465,6 +467,7 @@ export default function Player({
         </>
     )
 }
+
 
 export function ProgressBar({value:initValue=0, duration=0,style, onValueChange, onProgress,onSlidingComplete,onSlidingStart, ...props}){
     const [value, setValue]=React.useState(initValue)
@@ -536,13 +539,13 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitle({delay,id, i, item, policyName, style, ...props}){
+export function Subtitle({delay, id, item, policyName, style, ...props}){
     const {diffs}=useSelector(state=>{
         return state.talks[id]?.[policyName]?.records?.[`${item?.time}-${item?.end}`]
     })||{}
     return (
         <Text {...props} style={style}>
-            <Recognizer.Text key={i} i={i}>{diffPretty(diffs)}</Recognizer.Text>
+            {item && <Recognizer.Text key={item.text} id={item.text}>{diffPretty(diffs)}</Recognizer.Text>}
             {"\n"}
             <Delay seconds={delay}>
                 <>
@@ -636,13 +639,16 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                 </Pressable>
                 <Pressable style={{ flex:1, justifyContent:"flex-end", }}
                     onPress={e => {
-                        if(audioExists){
-                            dispatch({type:"nav/pause", callback:()=>setPlaying(true)})
-                        }
+                        if(!audioExists)
+                            return 
+                        dispatch({type:"nav/pause", callback:()=>{
+                            debugger
+                            setPlaying(true)
+                        }})
                     }}>
                     <Recognizer.Text 
                         key={recognized}
-                        i={index} 
+                        id={item.text} 
                         {...textProps} 
                         style={{
                             ...textProps.style, 

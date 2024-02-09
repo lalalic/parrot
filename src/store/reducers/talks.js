@@ -10,14 +10,13 @@ const l10n=globalThis.l10n
 function checkAction(action, keys) {
 	const missing = keys.filter(a => !(a in action));
 	if (missing.length > 0) {
-		throw new Error(`action[${action.type}] miss keys[${missing.join(",")}]`);
+		throw new Error(`Talks action[${action.type}] miss keys[${missing.join(",")}]`);
 	}
 	return true;
 }
 
 function getTalk(action, talks){
-	checkAction(action, ["talk"]);
-	const { id:_id, talk: { slug, id, ...$payload }={id:_id}, key, value, policy, payload = key ? { [key]: value } : $payload, ...others } = action;
+	const { talk: { slug, id, ...$payload }, key, value, policy, payload = key ? { [key]: value } : $payload, ...others } = action;
 	const { talk: { title, thumb, duration, link, video, data, languages } } = action;
 	return {
 		talk: talks[id] || (talks[id] = { slug, title, thumb, duration, link, id, video, data, languages }),
@@ -36,6 +35,12 @@ function clearPolicyHistory({ talk, policy: policyName }) {
 	FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
 }
 
+/**
+ * talk/book : {id}, others {talk}
+ * @param {*} talks 
+ * @param {*} action 
+ * @returns 
+ */
 export default function talks(talks = {}, action) {
 	switch (action.type) {
 		case "lang/PERSIST":
@@ -92,7 +97,7 @@ export default function talks(talks = {}, action) {
 			});
 		case "talk/policy":
 			return produce(talks, $talks => {
-				checkAction(action, ["payload", "talk"]);
+				checkAction(action, ["payload"]);
 				const { talk, payload, target = "general", } = getTalk(action, $talks);
 				if (talk[target]?.challenging) {
 					delete payload.chunk;
@@ -101,7 +106,7 @@ export default function talks(talks = {}, action) {
 			});
 		case "talk/challenge/remove":
 			return produce(talks, $talks => {
-				checkAction(action, ["chunk", "talk", "policy"]);
+				checkAction(action, ["chunk", "policy"]);
 				const { talk, policy = "general", chunk } = getTalk(action, $talks);
 
 				const { challenges = [] } = talk[policy] || (talk[policy] = {});
@@ -116,7 +121,7 @@ export default function talks(talks = {}, action) {
 			});
 		case "talk/challenge/toggle":
 			return produce(talks, $talks => {
-				checkAction(action, ["chunk", "talk", "policy"]);
+				checkAction(action, ["chunk","policy"]);
 				const { talk, policy = "general", chunk } = getTalk(action, $talks);
 
 				const { challenges = [] } = talk[policy] || (talk[policy] = {});
@@ -135,7 +140,7 @@ export default function talks(talks = {}, action) {
 			});
 		case "talk/recording":
 			return produce(talks, $talks => {
-				checkAction(action, ["record", "talk", "policy", "chunk"]);
+				checkAction(action, ["record", "policy", "chunk"]);
 				const { talk, policy, policyName, record, chunk } = getTalk(action, $talks);
 				const current = (talk[policyName] || (talk[policyName] = {}));
 				current.history=chunk.time
@@ -147,13 +152,15 @@ export default function talks(talks = {}, action) {
 							if (!current.challenging) {
 								if (-1 == challenges.findIndex(a => a.time == chunk.time)) {
 									challenges.push(chunk);
+								}else{
+									record.pass=true
 								}
 							}
 						} else {
 							if (current.challenging) {
 								const challenge = challenges.find(a => a.time == chunk.time);
 								if (challenge) {
-									challenge.pass = true;
+									challenge.pass = record.pass=true;
 								}
 							}
 						}
@@ -268,11 +275,15 @@ export default function talks(talks = {}, action) {
 	return talks;
 }
 
+
 export const listeners=[
 	{
 		type: "talk/recording",
 		async effect(action, api) {
-			const {talk, policyName}=getTalk(action, api.getOriginalState().talks)
+			const {talk, record, policyName}=getTalk(action, api.getOriginalState().talks)
+			if(record.pass){
+				globalThis.sounds.pop()
+			}
 			if(action.isLastChunk){
 				api.dispatch({type:"talk/toggle/challenging", talk:{id:talk.id}, policy:policyName})
 			}

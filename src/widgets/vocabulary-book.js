@@ -257,7 +257,7 @@ const Usage=({talk, id=talk?.id, policyName})=>{
         name={UsageIcons[usage]} 
         color={UsageColors[usage]}
         onPress={e=>{
-            dispatch({type:"talk/clear/policy/history", id, policy: policyName})
+            dispatch({type:"talk/clear/policy/history", talk:{id}, policy: policyName})
             dispatch({type:"talk/policy",talk:{id}, target:policyName, payload:{usage:(usage+1)%3}})
         }}/>
 }

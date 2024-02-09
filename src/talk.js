@@ -34,7 +34,7 @@ export default function Talk({autoplay}){
             onQuit={({time})=>dispatch({type:"talk/policy",talk, target:policyName,payload:{history:time}})}
             onRecordChunk={props=>dispatch({type:"talk/recording",talk, policy, policyName, ...props})}
             toggleChallengeChunk={chunk=>dispatch({type:"talk/challenge/toggle",talk, policy:policyName, chunk})}
-            
+        
             getRecordChunkUri={({time,end})=>`${FileSystem.documentDirectory}${talk.id}/${policyName}/audios/${time}-${end}.wav`}
             {...{id:talk.id, challenging, key:`${policyName}-${talk.id}`, policyName, policy, 
                 style,

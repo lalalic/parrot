@@ -1,6 +1,14 @@
 import { produce } from "immer";
 import * as Calendar from "../../experiment/calendar";
 
+function checkAction(action, keys) {
+	const missing = keys.filter(a => !(a in action));
+	if (missing.length > 0) {
+		throw new Error(`plan action[${action.type}] miss keys[${missing.join(",")}]`);
+	}
+	return true;
+}
+
 export default function plan(plans = {}, action) {
 	switch (action.type) {
 		case "lang/PERSIST":

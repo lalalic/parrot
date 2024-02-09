@@ -499,7 +499,6 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart, onE
 
 })
 
-
 export function Recorder({style, 
     name=ControlIcons.record, size=40,color:_color, 
     onRecordUri, onRecord, onText, onCancel, recording=false, 
@@ -569,7 +568,7 @@ export function Recorder({style,
 }
 
 export const Recognizer=(()=>{
-    function Recognizer({i,uri, text="", onRecord, locale, style, autoSubmit, onAutoSubmit,onWave, ...props}){
+    function Recognizer({id,uri, text="", onRecord, locale, style, autoSubmit, onAutoSubmit,onWave, ...props}){
         const {lang, mylang}=useSelector(state=>state.my)
         if(locale===true){
             locale=mylang||"zh-CN"
@@ -586,7 +585,7 @@ export const Recognizer=(()=>{
             Voice.onSpeechResults=e=>{
                 clearTimeout(autoSubmitHolder.current)
                 setRecognizedText(recognized=e?.value.join(""))
-                DeviceEventEmitter.emit("recognized",[recognized,i])
+                DeviceEventEmitter.emit("recognized",[recognized,id])
                 autoSubmitHolder.current=setTimeout(()=>{
                     onAutoSubmit?.({
                         recognized, 
@@ -626,7 +625,7 @@ export const Recognizer=(()=>{
                     await Voice.stop()
                     await Voice.destroy()
                     if(recognized){
-                        DeviceEventEmitter.emit("recognized.done",[recognized,i, locale])
+                        DeviceEventEmitter.emit("recognized.done",[recognized,id, locale])
                         onRecord?.({
                             lang:locale,
                             recognized, 
@@ -667,16 +666,16 @@ export const Recognizer=(()=>{
         
     }
 
-    Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{
+    Recognizer.Text=({children,id,style, onRecognizeEnd, ...props})=>{
         const [recognized, setRecognized]=React.useState(children)
         React.useEffect(()=>{
-            const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{
-                if(i==index){
+            const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,recId])=>{
+                if(id==recId){
                     setRecognized(recognized)
                 }
             })
-            const doneListener=DeviceEventEmitter.addListener('recognized.done',([recognized,index])=>{
-                if(i==index){
+            const doneListener=DeviceEventEmitter.addListener('recognized.done',([recognized,recId])=>{
+                if(id==recId){
                     onRecognizeEnd?.(recognized)
                 }
             })
