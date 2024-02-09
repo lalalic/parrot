@@ -27,13 +27,14 @@ const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color=
 1. why is it constantly rerendered although status is not changed 
  */
 export default function Player({
-    debug=false,
+    debug=true,
     id, //talk id 
     media,
     style, title,
     children, //customizable controls
     policyName="general", //used to get history of a policy
     policy,
+
     challenging,
     
     toggleChallengeChunk,getRecordChunkUri,  
@@ -47,6 +48,7 @@ export default function Player({
     console.info(`player rendered ${performanceCount.current++} times`)
     
     const video=React.useRef()
+    const nextRound=React.useRef()
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
 
@@ -128,10 +130,19 @@ export default function Player({
         stopOnMediaStatus.current=false
         callback?.()
         return done
-    },[])
+    },[video])
 
-    const [status, dispatch] = React.useReducer((state,action)=>{
+    
+    /** 
+     * nextRound should be called after challenge store updated, 
+     * so wait 1 second after last whitespacing end 
+     * 
+     * nextRound must use latest chunks and challenging
+     * */
+    nextRound.current=React.useCallback(()=>setVideoStatusAsync({shouldPlay:!!challenging, positionMillis:chunks[0]?.time}),[chunks[0]?.time, !!challenging])
+    const [status, _setStatus] = React.useReducer((state,action)=>{
         const {isPlaying, i, whitespacing, rate:currentRate, lastRate}=state
+        const {chunks}=action
         const rate=lastRate||currentRate
 
         function terminateWhitespace(next, newState, callback){
@@ -178,7 +189,18 @@ export default function Player({
                         shouldPlay:whitespacing ? false : !isPlaying, 
                         positionMillis: CurrentChunkPositionMillis()
                     })
-                case "whitespace/end":
+                case "whitespace/end":{
+                    if(action.isLast){
+                        asyncCall(()=>onProgress.current?.(0))
+                        return terminateWhitespace(
+                            {shouldPlay:false},
+                            {i:0}, 
+                            ()=>setTimeout(()=>nextRound.current(),1000)//wait 1 second for challege store complete
+                        )
+                    }else{
+                        //same as nav/next
+                    }
+                }
                 case "nav/next":
                     return (next=>terminateWhitespace(
                                     {positionMillis:CurrentChunkPositionMillis(next)}, 
@@ -213,12 +235,6 @@ export default function Player({
                         {i: i==-1 ? chunks.length-1 : i}
                     )
                 }
-                case "media/finished":
-                    asyncCall(()=>onProgress.current?.(0))
-                    return terminateWhitespace(
-                        {shouldPlay:false, positionMillis:chunks[0]?.time},
-                        {i:0}
-                    )
                 case "media/status/changed":
                     return action.state
             }
@@ -230,6 +246,14 @@ export default function Player({
         }
         return nextState
     },{isLoaded:false, i:-1, durationMillis:0});
+    /**
+     * state reducer use chunks, so make a shallow dispatch with chunks injected to action
+     */
+    const dispatch=React.useCallback(action=>{
+        _setStatus(Object.assign(action, { chunks }))
+    },[chunks])
+
+
 
     const controls=React.useMemo(()=>{
         return {
@@ -284,7 +308,7 @@ export default function Player({
                     console.info('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
                     setVideoStatusAsync({shouldPlay:false})
-                    const whitespacing=setTimeout(()=>dispatch({type: !isLast ? "whitespace/end" : "media/finished"}),whitespace+1000)
+                    const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+1000)
                     return {...state, whitespace, whitespacing}
                 }
             }
@@ -436,7 +460,7 @@ export default function Player({
                 </View>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy, policyName}}>
+        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy, policyName, challenging}}>
             {children}
         </Context.Provider>}
         </>
@@ -547,7 +571,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
                 //extraData={`${chunks.length}`} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({time,end}, i)=>`${time}-${end}-${i}`}
+                keyExtractor={({time,end})=>`${time}-${end}`}
                 renderItem={({ index, item })=><SubtitleItem {...{ style:{height}, shouldCaption, index, item,}}/>}
                 />
         </View>
@@ -557,7 +581,9 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
     const {id, dispatch, status, current=status.i, getRecordChunkUri, policyName}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
-    const {recognized, diffs, score}=useSelector(state=>state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`])||React.useMemo(a=>({}),[])
+    const {recognized, diffs, score}=useSelector(state=>{
+        return state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`]
+    })||{}
     const isChallenged= useSelector(state=>{
         const exist=state.talks[id]?.[policyName]?.challenges?.find(a=>a.time==item.time)
         return exist && !exist.pass
@@ -608,7 +634,7 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                         }
                     }}>
                     <Recognizer.Text 
-                        key={recognized}//
+                        key={`${recognized}`}
                         i={index} 
                         {...textProps} 
                         style={{

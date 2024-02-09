@@ -202,7 +202,7 @@ class Media extends React.Component {
                         isInteraction:false,
                     })
                     this.progressing.start(({finished})=>{
-                        this.setState({isPlaying:false})
+                        //this.setState({isPlaying:false})
                         if(!finished)
                             return
                         this.status.didJustFinish=true
@@ -212,11 +212,11 @@ class Media extends React.Component {
                         this.progress.current = 0
                         this.progress.last = 0
                     })
-                    this.setState({isPlaying:true})
+                    //this.setState({isPlaying:true})
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
-                    this.setState({isPlaying:false})
+                    //this.setState({isPlaying:false})
                     this.status.shouldPlay = false
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 }

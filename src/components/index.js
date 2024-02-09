@@ -668,7 +668,6 @@ export const Recognizer=(()=>{
     }
 
     Recognizer.Text=({children,i,style, onRecognizeEnd, ...props})=>{
-        const color=React.useContext(ColorScheme)
         const [recognized, setRecognized]=React.useState(children)
         React.useEffect(()=>{
             const recognizedListener=DeviceEventEmitter.addListener('recognized',([recognized,index])=>{

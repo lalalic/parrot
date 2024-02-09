@@ -26,9 +26,11 @@ function getTalk(action, talks){
 }
 
 function clearPolicyHistory({ talk, policy: policyName }) {
-	delete talk[policyName].challenges;
-	delete talk[policyName].records;
-	delete talk[policyName].history;
+	const talkPolicy=talk[policyName]
+	delete talkPolicy.challenges;
+	delete talkPolicy.records;
+	delete talkPolicy.history;
+	talkPolicy.challenging=0
 	FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
 }
 
@@ -79,11 +81,11 @@ export default function talks(talks = {}, action) {
 						}
 					});
 				} else {
-					talkPolicy.challenging = 0;
 					if (talkPolicy.challenged == undefined) {
 						talkPolicy.challenged = 0;
 					}
 					talkPolicy.challenged++;
+					clearPolicyHistory({talk, policy})
 				}
 			});
 		case "talk/policy":
@@ -159,7 +161,7 @@ export default function talks(talks = {}, action) {
 				//2. save recognized to records
 				; (() => {
 					if (record.recognized && policy.record) {
-						const records = (policy.records || (policy.records = {}));
+						const records = (current.records || (current.records = {}));
 						records[`${chunk.time}-${chunk.end}`] = record;
 						records.changed = Date.now();
 					}
