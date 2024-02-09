@@ -9,7 +9,7 @@ import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
-import { TaggedTranscript, clean, getItemText,SmartRecognizedText, Delay } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
@@ -48,12 +48,7 @@ export default class PictureBook extends TaggedListMedia {
         const [left,top,width,height]=cue.uri.split(",").map(a=>parseInt(a))
         const title=(()=>{
             if(policy.fullscreen){
-                return (
-                    <>
-                        <SmartRecognizedText {...{id, policy, cue}}/>
-                        {getItemText(data[i], {text:false})}
-                    </>
-                )
+                return getItemText(data[i], true, "\n\n")
             }else{
                 return cue.test
             }
@@ -63,7 +58,7 @@ export default class PictureBook extends TaggedListMedia {
                 <AreaImage src={thumb} size={200} area={{left,top,width,height}}/>
                 <View style={{width:"100%", position:"absolute", top:0, left:0}}>
                     <Text style={{color:"white", textAlign:"center", fontSize:20}}>
-                        <Delay seconds={policy.captionDelay}>{title}</Delay>
+                        {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                     </Text>
                 </View>
             </View>

@@ -4,7 +4,7 @@ import { TaggedListMedia } from "./media"
 import { Speak } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { TaggedTranscript, clean, getItemText, SmartRecognizedText, Delay } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 
@@ -97,14 +97,7 @@ export default class DialogBook extends TaggedListMedia{
 
             if(policy.fullscreen){
                 const {pronunciation1:pronunciation, translated1:translated}=data[i]
-        
-                return (
-                    <>
-                        <SmartRecognizedText {...{id, policy, cue}}/>
-                        {"\n\n"}
-                        {getItemText({text:test, pronunciation, translated}, {text:false,}, "\n\n")}
-                    </>
-                )
+                return getItemText({text:test, pronunciation, translated}, true, "\n\n")
             }else{
                 return test
             }
@@ -112,7 +105,7 @@ export default class DialogBook extends TaggedListMedia{
         return (
             <>
                 <Text style={{padding:10, color:"white"}}>
-                    <Delay seconds={policy.captionDelay}>{title}</Delay>
+                    {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                 </Text>
                 {this.speak({text})}
             </>

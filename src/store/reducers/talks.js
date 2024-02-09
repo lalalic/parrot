@@ -30,7 +30,9 @@ function clearPolicyHistory({ talk, policy: policyName }) {
 	delete talkPolicy.challenges;
 	delete talkPolicy.records;
 	delete talkPolicy.history;
+	talkPolicy.fullscreen=false
 	talkPolicy.challenging=0
+
 	FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
 }
 

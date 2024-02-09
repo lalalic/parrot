@@ -4,7 +4,7 @@ import { useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import * as Clipboard from 'expo-clipboard';
 
-import { KeyboardAvoidingView, } from "../components"
+import { KeyboardAvoidingView, Recognizer } from "../components"
 import { diffPretty } from '../experiment/diff'
 
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
@@ -130,13 +130,4 @@ export function getItemText({text, pronunciation, translated, classification, ex
             return extra ? `${sep}- ${extra}` : ""
         })() : ""
     return `${text}${sep}${pronunciation}${sep}${translated}${extra}`.trim()
-}
-
-export function SmartRecognizedText({cue:{text, test=text, time, end}, id, policyName}){
-    const recognized=useSelector(({talks})=>talks[id]?.[policyName]?.records?.[`${time}-${end}`])
-    if(recognized){
-        const [label, full , score]=diffPretty(test, recognized)
-        return label
-    }
-    return test
 }

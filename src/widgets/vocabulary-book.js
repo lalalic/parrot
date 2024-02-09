@@ -5,7 +5,7 @@ import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"
-import { TaggedTranscript, clean, getItemText, Delay, SmartRecognizedText } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
@@ -143,13 +143,7 @@ export default class VocabularyBook extends TaggedListMedia{
             }
 
             if(policy.fullscreen){
-                return (
-                    <>
-                        <SmartRecognizedText {...{id, policy, cue}}/>
-                        {"\n\n"}
-                        {getItemText(data[i], {translated:false})}
-                    </>
-                )
+                return getItemText(data[i], true, "\n\n")
             }else{
                 return test||text
             }
@@ -158,7 +152,7 @@ export default class VocabularyBook extends TaggedListMedia{
         return (
             <>
                 <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
-                    <Delay seconds={policy.captionDelay}>{title}</Delay>
+                    {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                 </Text>
                 {this.speak({locale:speakMyLocale, text})}
             </>

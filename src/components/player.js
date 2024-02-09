@@ -440,8 +440,7 @@ export default function Player({
                     <Subtitle 
                         testID="subtitle"
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
-                        title={chunks[status.i]?.text||""}
-                        my={chunks[status.i]?.my}
+                        id={id}  i={status.i}  item={chunks[status.i]} policyName={policyName}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
                         delay={chunks[status.i]?.test ? 0 : policy.captionDelay/*delay for test*/}
@@ -537,12 +536,20 @@ export function NavBar({dispatch,status={},controls={},isChallenged, navable,sty
     )
 }
 
-export function Subtitle({delay,title, my, style,  ...props}){
+export function Subtitle({delay,id, i, item, policyName, style, ...props}){
+    const {diffs}=useSelector(state=>{
+        return state.talks[id]?.[policyName]?.records?.[`${item?.time}-${item?.end}`]
+    })||{}
     return (
         <Text {...props} style={style}>
-            <Delay seconds={delay}>{title}</Delay>
+            <Recognizer.Text key={i} i={i}>{diffPretty(diffs)}</Recognizer.Text>
             {"\n"}
-            <Text style={{fontSize:10, color:"gray"}}>{my||""}</Text>
+            <Delay seconds={delay}>
+                <>
+                    {item?.text||""}{"\n"}
+                    <Text style={{fontSize:10, color:"gray"}}>{item?.my||""}</Text>
+                </>
+            </Delay>
         </Text>
     )
 }
@@ -634,7 +641,7 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                         }
                     }}>
                     <Recognizer.Text 
-                        key={`${recognized}`}
+                        key={recognized}
                         i={index} 
                         {...textProps} 
                         style={{
