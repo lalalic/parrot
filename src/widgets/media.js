@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { selectWidgetTalks, TalkApi, Qili } from "../store"
 
-import { Subtitles } from "../components/player"
+import { Subtitles, Context as PlayerContext } from "../components/player"
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import ChangableText from "react-native-use-qili/components/ChangableText";
@@ -30,10 +30,7 @@ class Media extends React.Component {
                     onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
 
                 
-                {talk.hasLocal && <PressableIcon name="delete-sweep" 
-                    onLongPress={e => dispatch({ type: `talk/clear/policy`, talk})}
-                    onPress={e => dispatch({ type: "talk/clear/policy/history", talk, policy:policyName })} 
-                />}
+                {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
 
                 {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
@@ -516,5 +513,22 @@ export const TagManagement=({talk, placeholder, onCreate, slug=talk.slug, dispat
             renderItemText={item=>item.title}
             {...props}
         />
+    )
+}
+
+function ClearAction({talk, policyName}){
+    const dispatch=useDispatch()
+    const {onAction}=React.useContext(PlayerContext)
+    return (
+        <PressableIcon name="delete-sweep" 
+                onLongPress={e => {
+                    dispatch({ type: `talk/clear/policy`, talk})
+                    onAction?.(`talk/clear/policy`)
+                }}
+                onPress={e => {
+                    dispatch({ type: "talk/clear/policy/history", talk, policy:policyName })
+                    onAction?.("talk/clear/policy/history")
+                }} 
+            />
     )
 }

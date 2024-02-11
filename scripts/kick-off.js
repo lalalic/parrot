@@ -2,12 +2,15 @@ const fetch=require("node-fetch2")
 
 const uploader={
     vocabulary(){
+        console.log('kick off english vocabulary')
         const cheerio = require("cheerio")
         const Vocabulary=["cet4","cet6","toefl","ielts","gmat","gre","sat","common"]
         const pattern = /(\w+)\s+\[([^\]]+)\]\s*–\s*(\w+)\.\s*(.*?)\s*:\s*(.*)/;
             
         async function getVocabulary(cat){
-            const res=await fetch(`https://vocabularyshop.com/${cat}-vocabulary-words/`)
+            const url=`https://vocabularyshop.com/${cat}-vocabulary-words/`
+            console.log(`getting data for ${cat} from ${url}`)
+            const res=await fetch(url)
             const data=await res.text()
             const $=cheerio.load(data)
             const ps=Array.from($('.entry-content>p'))
@@ -17,16 +20,14 @@ const uploader={
                 const text=$(a).text()
                 const [,word, pronunciation, classification, explanation, example ] = text.match(pattern)||[]
                 if(word){
-                    return {word, pronunciation, classification, explanation}
+                    return {text:word, pronunciation, classification, explanation}
                 }
             }).filter(a=>!!a)
             return words
         }
 
         Vocabulary.forEach(async cat=>{
-            console.log('getting data for '+cat)
             const words=await getVocabulary(cat)
-            const file=`${__dirname}/../resources/vocabulary/${cat}`
             let i=1, id=Date.now()
             while(words.length){
                 const chunks=words.splice(0,1000)
@@ -69,7 +70,7 @@ async function upload(talk){
         method:"POST",
         headers:{
             "x-application-id":"parrot",
-            "x-session-token": 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NDdmNjlhYzM0NmZhMjAwMmY4MzU4NmMiLCJpYXQiOjE2ODY1MzcwNzQsImV4cCI6MTcxODA5NDY3NH0.iqxEgnJCP2_PbBCr1KZwAtUU6wdxl8FLmYuz70VHtJM',
+            "x-session-token": 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NWIwNzM3ZDhjNDRjNTAwMmZhN2VmZGUiLCJpYXQiOjE3MDYzODA0MzUsImV4cCI6MTczNzkzODAzNX0.8fkyYzyL5Op96jrBbdxUgvG-K9UOEt26LwuY83PqgcQ',
             "content-type":"application/json",
         },
         body:JSON.stringify({
@@ -84,6 +85,6 @@ async function upload(talk){
     console.info(data)
 }
 
-const [,,type='$',i]=process.argv
-uploader[type]?.(i)
+const [,,type='vocabulary',i]=process.argv
+uploader[type](i)
 

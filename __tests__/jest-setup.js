@@ -1,3 +1,7 @@
+
+import {Provider} from "../src/store"
+import renderer from "react-test-renderer"
+
 jest.mock("@react-native-voice/voice",()=>({}))
 jest.mock("react-native-tts",()=>({
     setIgnoreSilentSwitch:jest.fn(),
@@ -5,8 +9,8 @@ jest.mock("react-native-tts",()=>({
 }))
 jest.mock("@react-native-community/slider",()=>jest.fn())
 
-jest.mock("../components", () => ({
-    ...jest.requireActual("../components"),
+jest.mock("../src/components", () => ({
+    ...jest.requireActual("../src/components"),
     AutoHide: props=><span {...props}/>,
 }))
 
@@ -21,8 +25,8 @@ jest.mock('react-router-native', () => ({
     useDispatch:() =>global.dispatch,
  }))
 
- jest.mock("../components",()=>({
-    ...jest.requireActual('../components'),
+ jest.mock("../src/components",()=>({
+    ...jest.requireActual('../src/components'),
     Recorder:jest.fn(),
     PlaySound: jest.fn(),
  }))
@@ -31,7 +35,7 @@ jest.mock('react-router-native', () => ({
     MaterialIcons:"a"
  }))
 
- jest.mock("../experiment/calendar",()=>({
+ jest.mock("../src/experiment/calendar",()=>({
     deleteEvents:jest.fn(),
     createEvents:jest.fn(),
 }))
@@ -41,10 +45,6 @@ console.log=jest.fn()
 console.warn=jest.fn()
 global.dispatch=jest.fn()
 global.alert=jest.fn()
- 
- 
-import {Provider} from "../src/store"
-import renderer from "react-test-renderer"
 
 global.render=el=>{
     const render=renderer.create(

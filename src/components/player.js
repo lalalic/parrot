@@ -16,7 +16,7 @@ import { diffPretty } from '../experiment/diff';
 import { Delay } from "../components/delay"
 import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, useSound} from '../components';
 
-const Context=React.createContext({})
+export const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
 
 const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
@@ -139,7 +139,12 @@ export default function Player({
      * 
      * nextRound must use latest chunks and challenging
      * */
-    nextRound.current=React.useCallback(()=>setVideoStatusAsync({shouldPlay:!!challenging, positionMillis:chunks[0]?.time}),[chunks[0]?.time, !!challenging])
+    nextRound.current=React.useCallback(shouldPlay=>{
+        setVideoStatusAsync({
+            shouldPlay:shouldPlay==undefined ? !!challenging : shouldPlay, 
+            positionMillis:chunks[0]?.time
+        })
+    },[chunks[0]?.time, !!challenging])
     const [status, _setStatus] = React.useReducer((state,action)=>{
         const {isPlaying, i, whitespacing, rate:currentRate, lastRate}=state
         const {chunks}=action
@@ -189,6 +194,14 @@ export default function Player({
                         shouldPlay:whitespacing ? false : !isPlaying, 
                         positionMillis: CurrentChunkPositionMillis()
                     })
+                case "talk/clear/policy/history":{
+                    asyncCall(()=>onProgress.current?.(0))
+                    return terminateWhitespace(
+                        {shouldPlay:false},
+                        {i:0}, 
+                        ()=>setTimeout(()=>nextRound.current(false),1000)//wait 1 second for challege store complete
+                    )
+                }
                 case "whitespace/end":{
                     if(action.isLast){
                         asyncCall(()=>onProgress.current?.(0))
@@ -252,6 +265,14 @@ export default function Player({
     const dispatch=React.useCallback(action=>{
         _setStatus(Object.assign(action, { chunks }))
     },[chunks])
+
+    const onAction=React.useCallback(action=>{
+        switch(action){
+            case "talk/clear/policy/history":
+                dispatch({type:"talk/clear/policy/history"})
+            break
+        }
+    },[dispatch])
 
 
 
@@ -461,9 +482,17 @@ export default function Player({
                 </View>
             </View>
         </SliderIcon.Container>
-        {!policy.fullscreen && <Context.Provider value={{id, status, chunks, dispatch, setShowSubtitle, getRecordChunkUri, policy, policyName, challenging}}>
+
+        {!policy.fullscreen && 
+        <Context.Provider 
+            value={{
+                id, status, chunks, dispatch, setShowSubtitle, 
+                getRecordChunkUri, policy, policyName, challenging,
+                onAction
+            }}>
             {children}
-        </Context.Provider>}
+        </Context.Provider>
+        }
         </>
     )
 }
@@ -652,7 +681,7 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                         {...textProps} 
                         style={{
                             ...textProps.style, 
-                            color: playing ? "red" : color.primary
+                            color: playing ? color.primary : color.text
                         }}
                         children={diffPretty(diffs)}
                         />

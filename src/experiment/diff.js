@@ -3,41 +3,48 @@ import { Text } from "react-native";
 import * as Diff from "diff";
 import memoize from "memoize-one"
 
-function trim(text){
-    text=text.replace(/\n/g, " ")
-    
-    text=text.replace(/(\(.*\))/g, "")
-
-    return text.replace(/\s+/g, " ").toLowerCase().trim()
-}
+const SE=/[^\p{L}\p{N}]+/gu
 
 export function diffScore(text, recognized, data) {
-    text = trim(text)
-    if(!text)
+    text = text.split(SE).filter(a=>!!a)
+    recognized = recognized.split(SE).filter(a=>!!a)
+    if(!text.length)
         return 110
-    if(!recognized)
+    if(!recognized.length)
         return 10
 
     const [diffs, score]=(lang=>{
         const opt={ignoreCase:true}
         
         if(['zh','jp','kr'].find(a=>lang.indexOf(a)!=-1)){
+            text=text.join("")
+            recognized=recognized.join("")
             const diffs=Diff.diffChars(text, recognized, opt)
+            const total=text.length
+            const valid=diffs.reduce((score, {count=0, added, removed }) => score + (!added && !removed && count || 0), 0)
+            console.log({
+                text, recognized,
+                diffs, 
+                total, valid
+            })
             return [
                 diffs,
-                Math.ceil(100 * 
-                    text.length /
-                        diffs.reduce((score, { count=0 }) => score + count, 0)
-                )
+                Math.ceil(100 * valid/total)
             ]
         }else{
+            text=text.join(" ")
+            recognized=recognized.join(" ")
             const diffs=Diff.diffWords(text, recognized,opt)
+            const total=text.split(SE).length
+            const valid=diffs.reduce((score, { value , count=0, added, removed }) => score + (!added && !removed && count ? value.split(SE).length : 0), 0)
+            console.log({
+                text, recognized,
+                diffs, 
+                total, valid
+            })
             return [
                 diffs,
-                Math.ceil(100 *
-                    text.split(/\s+/).length /
-                        diffs.reduce((score, { value , count=0 }) => score + (count ? value.split(/\s+/).length : 0), 0)
-                )
+                Math.ceil(100 * valid/total)
             ]
         }
     })(data?.lang||'en')

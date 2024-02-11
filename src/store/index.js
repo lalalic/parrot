@@ -37,7 +37,10 @@ export const reducers={
 	my(state = {
 		...myReducer(undefined, {}),
 		policy:Policy, 
-		lang:"en", mylang: l10n.getLanguage(), tts:{}, 
+		lang:"en", 
+		mylang: l10n.getLanguage(), 
+		tts:{},
+		api: Services.current
 	}, action) {
 		switch (action.type) {
 			case "lang/PERSIST":
@@ -122,21 +125,14 @@ export const listeners=[
 				console.warn(e);
 			}
 		}
-	},
-	// {
-	// 	type:"persist/REHYDRATE",
-	// 	async effect(action, api){
-	// 		const {my:{mylang}}=api.getState()
-	// 		const currentUILang=l10n.getLanguage()
-	// 		if(mylang){
-	// 			l10n.setLanguage(mylang)
-	// 			const nextUILang=l10n.getLanguage()
-	// 			if(currentUILang!=nextUILang){
-	// 				api.dispatch({type:"my/uilang", uilang:nextUILang})
-	// 			}
-	// 		}
-	// 	}
-	// }
+	},{
+		type:'my/api',
+		async effect(action, api){
+			if(api.getOriginalState().my.api!=api.getState().my.api){
+				api.dispatch({type:"qili/resetApiState"})
+			}
+		}
+	}
 ]
 
 export const middlewares=[ Qili.middleware, Ted.middleware,]

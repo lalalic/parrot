@@ -316,6 +316,9 @@ export const Qili = Object.assign(createApi({
 					id: "talk",
 					variables: { slug, id }
 				});
+				if(!api.getState().talks[id]){
+					api.dispatch({type:'talk/set', talk})
+				}
 				return { data: talk || { id } };
 			},
 			providesTags: talk => {
@@ -379,7 +382,7 @@ export const Qili = Object.assign(createApi({
 });
 
 
-export const Services = { Ted, Qili, current: 'Ted' };
+export const Services = { Ted, Qili, current: 'Qili' };
 
 export const TalkApi = new Proxy(Services, {
 	get(target, key) {

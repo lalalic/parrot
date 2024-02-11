@@ -26,13 +26,15 @@ function getTalk(action, talks){
 
 function clearPolicyHistory({ talk, policy: policyName }) {
 	const talkPolicy=talk[policyName]
-	delete talkPolicy.challenges;
-	delete talkPolicy.records;
-	delete talkPolicy.history;
-	talkPolicy.fullscreen=false
-	talkPolicy.challenging=0
+	if(talkPolicy){
+		delete talkPolicy.challenges;
+		delete talkPolicy.records;
+		delete talkPolicy.history;
+		talkPolicy.fullscreen=false
+		talkPolicy.challenging=0
 
-	FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
+		FileSystem.deleteAsync(`${FileSystem.documentDirectory}${talk.id}/${policyName}`, { idempotent: true });
+	}
 }
 
 /**
@@ -152,15 +154,14 @@ export default function talks(talks = {}, action) {
 							if (!current.challenging) {
 								if (-1 == challenges.findIndex(a => a.time == chunk.time)) {
 									challenges.push(chunk);
-								}else{
-									record.pass=true
 								}
 							}
 						} else {
+							record.pass=true
 							if (current.challenging) {
 								const challenge = challenges.find(a => a.time == chunk.time);
 								if (challenge) {
-									challenge.pass = record.pass=true;
+									challenge.pass = true;
 								}
 							}
 						}
@@ -322,11 +323,13 @@ export const listeners=[
 				const talkPolicy = getTalkPolicy(state);
 				if (!lastTalkPolicy.challenging && !talkPolicy.challenging) { //pass all at first run
 					//@Todo: play
+					globalThis.sounds.celebrate()
 					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]);
 				} else if (!lastTalkPolicy.challenging && talkPolicy.challenging) { //start
 					FlyMessage.show(l10n[`${talkPolicy.challenges.length} left`]);
 				} else if (lastTalkPolicy.challenging && !talkPolicy.challenging) { //complete
 					//@Todo: play
+					globalThis.sounds.celebrate()
 					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]);
 				} else { //in progress
 					const passed=lastTalkPolicy.challenges.length - talkPolicy.challenges.length

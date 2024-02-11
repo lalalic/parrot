@@ -15,9 +15,10 @@ function useSound(audio){
 }
 
 globalThis.sounds={}
-export default function PreloadSound({ding, pop}){
+export default function PreloadSound({ding, pop, celebrate}){
     globalThis.sounds.ding=useSound(ding)
     globalThis.sounds.pop=useSound(pop)
+    globalThis.sounds.celebrate=useSound(celebrate)
     return null
 }
 

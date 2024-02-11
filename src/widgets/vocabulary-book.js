@@ -9,6 +9,7 @@ import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
+import { Context as PlayerContext} from "../components/player"
 const l10n=globalThis.l10n
 
 /**
@@ -121,12 +122,12 @@ export default class VocabularyBook extends TaggedListMedia{
     createTranscript(){
         const {data=[]}=this.props
         const {usage}=this.state
-        return data.map(({text="", translated=text})=>{
+        return data.map(({word, text=word, translated})=>{
             switch(usage){
                 case 0://lang -> mylang
-                    return {text, test:translated, recogMyLocale:true}
+                    return {text, test:translated||text, recogMyLocale:!!translated&&true}
                 case 1://mylang->lang
-                    return {text:translated, test:text, speakMyLocale:true}
+                    return {text:translated||text, test:text, speakMyLocale:!!translated&&true}
                 case 2://pronouncing
                     return {text}
             }
@@ -252,6 +253,7 @@ const Paste=({id})=>{
 
 const Usage=({talk, id=talk?.id, policyName})=>{
     const dispatch=useDispatch()
+    const {onAction}=React.useContext(PlayerContext)
     const {usage=0}=useSelector(state=>state.talks[id]?.[policyName]||{})
     return <PressableIcon 
         name={UsageIcons[usage]} 
@@ -259,6 +261,7 @@ const Usage=({talk, id=talk?.id, policyName})=>{
         onPress={e=>{
             dispatch({type:"talk/clear/policy/history", talk:{id}, policy: policyName})
             dispatch({type:"talk/policy",talk:{id}, target:policyName, payload:{usage:(usage+1)%3}})
+            onAction("talk/clear/policy/history")
         }}/>
 }
 
