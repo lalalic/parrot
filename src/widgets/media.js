@@ -145,18 +145,17 @@ class Media extends React.Component {
     }
 
     onPositionMillis(positionMillis){
-
+        this.progress.current = positionMillis
+        if (this.progress.current - this.progress.last >= this.props.progressUpdateIntervalMillis) {
+            this.progress.last = positionMillis;
+            this.onPlaybackStatusUpdate();
+        }
     }
 
     componentDidMount() {
-        const { progressUpdateIntervalMillis, positionMillis = 0, shouldPlay } = this.props;
+        const { positionMillis = 0, shouldPlay } = this.props;
         this.progress.addListener(({ value }) => {
-            value = Math.floor(value)
-            this.onPositionMillis(this.progress.current = value)
-            if (this.progress.current - this.progress.last >= progressUpdateIntervalMillis) {
-                this.progress.last = value;
-                this.onPlaybackStatusUpdate();
-            }
+            this.onPositionMillis(Math.floor(value))
         })
 
         this.setStatusAsync({ shouldPlay, positionMillis });
@@ -305,6 +304,7 @@ export class ListMedia extends Media{
         if(this.state.i!=i){
             this.setState({i})
         }
+        super.onPositionMillis(...arguments)
     }
 
     componentDidMount(){
