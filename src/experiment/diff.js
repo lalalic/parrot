@@ -6,8 +6,8 @@ import memoize from "memoize-one"
 const SE=/[^\p{L}\p{N}]+/gu
 
 export function diffScore(text, recognized, data) {
-    text = text.split(SE).filter(a=>!!a)
-    recognized = recognized.split(SE).filter(a=>!!a)
+    text = (text||"").split(SE).filter(a=>!!a)
+    recognized = (recognized||"").split(SE).filter(a=>!!a)
     if(!text.length)
         return 110
     if(!recognized.length)
