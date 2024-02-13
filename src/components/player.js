@@ -329,7 +329,7 @@ export default function Player({
                     console.info('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
                     setVideoStatusAsync({shouldPlay:false}, globalThis.sounds.ding)
-                    const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+1500)
+                    const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+2000)
                     return {...state, whitespace, whitespacing}
                 }
             }

@@ -152,8 +152,11 @@ export default function talks(talks = {}, action) {
 						const challenges = (current.challenges || (current.challenges = []));
 						if (score < policy.autoChallenge) {
 							if (!current.challenging) {
-								if (-1 == challenges.findIndex(a => a.time == chunk.time)) {
+								const i=challenges.findIndex(a => a.time == chunk.time)
+								if (-1 == i) {
 									challenges.push(chunk);
+								}else {
+									challenges.splice(i,1)
 								}
 							}
 						} else {
