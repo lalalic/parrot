@@ -67,9 +67,9 @@ Cloud.addModule({
                 }
                 return app.get1Entity("Talk", filter)
             },
-            talks(_,{q, duration, lang="en"},{app}){
-                const cond={$regex:q, $options:'i', lang}
-                return app.findEntity("Talk", {$or:[{title:cond},{description:cond}]})
+            talks(_,{q, duration, lang="en"},{app}, other){
+                const cond={$regex:q, $options:'i'}
+                return app.findEntity("Talk", {$or:[{title:cond},{description:cond}], lang})
             },
             people(_,{q},{app}){
                 return app.findEntity("Talk",{speaker:{$regex:q, $options:'i'}})
