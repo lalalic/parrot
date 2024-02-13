@@ -115,13 +115,19 @@ export default class VocabularyBook extends TaggedListMedia{
         return {usage}
     }
 
+    constructor({data, shuffle}){
+        super(...arguments)
+        this.state.data=this.shuffleArray([...data])
+    }
+
     /**
      * A:B
      * lang:mylang
      */
     createTranscript(){
-        const {data=[]}=this.props
+        const {data=[]}=this.state
         const {usage}=this.state
+        
         return data.map(({word, text=word, translated})=>{
                 switch(usage){
                     case 0://lang -> mylang
@@ -135,7 +141,8 @@ export default class VocabularyBook extends TaggedListMedia{
     }
 
     renderAt(cue,i){
-        const {data=[], policy, id, whitespacing}=this.props
+        const {policy, id, whitespacing}=this.props
+        const {data=[]}=this.state
         const {text, test, speakMyLocale}=cue
         
         const title=(()=>{
