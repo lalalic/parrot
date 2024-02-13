@@ -86,6 +86,7 @@ class Media extends React.Component {
         cueHasDuration:false,
         miniPlayer:true,
         progressBar:false,
+        chunk:false,
     }
 
     static contextType=ReactReduxContext
@@ -256,7 +257,7 @@ class Media extends React.Component {
  */
 export class ListMedia extends Media{
     static cueEqualData(cue, data){
-        return !!["text","translated","ask"].find(k=>cue.text==data[k])
+        return !!["text","word","translated","ask"].find(k=>cue.text==data[k])
     }
 
     reset(){

@@ -34,7 +34,7 @@ export default class VocabularyBook extends TaggedListMedia{
     static ExtendActions({talk, policyName}){
         return [
             <Usage key="usage" talk={talk} policyName={policyName}/>,
-            <Sentense key="support" talk={talk} policyName={policyName}/>
+            <Sentense key="support" talk={talk} policyName={policyName}/>,
         ]
     }
 
@@ -123,15 +123,15 @@ export default class VocabularyBook extends TaggedListMedia{
         const {data=[]}=this.props
         const {usage}=this.state
         return data.map(({word, text=word, translated})=>{
-            switch(usage){
-                case 0://lang -> mylang
-                    return {text, test:translated||text, recogMyLocale:!!translated&&true}
-                case 1://mylang->lang
-                    return {text:translated||text, test:text, speakMyLocale:!!translated&&true}
-                case 2://pronouncing
-                    return {text}
-            }
-        })
+                switch(usage){
+                    case 0://lang -> mylang
+                        return {text, test:translated||text, recogMyLocale:!!translated&&true}
+                    case 1://mylang->lang
+                        return {text:translated||text, test:text, speakMyLocale:!!translated&&true}
+                    case 2://pronouncing
+                        return {text}
+                }
+            })
     }
 
     renderAt(cue,i){

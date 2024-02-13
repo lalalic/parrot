@@ -18,7 +18,7 @@ const uploader={
             ps.splice(0,i)
             const words=ps.map(a=>{
                 const text=$(a).text()
-                const [,word, pronunciation, classification, explanation, example ] = text.match(pattern)||[]
+                const [,word, pronunciation, classification, explanation ] = text.match(pattern)||[]
                 if(word){
                     return {text:word, pronunciation, classification, explanation}
                 }

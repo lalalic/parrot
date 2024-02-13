@@ -79,12 +79,12 @@ export default function Player({
             switch(policy.chunk){        
                 case 0:
                 case 1:{
-                    if(policy.fullscreen){
-                        const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1]?.end*2.5>=5*60*1000)
-                        if(i!=-1){
-                            return paragraphs.slice(0,i).map(p=>p.cues).flat()
-                        }
-                    }    
+                    // if(policy.fullscreen){//why ???
+                    //     const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1]?.end*2.5>=5*60*1000)
+                    //     if(i!=-1){
+                    //         return paragraphs.slice(0,i).map(p=>p.cues).flat()
+                    //     }
+                    // }    
                     return paragraphs.map(p=>p.cues).flat()
                 }
                 case 9:
@@ -120,10 +120,10 @@ export default function Player({
             }
         }
         return []
-    },[id, policy.chunk, policy.autoChallenge, policy.fullscreen, challenging, challenges, transcript])
+    },[id, policy.chunk, /*policy.fullscreen,*/ challenging, challenges, transcript])
 
     const stopOnMediaStatus=React.useRef(false)
-    const setVideoStatusAsync=React.useCallback(async (status, callback)=>{
+    const setMediaStatusAsync=React.useCallback(async (status, callback)=>{
         debug && console.debug(status)
         stopOnMediaStatus.current=true
         const done = await video.current?.setStatusAsync(status)
@@ -140,7 +140,7 @@ export default function Player({
      * nextRound must use latest chunks and challenging
      * */
     nextRound.current=React.useCallback(shouldPlay=>{
-        setVideoStatusAsync({
+        setMediaStatusAsync({
             shouldPlay:shouldPlay==undefined ? !!challenging : shouldPlay, 
             positionMillis:chunks[0]?.time
         })
@@ -152,7 +152,7 @@ export default function Player({
 
         function terminateWhitespace(next, newState, callback){
             whitespacing && clearTimeout(whitespacing)
-            setVideoStatusAsync(next={shouldPlay:true, rate, ...next}, callback)
+            setMediaStatusAsync(next={shouldPlay:true, rate, ...next}, callback)
             return produce(state, $state=>{
                 $state.isPlaying=next.shouldPlay
                 delete $state.whitespace
@@ -231,11 +231,11 @@ export default function Player({
                     break
                 }
                 case "speed/toggle":
-                    setVideoStatusAsync({rate:rate==0.75 ? 1 : 0.75})
+                    setMediaStatusAsync({rate:rate==0.75 ? 1 : 0.75})
                         .then(a=>changePolicy("speed",a.rate))
                 break
                 case "speed/tune":
-                    setVideoStatusAsync({rate:action.rate})
+                    setMediaStatusAsync({rate:action.rate})
                         .then(a=>changePolicy("speed",a.rate))
                 break
                 case "record/chunk"://not implemented
@@ -266,15 +266,7 @@ export default function Player({
         _setStatus(Object.assign(action, { chunks }))
     },[chunks])
 
-    const onAction=React.useCallback(action=>{
-        switch(action){
-            case "talk/clear/policy/history":
-                dispatch({type:"talk/clear/policy/history"})
-            break
-        }
-    },[dispatch])
-
-
+    const onAction=React.useCallback(action=>dispatch({type:action}),[dispatch])
 
     const controls=React.useMemo(()=>{
         return {
@@ -312,7 +304,7 @@ export default function Player({
             const current={isLoaded,isPlaying,rate,durationMillis,i:_i}
 
             if(!isLoaded){//init video pitch, props can't work
-                setVideoStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
+                setMediaStatusAsync({shouldCorrectPitch:true,pitchCorrectionQuality:Audio.PitchCorrectionQuality.High})
                 return current
             }
 
@@ -328,7 +320,7 @@ export default function Player({
                 if(policy.whitespace){
                     console.info('whitespace/start')
                     const whitespace=policy.whitespace*(chunks[i].duration||(chunks[i].end-chunks[i].time))
-                    setVideoStatusAsync({shouldPlay:false}, globalThis.sounds.ding)
+                    setMediaStatusAsync({shouldPlay:false}, globalThis.sounds.ding)
                     const whitespacing=setTimeout(()=>dispatch({type: "whitespace/end", isLast}),whitespace+2000)
                     return {...state, whitespace, whitespacing}
                 }
@@ -470,7 +462,7 @@ export default function Player({
                         />
                     }
 
-                    <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
+                    {controls.progressBar!=false && <AutoHide hide={autoHideProgress} style={[{position:"absolute",bottom:0, width:"100%"},progressStyle]}>
                         <ProgressBar {...{
                             onProgress,
                             duration:status.durationMillis,
@@ -478,7 +470,7 @@ export default function Player({
                             onSlidingStart:e=>setAutoHide(Date.now()+2*60*1000),
                             onSlidingComplete:e=>setAutoHide(Date.now())
                         }}/> 
-                    </AutoHide>
+                    </AutoHide>}
                 </View>
             </View>
         </SliderIcon.Container>
