@@ -21,7 +21,9 @@ class Media extends React.Component {
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
-            <PolicyChoice label={false} labelFade={true} value={policyName} excludes={["retelling"]} deselectable={false}
+            <PolicyChoice label={false} labelFade={true} value={policyName} 
+                excludes={talk?.exludePolicy || ["dictating","retelling"]} 
+                deselectable={false}
                 onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
                     
                 {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
@@ -83,6 +85,7 @@ class Media extends React.Component {
         positionMillis: 0,
         cueHasDuration:false,
         miniPlayer:true,
+        progressBar:false,
     }
 
     static contextType=ReactReduxContext
@@ -400,6 +403,14 @@ export class TaggedListMedia extends ListMedia{
         }, state.my.admin)
 
         console.info(`Cloned the talk to Qili`)
+    }
+
+    shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     }
 
     createTranscript(){
