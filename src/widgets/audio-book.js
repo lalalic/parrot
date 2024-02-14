@@ -4,7 +4,7 @@ import { View, Linking, Text, Pressable} from "react-native"
 import { TaggedListMedia,  } from "./media"
 import { PlaySound, Recorder } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
-import { TaggedTranscript, clean, getItemText } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'

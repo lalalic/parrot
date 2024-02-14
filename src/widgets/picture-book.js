@@ -3,13 +3,14 @@ import { View, Text, Pressable, Image, useWindowDimensions, Alert} from "react-n
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 
-import { TaggedListMedia, TagManagement } from "./media"
+import { TaggedListMedia } from "./media"
+import TagManagement from "./management/TagManagement"
 import { useTalkQuery } from "../components"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
-import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged-transcript"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
@@ -174,22 +175,20 @@ export default class PictureBook extends TaggedListMedia {
         const dispatch=useDispatch()
         const navigate=useNavigate()
         return (
-            <View style={{flex:1}}>
-                <TagManagement {...{
-                    talk, 
-                    ...props,
-                    renderItemExtra({item}){
-                        return ( 
-                            <Pressable style={{width:50,height:50,borderWidth:1,borderColor:"lightgray"}}
-                                onPress={e=>navigate(`/widget/${item.slug}/${item.id}`)}
-                                >
-                                {item.thumb && <Image source={{uri:item.thumb}} style={{width:"100%",height:"100%"}}/>}
-                            </Pressable>
-                        )
-                    }
-                    }}/>
-                <View style={{height:50, flexDirection:"row", alignItems:"center", justifyContent:"center"}}>
-                    <Uploader upload={async select=>{
+            <TagManagement {...{
+                talk, 
+                ...props,
+                renderItemExtra({item}){
+                    return ( 
+                        <Pressable style={{width:50,height:50,borderWidth:1,borderColor:"lightgray"}}
+                            onPress={e=>navigate(`/widget/${item.slug}/${item.id}`)}
+                            >
+                            {item.thumb && <Image source={{uri:item.thumb}} style={{width:"100%",height:"100%"}}/>}
+                        </Pressable>
+                    )
+                },
+
+                actions:(<Uploader upload={async select=>{
                         let uuid=Date.now()
                         let source=select.uri
                         if(select.width>select.height){
@@ -197,9 +196,8 @@ export default class PictureBook extends TaggedListMedia {
                             source=result.uri
                         }
                         PictureBook.create({thumb:source, title:`local-${uuid++}`},dispatch)
-                    }}/>
-                </View>
-            </View>
+                    }}/>)
+                }}/>
         )
     }
 

@@ -5,7 +5,7 @@ import { Speak,  } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"
-import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
@@ -44,6 +44,7 @@ export default class VocabularyBook extends TaggedListMedia{
                 "category":"Kitchen",
                 "amount": "10",
             }, 
+            initParams:title=>({category:title}),
             speakable:false,
             prompt(a,store){
                 const state=store.getState()
@@ -64,13 +65,13 @@ export default class VocabularyBook extends TaggedListMedia{
                     `
             },
 
-            onSuccess({response,store}){
-                const {category, amount}=this.params
+            onSuccess({response,store, id}){
+                const {category, amount, title=category}=this.params
                 const {my:{mylang,lang}}=store.getState()
 
                 try{
                     const data=VocabularyBook.parse(response)
-                    const id=VocabularyBook.create({data,title:category, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
+                    id=VocabularyBook.create({id, data, title, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
                     return `${amount} ${category} Vocabulary save to @#${id}`
                 }catch(e){
                     return e.message
@@ -82,6 +83,7 @@ export default class VocabularyBook extends TaggedListMedia{
                 amount:"10",
                 category:"meeting"
             }, 
+            initParams:title=>({category:title}),
             speakable:false,
             prompt:(a,store)=>{
                 const state=store.getState()
@@ -96,13 +98,13 @@ export default class VocabularyBook extends TaggedListMedia{
                 `
             },
 
-            onSuccess({response,store}){
+            onSuccess({response,store, id}){
                 const {category, amount}=this.params
                 const {lang, mylang}=store.getState().my
                 try{
                     const idioms=JSON.parse(response.replace(/\"idiom\"\:/g, '"text":').replace(/\"translation\"\:/,'"translated":'))
                     const title=`idioms - ${category}`
-                    const id=VocabularyBook.create({data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
+                    id=VocabularyBook.create({id, data:idioms,title, generator:"idioms",params:this.params, lang, mylang}, store.dispatch)
                     return `${amount} ${category} idioms save to @#${id}`
                 }catch(e){
                     return e.message
@@ -283,7 +285,7 @@ const Sentense=({talk, id=talk?.id})=>{
         return null
 
     return (
-        <PressableIcon name="support" 
+        <PressableIcon name="support" color="blue"
             onPress={e=>{
                 (async()=>{
                     try{

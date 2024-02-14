@@ -4,7 +4,7 @@ import { TaggedListMedia } from "./media"
 import { Speak } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { TaggedTranscript, clean, getItemText, Delay } from "./tagged-transcript"
+import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { useDispatch } from "react-redux"
 

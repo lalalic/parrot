@@ -1,16 +1,13 @@
 import React from "react"
-import { FlatList, TextInput, View, } from "react-native"
+import { FlatList, TextInput, View} from "react-native"
 import { useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import * as Clipboard from 'expo-clipboard';
 
-import { KeyboardAvoidingView, Recognizer } from "../components"
-import { diffPretty } from '../experiment/diff'
-
+import { KeyboardAvoidingView } from "../../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-
-export * from "../components/delay"
+export * from "../../components/delay"
 
 const l10n=globalThis.l10n
 
@@ -26,7 +23,7 @@ export default Wrapper=({})=>{
 /**
  * it's for audio item {text, uri}
  */
-export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, children, editor}){
+export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, children, editor, prompts}){
     const color=React.useContext(ColorScheme)
     const navigate=useNavigate()
     const [q, setSearch]=React.useState("")

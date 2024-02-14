@@ -21,7 +21,7 @@ import Test from "./account/test"
 
 import { TalkApi } from "./store"
 
-import TaggedTranscript from "./widgets/tagged-transcript"
+import TaggedTranscript from "./widgets/management/tagged-transcript"
 
 export default function MyRouter(){
     const dispatch=useDispatch() 
@@ -97,7 +97,7 @@ export default function MyRouter(){
                         
                         if(Widget.TagManagement){
                             const TagManagement=Widget.$TagManagement || (Widget.$TagManagement=Widget.TagManagement.bind(Widget))
-                            return <TagManagement/>
+                            return <TagManagement prompts={Widget.prompts}/>
                         }
 
                         return <Widget/>
