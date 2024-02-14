@@ -1,14 +1,12 @@
 import React from 'react'
 import { View, Animated, Easing, Image, Text , ScrollView, ImageBackground} from "react-native";
 import { useDispatch, ReactReduxContext } from "react-redux";
-import { Link } from 'react-router-native';
 import { Qili } from "../store"
 
 import { Subtitles, Context as PlayerContext } from "../components/player"
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import TagManagement from './management/TagManagement';
-export const l10n=globalThis.l10n
 
 class Media extends React.Component {
     /**
@@ -378,10 +376,8 @@ export class ListMedia extends Media{
 
 export class TaggedListMedia extends ListMedia{
     //@NOTE: chat.js use this id pattern
-    static create({slug=this.defaultProps.slug, id=`${slug}${Date.now()}`, ...talk}, dispatch){
-        console.assert(slug, "Slug must be specified when creating widget talk")
-        dispatch({type:"talk/set",talk:{data:[],...talk,id,slug}})
-        return id
+    static create({slug=this.defaultProps.slug, ...props}, dispatch){
+        return TagManagement.create({slug,...props},dispatch)
     }
 
     static TagManagement(props){

@@ -9,8 +9,13 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import ChangableText from "react-native-use-qili/components/ChangableText";
 import Loading from "react-native-use-qili/components/Loading";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
-import { l10n, TaggedListMedia } from '../media';
+const l10n=globalThis.l10n
 
+function create({slug, id=`${slug}${Date.now()}`, ...talk}, dispatch){
+    console.assert(slug, "Slug must be specified when creating widget talk")
+    dispatch({type:"talk/set",talk:{data:[],...talk,id,slug}})
+    return id
+}
 
 export default function TagManagement({ talk, placeholder, onCreate, slug = talk.slug, dispatch = useDispatch(), ...props }){
     const talks = useSelector(state => selectWidgetTalks(state, slug));
@@ -26,13 +31,16 @@ export default function TagManagement({ talk, placeholder, onCreate, slug = talk
                 if (onCreate) {
                     onCreate({ title, slug }, dispatch);
                 } else {
-                    TaggedListMedia.create({ title, slug, data: [] }, dispatch);
+                    create({ title, slug, data: [] }, dispatch);
                 }
             }}
             renderItemText={item => item.title}
             {...props} />
     );
-};
+}
+
+TagManagement.create=create
+
 function TagList({ data, slug, onEndEditing, navigate = useNavigate(), children, iconWidth = 50, actions, prompts, renderItemExtra = ({ item }) => {
     if (item.isLocal !== true) {
         return (
