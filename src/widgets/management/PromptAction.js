@@ -5,13 +5,14 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import useAsk from "react-native-use-qili/components/useAsk";
 
 
-export default function PromptAction({ prompt, title, id }) {
+export default function PromptAction({ prompt }) {
     const ask = useAsk();
     const store = useStore();
     const [showDialog, setShowDialog] = React.useState(false);
     const apply = React.useCallback(async (params) => {
         const message = prompt.prompt?.(params, store);
-        const response = await ask(message); ({ ...prompt, params: { title, ...params } }).onSuccess({ response, store, id });
+        const response = await ask(message); 
+        ({ ...prompt, params}).onSuccess({ response, store });
     }, [ask, store]);
     return (
         <>
@@ -27,7 +28,7 @@ export default function PromptAction({ prompt, title, id }) {
                 }} />
             {showDialog && <PromptParamDialog
                 style={{ position: "absolute", zIndex: 999, bottom: 10, left: 0 }}
-                prompt={prompt} title={title}
+                prompt={prompt} 
                 onApply={async (params) => {
                     try {
                         await apply(params);
@@ -39,8 +40,8 @@ export default function PromptAction({ prompt, title, id }) {
         </>
     );
 }
-function PromptParamDialog({ style, title, prompt: { params, label, initParams }, onApply, onCancel }) {
-    const [values, setValues] = React.useState({ ...params, ...initParams?.(title) });
+function PromptParamDialog({ style, prompt: { params, label, initParams }, onApply, onCancel }) {
+    const [values, setValues] = React.useState(params);
     const inputStyle = { margin: 5, paddingLeft: 5, flex: 1, borderWidth: 1, height: 30 };
     const paramsUI = React.useMemo(() => {
         const ui = [];

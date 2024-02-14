@@ -25,26 +25,6 @@ export default class DialogBook extends TaggedListMedia{
     }
 
     static prompts=[
-        {label:"RolePlay", name:"face-retouching-natural",
-            params:{
-                "Your Role":"Software Engineering Manager",
-                "Your Name":"Bob",
-                "My Role":"Software Engineer",
-                "My Name":"Ray",
-                "Scene":"Discuss a message queue solution",
-            }, 
-            prompt:a=>{
-                return `Let's role-play. 
-                Your role is ${a["Your Role"]} called ${a["Your Name"]}. 
-                My role is ${a["My Role"]} called ${a["My Name"]}.
-                the scene: ${a["Scene"]}.
-                You must wait for my response before you continue.  
-                ${a["Your Name"]}, you start first.`
-            },
-            settings:{
-                dialog:true
-            }
-        },
         {label:"Dialog", name:"record-voice-over",
             speakable:false,
             params:{

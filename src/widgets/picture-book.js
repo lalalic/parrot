@@ -1,5 +1,5 @@
 import React from "react"
-import { View, Text, Pressable, Image, useWindowDimensions, Alert} from "react-native"
+import { View, Text, Pressable, Image, useWindowDimensions, Dimensions} from "react-native"
 import * as ImagePicker from "expo-image-picker"
 import * as ImageManipulator from "expo-image-manipulator"
 
@@ -105,15 +105,6 @@ export default class PictureBook extends TaggedListMedia {
                     hasData && <PressableIcon name="apps" key="visible"
                         color={visible ? "yellow" : "gray"} 
                         onPress={e=>setVisible(!visible)}/>,
-
-                    !hasData && <PressableIcon name="auto-fix-high" key="auto" 
-                        requireLogin="generate a scenario picture"
-                        onPress={async e=>{
-                            const words=await ask({message:"response one or two words to describe a random scene with comma as seperator", })
-                            const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${words}`)
-                            dispatch({type:"talk/set", talk:{id, thumb:res.url, tags:words.split(",")}})
-                        }}
-                        />,
                     
                     !hasData && <Uploader name="camera-alt"
                         allowsMultipleSelection={false}
@@ -150,6 +141,19 @@ export default class PictureBook extends TaggedListMedia {
             </TaggedTranscript>
         )
     }
+
+    static prompts=[{
+        label:"random picture", name:"auto-fix-high",
+        prompt(){
+            return "response one or two words to describe a random scene with comma as seperator"
+        },
+        async onSuccess({response: title, store}){
+            const {width,height}=Dimensions.get('window')
+            const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${title}`)
+            const id=PictureBook.create({title,thumb:res.url,tags:title.split(",")}, store.dispatch)
+            return `${amount} ${category} Vocabulary save to @#${id}`
+        }
+    }]
 
 
     static parse(input){

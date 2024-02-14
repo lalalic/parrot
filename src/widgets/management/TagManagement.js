@@ -100,7 +100,7 @@ function TagList({ data, slug, onEndEditing, navigate = useNavigate(), children,
                 renderItem={renderItem} />
             {isLoading && <Loading style={{ backgroundColor: "transparent" }} />}
             {(!!actions || !!prompts) && (
-                <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "center" }}>
+                <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-around" }}>
                     {actions}
                     {prompts?.map(a => <PromptAction prompt={a} key={a.label} />)}
                 </View>

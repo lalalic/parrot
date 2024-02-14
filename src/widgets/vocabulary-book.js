@@ -44,7 +44,6 @@ export default class VocabularyBook extends TaggedListMedia{
                 "category":"Kitchen",
                 "amount": "10",
             }, 
-            initParams:title=>({category:title}),
             speakable:false,
             prompt(a,store){
                 const state=store.getState()
@@ -65,13 +64,13 @@ export default class VocabularyBook extends TaggedListMedia{
                     `
             },
 
-            onSuccess({response,store, id}){
+            onSuccess({response,store}){
                 const {category, amount, title=category}=this.params
                 const {my:{mylang,lang}}=store.getState()
 
                 try{
                     const data=VocabularyBook.parse(response)
-                    id=VocabularyBook.create({id, data, title, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
+                    const id=VocabularyBook.create({data, title, params:this.params, generator:"Vocabulary", lang, mylang}, store.dispatch)
                     return `${amount} ${category} Vocabulary save to @#${id}`
                 }catch(e){
                     return e.message
@@ -83,7 +82,6 @@ export default class VocabularyBook extends TaggedListMedia{
                 amount:"10",
                 category:"meeting"
             }, 
-            initParams:title=>({category:title}),
             speakable:false,
             prompt:(a,store)=>{
                 const state=store.getState()
