@@ -306,7 +306,7 @@ export const listeners=[
 
 			try {
 				const unwrap = (({ general, shadowing, retelling, dictating, challenging, ...talk }) => talk)(talk);
-				; (globalThis.Widgets[talk.slug] || globalThis.TedTalk).onFavorite?.({ id, talk: { ...unwrap, _id: id }, state, dispatch });
+				(globalThis.Widgets[talk.slug] || globalThis.TedTalk).onFavorite?.({ id, talk: { ...unwrap, _id: id }, state, dispatch });
 			} catch (e) {
 				dispatch({ type: "message/error", message: e.message });
 			}

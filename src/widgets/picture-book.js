@@ -149,8 +149,9 @@ export default class PictureBook extends TaggedListMedia {
         },
         async onSuccess({response: title, store}){
             const {width,height}=Dimensions.get('window')
+            const {my:{lang, mylang}}=store.getState()
             const res=await fetch(`https://source.unsplash.com/random/${width}*${height-100}/?${title}`)
-            const id=PictureBook.create({title,thumb:res.url,tags:title.split(",")}, store.dispatch)
+            const id=PictureBook.create({title,thumb:res.url,tags:title.split(","), lang, mylang}, store.dispatch)
             return `${amount} ${category} Vocabulary save to @#${id}`
         }
     }]

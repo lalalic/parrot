@@ -132,6 +132,6 @@ export default class extends React.Component{
 
         dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
 
-        FlyMessage.show(`Cloned`)
+        FlyMessage.show(`Cloned to server`)
     }
 }

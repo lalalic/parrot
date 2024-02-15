@@ -1,11 +1,13 @@
 import React from 'react'
-import { View, Animated, Easing, Image, Text , ScrollView, ImageBackground} from "react-native";
+import { View, Animated, Easing, Text , ImageBackground} from "react-native";
 import { useDispatch, ReactReduxContext } from "react-redux";
 import { Qili } from "../store"
 
 import { Subtitles, Context as PlayerContext } from "../components/player"
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
+
 import TagManagement from './management/TagManagement';
 
 class Media extends React.Component {
@@ -385,17 +387,19 @@ export class TaggedListMedia extends ListMedia{
     }
 
     static async onFavorite({id, talk, state, dispatch}){
+        const {lang, mylang}=state.my
         await Qili.fetch({
             id:"save",
             variables:{
                 talk:{
+                    lang, mylang,
                     ...talk,
                     isWidget:true
                 }
             }
-        }, state.my.admin)
+        })
 
-        console.info(`Cloned the talk to Qili`)
+        FlyMessage.show("Uploaded to server")
     }
 
     shuffleArray(array) {
