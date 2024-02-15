@@ -28,7 +28,7 @@ export default function MyRouter(){
     const [bAdmin, setIsAdmin]=React.useState(false)  
     React.useEffect(()=>{
         fetch("https://ted.com").then(async res=>{
-            if(res.statusText=="ok"){
+            if(res.ok){
                 setIsAdmin(await isAdmin())
             }else{
                 dispatch({type:"my/api", api: "Qili"})

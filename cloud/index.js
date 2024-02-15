@@ -93,7 +93,7 @@ Cloud.addModule({
                 return app.findEntity("Widget", props)
             },
             isAdmin(_,{},{app,user}){
-                return app.get1Entity("User",{_id:user._id}).then(user=>user.isAdmin)
+                return app.get1Entity("User",{_id:user._id}).then(user=>!!user?.isAdmin)
             },
         },
         Mutation:{
