@@ -349,67 +349,10 @@ export const Speak=Object.assign(({text,children=null, locale, onStart, onEnd})=
     },[])
     return children
 },{
-    async prepare(options){
-        const releaseLock = await lock.acquire()
-        return [
-            async(text)=>await Speech.speak(text,options),
-            done=>{
-                try{
-                    Speech.stop()
-                    done?.()
-                }finally{
-                    releaseLock?.()
-                }
-            }
-        ]
-    },
-    session(voice){
-        const options=voice ? {iosVoiceId:voice} : undefined
-        const speak=async text=>{
-            if(speak.cancelled)
-                return 
-            if(!speak.run){
-                const [run, stop]=await Speak.prepare(options)
-                speak.current=0
-                speak.queue=[]
-                speak.run=run
-                speak.stop=(finalText, done=()=>null)=>{
-                    if(speak.canncelled)
-                        return done()
-                    speak.done=done
-                    speak(finalText)
-                }
-                speak.doStop=stop
-                speak.cancel=()=>{
-                    speak.cancelled=true
-                    speak.queue=Object.freeze([])
-                    speak.doStop()
-                }
-            }
-            if(/[\.\!\?]$/g.test(text)){
-                speak.queue=text.replace(/\s+/g," ").split(/[\.\!\?]/g).filter(a=>!!a).slice(speak.current)
-            }
-            if(!speak.running){
-                speak.running=true
-                const next=()=>(speak.current++, speak.queue.shift())
-                while(speak.queue.length){
-                    await speak.run(next())
-                }
-                if(speak.done){
-                    speak.doStop()
-                    speak.done()
-                }
-                speak.running=false
-            }
-        }
-        this._currentSession=speak
-        return speak
-    },
     setDefaults(){
         Speech.setDefaults(...arguments)
     },
     stop(){
-        this._currentSession?.cancel()
         Speech.stop()
     },
     speak(){

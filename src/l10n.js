@@ -48,6 +48,9 @@ export default globalThis.l10n=makeLocalized({
         "Week Copy":"周拷贝",
         "Template Day":"日模版",
         "Template Week":"周模版",
+        //chat
+        "Ask me anything":"可以提问啦",
+        "Sorry, can't process your request right now":"对不起，现在处理不了你的请求",
         
         //calendar
         "AM":"上午",
