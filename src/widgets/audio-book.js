@@ -22,7 +22,7 @@ export default class AudioBook extends TaggedListMedia {
         description: "A list of audios: manage audio book with tags and practise them",
     }
 
-    renderAt({text, uri}, i){ 
+    renderAt({text, uri}, ){ 
         const {rate, volume}=this.status
         return (
             <>

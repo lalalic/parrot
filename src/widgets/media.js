@@ -341,7 +341,7 @@ export class ListMedia extends Media{
             return 
 
 
-        return this.renderAt(cue, Math.floor(i))
+        return this.renderAt(cue)
     }
 
     speak(props){
@@ -371,7 +371,7 @@ export class ListMedia extends Media{
         return <Speak key={this.state.i} rate={this.status.rate} {...props}/>
     }
 
-    renderAt(cue,i){
+    renderAt(cue){
         return null
     }
 }
@@ -411,7 +411,7 @@ export class TaggedListMedia extends ListMedia{
     }
 
     createTranscript(){
-        return [...(this.props.data||[])]
+        return (this.props.data||[]).map(a=>({...a, fulltext:getItemText(a, true, '\n\n')}))
     }
 
     title(){

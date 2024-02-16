@@ -37,29 +37,24 @@ export default class PictureBook extends TaggedListMedia {
 
     createTranscript(){
         const {data=[]}=this.props
-        return data.map(({uri, text})=>({
+        return data.map(({uri, text},i)=>({
             text: "",
             test: text,
-            uri
+            uri,
+            fulltext:getItemText(data[i], true, "\n\n")
         }))
     }
 
-    renderAt(cue,i){
-        const {data=[], thumb, id, policy}=this.props
-        const [left,top,width,height]=cue.uri.split(",").map(a=>parseInt(a))
-        const title=(()=>{
-            if(policy.fullscreen){
-                return getItemText(data[i], true, "\n\n")
-            }else{
-                return cue.test
-            }
-        })();
+    renderAt({test, uri, fulltext}){
+        const { thumb, policy, whitespacing}=this.props
+        const [left,top,width,height]=uri.split(",").map(a=>parseInt(a))
+        const title= policy.fullscreen ? fulltext : test
         return (
             <View style={{flex:1, alignItems:"center", justifyContent:"center", paddingTop: 20}}>
                 <AreaImage src={thumb} size={200} area={{left,top,width,height}}/>
                 <View style={{width:"100%", position:"absolute", top:0, left:0}}>
                     <Text style={{color:"white", textAlign:"center", fontSize:20}}>
-                        {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
+                        {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                     </Text>
                 </View>
             </View>

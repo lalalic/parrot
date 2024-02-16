@@ -115,52 +115,35 @@ export default class VocabularyBook extends TaggedListMedia{
         return {usage}
     }
 
-    constructor({data, shuffle}){
-        super(...arguments)
-        this.state.data=this.shuffleArray([...data])
-    }
-
     /**
      * A:B
      * lang:mylang
      */
     createTranscript(){
-        const {data=[]}=this.state
-        const {usage}=this.state
+        const {state:{usage}, props:{data=[]}}=this
         
-        return data.map(({word, text=word, translated})=>{
+        return data.map(({word, text=word, translated},i)=>{
+                const fulltext=getItemText(data[i], true, "\n\n")
                 switch(usage){
                     case 0://lang -> mylang
-                        return {text, test:translated||text, recogMyLocale:!!translated&&true}
+                        return {text, test:translated||text, recogMyLocale:!!translated&&true, fulltext}
                     case 1://mylang->lang
-                        return {text:translated||text, test:text, speakMyLocale:!!translated&&true}
+                        return {text:translated||text, test:text, speakMyLocale:!!translated&&true, fulltext}
                     case 2://pronouncing
-                        return {text}
+                        return {text,fulltext}
                 }
             })
     }
 
-    renderAt(cue,i){
-        const {policy, id, whitespacing}=this.props
-        const {data=[]}=this.state
-        const {text, test, speakMyLocale}=cue
+    renderAt(cue){
+        const {policy, whitespacing}=this.props
+        const {text, test=text, speakMyLocale, fulltext}=cue
         
-        const title=(()=>{
-            if(!whitespacing){
-                return null
-            }
-
-            if(policy.fullscreen){
-                return getItemText(data[i], true, "\n\n")
-            }else{
-                return test||text
-            }
-        })();
-
+        const title= policy.fullscreen ? fulltext : test
         return (
             <>
                 <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
-                    {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
+                    {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                 </Text>
                 {this.speak({locale:speakMyLocale, text})}
             </>

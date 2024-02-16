@@ -60,32 +60,23 @@ export default class DialogBook extends TaggedListMedia{
 
     createTranscript(){
         const {data=[]}=this.props
-        return data.map(({ask, text, translated1})=>({
+        return data.map(({ask, text, translated1, pronunciation1})=>({
             text: ask,
             test: text,
-            my: translated1
+            my: translated1,
+            fulltext: getItemText({text:test, pronunciation:pronunciation1, translated:translated1}, true, "\n\n")
         }))
     }
 
-    renderAt(cue,i){
-        const {data=[], whitespacing, policy, id}=this.props
-        const {text, test}=cue
-        const title=(()=>{
-            if(!whitespacing){
-                return null
-            }
+    renderAt(cue){
+        const {whitespacing, policy}=this.props
+        const {text, test=text, fulltext}=cue
+        const title= policy.fullscreen ? fulltext : test
 
-            if(policy.fullscreen){
-                const {pronunciation1:pronunciation, translated1:translated}=data[i]
-                return getItemText({text:test, pronunciation, translated}, true, "\n\n")
-            }else{
-                return test
-            }
-        })();
         return (
             <>
                 <Text style={{padding:10, color:"white"}}>
-                    {policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
+                    {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                 </Text>
                 {this.speak({text})}
             </>

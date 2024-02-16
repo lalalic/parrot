@@ -124,20 +124,22 @@ export default function talks(talks = {}, action) {
 		case "talk/challenge/toggle":
 			return produce(talks, $talks => {
 				checkAction(action, ["chunk","policy"]);
-				const { talk, policy = "general", chunk } = getTalk(action, $talks);
+				const { talk, policy:policyName = "general", chunk } = getTalk(action, $talks);
+				const current = (talk[policyName] || (talk[policyName] = {}));
+				const challenges = (current.challenges || (current.challenges = []));
 
-				const { challenges = [] } = talk[policy] || (talk[policy] = {});
-				talk[policy].challenges = challenges;
-				const i = challenges.findIndex(a => a.time >= chunk.time);
-				if (i == -1) {
-					challenges.push(chunk);
-				} else if (challenges[i].time == chunk.time) {
-					challenges.splice(i, 1);
-				} else {
-					challenges.splice(i, 0, chunk);
-				}
-				if (challenges.length == 0) {
-					clearPolicyHistory({ talk, policy });
+				const i = challenges.findIndex(a => a.time == chunk.time);
+				if(current.challenging){
+					if(i!=-1){
+						challenges[i].pass=true
+					}
+				}else{
+					if(i!=-1){
+						challenges.splice(i,1)
+					}else{
+						challenges.push(chunk)
+						challenges.sort((a,b)=>a.time-b.time)
+					}
 				}
 			});
 		case "talk/recording":
