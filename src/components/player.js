@@ -78,22 +78,15 @@ export default function Player({
             const paragraphs=transcript
             switch(policy.chunk){        
                 case 0:
-                case 1:{
-                    // if(policy.fullscreen){//why ???
-                    //     const i=paragraphs.findIndex(p=>p.cues[p.cues.length-1]?.end*2.5>=5*60*1000)
-                    //     if(i!=-1){
-                    //         return paragraphs.slice(0,i).map(p=>p.cues).flat()
-                    //     }
-                    // }    
+                case 1:
                     return paragraphs.map(p=>p.cues).flat()
-                }
                 case 9:
-                    return (paragraphs.map(p=>{
+                    return paragraphs.map(p=>{
                         const text=p.cues.map(a=>a.text).join("")
                         const time=p.cues[0].time
                         const end=p.cues[p.cues.length-1]?.end
                         return {text,time,end}
-                    }))
+                    })
                 case 10:
                     return ([{
                         text:paragraphs.map(a=>a.cues.map(b=>b.text).join(" ")).join("\n"),
@@ -480,7 +473,7 @@ export default function Player({
             value={{
                 id, status, chunks, dispatch, setShowSubtitle, 
                 getRecordChunkUri, policy, policyName, challenging,
-                onAction
+                onAction, media:video, controls,
             }}>
             {children}
         </Context.Provider>
@@ -599,10 +592,9 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
         <View {...props} style={[{padding:4},style]}>
             <FlatList data={chunks} 
                 ref={subtitleRef}
-                //extraData={`${chunks.length}`} 
                 estimatedItemSize={height}
                 getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({time,end})=>`${time}-${end}`}
+                keyExtractor={({text,test},i)=>`${text}-${test}-${i}`}
                 renderItem={({ index, item })=><SubtitleItem {...{ style:{height}, shouldCaption, index, item,}}/>}
                 />
         </View>
@@ -610,7 +602,7 @@ export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
 }
 
 function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
-    const {id, dispatch, status, current=status.i, getRecordChunkUri, policyName}=React.useContext(Context)
+    const {id, dispatch, status, current=status.i, getRecordChunkUri, policyName,controls}=React.useContext(Context)
     const color=React.useContext(ColorScheme)
     const {recognized, diffs, score}=useSelector(state=>{
         return state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`]
@@ -646,9 +638,9 @@ function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
                 flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
             <View style={{width:22, justifyContent:"space-between", alignItems:"center"}}>
                 <Text style={{ textAlign: "center", fontSize:10 }}>{index + 1}</Text>
-                <PressableIcon size={20} color={color.text}
+                {controls.select!=false && <PressableIcon size={20} color={color.text} 
                     onPress={e=>dispatch({type:"nav/challenge",i:index})}
-                    name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>
+                    name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>}
                 <Text style={{textAlign: "center",fontSize:10}}>{score||""}</Text>
             </View>
             <View style={{flex:1, flexGrow:1 }}>

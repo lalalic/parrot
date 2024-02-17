@@ -15,13 +15,13 @@ export default function Talk({autoplay}){
     
     const Media=globalThis.Widgets[slug]||Video
 
-    const {data:talk={}, policy={}, challenging,  isLoading}=useTalkQuery({slug, id, policyName})
+    const {data:talk={}, policy={}, challenging, parentControled, isLoading}=useTalkQuery({slug, id, policyName})
     
     const style=policy.fullscreen || (policy.visible&&!talk.miniPlayer) ? {flex:1}: {height:200}
 
     const [info, actions]=React.useMemo(()=>([
         Media.Info({talk, policyName, dispatch,navigate, style:{flex: 1, padding: 5, flexGrow: 1 }}),
-        Media.Actions({talk, policyName, dispatch,navigate,})
+        Media.Actions({talk, policyName, dispatch,navigate,parentControled})
     ]),[talk, policyName, dispatch,navigate])
 
     if(isLoading){
@@ -39,7 +39,7 @@ export default function Talk({autoplay}){
             {...{id:talk.id, challenging, key:`${policyName}-${talk.id}`, policyName, policy, 
                 style,
                 title:talk.title,
-                ...Media.mediaProps({autoplay, talk, dispatch, policyName})
+                ...Media.mediaProps({autoplay, talk, dispatch, policyName, parentControled})
             }}
             >
             {info}

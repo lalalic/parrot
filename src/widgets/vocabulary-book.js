@@ -35,6 +35,7 @@ export default class VocabularyBook extends TaggedListMedia{
         return [
             <Usage key="usage" talk={talk} policyName={policyName}/>,
             <Sentense key="support" talk={talk} policyName={policyName}/>,
+            <Shuffle key="shuffle" talk={talk} policyName={policyName}/>,
         ]
     }
 
@@ -119,10 +120,11 @@ export default class VocabularyBook extends TaggedListMedia{
      * A:B
      * lang:mylang
      */
-    createTranscript(){
+    createTranscript(shuffle){
         const {state:{usage}, props:{data=[]}}=this
         
-        return data.map(({word, text=word, translated},i)=>{
+        return (shuffle ? this.shuffleArray([...data]) : data)
+            .map(({word, text=word, translated},i)=>{
                 const fulltext=getItemText(data[i], true, "\n\n")
                 switch(usage){
                     case 0://lang -> mylang
@@ -259,10 +261,10 @@ const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const ask=useAsk({timeout:2*60*1000})
     const { policy: policyName } = useParams()
-    const {challenges=[]}=useSelector(state=>state.talks[id]?.[policyName]||{})
-    const {widgets={}, lang}=useSelector(state=>state.my)
+    const {challenges=[], challenging}=useSelector(state=>state.talks[id]?.[policyName]||{})
+    const {lang}=useSelector(state=>state.my)
     const words=challenges.map(({recogMyLocale, ask, text})=>recogMyLocale ? ask : text).join(",")
-    if(widgets.chat===false || !words)
+    if(challenging < 5 || !words )
         return null
 
     return (
@@ -290,6 +292,19 @@ const Sentense=({talk, id=talk?.id})=>{
                 })();
             }}/>
     )
+}
+
+function Shuffle({talk, id=talk?.id, policyName}){
+    const dispatch=useDispatch()
+    const {media: book}=React.useContext(PlayerContext)
+    const {challenging}=useSelector(state=>state.talks[id]?.[policyName]||{})
+    if(challenging)
+        return null
+    return <PressableIcon name="shuffle" 
+        onPress={e=>{
+            book.current.doCreateTranscript(true)
+            dispatch({type:"talk/challenge/shuffle", talk:{id}, policyName, challenges:book.current.cues})
+        }}/>
 }
 
 const UsageIcons=["translate", "translate", "graphic-eq"]

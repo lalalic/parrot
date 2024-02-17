@@ -53,6 +53,12 @@ export default function talks(talks = {}, action) {
 			return produce(talks, $talks => {
 				$talks[action.talk.id] = { ...$talks[action.talk.id], ...action.talk };
 			});
+		case "talk/parentControl":
+			return produce(talks, $talks=>{
+				const { talk, policyName, controled } = getTalk(action, $talks)
+				const current=talk[policyName]||(talk[policyName]={})
+				current.parentControled=controled
+			})
 		case "talk/toggle/favorited":
 			return produce(talks, $talks => {
 				const { talk } = getTalk(action, $talks);
@@ -142,6 +148,15 @@ export default function talks(talks = {}, action) {
 					}
 				}
 			});
+		case "talk/challenge/shuffle":{
+			return produce(talks, $talks=>{
+				const { talk, policyName, challenges } = getTalk(action, $talks)
+				clearPolicyHistory({talk, policy:policyName})
+				const current=talk[policyName]||(talk[policyName]={})
+				current.challenges=challenges
+				current.challenging=1
+			})
+		}
 		case "talk/recording":
 			return produce(talks, $talks => {
 				checkAction(action, ["record", "policy", "chunk"]);

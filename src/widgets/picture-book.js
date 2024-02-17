@@ -30,8 +30,6 @@ export default class PictureBook extends TaggedListMedia {
         thumb: require("../../assets/widget-picture-book.png"),
         description: "Recognize everything in your world",
         shadowing:{visible:true},
-        dictating:{visible:true},
-        retelling:{visible:true},
         miniPlayer:false
     }
 

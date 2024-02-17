@@ -665,7 +665,6 @@ export function KeyboardAvoidingView(props){
 export function useTalkQuery({api, slug, id, policyName }) {
     const Widget = globalThis.Widgets[slug]
     
-    //const { data: remote = {}, ...status } = {isLoading:false}//remoteService.useTalkQuery({slug, id });
     const { data: remote = {}, ...status } = (api=="Qili"||!!Widget ? Qili : TalkApi).useTalkQuery({slug:!!Widget ? "Widget" : slug, id });
     const local = useSelector(state => state.talks[id||remote?.id]);
     const policy = useSelector(state => selectPolicy({state, policyName, id}));
@@ -684,5 +683,9 @@ export function useTalkQuery({api, slug, id, policyName }) {
     }, [remote, local]);
 
     const { general, shadowing, dictating, retelling, ...data } = talk;
-    return { data, policy, challenging: talk[policyName]?.challenging, ...status};
+    return { data, policy, 
+        challenging: talk[policyName]?.challenging, 
+        parentControled: talk[policyName]?.parentControled, 
+        ...status
+    };
 }

@@ -1,6 +1,6 @@
 import React from 'react'
-import { View, Animated, Easing, Text , ImageBackground} from "react-native";
-import { useDispatch, ReactReduxContext } from "react-redux";
+import { View, Animated, Easing, Text , ImageBackground, Modal, TextInput} from "react-native";
+import { useDispatch, ReactReduxContext, useSelector } from "react-redux";
 import { Qili } from "../store"
 
 import { Subtitles, Context as PlayerContext } from "../components/player"
@@ -24,7 +24,7 @@ class Media extends React.Component {
                 onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
                     
                 {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
-                
+                <ParentControl {...{talk, policyName}}/>
                 <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
                     onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
 
@@ -35,7 +35,6 @@ class Media extends React.Component {
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
-
                 {this.ExtendActions?.(...arguments)}
             </PolicyChoice>
         )
@@ -62,10 +61,14 @@ class Media extends React.Component {
         }
      }
 
-     static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
+     static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id, parentControled}){
         const Widget=this
         const media = <Widget shouldPlay={autoplay} {...talk} policyName={policyName}/>
-        return { media, controls: media.props };
+        const controls={...media.props.controls}
+        if(parentControled){
+            Object.assign(controls, media.props.parentControls||{})
+        }
+        return { media, controls};
      }
 
      static get isWidget(){
@@ -82,8 +85,21 @@ class Media extends React.Component {
         positionMillis: 0,
         cueHasDuration:false,
         miniPlayer:true,
-        progressBar:false,
-        chunk:false,
+        controls:{
+            progressBar:false,
+            chunk:false,  
+            video:false,  
+        },
+        parentControls:{
+            progressBar:false,
+            chunk:false,  
+            video:false,
+            record:false,
+            caption:false,
+            autoChallenge:false,
+            select:false,
+        },
+        exludePolicy:['dictating', 'retelling'],
     }
 
     static contextType=ReactReduxContext
@@ -279,7 +295,7 @@ export class ListMedia extends Media{
     }
 
     doCreateTranscript(){
-        const cues=this.createTranscript()
+        const cues=this.createTranscript(...arguments)
         if(cues){
             this.cues.splice(0,this.cues.length,...cues)
         }
@@ -433,5 +449,84 @@ function ClearAction({talk, policyName}){
                     onAction?.("talk/clear/policy/history")
                 }} 
             />
+    )
+}
+
+function ParentControl({talk, policyName}){
+    const dispatch=useDispatch()
+    const controled=useSelector(state=>state.talks[talk.id][policyName]?.parentControled)
+    const [show, setShow]=React.useState(false)
+    const promptPromoise=React.useRef(null)
+    const prompt=React.useCallback((title)=>{
+        setShow(title)
+
+        let resolve=null
+        promptPromoise.current=new Promise(res=>resolve=res)
+        promptPromoise.current.resolve=resolve
+        return promptPromoise.current
+    },[])
+
+    return (
+        <>
+            <PressableIcon name="supervisor-account"
+                color={controled ? "yellow" : undefined}
+                onPress={e=>{
+                    if(controled){
+                        prompt('input password to unlock')
+                            .then(password=>{
+                                if(password==controled){
+                                    dispatch({type:"talk/parentControl", talk:{id:talk.id}, controled:false, policyName})
+                                }
+                            })
+                    }else{
+                        prompt('set password to lock')
+                            .then(password=>{
+                                if(password){
+                                    dispatch({type:"talk/parentControl", talk:{id:talk.id}, controled:password, policyName})
+                                }
+                            })
+                    }
+                }}
+            />
+            {show && (<Prompt title={show} 
+                onApply={value=>{
+                    setShow(false)
+                    promptPromoise.current.resolve(value)
+                    promptPromoise.current=null
+                }}
+                onCancel={()=>{
+                    setShow(false)
+                    promptPromoise.current.resolve(null)
+                    promptPromoise.current=null
+                }}
+                />
+                
+            )}
+        </>
+    )
+}
+
+function Prompt({title, onApply, onCancel}){
+    const [text, setText]=React.useState("")
+    return (
+        <Modal visible={true} animationType="slide" transparent={true}>
+            <View style={{width:"100%",  flex: 1, justifyContent: 'center'}}>
+                <View style={{backgroundColor:"white",padding:40}}>
+                    <View style={{height: 80, flexDirection:"column"}}>
+                        <Text style={{fontSize:20, flex:1, color:"black"}}>{title}</Text>
+                        <TextInput value={text}  
+                            textContentType='password'
+                            placeholder={l10n["Password"]}
+                            style={{borderBottomWidth:1, borderColor:"gray", flex:1, padding:2}}
+                            onChangeText={value=>setText(value)}
+                            />
+                    </View>
+                    <View style={{flexDirection:"row", alignItems:"center", justifyContent:"space-around",paddingTop:20}}>
+                        <PressableIcon name="check" onPress={e=>onApply(text.trim())}/>
+                        <PressableIcon name="cancel" onPress={e=>onCancel()}/>
+                    </View>
+                </View>
+            </View>
+        </Modal>
     )
 }
