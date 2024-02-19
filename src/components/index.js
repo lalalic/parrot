@@ -252,7 +252,6 @@ export function AutoHide({hide:indicatorOrCallbackRef, style, children, timeout=
 export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
     const {thumb,duration,title, slug}=item
-    const isMedia=!globalThis.Widgets[slug]?.defaultProps.isWidget
     const navigate=useNavigate()
     const location=useLocation()
     const source=typeof(thumb)=="string" ? {uri:thumb} : thumb
@@ -260,13 +259,15 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 		<View style={[TalkStyle.thumb, style]}>
             <View style={{flex:1, opacity}}>
                 <Pressable onPress={e=>{
-                    if(isMedia==false){
-                        navigate(`/widget/${slug}/${item.id}`)
-                    }else if(!getLinkUri){
-                        navigate(location.pathname,{replace:true, state:{id:item.id}})
-                        navigate(`/talk/${slug}`)
-                    }else{
+                    if(getLinkUri){
                         navigate(getLinkUri(item))
+                    }else{
+                        if(globalThis.Widgets[slug]?.defaultProps.isWidget){
+                            navigate(`/talk/${slug}/shadowing/${item.id}`)
+                        }else{
+                            navigate(location.pathname,{replace:true, state:{id:item.id}})
+                            navigate(`/talk/${slug}`)
+                        }
                     }
                 }}>
                     <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={source}/>
