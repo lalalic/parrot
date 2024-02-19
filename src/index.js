@@ -9,6 +9,7 @@ import App from "react-native-use-qili/App"
 import Router from "./router"
 import Permissions from "./permissions"
 import PreloadSound from "./components/preload-sound"
+import { Prompt } from "./components/Prompt"
 import { listeners, middlewares, reducers } from "./store"
 const l10n=globalThis.l10n
 
@@ -27,6 +28,7 @@ export default function Parrot(){
                 celebrate={require("../assets/celebrate.mp3")}
                 pop={require("../assets/pop.mp3")}/>
             <MotherLang/>
+            <Prompt/>
         </App>
     )
 }

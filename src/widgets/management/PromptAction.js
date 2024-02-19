@@ -1,5 +1,5 @@
 import React from "react";
-import { TextInput, View, Text } from "react-native";
+import { TextInput, View, Text, Modal } from "react-native";
 import { useStore } from "react-redux";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import useAsk from "react-native-use-qili/components/useAsk";
@@ -50,7 +50,7 @@ function PromptParamDialog({ style, prompt: { params, label, initParams }, onApp
                 const value = values[key];
                 ui.push(
                     <View style={{ flexDirection: "row", margin: 5, alignItems: 'center' }} key={key}>
-                        <Text style={{ width: 100, color: "white", textAlign: "right" }}>{key.toUpperCase()}</Text>
+                        <Text style={{ width: 100, color: "black", textAlign: "right" }}>{key.toUpperCase()}</Text>
                         {(() => {
                             if (typeof (value) != "object") {
                                 return <TextInput name={key}
@@ -69,17 +69,21 @@ function PromptParamDialog({ style, prompt: { params, label, initParams }, onApp
         return ui;
     }, [values]);
     return (
-        <View style={[style, { flexDirection: "column", width: "100%", backgroundColor: "gray", padding: 4 }]}>
-            <View style={{ alignItems: "center", height: 30, paddingTop: 10 }}>
-                <Text style={{ color: "white" }}>{label.toUpperCase()}</Text>
+        <Modal visible={true} animationType="slide" transparent={true}>
+            <View style={[{ flex:1, justifyContent:"center",  width: "100%"}]}>
+                <View style={{ backgroundColor: "white", padding: 4,  }}>
+                    <View style={{ alignItems: "center", height: 30, paddingTop: 10 }}>
+                        <Text style={{ color: "black" }}>{label.toUpperCase()}</Text>
+                    </View>
+                    {paramsUI}
+                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-around", paddingTop: 20 }}>
+                        <PressableIcon name="check" style={{ flex: 1 }}
+                            onPress={() => onApply(values)} />
+                        <PressableIcon name="clear" style={{ flex: 1 }}
+                            onPress={() => onCancel(values)} />
+                    </View>
+                </View>
             </View>
-            {paramsUI}
-            <View style={{ flexDirection: "row", alignItems: "center", marginTop: 20 }}>
-                <PressableIcon name="done" style={{ flex: 1 }}
-                    onPress={() => onApply(values)} />
-                <PressableIcon name="clear" style={{ flex: 1 }}
-                    onPress={() => onCancel(values)} />
-            </View>
-        </View>
+        </Modal>
     );
 }
