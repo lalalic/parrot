@@ -27,6 +27,9 @@ export default class PictureBook extends TaggedListMedia {
         id: "picturebook",
         slug: "picturebook",
         title: "Picture Book",
+        /**
+         * thumb will be image src for individual picture
+         */
         thumb: require("../../assets/widget-picture-book.png"),
         description: "Recognize everything in your world",
         shadowing:{visible:true},
@@ -43,13 +46,13 @@ export default class PictureBook extends TaggedListMedia {
         }))
     }
 
-    renderAt({test, uri, fulltext}){
+    renderAt({test, uri, fulltext, image}){
         const { thumb, policy, whitespacing}=this.props
         const [left,top,width,height]=uri.split(",").map(a=>parseInt(a))
         const title= policy.fullscreen ? fulltext : test
         return (
             <View style={{flex:1, alignItems:"center", justifyContent:"center", paddingTop: 20}}>
-                <AreaImage src={thumb} size={200} area={{left,top,width,height}}/>
+                <AreaImage src={image||thumb} size={200} area={{left,top,width,height}}/>
                 <View style={{width:"100%", position:"absolute", top:0, left:0}}>
                     <Text style={{color:"white", textAlign:"center", fontSize:20}}>
                         {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
@@ -57,6 +60,10 @@ export default class PictureBook extends TaggedListMedia {
                 </View>
             </View>
         )
+    }
+
+    static onLongMemoryData(newData, srcTalk){
+        return newData.map(a=>({...a, image:srcTalk.thumb}))
     }
 
     static remoteSave=false

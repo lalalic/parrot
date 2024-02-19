@@ -18,6 +18,7 @@ class Media extends React.Component {
      static Actions({talk, policyName, dispatch, navigate, slug=talk.slug}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
+        const Widget = globalThis.Widgets[slug]
         return (
             <PolicyChoice label={false} labelFade={true} value={policyName} 
                 excludes={talk?.exludePolicy || ["dictating","retelling"]} 
@@ -39,6 +40,7 @@ class Media extends React.Component {
 
                 {this.ExtendActions?.(...arguments)}
                 <ParentControl {...{talk, policyName}}/>
+                <LongMemory {...{talk, policyName}}/>
             </PolicyChoice>
         )
     }
@@ -468,6 +470,9 @@ function ParentControl({talk, policyName}){
         <>
             <PressableIcon name="supervisor-account"
                 color={controled ? "yellow" : undefined}
+                onLongPress={e=>{
+                    dispatch({type:"talk/parentControl/remove", talk:{id:talk.id}, policyName})
+                }}
                 onPress={e=>{
                     if(controled){
                         prompt('Input password to unlock', promptProps)
@@ -487,5 +492,24 @@ function ParentControl({talk, policyName}){
                 }}
             />
         </>
+    )
+}
+
+function LongMemory({talk, policyName}){
+    const dispatch=useDispatch()
+    const {firePlayerEvent, challenging}=React.useContext(PlayerContext)
+    if(globalThis.Widgets[talk.slug]?.defaultProps?.longMemory===false)
+        return null
+    if(!challenging || talk.id==`${talk.slug}-longmemory`)
+        return null
+    
+    return (
+        <PressableIcon name="library-add" 
+                onPress={e => {
+                    dispatch({ type: "talk/chanllenge/longmemory", talk, policyName })
+                    firePlayerEvent("nav/reset")
+                    FlyMessage.show(`Moved to Long Memory`)
+                }} 
+            />
     )
 }

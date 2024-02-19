@@ -59,6 +59,12 @@ export default function talks(talks = {}, action) {
 				const current=talk[policyName]||(talk[policyName]={})
 				current.parentControled=controled
 			})
+		case "talk/parentControl/remove":
+			return produce(talks, $talks=>{
+				const { talk, policyName } = getTalk(action, $talks)
+				const current=talk[policyName]||(talk[policyName]={})
+				delete current.parentControled
+			})
 		case "talk/toggle/favorited":
 			return produce(talks, $talks => {
 				const { talk } = getTalk(action, $talks);
@@ -148,7 +154,7 @@ export default function talks(talks = {}, action) {
 					}
 				}
 			});
-		case "talk/challenge/shuffle":{
+		case "talk/challenge/shuffle":
 			return produce(talks, $talks=>{
 				const { talk, policyName, challenges } = getTalk(action, $talks)
 				clearPolicyHistory({talk, policy:policyName})
@@ -156,7 +162,21 @@ export default function talks(talks = {}, action) {
 				current.challenges=challenges
 				current.challenging=1
 			})
-		}
+		case "talk/chanllenge/longmemory":
+			return produce(talks, $talks=>{
+				const { talk, policyName } = getTalk(action, $talks)
+				const current=talk[policyName]||(talk[policyName]={})
+				const id=`${talk.slug}-longmemory`
+				const longMemoryTalk=$talks[id]||($talks[id]={id, slug:talk.slug, title:`${talk.slug} Long Memory`, data:[]})
+				const data=longMemoryTalk.data||(longMemoryTalk.data=[])
+				const Widget=globalThis.Widgets[talk.slug]
+				const currentLeft=current.challenges
+					.map(cue=>talk.data.find(data=>Widget.cueEqualData?.(cue,data))).filter(a=>!!a)//cue -> data
+					.filter(({word,text:a=word})=>!data.find(({word:$1,text:b=$1})=>a==b))//filter out existing
+				
+				data.splice(data.length, 0, ...(Widget.onLongMemoryData ?  Widget.onLongMemoryData(currentLeft, talk) : currentLeft))
+				clearPolicyHistory({talk, policy:policyName})
+			})
 		case "talk/recording":
 			return produce(talks, $talks => {
 				checkAction(action, ["record", "policy", "chunk"]);
