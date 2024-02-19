@@ -245,7 +245,7 @@ const Paste=({id})=>{
 
 const Usage=({talk, id=talk?.id, policyName})=>{
     const dispatch=useDispatch()
-    const {onAction}=React.useContext(PlayerContext)
+    const {firePlayerEvent}=React.useContext(PlayerContext)
     const {usage=0}=useSelector(state=>state.talks[id]?.[policyName]||{})
     return <PressableIcon 
         name={UsageIcons[usage]} 
@@ -253,7 +253,7 @@ const Usage=({talk, id=talk?.id, policyName})=>{
         onPress={e=>{
             dispatch({type:"talk/clear/policy/history", talk:{id}, policy: policyName})
             dispatch({type:"talk/policy",talk:{id}, target:policyName, payload:{usage:(usage+1)%3}})
-            onAction("talk/clear/policy/history")
+            firePlayerEvent("nav/reset")
         }}/>
 }
 
@@ -296,7 +296,7 @@ const Sentense=({talk, id=talk?.id})=>{
 
 function Shuffle({talk, id=talk?.id, policyName}){
     const dispatch=useDispatch()
-    const {media: book}=React.useContext(PlayerContext)
+    const {media: book, firePlayerEvent}=React.useContext(PlayerContext)
     const {challenging}=useSelector(state=>state.talks[id]?.[policyName]||{})
     if(challenging)
         return null
@@ -304,6 +304,7 @@ function Shuffle({talk, id=talk?.id, policyName}){
         onPress={e=>{
             book.current.doCreateTranscript(true)
             dispatch({type:"talk/challenge/shuffle", talk:{id}, policyName, challenges:book.current.cues})
+            firePlayerEvent("nav/reset")
         }}/>
 }
 

@@ -88,7 +88,8 @@ class Media extends React.Component {
         controls:{
             progressBar:false,
             chunk:false,  
-            video:false,  
+            video:false,
+            speed:false,  
         },
         parentControls:{
             progressBar:false,
@@ -437,16 +438,16 @@ export class TaggedListMedia extends ListMedia{
 
 function ClearAction({talk, policyName}){
     const dispatch=useDispatch()
-    const {onAction}=React.useContext(PlayerContext)
+    const {firePlayerEvent}=React.useContext(PlayerContext)
     return (
         <PressableIcon name="delete-sweep" 
                 onLongPress={e => {
                     dispatch({ type: `talk/clear/policy`, talk})
-                    onAction?.(`talk/clear/policy`)
+                    firePlayerEvent(`nav/reset`)
                 }}
                 onPress={e => {
                     dispatch({ type: "talk/clear/policy/history", talk, policy:policyName })
-                    onAction?.("talk/clear/policy/history")
+                    firePlayerEvent("nav/reset")
                 }} 
             />
     )

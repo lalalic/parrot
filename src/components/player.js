@@ -187,7 +187,7 @@ export default function Player({
                         shouldPlay:whitespacing ? false : !isPlaying, 
                         positionMillis: CurrentChunkPositionMillis()
                     })
-                case "talk/clear/policy/history":{
+                case "nav/reset":{
                     asyncCall(()=>onProgress.current?.(0))
                     return terminateWhitespace(
                         {shouldPlay:false},
@@ -259,7 +259,7 @@ export default function Player({
         _setStatus(Object.assign(action, { chunks }))
     },[chunks])
 
-    const onAction=React.useCallback(action=>dispatch({type:action}),[dispatch])
+    const firePlayerEvent=React.useCallback(action=>dispatch({type:action}),[dispatch])
 
     const controls=React.useMemo(()=>{
         return {
@@ -473,7 +473,7 @@ export default function Player({
             value={{
                 id, status, chunks, dispatch, setShowSubtitle, 
                 getRecordChunkUri, policy, policyName, challenging,
-                onAction, media:video, controls,
+                firePlayerEvent, media:video, controls,
             }}>
             {children}
         </Context.Provider>
