@@ -60,38 +60,27 @@ export default class DialogBook extends TaggedListMedia{
 
     createTranscript(){
         const {data=[]}=this.props
-        return data.map(({ask, text, translated1, pronunciation1})=>({
-            text: ask,
+        return data.map(({ask, text, translated, translated1, pronunciation1})=>({
+            text: ask, my: translated,
+
             test: text,
-            my: translated1,
-            fulltext: getItemText({text:test, pronunciation:pronunciation1, translated:translated1}, true, "\n\n")
+            fulltext: getItemText({text, pronunciation:pronunciation1, translated:translated1}, true, "\n\n")
         }))
     }
 
     renderAt(cue){
-        const {whitespacing, policy}=this.props
+        const {policy, whitespacing}=this.props
         const {text, test=text, fulltext}=cue
         const title= policy.fullscreen ? fulltext : test
 
         return (
             <>
-                <Text style={{padding:10, color:"white"}}>
+                <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
                     {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
                 </Text>
                 {this.speak({text})}
             </>
         )
-    }
-
-    shouldComponentUpdate({policy:{fullscreen:next=false}}){
-        const {policy:{fullscreen:current=false}}=this.props
-        if(current!=next){
-            this.setState({fullscreen:next},()=>{
-                this.reset()
-                this.doCreateTranscript()
-            })
-        }
-        return super.shouldComponentUpdate(...arguments)
     }
 
     static TaggedTranscript({id, ...props}){

@@ -350,14 +350,14 @@ export default function Player({
             {React.cloneElement(media, {
                 ref:video,
                 onPlaybackStatusUpdate:mediaStatus =>{
-                    debug && console.debug(`medis status: ${JSON.stringify(mediaStatus)}`)
+                    debug && console.debug(`media status: ${JSON.stringify(mediaStatus)}`)
                     onMediaStatus(status, {type:"media/status", status: mediaStatus})
                 },
-                rate:policy.rate,
+                rate:policy.rate, 
                 style:{flex:1, minHeight:150},
                 positionMillis: positionMillisHistory,
-                policy,
-                whitespacing: status.whitespacing,
+                
+                policy, whitespacing: status.whitespacing,
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>

@@ -10,6 +10,7 @@ import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useParams } from "react-router-native"
 import { Context as PlayerContext} from "../components/player"
+import FlyMessage from "react-native-use-qili/components/FlyMessage"
 const l10n=globalThis.l10n
 
 /**
@@ -128,9 +129,9 @@ export default class VocabularyBook extends TaggedListMedia{
                 const fulltext=getItemText(data[i], true, "\n\n")
                 switch(usage){
                     case 0://lang -> mylang
-                        return {text, test:translated||text, recogMyLocale:!!translated&&true, fulltext}
+                        return {text, test:translated||text, recogMyLocale:!!translated, fulltext}
                     case 1://mylang->lang
-                        return {text:translated||text, test:text, speakMyLocale:!!translated&&true, fulltext}
+                        return {text:translated||text, test:text, speakMyLocale:!!translated, fulltext}
                     case 2://pronouncing
                         return {text,fulltext}
                 }
@@ -259,12 +260,13 @@ const Usage=({talk, id=talk?.id, policyName})=>{
 
 const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
-    const ask=useAsk({timeout:2*60*1000})
+    const {firePlayerEvent}=React.useContext(PlayerContext)
+    const ask=useAsk()
     const { policy: policyName } = useParams()
-    const {challenges=[], challenging}=useSelector(state=>state.talks[id]?.[policyName]||{})
+    const {challenges=[], challenging, usage, }=useSelector(state=>state.talks[id]?.[policyName]||{})
     const {lang}=useSelector(state=>state.my)
-    const words=challenges.map(({recogMyLocale, ask, text})=>recogMyLocale ? ask : text).join(",")
-    if(challenging < 5 || !words )
+    const words=challenges.map(({test, text})=>usage==1 ? test : text).join(",")
+    if(challenging < 2 || !words )
         return null
 
     return (
@@ -278,16 +280,17 @@ const Sentense=({talk, id=talk?.id})=>{
                             ${words}
                             ---------word end------- 
                             Response should NOT have anything else.
-                        `,3*60*1000)
+                        `)
                         
                         dispatch({
-                            type:"talk/challenge", 
-                            talk, 
-                            chunk:{text:response}, 
-                            policy: policyName
+                            type:"talk/chanllenge/longmemory/sentence", 
+                            talk:{id}, policyName, 
+                            chunk:{text:response,test:words, usage}
                         })
+                        firePlayerEvent("nav/reset")
+                        FlyMessage.show(`appended to long memory`)
                     }catch(e){
-                        console.error(e)
+                        FlyMessage.error(e.message)
                     }
                 })();
             }}/>

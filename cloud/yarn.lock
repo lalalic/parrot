@@ -496,6 +496,11 @@ expo-constants@~13.2.0, expo-constants@~13.2.4:
     "@expo/config" "~7.0.0"
     uuid "^3.3.2"
 
+expo-document-picker@^11.10.1:
+  version "11.10.1"
+  resolved "https://registry.yarnpkg.com/expo-document-picker/-/expo-document-picker-11.10.1.tgz#03394d77842a2fd7cb0a784a60098ee1ddd1012e"
+  integrity sha512-A1MiLfyXQ+KxanRO5lYxYQy3ryV+25JHe5Ai/BLV+FJU0QXByUF+Y/dn35WVPx5gpdZXC8UJ4ejg5SKSoeconw==
+
 expo-eas-client@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/expo-eas-client/-/expo-eas-client-0.3.0.tgz#21383fc95a52e71e13c7276456db20388fefcf95"
@@ -1085,6 +1090,11 @@ react-native-material-ripple@^0.9.1:
   dependencies:
     prop-types "^15.5.10"
 
+react-native-select-dropdown@^3.3.4:
+  version "3.4.0"
+  resolved "https://registry.yarnpkg.com/react-native-select-dropdown/-/react-native-select-dropdown-3.4.0.tgz#3ce31dc2e5ffa1abf4c47e3297bf0da7144f1ea3"
+  integrity sha512-9xK1z4tYpwMxp3hsM0y1+xfqq/JoMh+l7sBsJ81b2eikFwT6ZbndFBqupQXrsQ1akce9hgC/10Nkzj0LjVjeXQ==
+
 react-native-snap-carousel@^3.9.1:
   version "3.9.1"
   resolved "https://registry.yarnpkg.com/react-native-snap-carousel/-/react-native-snap-carousel-3.9.1.tgz#6fd9bd8839546c2c6043a41d2035afbc6fe0443e"
@@ -1092,15 +1102,17 @@ react-native-snap-carousel@^3.9.1:
     prop-types "^15.6.1"
     react-addons-shallow-compare "15.6.2"
 
-react-native-use-qili@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.0.tgz#daf4264b8bf17101afb08468000bc476de3a9aa5"
-  integrity sha512-v6pELhzLiGDkbTg3Ujc23BcM4+5hYMkiShj8zV1o/WT3L7e37/HDuzQwORfJviBVMshuxavzSDg4loaluJ7Kig==
+react-native-use-qili@^1.1.8:
+  version "1.1.8"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.8.tgz#f7e3e3aed76fa80e55fe983b3172c9ecd151973a"
+  integrity sha512-YuwO+2rOI1WAEWrjLBEEYAKUQyz/Ty4SKoYMbpdsq6xxdSENDHBNE8Ck4aWxNqMlxYBe0GmtlYUkNe0PYY/XUQ==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"
+    expo-document-picker "^11.10.1"
     expo-linking "~3.2.4"
     react-native-snap-carousel "^3.9.1"
+    react-native-uuid "^2.0.1"
   optionalDependencies:
     "@reduxjs/toolkit" "^1.8.6"
     expo-file-system "^15.2.2"
@@ -1111,6 +1123,7 @@ react-native-use-qili@^1.1.0:
     patch-package "^7.0.0"
     react-native-iaphub "^8.4.2"
     react-native-iaphub-ui "^1.2.3"
+    react-native-select-dropdown "^3.3.4"
     react-native-webview "11.23.0"
     react-redux "^8.0.4"
     react-router-native "^6.4.2"
@@ -1118,6 +1131,11 @@ react-native-use-qili@^1.1.0:
     redux-persist "^6.0.0"
     redux-persist-expo-filesystem "^2.0.0"
     subscriptions-transport-ws "^0.11.0"
+
+react-native-uuid@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/react-native-uuid/-/react-native-uuid-2.0.1.tgz#ed4e2dfb1683eddb66967eb5dca140dfe1abddb9"
+  integrity sha512-cptnoIbL53GTCrWlb/+jrDC6tvb7ypIyzbXNJcpR3Vab0mkeaaVd5qnB3f0whXYzS+SMoSQLcUUB0gEWqkPC0g==
 
 react-native-webview@11.23.0:
   version "11.23.0"

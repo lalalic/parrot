@@ -24,6 +24,11 @@ function getTalk(action, talks){
 	}
 }
 
+function getLongMemoryTalk(talk, $talks){
+	const id=`${talk.slug}-longmemory`
+	return $talks[id]||($talks[id]={id, slug:talk.slug, title:`${talk.slug} Long Memory`, data:[]})
+}
+
 function clearPolicyHistory({ talk, policy: policyName }) {
 	const talkPolicy=talk[policyName]
 	if(talkPolicy){
@@ -165,16 +170,23 @@ export default function talks(talks = {}, action) {
 		case "talk/chanllenge/longmemory":
 			return produce(talks, $talks=>{
 				const { talk, policyName } = getTalk(action, $talks)
-				const current=talk[policyName]||(talk[policyName]={})
-				const id=`${talk.slug}-longmemory`
-				const longMemoryTalk=$talks[id]||($talks[id]={id, slug:talk.slug, title:`${talk.slug} Long Memory`, data:[]})
+				const longMemoryTalk=getLongMemoryTalk(talk, $talks)
 				const data=longMemoryTalk.data||(longMemoryTalk.data=[])
 				const Widget=globalThis.Widgets[talk.slug]
-				const currentLeft=current.challenges
+				const current=talk[policyName]||(talk[policyName]={})
+				const currentLeft=(current.challenges||[])
 					.map(cue=>talk.data.find(data=>Widget.cueEqualData?.(cue,data))).filter(a=>!!a)//cue -> data
 					.filter(({word,text:a=word})=>!data.find(({word:$1,text:b=$1})=>a==b))//filter out existing
 				
 				data.splice(data.length, 0, ...(Widget.onLongMemoryData ?  Widget.onLongMemoryData(currentLeft, talk) : currentLeft))
+				clearPolicyHistory({talk, policy:policyName})
+			})
+		case "talk/chanllenge/longmemory/sentence":
+			return produce(talks, $talks=>{
+				const { talk, chunk, policyName} = getTalk(action, $talks)
+				const longMemoryTalk=getLongMemoryTalk(talk, $talks)
+				const data=longMemoryTalk.data||(longMemoryTalk.data=[])
+				data.push(chunk)
 				clearPolicyHistory({talk, policy:policyName})
 			})
 		case "talk/recording":

@@ -9,7 +9,7 @@ function useSound(audio){
         return ()=>sound?.unloadAsync()
     },[])
     return React.useCallback(async ()=>{
-        await sound.setPositionAsync(0)
+        await sound?.setPositionAsync(0)
         await sound?.playAsync()
     },[sound])
 }

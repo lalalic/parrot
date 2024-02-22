@@ -152,10 +152,7 @@ class Media extends React.Component {
     }
 
     shouldComponentUpdate(nextProps, state) {
-        if (this.state !== state) {
-            return true;
-        }
-        return false;
+        return this.props!=nextProps || this.state!=state
     }
 
     onPlaybackStatusUpdate(particular) {
