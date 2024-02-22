@@ -8,6 +8,7 @@ import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
 import { Reset, isAdmin } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
+import Navigator from "react-native-use-qili/components/Navigator"
 
 import Home from "./home"
 import Scheduler from "./plan"
@@ -22,6 +23,7 @@ import Test from "./account/test"
 import { TalkApi } from "./store"
 
 import TaggedTranscript from "./widgets/management/tagged-transcript"
+import YoutubeShare from "./components/YoutubeShare"
 
 export default function MyRouter(){
     const dispatch=useDispatch() 
@@ -35,10 +37,15 @@ export default function MyRouter(){
             }
         })
     },[]) 
+
+    const root=(
+        <>
+            <Navigator navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}/>
+            <YoutubeShare/>
+        </>
+    )
     return (
-        <Router initialEntries={["/home"]} 
-            navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
-            >
+        <Router initialEntries={["/home"]} root={root} >
             <Route path="talks" element={<Talks/>} />
             <Route path="home" element={<Home/>} />
 
@@ -83,8 +90,6 @@ export default function MyRouter(){
             <Route path="plan" element={<Scheduler/>}/>
 
             <Route path="/talk" element={<WithBackButton/>}>
-                <Route path=":slug" element={<Talk/>}/>
-                <Route path=":slug/:policy" element={<Talk/>}/>
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
             </Route>
 

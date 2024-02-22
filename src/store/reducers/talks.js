@@ -194,7 +194,7 @@ export default function talks(talks = {}, action) {
 				checkAction(action, ["record", "policy", "chunk"]);
 				const { talk, policy, policyName, record, chunk } = getTalk(action, $talks);
 				const current = (talk[policyName] || (talk[policyName] = {}));
-				current.history=chunk.time
+				//current.history=chunk.time
 
 				const score = diffScore(chunk.test || chunk.text, record.recognized, record); (() => {
 					if (policy.autoChallenge) {

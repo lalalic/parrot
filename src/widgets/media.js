@@ -10,6 +10,7 @@ import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 import TagManagement from './management/TagManagement';
 import { prompt } from '../components/Prompt';
+import ClearAction from '../components/ClearAction';
 
 class Media extends React.Component {
     /**
@@ -436,23 +437,6 @@ export class TaggedListMedia extends ListMedia{
     title(){
         return this.props.title
     }
-}
-
-function ClearAction({talk, policyName}){
-    const dispatch=useDispatch()
-    const {firePlayerEvent}=React.useContext(PlayerContext)
-    return (
-        <PressableIcon name="delete-sweep" 
-                onLongPress={e => {
-                    dispatch({ type: `talk/clear/policy`, talk})
-                    firePlayerEvent(`nav/reset`)
-                }}
-                onPress={e => {
-                    dispatch({ type: "talk/clear/policy/history", talk, policy:policyName })
-                    firePlayerEvent("nav/reset")
-                }} 
-            />
-    )
 }
 
 function ParentControl({talk, policyName}){

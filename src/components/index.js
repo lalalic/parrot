@@ -266,7 +266,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
                             navigate(`/talk/${slug}/shadowing/${item.id}`)
                         }else{
                             navigate(location.pathname,{replace:true, state:{id:item.id}})
-                            navigate(`/talk/${slug}`)
+                            navigate(`/talk/${slug}/general/${item.id}`)
                         }
                     }
                 }}>
@@ -550,7 +550,7 @@ export const Recognizer=(()=>{
             }
 
             Voice.onSpeechError=e=>{
-                console.warn(e)
+                console.warn(`[Recognizer] - ${e.message}`)
             }
             const audioUri=uri?.replace("file://","")
             ;(async()=>{
@@ -666,8 +666,14 @@ export function KeyboardAvoidingView(props){
 
 export function useTalkQuery({api, slug, id, policyName }) {
     const Widget = globalThis.Widgets[slug]
+    const [service, querySlug]=(()=>{
+        if(slug=="youtube")
+            return [TalkApi, slug]
+
+        return [api=="Qili"||!!Widget ? Qili : TalkApi, !!Widget ? "Widget" : slug]
+    })();
     
-    const { data: remote = {}, ...status } = (api=="Qili"||!!Widget ? Qili : TalkApi).useTalkQuery({slug:!!Widget ? "Widget" : slug, id });
+    const { data: remote = {}, ...status } = service.useTalkQuery({slug:querySlug, id });
     const local = useSelector(state => state.talks[id||remote?.id]);
     const policy = useSelector(state => selectPolicy({state, policyName, id}));
 

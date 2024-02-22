@@ -98,6 +98,69 @@ async function fetchTedTalk({slug},{lang, mylang}){
 	return talk
 }
 
+async function fetchYoutubeTalk({id},{lang,mylang}){
+	debugger;
+	/*
+	if(state.talks[id]){
+		return {id,slug:"youtube"}
+	}
+	*/
+	const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
+	const format = (formats => {
+		/*
+		const audios=formats.filter(a=>a.hasAudio && !a.hasVideo && a.container=="mp4" && a.contentLength)
+		if(audios.length){
+			const i=audios.reduce((k,a,I)=>{
+				return parseInt(a.contentLength)<parseInt(audios[k].contentLength) ? I : k
+			},0)
+			return audios[i]
+		}
+		*/
+		return ytdl.chooseFormat(formats, {
+			filter: a => a.hasAudio && a.container == "mp4",
+			quality: "lowestvideo",
+		});
+	})(info.formats);
+
+	const { title, keywords: tags, lengthSeconds, thumbnails: [{ url: thumb }], author: { name: author }, } = info.videoDetails;
+
+	const talk = {
+		title, id, slug: `youtube`, source: "youtube", thumb, tags, author,
+		video: format.url,
+		duration: parseInt(lengthSeconds) * 1000,
+	};
+
+	api.dispatch({ type: "talk/set", talk });
+
+	const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
+	mpegKit.generateAudio({ source: format.url, target: file })
+		.then(() => {
+			//api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
+		})
+		.catch(e => {
+			console.error(e);
+			api.dispatch({ type: "talk/clear", id });
+		});
+
+	const transcripts = await YoutubeTranscript.fetchTranscript(id, { lang });
+	const myTranscripts = await YoutubeTranscript.fetchTranscript(id, { lang: mylang });
+	if (myTranscripts && transcripts.length == myTranscripts.length) {
+		transcripts.forEach((cue, i) => cue.my = myTranscripts[i].text);
+	}
+	if (transcripts) {
+		transcripts.forEach(cue => {
+			cue.time = cue.offset;
+			delete cue.offset;
+			cue.end = cue.time + cue.duration;
+			delete cue.duration;
+		});
+	}
+	talk.languages = { mine: { transcript: [{ cues: transcripts }] } };
+	api.dispatch({ type: "talk/set", talk });
+
+	return { id, slug: "youtube" };
+}
+
 export const Ted = Object.assign(createApi({
 	reducerPath: "ted",
 	endpoints: builder => ({

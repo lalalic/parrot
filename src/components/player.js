@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {PureComponent} from 'react';
 import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
@@ -38,7 +38,7 @@ export default function Player({
     challenging,
     
     toggleChallengeChunk,getRecordChunkUri,  
-    onPolicyChange, onRecordChunk,
+    onPolicyChange, onRecordChunk, onQuit,
 
     controls:_controls,
     transcript:_transcript,
@@ -117,7 +117,7 @@ export default function Player({
 
     const stopOnMediaStatus=React.useRef(false)
     const setMediaStatusAsync=React.useCallback(async (status, callback)=>{
-        debug && console.debug(status)
+        debug && console.debug({setMediaStatusAsync:true,...status})
         stopOnMediaStatus.current=true
         const done = await video.current?.setStatusAsync(status)
         stopOnMediaStatus.current=false
@@ -327,15 +327,12 @@ export default function Player({
         }
     },[policy,chunks, challenges, challenging])
     
-    const positionMillisHistory=useSelector(state=>state.talks[id]?.[policyName]?.history??0)
-
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
 
     const onRecord=React.useCallback(record=>{
-            const {i, chunk=chunks[i]}=status
-            console.assert(!!chunk)
-            const isLastChunk = i>=chunks.length-1
-            onRecordChunk?.({chunk, record, isLastChunk})
+        const {i, chunk=chunks[i]}=status
+        const isLastChunk = i>=chunks.length-1
+        onRecordChunk?.({chunk, record, isLastChunk})
     },[status.i,chunks])
     
     const [showSubtitle, setShowSubtitle]=React.useState(true)
@@ -355,7 +352,7 @@ export default function Player({
                 },
                 rate:policy.rate, 
                 style:{flex:1, minHeight:150},
-                positionMillis: positionMillisHistory,
+                positionMillis: useSelector(state=>state.talks[id]?.[policyName]?.history??0),
                 
                 policy, whitespacing: status.whitespacing,
             })}
@@ -478,8 +475,20 @@ export default function Player({
             {children}
         </Context.Provider>
         }
+        <PersistentHistory onQuit={onQuit} positionMillis={chunks[status.i]?.time}/>
         </>
     )
+}
+
+class PersistentHistory extends PureComponent{
+    componentWillUnmount(){
+        const {onQuit, positionMillis}=this.props
+        onQuit({time:positionMillis})
+    }
+
+    render(){
+        return null
+    }
 }
 
 

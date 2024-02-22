@@ -5,6 +5,8 @@ import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
 
 import { PolicyChoice, html } from '../components';
+import ClearAction from '../components/ClearAction';
+
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { Subtitles } from "../components/player"
 import mpegKit from "../experiment/mpeg"
@@ -21,17 +23,14 @@ export default class extends React.Component{
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
                 excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
-                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}`, { replace: true })}>
+                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
 
                 {hasTranscript && <PressableIcon name="print"
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
                 />}
 
-                {talk.hasLocal && <PressableIcon name="delete-sweep" 
-                    onLongPress={e => dispatch({ type: "talk/clear", id: talk.id })}
-                    onPress={e => dispatch({ type: "talk/clear/history", id: talk.id })} 
-                />}
+                {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
 
                 {hasTranscript&&<PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}/>}
@@ -88,7 +87,7 @@ export default class extends React.Component{
         }
     }
 
-    static Video=React.forwardRef((props,ref)=>{
+    static Video=React.forwardRef(({policy, whitespacing, ...props},ref)=>{
         return <ExpoVideo 
             shouldCorrectPitch={true}
             pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
