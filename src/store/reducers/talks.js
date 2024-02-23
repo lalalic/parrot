@@ -390,4 +390,10 @@ export const listeners=[
 			}
 		}
 	},
+	{
+		type:"talk/youtube/queue",
+		async effect(action, api){
+			
+		}
+	}
 ]

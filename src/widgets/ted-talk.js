@@ -16,7 +16,7 @@ import { Qili, Ted } from "../store";
 const l10n=globalThis.l10n
 
 
-export default class extends React.Component{
+export default class TedTalk extends React.Component{
     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
         const hasTranscript = !!talk.languages?.mine?.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
@@ -62,28 +62,6 @@ export default class extends React.Component{
                 useNativeControls={false}
                 style={{ flex: 1 }} />,
             transcript: talk.languages?.mine?.transcript,
-            onLongtermChallenge: async chunk => {
-                const localUri=`${FileSystem.documentDirectory}${talk.id}/${chunk.time}.mp4`
-
-                await mpeg.sliceAudio({
-                    source:talk.video,
-                    target: localUri,
-                    start:chunk.time/1000, duration:(chunk.end-chunk.time)/1000
-                })
-
-                dispatch({ type: "talk/challenge/remove", talk, policy: policyName, chunk });
-                dispatch({
-                    type: "talk/challenge", policy: policyName,
-                    chunk: { ...chunk, audio: localUri, time:undefined, end:undefined },
-                    talk: {
-                        slug: "long_term_challenge",
-                        title: "challenges from talks",
-                        thumb: require("../../assets/challenge-book.jpeg"),
-                        id: "challenge",
-                        favorited: true,
-                    }
-                })
-            }
         }
     }
 

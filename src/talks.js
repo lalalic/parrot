@@ -1,5 +1,5 @@
 import React from "react"
-import { FlatList, View, TextInput} from 'react-native';
+import { FlatList, View, TextInput, Switch} from 'react-native';
 import { ColorScheme, TitleStyle } from "react-native-use-qili/components/default-style";
 import { TalkThumb } from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
@@ -18,7 +18,7 @@ export default function Talks(props){
     const [search, setSearch]=React.useReducer(defaultMemoize(
         (last, next)=>({...last, ...next}),
         shallowEqual,
-    ),{ q:"",people:false, peopleName:"", ...useSelector(state=>state.history.search), page:1})
+    ),{ q:"",people:false, peopleName:"",local:true, ...useSelector(state=>state.history.search), page:1})
     
     const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
 
@@ -57,13 +57,25 @@ export default function Talks(props){
                     }
                 }}
                 />}
-                {!search.people && <TextInput placeholder="Search Talks" defaultValue={search.q} 
-                        clearButtonMode="while-editing"
-                        keyboardType="web-search"
-                        onEndEditing={({nativeEvent:{text:q}})=>{
-                            setSearch({ q, page:1, peopleName:""})
-                        }}
-                        style={searchTextStyle}/>}
+                {!search.people && (
+                    <>
+                        <TextInput 
+                            placeholder="Search Talks" 
+                            defaultValue={search.q} 
+                            clearButtonMode="while-editing"
+                            keyboardType="web-search"
+                            onEndEditing={({nativeEvent:{text:q}})=>{
+                                setSearch({ q, page:1, peopleName:""})
+                            }}
+                            style={searchTextStyle}/>
+                        
+                        <Switch value={!!search.local}
+                            style={{position:"absolute", right:5, top:10, transform:[{scale:0.5}]}}
+                            onValueChange={e=>setSearch({local:!search.local})}
+                            />
+                    </>
+                )}
+
                 {search.people && <PeopleSearch style={searchTextStyle}
                         value={search.q}
                         name={search.peopleName}
@@ -73,7 +85,6 @@ export default function Talks(props){
 }
 
 const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
-    const color=React.useContext(ColorScheme)
     const [search, setSearch]=React.useState({q:value, name})
     const {data:people=[]}=TalkApi.usePeopleQuery({q:search.q.trim()})
     return (
@@ -87,7 +98,7 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
                         flex:1, height:"100%", width:"100%"}}
                     search={true}
                     defaultValue={search.name}
-                    onChangeSearchInputText={q=>MusetSearch({q})}
+                    onChangeSearchInputText={q=>setSearch({q})}
                     data={people.map(({name})=>name)}
                     onSelect={(value,i)=>{
                         setSearch({name:people[i].name, q: value})
@@ -104,6 +115,10 @@ export function useTalksQuery(search){
     const select=React.useRef(VOID)
     React.useEffect(()=>{
         try{
+            if(search.local){
+                return 
+            }
+
             if(!search.q){
                 const sub=dispatch(TalkApi.endpoints.today.initiate({day:new Date().asDateString()}))
                 return ()=>sub.unsubscribe()
@@ -118,7 +133,15 @@ export function useTalksQuery(search){
             return ()=>subs.forEach(a=>a.unsubscribe())
         }finally{
             select.current=defaultMemoize(
-                state=>{    
+                state=>{   
+                    if(search.local){
+                        const widgets=['vocabulary','picturebook','dialog','chat','audiobook']
+                        const videoTalks=Object.values(state.talks).filter(talk=>{
+                            return widgets.indexOf(talk.slug)==-1
+                        })
+                        return {data: {talks:videoTalks}, isLoading:false}
+                    } 
+
                     if(!search.q){
                         return TalkApi.endpoints.today.select({day:new Date().asDateString()})(state)
                     }

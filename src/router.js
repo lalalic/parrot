@@ -45,7 +45,7 @@ export default function MyRouter(){
         </>
     )
     return (
-        <Router initialEntries={["/home"]} root={root} >
+        <Router initialEntries={["/home", "/talk/youtube/general/tMiZT-0Efag"]} root={root} >
             <Route path="talks" element={<Talks/>} />
             <Route path="home" element={<Home/>} />
 

@@ -7276,12 +7276,6 @@ react-native-webview@11.23.0:
     escape-string-regexp "2.0.0"
     invariant "2.2.4"
 
-react-native-youtube-iframe@^2.2.2:
-  version "2.2.2"
-  resolved "https://registry.yarnpkg.com/react-native-youtube-iframe/-/react-native-youtube-iframe-2.2.2.tgz#ade1a2e4ead3d539fbb80463f45b59ff1b510b55"
-  dependencies:
-    events "^3.2.0"
-
 react-native-ytdl@^4.8.3:
   version "4.8.3"
   resolved "https://registry.yarnpkg.com/react-native-ytdl/-/react-native-ytdl-4.8.3.tgz#e871c0423468997d10ffa0ba1f2b8fd577a94be7"

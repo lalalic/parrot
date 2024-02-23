@@ -6,6 +6,7 @@ import cheerio from "cheerio";
 import ytdl from "react-native-ytdl";
 import { YoutubeTranscript } from "../experiment/youtube-transcript";
 import mpegKit from "../experiment/mpeg"
+import FlyMessage from "react-native-use-qili/components/FlyMessage"
 
 const TedHeader={
 	"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
@@ -21,7 +22,8 @@ const widgetTalks_queryFn=async (variables,api)=>{
 }
 
 
-async function fetchTedTalk({slug},{lang, mylang}){
+async function fetchTedTalk({slug},api){
+	const {my:{lang, mylang}}=api.getState()
 	const res=await fetch("https://www.ted.com/graphql",{
 		method:"POST",
 		headers:{
@@ -98,24 +100,12 @@ async function fetchTedTalk({slug},{lang, mylang}){
 	return talk
 }
 
-async function fetchYoutubeTalk({id},{lang,mylang}){
-	debugger;
-	/*
-	if(state.talks[id]){
-		return {id,slug:"youtube"}
-	}
-	*/
+async function fetchYoutubeTalk({id}, api){
+	const {my:{lang, mylang}}=api.getState()
+
+	FlyMessage.show("Getting video information...")
 	const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
 	const format = (formats => {
-		/*
-		const audios=formats.filter(a=>a.hasAudio && !a.hasVideo && a.container=="mp4" && a.contentLength)
-		if(audios.length){
-			const i=audios.reduce((k,a,I)=>{
-				return parseInt(a.contentLength)<parseInt(audios[k].contentLength) ? I : k
-			},0)
-			return audios[i]
-		}
-		*/
 		return ytdl.chooseFormat(formats, {
 			filter: a => a.hasAudio && a.container == "mp4",
 			quality: "lowestvideo",
@@ -125,40 +115,44 @@ async function fetchYoutubeTalk({id},{lang,mylang}){
 	const { title, keywords: tags, lengthSeconds, thumbnails: [{ url: thumb }], author: { name: author }, } = info.videoDetails;
 
 	const talk = {
-		title, id, slug: `youtube`, source: "youtube", thumb, tags, author,
+		id, slug: `youtube`, title, thumb, 
 		video: format.url,
 		duration: parseInt(lengthSeconds) * 1000,
 	};
 
 	api.dispatch({ type: "talk/set", talk });
 
+	api.dispatch({type:"talk/youtube/queue", id})
+
 	const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
 	mpegKit.generateAudio({ source: format.url, target: file })
 		.then(() => {
-			//api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
+			api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
+			FlyMessage.show(`Downloaded audio`)
 		})
 		.catch(e => {
-			console.error(e);
+			FlyMessage.error(`download video error, cancel it!`)
 			api.dispatch({ type: "talk/clear", id });
 		});
 
-	const transcripts = await YoutubeTranscript.fetchTranscript(id, { lang });
-	const myTranscripts = await YoutubeTranscript.fetchTranscript(id, { lang: mylang });
-	if (myTranscripts && transcripts.length == myTranscripts.length) {
-		transcripts.forEach((cue, i) => cue.my = myTranscripts[i].text);
+	try{
+		FlyMessage.show(`Download youtube video transcript...`)
+		const transcripts = await YoutubeTranscript.fetchTranscript(id, { lang });
+		if (transcripts) {
+			transcripts.forEach(cue => {
+				cue.time = cue.offset;
+				delete cue.offset;
+				cue.end = cue.time + cue.duration;
+				delete cue.duration;
+			});
+		}
+		talk.languages = { mine: { transcript: [{ cues: transcripts }] } };
+		api.dispatch({ type: "talk/set", talk });
+	}catch(e){
+		FlyMessage.error(`Download transcript error. You can delete it, or keep it. `)
 	}
-	if (transcripts) {
-		transcripts.forEach(cue => {
-			cue.time = cue.offset;
-			delete cue.offset;
-			cue.end = cue.time + cue.duration;
-			delete cue.duration;
-		});
-	}
-	talk.languages = { mine: { transcript: [{ cues: transcripts }] } };
-	api.dispatch({ type: "talk/set", talk });
 
-	return { id, slug: "youtube" };
+	return talk
 }
 
 export const Ted = Object.assign(createApi({
@@ -167,74 +161,14 @@ export const Ted = Object.assign(createApi({
 		talk: builder.query({
 			queryFn: async ({ slug, id }, api) => {
 				const state = api.getState();
+				if(id && state.talks[id]){
+					return {data:state.talks[id]}
+				}
 
 				const talk = await (async () => {
-					const Widget = globalThis.Widgets[slug];
-
-					const { lang = "en", mylang = "zh-cn" } = state.my;
-
 					if (slug == "youtube") {
-						debugger;
-						/*
-						if(state.talks[id]){
-							return {id,slug:"youtube"}
-						}
-						*/
-						const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
-						const format = (formats => {
-							/*
-							const audios=formats.filter(a=>a.hasAudio && !a.hasVideo && a.container=="mp4" && a.contentLength)
-							if(audios.length){
-								const i=audios.reduce((k,a,I)=>{
-									return parseInt(a.contentLength)<parseInt(audios[k].contentLength) ? I : k
-								},0)
-								return audios[i]
-							}
-							*/
-							return ytdl.chooseFormat(formats, {
-								filter: a => a.hasAudio && a.container == "mp4",
-								quality: "lowestvideo",
-							});
-						})(info.formats);
-
-						const { title, keywords: tags, lengthSeconds, thumbnails: [{ url: thumb }], author: { name: author }, } = info.videoDetails;
-
-						const talk = {
-							title, id, slug: `youtube`, source: "youtube", thumb, tags, author,
-							video: format.url,
-							duration: parseInt(lengthSeconds) * 1000,
-						};
-
-						api.dispatch({ type: "talk/set", talk });
-
-						const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
-						mpegKit.generateAudio({ source: format.url, target: file })
-							.then(() => {
-								//api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
-							})
-							.catch(e => {
-								console.error(e);
-								api.dispatch({ type: "talk/clear", id });
-							});
-
-						const transcripts = await YoutubeTranscript.fetchTranscript(id, { lang });
-						const myTranscripts = await YoutubeTranscript.fetchTranscript(id, { lang: mylang });
-						if (myTranscripts && transcripts.length == myTranscripts.length) {
-							transcripts.forEach((cue, i) => cue.my = myTranscripts[i].text);
-						}
-						if (transcripts) {
-							transcripts.forEach(cue => {
-								cue.time = cue.offset;
-								delete cue.offset;
-								cue.end = cue.time + cue.duration;
-								delete cue.duration;
-							});
-						}
-						talk.languages = { mine: { transcript: [{ cues: transcripts }] } };
-						api.dispatch({ type: "talk/set", talk });
-
-						return { id, slug: "youtube" };
-					} else if (Widget) {
+						return await fetchYoutubeTalk({id},api)
+					} else if (globalThis.Widgets[slug]) {
 						if (id && !state.talks[id]) {
 							const { talk } = await Qili.fetch({
 								id: "talk",
@@ -246,11 +180,10 @@ export const Ted = Object.assign(createApi({
 							return talk;
 						}
 					} else {
-						return await fetchTedTalk({ slug }, { lang, mylang });
+						return await fetchTedTalk({ slug }, api);
 					}
 				})();
 
-				//talk && api.dispatch({type:"talk/set", talk})
 				return { data: talk };
 			},
 		}),
