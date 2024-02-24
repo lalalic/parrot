@@ -33,7 +33,9 @@ export default class TedTalk extends React.Component{
                 {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
 
                 {hasTranscript&&<PressableIcon name={favorited ? "favorite" : "favorite-outline"}
-                    onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}/>}
+                    onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}
+                    onLongPress={()=> dispatch({type:"talk/remote/favorited", talk})}
+                    />}
             </PolicyChoice>
         )
     }

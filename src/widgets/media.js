@@ -29,7 +29,9 @@ class Media extends React.Component {
                 {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
                 
                 <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
-                    onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}/>
+                    onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}
+                    onLongPress={()=> dispatch({type:"talk/remote/favorited", talk})}
+                    />
 
                 
                 {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}

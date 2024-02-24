@@ -24,6 +24,8 @@ Features
 > Settings [1.0]
     > Policy: Shadowing, Dictating, Retelling
     > Language: En - Zh
+> PlanPlayer 
+
 
 command
 =======
@@ -42,12 +44,7 @@ design
 
 todo
 ====
-> remove reanimated 10%
-> use ai.qili2 to provide service
-    > create random image
-    > generate vocabulary
-    > generate dialog
-    > generate idioms
+> manage talks on qili
 
 deploy
 =====

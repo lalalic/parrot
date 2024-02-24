@@ -1,7 +1,6 @@
 import * as FileSystem from "expo-file-system";
 import { produce } from "immer";
 import { isAdmin } from "react-native-use-qili/store";
-import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 import { diffScore } from "../../experiment/diff";
 import Policy from "../policy";
@@ -344,7 +343,7 @@ export const listeners=[
 		}
 	},
 	{
-		type: "talk/toggle/favorited",
+		type: "talk/remote/favorited",
 		async effect(action, { getState, dispatch }) {
 			const state = getState();
 			const { id, favorited, ...talk } = state.talks[action.talk.id];
@@ -374,20 +373,20 @@ export const listeners=[
 				if (!lastTalkPolicy.challenging && !talkPolicy.challenging) { //pass all at first run
 					//@Todo: play
 					globalThis.sounds.celebrate()
-					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]);
+					api.dispatch({ type: "message/info", message: l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]});
 					api.dispatch({type:'today/plan/check', id, policy, complete:true})
 				} else if (!lastTalkPolicy.challenging && talkPolicy.challenging) { //start
-					FlyMessage.show(l10n[`${talkPolicy.challenges.length} left`]);
+					api.dispatch({ type: "message/info", message: l10n[`${talkPolicy.challenges.length} left`]});
 				} else if (lastTalkPolicy.challenging && !talkPolicy.challenging) { //complete
 					//@Todo: play
 					globalThis.sounds.celebrate()
-					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]);
+					api.dispatch({ type: "message/info", message: l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]});
 					api.dispatch({type:'today/plan/check', id, policy, complete:true})
 
 				} else { //in progress
 					const passed=lastTalkPolicy.challenges.length - talkPolicy.challenges.length
 					if(passed){
-						FlyMessage.show(l10n[`${passed} more passed`]);
+						api.dispatch({ type: "message/info", message: l10n[`${passed} more passed`]});
 					}
 					api.dispatch({type:'today/plan/check', id, policy})
 				}
