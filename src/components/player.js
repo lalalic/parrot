@@ -51,6 +51,7 @@ export default function Player({
     const nextRound=React.useRef()
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
+    console.log(`challenges[0]: ${challenges?.[0]?.text}`)
 
     const autoHideActions=React.useRef()
     const autoHideProgress=React.useRef()
@@ -354,7 +355,7 @@ export default function Player({
                 style:{flex:1, minHeight:150},
                 positionMillis: useSelector(state=>state.talks[id]?.[policyName]?.history??0),
                 
-                policy, whitespacing: status.whitespacing,
+                policy, whitespacing: status.whitespacing, chunks
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>

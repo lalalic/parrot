@@ -279,14 +279,14 @@ export class ListMedia extends Media{
         return !!["text","word","translated","ask"].find(k=>cue.text==data[k])
     }
 
+    get cues(){
+        return this.props.chunks||[]
+    }
+
     reset(){
         super.reset()
-        if(this.cues){
-            this.setState({i:-1, cues:this.cues=[]})
-        }else{
-            this.state.i=-1
-            this.state.cues=this.cues=[]
-        }
+        this.state.i=-1
+        this.setState({i:-1})
     }
 
     measureTime(a){
@@ -294,7 +294,7 @@ export class ListMedia extends Media{
     }
 
     /**
-     * create this.cues=[{time,end,text}]
+     * create cues=[{time,end,text}]
      */
     createTranscript(){
         
@@ -302,23 +302,20 @@ export class ListMedia extends Media{
 
     doCreateTranscript(){
         const cues=this.createTranscript(...arguments)
-        if(cues){
-            this.cues.splice(0,this.cues.length,...cues)
-        }
-        if(this.cues.length>0){
+        if(cues && cues.length>0){
             const delta=3*this.props.progressUpdateIntervalMillis
-            if(!this.cues[this.cues.length-1].end){
-                this.cues.forEach((a,i)=>{
-                    a=this.cues[i]={...a}
-                    a.time=(i>0 ? this.cues[i-1].end : 0)+delta
+            if(!cues[cues.length-1].end){
+                cues.forEach((a,i)=>{
+                    a=cues[i]={...a}
+                    a.time=(i>0 ? cues[i-1].end : 0)+delta
                     a.end=a.time+this.measureTime(a)
                 })
             }
-            this.status.durationMillis=this.cues[this.cues.length-1].end+delta
+            this.status.durationMillis=cues[cues.length-1].end+delta
         }
         this.status.isLoaded=true
         this.onPlaybackStatusUpdate({
-            transcript:[{cues:this.cues}]
+            transcript:[{cues}]
         })
     }
 

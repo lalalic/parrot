@@ -259,6 +259,16 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
     
     const [plan, setPlan]=React.useState(props.plan)
     const i=plan.start?.getHalfHour()||0
+    const store=useStore()
+    const widgetPolicyExcludes=React.useMemo(()=>{
+        if(!plan.id)
+            return []
+        const talk=store.getState().talks[plan.id]
+        const Widget=globalThis.Widgets[talk.slug]
+        if(!Widget)
+            return []
+        return Widget.defaultProps?.exludePolicy||[]
+    },[plan.id])
     return (
         <Modal  animationType="fade" transparent={true} {...props}>
             <View style={[{padding:4, overflow:"hidden", position:"absolute", top:200, height:400, flex:1, width:"100%"}]}>
@@ -276,12 +286,6 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
                             selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
-                    <PolicyChoice style={rowStyle} 
-                        color="white"
-                        value={plan.policy} 
-                        excludes={["general"]}
-                        onValueChange={policy=>setPlan({...plan, policy})}
-                        />
                     <TalkSelector style={[rowStyle, {height:130, topMargin:10, alignItems:undefined}]}>
                         <TalkSelectedIndicator 
                             selected={plan.id} 
@@ -289,6 +293,14 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
                             backgroundColor={color.backgroundColor}
                             setSelected={id=>setPlan({...plan, id: id==plan.id ? null : id})}/>
                     </TalkSelector>
+
+                    <PolicyChoice style={rowStyle} 
+                        color="white"
+                        value={plan.policy} 
+                        excludes={["general",...widgetPolicyExcludes]}
+                        onValueChange={policy=>setPlan({...plan, policy})}
+                        />
+                        
                     <View style={[rowStyle, {flexDirection:"row", justifyContent:"space-around"}]}>
                         <PressableIcon name="add-task" size={32} color="white"
                             onPress={e=>dispatch({type:"plan/save", plan})}/>
