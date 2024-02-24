@@ -4,12 +4,12 @@ import { useSelector } from "react-redux"
 
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import Login from "react-native-use-qili/components/Login"
+import { Prompt } from "react-native-use-qili/components/Prompt"
 import App from "react-native-use-qili/App"
 
 import Router from "./router"
 import Permissions from "./permissions"
 import PreloadSound from "./components/preload-sound"
-import { Prompt } from "./components/Prompt"
 import { listeners, middlewares, reducers } from "./store"
 const l10n=globalThis.l10n
 
@@ -21,13 +21,13 @@ export default function Parrot(){
                     <Router/>
                 </MotherLang>
             </Login.Required>
-            <FlyMessage/>
             <Permissions/>
             <PreloadSound 
                 ding={require("../assets/ding.mp3")} 
                 celebrate={require("../assets/celebrate.mp3")}
                 pop={require("../assets/pop.mp3")}/>
             <MotherLang/>
+            <FlyMessage/>
             <Prompt/>
         </App>
     )

@@ -12,6 +12,7 @@ import plan from "./reducers/plan"
 import talks, {listeners as TalksListeners} from "./reducers/talks"
 import message from "./reducers/message"
 
+
 const l10n=globalThis.l10n
 
 export const reducers={
@@ -136,20 +137,6 @@ export const listeners=[
 ]
 
 export const middlewares=[ Qili.middleware, Ted.middleware,]
-
-export function selectPlansByDay(state,day){
-	const events = state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()];
-	if (!events)
-		return [];
-	return Object.values(events).filter(a=>!!a).map(plan => {
-		return {
-			start: plan.start.asDateTimeString(),
-			end: new Date(plan.start.getTime() + plan.coures * 30 * 60 * 1000).asDateTimeString(),
-			plan,
-			talk:state.talks[plan.id]
-		};
-	}).sort((a,b)=>a.plan.start.getTime()-b.plan.start.getTime());
-}
 
 const extract=(o,proto)=>!o ? o: Object.keys(o).reduce((a,k)=>(k in proto && (a[k]=o[k]), a),{})
 

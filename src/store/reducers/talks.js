@@ -5,6 +5,7 @@ import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 import { diffScore } from "../../experiment/diff";
 import Policy from "../policy";
+import { selectPlansByDay } from "./plan"
 const l10n=globalThis.l10n
 
 function checkAction(action, keys) {
@@ -374,26 +375,62 @@ export const listeners=[
 					//@Todo: play
 					globalThis.sounds.celebrate()
 					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]);
+					api.dispatch({type:'today/plan/check', id, policy, complete:true})
 				} else if (!lastTalkPolicy.challenging && talkPolicy.challenging) { //start
 					FlyMessage.show(l10n[`${talkPolicy.challenges.length} left`]);
 				} else if (lastTalkPolicy.challenging && !talkPolicy.challenging) { //complete
 					//@Todo: play
 					globalThis.sounds.celebrate()
 					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]);
+					api.dispatch({type:'today/plan/check', id, policy, complete:true})
+
 				} else { //in progress
 					const passed=lastTalkPolicy.challenges.length - talkPolicy.challenges.length
 					if(passed){
 						FlyMessage.show(l10n[`${passed} more passed`]);
 					}
+					api.dispatch({type:'today/plan/check', id, policy})
 				}
 			} catch (e) {
 			}
 		}
 	},
 	{
-		type:"talk/youtube/queue",
-		async effect(action, api){
-			
+		type:"today/plan/check",
+		async effect({id, policy, complete, togglePlaying, challenging}, api){
+			const state=api.getState()
+			let {plan:{today:original}, talks}=state
+			const changed=produce(original||{}, today=>{
+				if(!today?.day || new Date().asDateString()!=today.day){
+					//create today plan 
+					const day=new Date()
+					today.tasks=selectPlansByDay(state, day),
+					today.day=day.asDateString()
+				}
+	
+				if(togglePlaying===true){
+					today.playing=today.playing ? false : Date.now()
+				}
+	
+				if(id && policy){
+					const policyTalk=talks[id][policy]
+					const plan=today.find(a=>a.plan.id==id && a.plan.policy==policy && !a.complete)
+	
+					if(plan){
+						if(complete){
+							plan.complete=true
+						}else{
+							// if(policyTalk.challenging>5){
+							// 	plan.complete=policyTalk.challenging
+							// }
+						}
+					}
+				}
+			})
+
+			if(changed!=original){
+				api.dispatch({type:"today/plan", today:changed})
+			}
 		}
 	}
 ]

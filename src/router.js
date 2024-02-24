@@ -24,6 +24,7 @@ import { TalkApi } from "./store"
 
 import TaggedTranscript from "./widgets/management/tagged-transcript"
 import YoutubeShare from "./components/YoutubeShare"
+import PlanPlayer from "./components/PlanPlayer"
 
 export default function MyRouter(){
     const dispatch=useDispatch() 
@@ -37,15 +38,10 @@ export default function MyRouter(){
             }
         })
     },[]) 
-
-    const root=(
-        <>
-            <Navigator navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}/>
-            <YoutubeShare/>
-        </>
-    )
     return (
-        <Router initialEntries={["/home", "/talk/youtube/general/tMiZT-0Efag"]} root={root} >
+        <Router initialEntries={["/home"]}
+            navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
+            >
             <Route path="talks" element={<Talks/>} />
             <Route path="home" element={<Home/>} />
 
@@ -91,6 +87,7 @@ export default function MyRouter(){
 
             <Route path="/talk" element={<WithBackButton/>}>
                 <Route path=":slug/:policy/:id" element={<Talk/>}/>
+                <Route path=":slug/:policy/:id/autoplay" element={<Talk autoplay={true}/>}/>
             </Route>
 
             <Route path="/widget" element={<WithBackButton/>}>
@@ -111,6 +108,8 @@ export default function MyRouter(){
 
                 <Route path=":slug/:id" element={<TaggedTranscript/>}/>
             </Route>
+            <YoutubeShare/>
+            <PlanPlayer style={{position:"absolute", top:350, right:10, zIndex:999}}/>
         </Router>
     )
 }

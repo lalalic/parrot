@@ -1,4 +1,5 @@
 import { produce } from "immer";
+import { defaultMemoize } from "reselect";
 import * as Calendar from "../../experiment/calendar";
 
 function checkAction(action, keys) {
@@ -16,18 +17,16 @@ export default function plan(plans = {}, action) {
 		case "lang/REHYDRATE":
 			return action.payload.plan;
 		case "persist/REHYDRATE": {
-			const { plan: { calendar, ...lastPlans } = {} } = action.payload || {};
+			const { plan = {} } = action.payload || {};
 			return {
 				...plans,
-				calendar,
-				...(function deep(a) {
-					if (a.start) {
-						a.start = new Date(a.start);
-					} else {
-						Object.values(a).forEach(deep);
+				...JSON.parse(JSON.stringify(plan), (key, value) => {
+					switch (key) {
+						case "start":
+							return new Date(value)
 					}
-					return a;
-				})(lastPlans)
+					return value;
+				})
 			};
 		}
 		case "plan/calendar":
@@ -93,7 +92,10 @@ export default function plan(plans = {}, action) {
 			Calendar.createEvents(store, plan, plans[y]?.[w]);
 			return immutableSet(plans, [y, w], plan);
 		}
-
+		case "today/plan":
+			return produce(plans, $plans=>{
+				$plans.today=action.today
+			})
 	}
 	return plans;
 }
@@ -111,4 +113,20 @@ function immutableSet(o, keys, value, returnEmpty = true) {
 	const first = keys.shift();
 	const firstValue = immutableSet({ ...o[first] }, keys, value, false);
 	return firstValue === null ? nullClear(o, first, returnEmpty) : { ...o, [first]: firstValue };
+}
+
+const dayEvents=defaultMemoize(events=>{
+	if (!events)
+		return [];
+	return Object.values(events).filter(a=>!!a).map(plan => {
+		return {
+			start: plan.start.asDateTimeString(),
+			end: new Date(plan.start.getTime() + plan.coures * 30 * 60 * 1000).asDateTimeString(),
+			plan,
+		};
+	}).sort((a,b)=>a.plan.start.getTime()-b.plan.start.getTime());
+})
+
+export function selectPlansByDay(state,day){
+	return dayEvents(state.plan?.[day.getFullYear()]?.[day.getWeek()]?.[day.getDay()])
 }

@@ -18,7 +18,7 @@ export default function Talks(props){
     const [search, setSearch]=React.useReducer(defaultMemoize(
         (last, next)=>({...last, ...next}),
         shallowEqual,
-    ),{ q:"",people:false, peopleName:"",local:true, ...useSelector(state=>state.history.search), page:1})
+    ),{ q:"",people:false, peopleName:"",local:false, ...useSelector(state=>state.history.search), page:1})
     
     const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
 

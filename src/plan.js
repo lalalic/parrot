@@ -1,19 +1,20 @@
 import React from "react";
 import { Text, View, Modal, Pressable, ScrollView} from "react-native";
 import { Timeline, CalendarProvider,  ExpandableCalendar, LocaleConfig} from "react-native-calendars";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import Select from "react-native-select-dropdown"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from "react-native-use-qili/components/default-style";
-import { selectPlansByDay } from "./store";
+import { selectPlansByDay } from "./store/reducers/plan";
 import { useNavigate, useLocation } from "react-router-native";
 import produce from "immer";
 const l10n=globalThis.l10n
 
 export default function Scheduler() {
+    const store=useStore()
     const color=React.useContext(ColorScheme)
     const remoteDispatch=useDispatch()
     const location=useLocation()
@@ -92,7 +93,8 @@ export default function Scheduler() {
                 scrollToFirst={true}
                 showNowIndicator={true}
                 timelineLeftInset={72}
-                renderEvent={({plan,talk, width})=>{
+                renderEvent={({plan,width})=>{
+                    const talk=store.getState().talks[plan.id]
                     const uri=`/talk/${talk.slug}${plan.policy ? `/${plan.policy}` : ""}`
                     return (
                         <Pressable style={{width, flex:1, flexDirection:"row"}} 

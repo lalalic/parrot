@@ -9,7 +9,7 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 import TagManagement from './management/TagManagement';
-import { prompt } from '../components/Prompt';
+import { prompt } from 'react-native-use-qili/components/Prompt';
 import ClearAction from '../components/ClearAction';
 
 class Media extends React.Component {
