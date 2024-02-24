@@ -41,48 +41,58 @@ export default function TagManagement({ talk, placeholder, onCreate, slug = talk
 
 TagManagement.create=create
 
-function TagList({ data, slug, onEndEditing, navigate = useNavigate(), children, iconWidth = 50, actions, prompts, renderItemExtra = ({ item }) => {
-    if (item.isLocal !== true) {
+function TagList({ data, slug, onEndEditing, style, placeholder, children, iconWidth = 50, 
+    navigate = useNavigate(), 
+    dispatch = useDispatch(), 
+    actions, prompts, 
+    renderItemExtra = ({ item }) => {
+        if (item.isLocal !== true) {
+            return (
+                <View style={{ width: iconWidth, alignContent: "center", alignItems: "center" }}>
+                    <MaterialIcons name="keyboard-arrow-right" />
+                </View>
+            );
+        }
         return (
-            <View style={{ width: iconWidth, alignContent: "center", alignItems: "center" }}>
-                <MaterialIcons name="keyboard-arrow-right" />
+            <PressableIcon name="keyboard-arrow-right"
+                onPress={e => navigate(`/widget/${item.slug}/${item.id}`)}
+                style={{ width: iconWidth }} />
+        );
+    }, 
+    renderItemText = a => a.id, 
+    renderItem: renderItem0 = function ({ item, id = item.id }) {
+        const text = renderItemText(item);
+        const textStyle = { fontSize: 16, color: "white" };
+        const containerStyle = { height: 50, justifyContent: "center", border: 1, borderBottomColor: color.inactive };
+        if (item.isLocal !== true) { //remote
+            return (
+                <Pressable style={[containerStyle, { flexDirection: "row", alignItems: "center", marginTop: 2 }]}
+                    onPress={e => navigate(`/talk/${slug}/shadowing/${id}`)}
+                    key={id}>
+                    <View style={{ width: iconWidth, alignItems: "center" }}>
+                        <MaterialIcons name="cloud-circle" />
+                    </View>
+                    <Text style={[{ flexGrow: 1 }, textStyle]}>{text}</Text>
+                    {renderItemExtra?.(...arguments)}
+                </Pressable>
+            );
+        }
+
+        return ( //local
+            <View style={{ flexDirection: "row", marginTop: 2 }} key={id}>
+                <PressableIcon name="remove-circle-outline" onPress={e => dispatch({ type: "talk/clear", id })} style={{ width: iconWidth }} />
+                <ChangableText style={[containerStyle, { flexGrow: 1 }]}
+                    text={{ style: textStyle, value: text }}
+                    onPress={e => navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)}
+                    onChange={title => dispatch({ type: "talk/set", talk: { id, title } })} />
+                {renderItemExtra?.(...arguments)}
             </View>
         );
-    }
-    return (
-        <PressableIcon name="keyboard-arrow-right"
-            onPress={e => navigate(`/widget/${item.slug}/${item.id}`)}
-            style={{ width: iconWidth }} />
-    );
-}, renderItemText = a => a.id, dispatch = useDispatch(), renderItem: renderItem0 = function ({ item, id = item.id }) {
-    const text = renderItemText(item);
-    const textStyle = { fontSize: 16, color: "white" };
-    const containerStyle = { height: 50, justifyContent: "center", border: 1, borderBottomColor: color.inactive };
-    if (item.isLocal !== true) { //remote
-        return (
-            <Pressable style={[containerStyle, { flexDirection: "row", alignItems: "center", marginTop: 2 }]}
-                onPress={e => navigate(`/talk/${slug}/shadowing/${id}`)}
-                key={id}>
-                <View style={{ width: iconWidth, alignItems: "center" }}>
-                    <MaterialIcons name="cloud-circle" />
-                </View>
-                <Text style={[{ flexGrow: 1 }, textStyle]}>{text}</Text>
-                {renderItemExtra?.(...arguments)}
-            </Pressable>
-        );
-    }
-
-    return ( //local
-        <View style={{ flexDirection: "row", marginTop: 2 }} key={id}>
-            <PressableIcon name="remove-circle-outline" onPress={e => dispatch({ type: "talk/clear", id })} style={{ width: iconWidth }} />
-            <ChangableText style={[containerStyle, { flexGrow: 1 }]}
-                text={{ style: textStyle, value: text }}
-                onPress={e => navigate(item.data?.length ? `/talk/${slug}/shadowing/${id}` : `/widget/${item.slug}/${item.id}`)}
-                onChange={title => dispatch({ type: "talk/set", talk: { id, title } })} />
-            {renderItemExtra?.(...arguments)}
-        </View>
-    );
-}, placeholder, inputProps: { style: inputStyle, ...inputProps } = {}, listProps: { style: listStyle, renderItem = renderItem0, ...listProps } = {}, style, ...props }) {
+    }, 
+    inputProps: { style: inputStyle, ...inputProps } = {}, 
+    listProps: { renderItem = renderItem0} = {}, 
+    ...props 
+}) {
     const color = React.useContext(ColorScheme);
 
     const { data: { talks = [] } = {}, isLoading } = TalkApi.useWidgetTalksQuery({ slug });
