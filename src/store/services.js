@@ -368,6 +368,18 @@ export const Qili = Object.assign(createApi({
 		}),
 		widgetTalks: builder.query({
 			queryFn: widgetTalks_queryFn
+		}),
+		remove: builder.mutation({
+			async queryFn({id},api){
+				const result=await Qili.fetch({
+					query: `mutation($id:String!, $type:String){
+						remove(id:$id, type:$type)
+					}`,
+					variables: { type:"Widget", id }
+				})
+				return {data:result.remove}
+			},
+			invalidatesTags:['Talk']
 		})
 	})
 }), {

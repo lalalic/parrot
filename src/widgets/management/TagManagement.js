@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, TextInput, FlatList, Pressable } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from 'react-router-native';
+import { useNavigate, useSearchParams } from 'react-router-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { selectWidgetTalks, TalkApi } from "../../store";
+import { isAdmin } from "react-native-use-qili/store"
 import PromptAction from './PromptAction';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import ChangableText from "react-native-use-qili/components/ChangableText";
@@ -19,9 +20,33 @@ function create({slug, id=`${slug}${Date.now()}`, ...talk}, dispatch){
 
 export default function TagManagement({ talk, placeholder, onCreate, slug = talk.slug, dispatch = useDispatch(), ...props }){
     const talks = useSelector(state => selectWidgetTalks(state, slug));
+    const [searchParams, setSearchParams]=useSearchParams()
+    const [isManageRemote, setManageRemote ]=React.useState(false)
+    const [bAdmin, setIsAdmin ]=React.useState(false)
+    React.useEffect(()=>{
+        isAdmin().then(b=>setIsAdmin(b),()=>setIsAdmin(false))
+    },[])
+
+    React.useEffect(()=>{
+        setManageRemote(bAdmin && searchParams.get('remote')==="true")
+    },[searchParams, bAdmin])
+
+    const manageAction=React.useMemo(()=>{
+        if(bAdmin){
+            return <PressableIcon 
+                    name="admin-panel-settings"
+                    color={isManageRemote ? "yellow" : undefined}
+                    onPress={()=>setSearchParams({remote:!isManageRemote})}
+                    />
+        }
+        return null
+    },[isManageRemote, bAdmin, setSearchParams])
+
     return (
-        <TagList
-            data={talks} slug={slug} placeholder={l10n[placeholder || `Create new ${talk.title}`]}
+        <TagList slug={slug} manageAction={manageAction}
+            data={isManageRemote ? [] :talks} 
+            isManageRemote={isManageRemote}
+            placeholder={l10n[placeholder || `Create new ${talk.title}`]}
             onEndEditing={({ nativeEvent: { text: title } }) => {
                 title = title.trim();
                 if (!title || -1 !== talks.findIndex(a => a.title == title)) {
@@ -41,12 +66,19 @@ export default function TagManagement({ talk, placeholder, onCreate, slug = talk
 
 TagManagement.create=create
 
-function TagList({ data, slug, onEndEditing, style, placeholder, children, iconWidth = 50, 
+function TagList({ data, isManageRemote,manageAction, slug, onEndEditing, style, placeholder, children, iconWidth = 50, 
     navigate = useNavigate(), 
     dispatch = useDispatch(), 
     actions, prompts, 
     renderItemExtra = ({ item }) => {
         if (item.isLocal !== true) {
+            if(isManageRemote){
+                return (
+                    <PressableIcon name="remove-circle-outline"
+                        onPress={e => dispatch({type:"talk/remote/remove", talk:item})}
+                        style={{ width: iconWidth }} />
+                )
+            }
             return (
                 <View style={{ width: iconWidth, alignContent: "center", alignItems: "center" }}>
                     <MaterialIcons name="keyboard-arrow-right" />
@@ -60,7 +92,7 @@ function TagList({ data, slug, onEndEditing, style, placeholder, children, iconW
         );
     }, 
     renderItemText = a => a.id, 
-    renderItem: renderItem0 = function ({ item, id = item.id }) {
+    renderItem= function({ item, id = item.id }){
         const text = renderItemText(item);
         const textStyle = { fontSize: 16, color: "white" };
         const containerStyle = { height: 50, justifyContent: "center", border: 1, borderBottomColor: color.inactive };
@@ -72,7 +104,14 @@ function TagList({ data, slug, onEndEditing, style, placeholder, children, iconW
                     <View style={{ width: iconWidth, alignItems: "center" }}>
                         <MaterialIcons name="cloud-circle" />
                     </View>
-                    <Text style={[{ flexGrow: 1 }, textStyle]}>{text}</Text>
+
+                    {isManageRemote ? 
+                        (<ChangableText style={[containerStyle, { flexGrow: 1 }]}
+                            text={{ style: textStyle, value: text }}
+                            onChange={title => dispatch({ type: "talk/remote/set/title", talk: { id, title } })} />)
+                        : 
+                        (<Text style={[{ flexGrow: 1 }, textStyle]}>{text}</Text>)}
+
                     {renderItemExtra?.(...arguments)}
                 </Pressable>
             );
@@ -90,7 +129,6 @@ function TagList({ data, slug, onEndEditing, style, placeholder, children, iconW
         );
     }, 
     inputProps: { style: inputStyle, ...inputProps } = {}, 
-    listProps: { renderItem = renderItem0} = {}, 
     ...props 
 }) {
     const color = React.useContext(ColorScheme);
@@ -117,12 +155,12 @@ function TagList({ data, slug, onEndEditing, style, placeholder, children, iconW
                 keyExtractor={({ id, isLocal }) => `${id}-${isLocal}`}
                 renderItem={renderItem} />
             {isLoading && <Loading style={{ backgroundColor: "transparent" }} />}
-            {(!!actions || !!prompts) && (
-                <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-around" }}>
-                    {actions}
-                    {prompts?.map(a => <PromptAction prompt={a} key={a.label} />)}
-                </View>
-            )}
+            
+            <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-around" }}>
+                {actions}
+                {manageAction}
+                {prompts?.map(a => <PromptAction prompt={a} key={a.label} />)}
+            </View>
         </View>
     );
 }

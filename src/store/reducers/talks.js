@@ -5,6 +5,7 @@ import { isAdmin } from "react-native-use-qili/store";
 import { diffScore } from "../../experiment/diff";
 import Policy from "../policy";
 import { selectPlansByDay } from "./plan"
+import { Qili } from "../services"
 const l10n=globalThis.l10n
 
 function checkAction(action, keys) {
@@ -360,7 +361,20 @@ export const listeners=[
 				dispatch({ type: "message/error", message: e.message });
 			}
 		}
-	}, 
+	},
+	{
+		type: "talk/remote/remove",
+		async effect({talk}, api){
+			api.dispatch(Qili.endpoints.remove.initiate({id: talk.id},{track:false}))
+		}
+	},
+	{
+		type: "talk/remote/set/title",
+		async effect({talk}){
+			//await Qili.endpoints.change({id: talk.id, title: talk.title}).unwrap()
+			dispatch({ type: "message/error", message: `${action.type} not implemented yet.` });
+		}
+	},
 	{
 		type: "talk/toggle/challenging",
 		async effect({ talk: { id }, policy }, api) {

@@ -113,7 +113,7 @@ export function clean(ob){
     return ob
 }
 
-export function getItemText({text, pronunciation, translated, classification, explanation},showAll=true, sep=" "){
+export function getItemText({word, text=word, pronunciation, translated, classification, explanation},showAll=true, sep=" "){
     if(!showAll)
         return text
     

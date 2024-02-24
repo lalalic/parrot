@@ -125,8 +125,8 @@ export default class VocabularyBook extends TaggedListMedia{
         const {state:{usage}, props:{data=[]}}=this
         
         return (shuffle ? this.shuffleArray([...data]) : data)
-            .map(({word, text=word, translated},i)=>{
-                const fulltext=getItemText(data[i], true, "\n\n")
+            .map(({word, text=word, translated},i, all)=>{
+                const fulltext=getItemText(all[i], true, "\n\n")
                 switch(usage){
                     case 0://lang -> mylang
                         return {text, test:translated||text, recogMyLocale:!!translated, fulltext}
