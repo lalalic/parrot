@@ -8,7 +8,6 @@ import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
 import { Reset, isAdmin } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
-import Navigator from "react-native-use-qili/components/Navigator"
 
 import Home from "./home"
 import Scheduler from "./plan"

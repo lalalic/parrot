@@ -367,7 +367,10 @@ export const Qili = Object.assign(createApi({
 			providesTags: () => [{ type: "Talk", id: "today" }]
 		}),
 		widgetTalks: builder.query({
-			queryFn: widgetTalks_queryFn
+			queryFn: widgetTalks_queryFn,
+			providesTags(talks, _, {slug}){
+				return [{type:"Talk", slug}]
+			}
 		}),
 		remove: builder.mutation({
 			async queryFn({id},api){
@@ -379,7 +382,23 @@ export const Qili = Object.assign(createApi({
 				})
 				return {data:result.remove}
 			},
-			invalidatesTags:['Talk']
+			invalidatesTags(result,_,{slug}){
+				return [{type:'Talk', slug }]
+			}
+		}),
+		changeTitle: build.mutation({
+			async queryFn({id, title},api){
+				const result=await Qili.fetch({
+					query: `mutation($id:String!, $title:String!){
+						changeWidgetTalkTitle(id:$id, title:$type)
+					}`,
+					variables: { id,  title}
+				})
+				return {data:result.changeWidgetTalkTitle}
+			},
+			invalidatesTags(result,_,{id}){
+				return [{type:'Talk', id }]
+			}
 		})
 	})
 }), {

@@ -325,6 +325,30 @@ export default function talks(talks = {}, action) {
 				Object.values($talks).forEach(clear);
 			});
 		}
+		case "talk/split":{//only for vocabulary
+			return produce(talks, $talks => {
+				const id=action.talk.id
+				const {general, shadowing, challenged, history, ...talk}=talks[id]
+				const number=action.number
+				const len=Math.ceil(talk.data.length / number)
+				if(len==1)
+					return
+				
+				const data=[...talk.data]
+				new Array(len).fill(0).map((a,i)=>{
+					return data.splice(0,number)
+				}).forEach((a,i)=>{
+					const newTalk={
+						...talk, 
+						id:`${talk.id}-${i+1}`, 
+						title:`${talk.title}-${i+1}`, 
+						data:a
+					}
+					$talks[newTalk.id]=newTalk
+				})
+			})
+		}
+
 	}
 	return talks;
 }
@@ -360,19 +384,6 @@ export const listeners=[
 			} catch (e) {
 				dispatch({ type: "message/error", message: e.message });
 			}
-		}
-	},
-	{
-		type: "talk/remote/remove",
-		async effect({talk}, api){
-			api.dispatch(Qili.endpoints.remove.initiate({id: talk.id},{track:false}))
-		}
-	},
-	{
-		type: "talk/remote/set/title",
-		async effect({talk}){
-			//await Qili.endpoints.change({id: talk.id, title: talk.title}).unwrap()
-			dispatch({ type: "message/error", message: `${action.type} not implemented yet.` });
 		}
 	},
 	{
@@ -421,13 +432,11 @@ export const listeners=[
 					today.day=day.asDateString()
 				}
 	
-				if(togglePlaying===true){
+				if(togglePlaying===true){// case 1: from UI action
 					today.playing=today.playing ? false : Date.now()
-				}
-	
-				if(id && policy){
+				}else if(id && policy){// case 2: from toggle challenging
 					const policyTalk=talks[id][policy]
-					const plan=today.find(a=>a.plan.id==id && a.plan.policy==policy && !a.complete)
+					const plan=today.tasks.find(a=>a.plan.id==id && a.plan.policy==policy && !a.complete)
 	
 					if(plan){
 						if(complete){
@@ -436,6 +445,12 @@ export const listeners=[
 							// if(policyTalk.challenging>5){
 							// 	plan.complete=policyTalk.challenging
 							// }
+						}
+					}else {//corner case: change playing to trigger next in case talk has already completed 
+						if(today.tasks.find(a=>!a.complete)){
+							if(today.playing){
+								today.playing=Date.now()
+							}
 						}
 					}
 				}

@@ -8,9 +8,10 @@ import { TaggedListMedia } from "./media"
 import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged-transcript"
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import { useParams } from "react-router-native"
+import { useNavigate, useParams } from "react-router-native"
 import { Context as PlayerContext} from "../components/player"
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
+import { prompt } from "react-native-use-qili/components/Prompt"
 const l10n=globalThis.l10n
 
 /**
@@ -192,7 +193,12 @@ export default class VocabularyBook extends TaggedListMedia{
             <TaggedTranscript 
                 {...props}
                 id={id}
-                actions={<Paste id={id}/>}
+                actions={
+                    <>
+                        <Paste id={id}/>
+                        <Split id={id}/>
+                    </>
+                }
                 listProps={{
                     renderItem:Item,
                     keyExtractor:a=>a.text
@@ -242,6 +248,22 @@ const Paste=({id})=>{
         const words=VocabularyBook.parse(text)
         dispatch({type:"talk/set",talk:{id, data:words}})
     })}/>
+}
+
+const Split=({id})=>{
+    const dispatch=useDispatch()
+    const navigate=useNavigate()
+    return <PressableIcon name="clear-all" 
+        onPress={async e=>{
+            const num=await prompt(l10n["How many do you want each contains?"])
+            if(!num)
+                return 
+            const number=parseInt(num)
+            if(number>1){
+                dispatch({type:"talk/split",talk:{id}, number})
+                navigate(`/widget/${VocabularyBook.defaultProps.slug}`)
+            }
+        }}/>
 }
 
 const Usage=({talk, id=talk?.id, policyName})=>{

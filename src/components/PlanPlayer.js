@@ -27,12 +27,12 @@ export default function PlanPlayer({style}){
     const [index, setIndex]=React.useState(-1)
 
     React.useEffect(()=>{
-        if(tasks){
-            const i=tasks.findIndex(({plan:{complete}})=>!complete)
+        if(tasks && playing){
+            const i=tasks.findIndex(({complete})=>!complete)
             setCurrent(tasks[i])
             setIndex(i)
         }
-    },[tasks])
+    },[tasks, playing])
 
     React.useEffect(()=>{
         if(current && playing){
@@ -51,20 +51,28 @@ export default function PlanPlayer({style}){
         )
     },[hasTasks, tasks])
 
+    if(!pathname.startsWith("/talk/") && !pathname.startsWith("/home")){
+        return null
+    }
+
     if(!hasTasks){
         return null
     }
 
-    if(!pathname.startsWith("/talk/") && !pathname.startsWith("/home")){
+    const fullComplete=!tasks.find(a=>!a.complete)
+    if(fullComplete && !pathname.startsWith("/home")){
         return null
     }
     
     return (
         <View style={[{flex:1, alignItems:"center", justifyContent:"space-around"},style]}>
-            <PressableIcon color="yellow" size={50}
-                name={playing ? "pause-circle-filled" : "play-circle-filled"}
+            <PressableIcon 
+                color={fullComplete ? "green" : "yellow"} size={50}
+                name={fullComplete ? "fact-check" : (playing ? "pause-circle-filled" : "play-circle-filled")}
                 onPress={e=>{
-                    dispatch({type:"today/plan/check", togglePlaying:true})
+                    if(!fullComplete){
+                        dispatch({type:"today/plan/check", togglePlaying:true})
+                    }
                 }}
                 />
             {numbers(index)}

@@ -23,6 +23,7 @@ export default function plan(plans = {}, action) {
 				...JSON.parse(JSON.stringify(plan), (key, value) => {
 					switch (key) {
 						case "start":
+						case "end":
 							return new Date(value)
 					}
 					return value;

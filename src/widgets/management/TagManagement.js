@@ -3,7 +3,7 @@ import { View, Text, TextInput, FlatList, Pressable } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from 'react-router-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { selectWidgetTalks, TalkApi } from "../../store";
+import { selectWidgetTalks, TalkApi, Qili as QiliApi } from "../../store";
 import { isAdmin } from "react-native-use-qili/store"
 import PromptAction from './PromptAction';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
@@ -75,7 +75,9 @@ function TagList({ data, isManageRemote,manageAction, slug, onEndEditing, style,
             if(isManageRemote){
                 return (
                     <PressableIcon name="remove-circle-outline"
-                        onPress={e => dispatch({type:"talk/remote/remove", talk:item})}
+                        onPress={e => {
+                            dispatch(QiliApi.endpoints.remove.initiate({id: item.id, slug}))
+                        }}
                         style={{ width: iconWidth }} />
                 )
             }
@@ -108,7 +110,9 @@ function TagList({ data, isManageRemote,manageAction, slug, onEndEditing, style,
                     {isManageRemote ? 
                         (<ChangableText style={[containerStyle, { flexGrow: 1 }]}
                             text={{ style: textStyle, value: text }}
-                            onChange={title => dispatch({ type: "talk/remote/set/title", talk: { id, title } })} />)
+                            onChange={title =>{
+                                dispatch(QiliApi.endpoints.changeTitle({id, title}))
+                            }} />)
                         : 
                         (<Text style={[{ flexGrow: 1 }, textStyle]}>{text}</Text>)}
 

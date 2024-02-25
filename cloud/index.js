@@ -44,6 +44,7 @@ Cloud.addModule({
         extend type Mutation{
             save(talk:JSON!):Boolean
             remove(id:String!, type:String):Boolean
+            changeWidgetTalkTitle(id:String!, title:String!):Boolean
             crashReport(crash:JSON!):Boolean
         }
     `, 
