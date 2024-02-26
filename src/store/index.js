@@ -88,6 +88,18 @@ export const reducers={
 				return {...state, tts:{...state.tts, ...action.payload}}
 			case "my/api":
 				return {...state, api:(Services.current=action.api)}
+			case "my/queue":
+				return produce(my, $my=>{
+					const queue=$my.queue||($my.queue=[])
+					if(action.task){
+						queue.push(action.task)
+					}else if(action.done){
+						const i=queue.indexOf(action.done)
+						if(i!=-1){
+							queue.splice(i,1)
+						}
+					}
+				})
 		}
 		return myReducer(state,action)
 	}	

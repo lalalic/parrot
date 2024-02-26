@@ -11,11 +11,12 @@ import Router from "./router"
 import Permissions from "./permissions"
 import PreloadSound from "./components/preload-sound"
 import { listeners, middlewares, reducers } from "./store"
+import Queue from "./components/queue"
 const l10n=globalThis.l10n
 
 export default function Parrot(){
     return (
-        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:[]}}>
+        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:["my/queue"]}}>
             <Login.Required iconSource={require("../assets/icon.png")}>
                 <MotherLang>
                     <Router/>
@@ -27,6 +28,7 @@ export default function Parrot(){
                 celebrate={require("../assets/celebrate.mp3")}
                 pop={require("../assets/pop.mp3")}/>
             <MotherLang/>
+            <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
             <FlyMessage/>
             <Prompt/>
         </App>

@@ -484,7 +484,7 @@ export default function Player({
 class PersistentHistory extends PureComponent{
     componentWillUnmount(){
         const {onQuit, positionMillis}=this.props
-        onQuit({time:positionMillis})
+        onQuit?.({time:positionMillis})
     }
 
     render(){

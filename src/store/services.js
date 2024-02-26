@@ -122,18 +122,18 @@ async function fetchYoutubeTalk({id}, api){
 
 	api.dispatch({ type: "talk/set", talk });
 
-	api.dispatch({type:"talk/youtube/queue", id})
-
-	const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
-	mpegKit.generateAudio({ source: format.url, target: file })
-		.then(() => {
-			api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
-			FlyMessage.show(`Downloaded audio`)
-		})
-		.catch(e => {
-			FlyMessage.error(`download video error, cancel it!`)
-			api.dispatch({ type: "talk/clear", id });
-		});
+	api.dispatch({type:"my/queue", task: Object.assign(()=>{
+		const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
+		return mpegKit.generateAudio({ source: format.url, target: file })
+			.then(() => {
+				api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
+				FlyMessage.show(`Downloaded audio`)
+			})
+			.catch(e => {
+				FlyMessage.error(`download video error, cancel it!`)
+				api.dispatch({ type: "talk/clear", id });
+			});
+	},{message:`youtube video`})})
 
 	try{
 		FlyMessage.show(`Download youtube video transcript...`)
@@ -386,7 +386,7 @@ export const Qili = Object.assign(createApi({
 				return [{type:'Talk', slug }]
 			}
 		}),
-		changeTitle: build.mutation({
+		changeTitle: builder.mutation({
 			async queryFn({id, title},api){
 				const result=await Qili.fetch({
 					query: `mutation($id:String!, $title:String!){
