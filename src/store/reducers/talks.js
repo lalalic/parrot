@@ -124,6 +124,10 @@ export default function talks(talks = {}, action) {
 					clearPolicyHistory({talk, policy})
 				}
 			});
+		case "talk/policy/history":
+			if(!(action.talk.id in talks)){
+				return talks
+			}
 		case "talk/policy":
 			return produce(talks, $talks => {
 				checkAction(action, ["payload"]);
@@ -133,6 +137,7 @@ export default function talks(talks = {}, action) {
 				}
 				talk[target] = { ...talk[target], ...payload };
 			});
+		
 		case "talk/challenge/remove":
 			return produce(talks, $talks => {
 				checkAction(action, ["chunk", "policy"]);

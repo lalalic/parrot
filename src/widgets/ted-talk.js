@@ -65,7 +65,8 @@ export default class TedTalk extends React.Component{
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,
-            transcript:talk.data
+            transcript:talk.data,
+            controls:{whitespace:false,autoChallenge:false,speed:false}
         }
     }
 

@@ -338,8 +338,11 @@ export const Qili = Object.assign(createApi({
 				})
 				return {data:result.remove}
 			},
-			invalidatesTags(result,_,{slug,id}){
-				return [{type:'Talk', slug }, {type:'Talk', id}]
+			invalidatesTags(result,_,{slug,id, type}){
+				return [
+					type=="Widget" ? {type:'Talk', slug } : {type:'Talk'}, 
+					{type:'Talk', id}
+				]
 			}
 		}),
 		changeTitle: builder.mutation({
