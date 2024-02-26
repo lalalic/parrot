@@ -64,7 +64,7 @@ export default function Player({
         setAutoHide(Date.now())
     }
 
-    const [transcript, setTranscript]=React.useState([])
+    const [transcript, setTranscript]=React.useState(_transcript)
     
     /**
      * why not in Talk?
@@ -571,10 +571,7 @@ export function Subtitle({delay, id, item, policyName, style, ...props}){
             {item && <Recognizer.Text key={item.text} id={item.text}>{diffPretty(diffs)}</Recognizer.Text>}
             {"\n"}
             <Delay seconds={delay}>
-                <>
-                    {item?.text||""}{"\n"}
-                    <Text style={{fontSize:10, color:"gray"}}>{item?.my||""}</Text>
-                </>
+                {item?.text||""}{"\n"}
             </Delay>
         </Text>
     )

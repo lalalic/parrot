@@ -1,12 +1,11 @@
 import React from "react"
-import { Switch } from "react-native"
 import * as FileSystem from "expo-file-system"
-import { useDispatch, useSelector } from "react-redux"
+import { useDispatch } from "react-redux"
 import { Route, useParams } from "react-router-native"
 
 import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
-import { Reset, isAdmin } from "react-native-use-qili/store"
+import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
 
 import Home from "./home"
@@ -27,16 +26,6 @@ import PlanPlayer from "./components/PlanPlayer"
 
 export default function MyRouter(){
     const dispatch=useDispatch() 
-    const [bAdmin, setIsAdmin]=React.useState(false)  
-    React.useEffect(()=>{
-        fetch("https://ted.com").then(async res=>{
-            if(res.ok){
-                setIsAdmin(await isAdmin())
-            }else{
-                dispatch({type:"my/api", api: "Qili"})
-            }
-        })
-    },[]) 
     return (
         <Router initialEntries={["/home"]}
             navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
@@ -49,7 +38,6 @@ export default function MyRouter(){
                     settings={[
                         {name:"Policy", icon:"policy"},
                         {name:"Language", icon:"compass-calibration"}, 
-                        bAdmin && {name:"Ted", icon:"electrical-services", children: <SwitchTed/>},
                     ].filter(a=>!!a)}
                     information={[
                         ...(__DEV__ ? [
@@ -112,15 +100,3 @@ export default function MyRouter(){
         </Router>
     )
 }
-
-function SwitchTed(){
-    const dispatch=useDispatch()
-    const {api}=useSelector(state=>state.my)
-    
-    return (
-        <Switch value={api=="Ted"} style={{transform:[{scale:0.5}], alignSelf:"center"}}
-            onValueChange={e=> dispatch({type:"my/api", api: api=="Ted" ? "Qili" : "Ted"})}
-            />
-    )
-}
- 

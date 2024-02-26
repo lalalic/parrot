@@ -32,10 +32,34 @@ export default class YouTubeVideo extends Video{
         
         return {
             media,
-            transcript: talk.transcript,
+            transcript: talk.data,
         }
     }
 
     static async onFavorite({id, talk, state, dispatch}){
+        if(Qili.isUploaded(talk.video))
+            return 
+        
+        const {lang, mylang}=state.my
+        
+        const url=await Qili.upload({file, host:`Talk:${id}`, key:`Talk/${id}/video.mp4`}, state.my.admin)
+
+        FlyMessage.show(`Uploaded, cloning talk...`)
+
+        await Qili.fetch({
+            id:"save",
+            variables:{
+                talk:{
+                    ...talk, 
+                    video:url,
+                    lang,
+                    mylang,
+                }
+            }
+        }, state.my.admin)
+
+        dispatch({type:"talk/set", talk:{id, video:url}})
+
+        FlyMessage.show(`Cloned to server`)
     }
 }

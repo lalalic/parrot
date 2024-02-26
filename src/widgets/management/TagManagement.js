@@ -76,7 +76,7 @@ function TagList({ data, isManageRemote,manageAction, slug, onEndEditing, style,
                 return (
                     <PressableIcon name="remove-circle-outline"
                         onPress={e => {
-                            dispatch(QiliApi.endpoints.remove.initiate({id: item.id, slug}))
+                            dispatch(QiliApi.endpoints.remove.initiate({id: item.id, slug, type:"Widget"}))
                         }}
                         style={{ width: iconWidth }} />
                 )

@@ -54,7 +54,7 @@ export async function fetchYoutubeTalk({ id }, store) {
 		}else{
 			throw new Error('No transcript')
 		}
-		talk.transcript=[{ cues: transcripts }]
+		talk.data=[{ cues: transcripts }]
 	} catch (e) {
 		const yes=await alert(`This video doesn't have transcript. Do you want to continue?`)
 		if(!yes){

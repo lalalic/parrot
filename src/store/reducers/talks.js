@@ -18,9 +18,9 @@ function checkAction(action, keys) {
 
 function getTalk(action, talks){
 	const { talk: { slug, id, ...$payload }, key, value, policy, payload = key ? { [key]: value } : $payload, ...others } = action;
-	const { talk: { title, thumb, duration, link, video, data, languages } } = action;
+	const { talk: { title, thumb, duration, link, video, data } } = action;
 	return {
-		talk: talks[id] || (talks[id] = { slug, title, thumb, duration, link, id, video, data, languages }),
+		talk: talks[id] || (talks[id] = { slug, title, thumb, duration, link, id, video, data }),
 		payload, policy, ...others
 	}
 }

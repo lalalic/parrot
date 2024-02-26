@@ -67,34 +67,35 @@ async function fetchTedTalk({slug},api){
 	const talk={
 		id, slug, title, thumb, duration,description,speaker,source:"ted",tags:tag.split(","),
 		video: resources.hls.stream,
-		transcript:transcript?.paragraphs || translation?.paragraphs
+		data:transcript?.paragraphs || translation?.paragraphs
 	}
 
-	if(transcript && translation){
-		let lastCue=null
-		transcript.paragraphs.forEach((p,i)=>{
+	if(talk.data){
+		let lastCue=null, offset=100
+		talk.data.forEach((p,i)=>{
 			p.cues.forEach((cue,j)=>{
 				cue.time+=offset
 				cue.end=talk.duration*1000+offset
 				if(lastCue){
 					lastCue.end=cue.time-200
 				}
-				cue.translated=translation.paragraphs[i]?.cues[j]?.translated
+				if(!cue.translated && translation){
+					cue.translated=translation.paragraphs[i]?.cues[j]?.translated
+					cue.fulltext=`${cue.text}\n\n${cue.translated}`
+				}
 				lastCue=cue
 			})
 		})
-	}
-
-	if(!talk.transcript){
+	}else{
 		FlyMessage.show("There's no transcript.")
 	}
 	return talk
 }
 
 async function filterOutNoLang(talks, lang="en"){
-	if(lang.startsWith("en"))
+	//if(lang.startsWith("en"))
 		return talks
-	
+	const query=talks.map((a,i)=>`_${i}:video(id:"${a.slug}"){audioInternalLanguageCode}`)
 	const res=await fetch("https://www.ted.com/graphql",{
 		method:"POST",
 		headers:{
@@ -103,13 +104,13 @@ async function filterOutNoLang(talks, lang="en"){
 		},
 		body:JSON.stringify({
 			query: `query {
-				${talks.map((a,i)=>`_${i}:translation(videoId:"${a.slug}", language:"${lang}"){id}`).join("\n")}
+				${query.join("\n")}
 			}`,
 		}),
 	})
 	const {data}=await res.json()
 	const exists=Object.values(data)
-	return talks.filter((a,i)=>!!exists[i])
+	return talks.filter((a,i)=>exists[i]?.audioInternalLanguageCode==lang)
 }
 
 export const Ted = Object.assign(createApi({
@@ -328,17 +329,17 @@ export const Qili = Object.assign(createApi({
 			}
 		}),
 		remove: builder.mutation({
-			async queryFn({id},api){
+			async queryFn({id, type},api){
 				const result=await Qili.fetch({
 					query: `mutation($id:String!, $type:String){
 						remove(id:$id, type:$type)
 					}`,
-					variables: { type:"Widget", id }
+					variables: { type, id }
 				})
 				return {data:result.remove}
 			},
-			invalidatesTags(result,_,{slug}){
-				return [{type:'Talk', slug }]
+			invalidatesTags(result,_,{slug,id}){
+				return [{type:'Talk', slug }, {type:'Talk', id}]
 			}
 		}),
 		changeTitle: builder.mutation({

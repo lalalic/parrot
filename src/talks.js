@@ -9,10 +9,12 @@ import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
 import { defaultMemoize } from "reselect";
 import Select from "react-native-select-dropdown";
+import SwitchTed from "./components/SwitchTed"
 
 export default function Talks(props){
     const {state: history}=useLocation()
     const color=React.useContext(ColorScheme)
+
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
     
     const [search, setSearch]=React.useReducer(defaultMemoize(
@@ -75,11 +77,13 @@ export default function Talks(props){
                             />
                     </>
                 )}
-
                 {search.people && <PeopleSearch style={searchTextStyle}
                         value={search.q}
                         name={search.peopleName}
                         onValueChange={(q, peopleName)=>setSearch({ q,peopleName, page:1})}/>}
+                <SwitchTed 
+                    style={{position:"absolute", right:35, top:10, transform:[{scale:0.3}]}}
+                    />
         </View>
     )
 }
@@ -113,6 +117,7 @@ const VOID=state=>({})
 export function useTalksQuery(search){
     const dispatch=useDispatch()
     const select=React.useRef(VOID)
+    const api=useSelector(state=>state.my.api)
     React.useEffect(()=>{
         try{
             if(search.local){
@@ -170,7 +175,7 @@ export function useTalksQuery(search){
 
             dispatch({type:"history", search})
         }
-    },[search])
+    },[search, api])
 
     const selector=React.useCallback(select.current,[search, select.current])
     return useSelector(selector)

@@ -3,28 +3,30 @@ import { Audio , Video as ExpoVideo} from "expo-av"
 import { Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
+import { useNavigate} from "react-router-native"
+import { useDispatch} from "react-redux"
+import PressableIcon from "react-native-use-qili/components/PressableIcon";
+import prepareFolder from "react-native-use-qili/components/prepareFolder";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
+import {isAdmin} from "react-native-use-qili/store";
 
 import { PolicyChoice, html } from '../components';
 import ClearAction from '../components/ClearAction';
-
-import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { Subtitles } from "../components/player"
 import mpegKit from "../experiment/mpeg"
-import prepareFolder from "react-native-use-qili/components/prepareFolder";
-import FlyMessage from "react-native-use-qili/components/FlyMessage";
-import { Qili, Ted } from "../store";
+import { Qili, Ted, } from "../store";
 const l10n=globalThis.l10n
 
 
 export default class TedTalk extends React.Component{
     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
-        const hasTranscript = !!talk.transcript;
+        const hasTranscript = !!talk.data;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
                 excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
                 onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
-
+                <RemoveRemote {...{talk, policyName}}/>
                 {hasTranscript && <PressableIcon name="print"
                     onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
                     onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
@@ -63,7 +65,7 @@ export default class TedTalk extends React.Component{
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,
-            transcript:talk.transcript
+            transcript:talk.data
         }
     }
 
@@ -123,4 +125,28 @@ export default class TedTalk extends React.Component{
         const {children}=this.props
         return children
     }
+}
+
+function RemoveRemote({talk}){
+    const navigate=useNavigate()
+    const dispatch=useDispatch()
+    const [bAdmin, setAdmin]=React.useState(false)
+    const [isRemote, setRemote]=React.useState()
+
+    React.useEffect(()=>{
+        setRemote(talk.video?.indexOf("qili.com")!=-1)
+    },[talk.video])
+
+    React.useEffect(()=>{
+        isAdmin().then(be=>setAdmin(be))
+    },[])
+
+    if(!isRemote || !bAdmin)
+        return null
+
+    return <PressableIcon name="remove-circle"
+        onPress={e=>{
+            dispatch(Qili.endpoints.remove.initiate({id:talk.id, slug:talk.slug, type:"Talk"}))
+            navigate("/home",{replace:true})
+        }}/>
 }
