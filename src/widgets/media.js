@@ -17,7 +17,7 @@ class Media extends React.Component {
      * protocol: supported actions
      */
      static Actions({talk, policyName, dispatch, navigate, slug=talk.slug}){
-        const hasTranscript = !!talk.languages?.mine?.transcript;
+        const hasTranscript = !!talk.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         const Widget = globalThis.Widgets[slug]
         return (

@@ -649,7 +649,7 @@ export const html = (talk, lineHeight, margins, needMy) => `
                 <span>${talk.title}</span>
                 <span style="font-size:12pt;float:right;padding-right:10mm">${talk.speaker} ${new Date().asDateString()}</span>
             </h2>
-            ${talk.languages?.mine?.transcript?.map(a => {
+            ${talk.transcript?.map(a => {
     const content = a.cues.map(b => b.text).join("");
     const my = needMy && a.cues.map(b => b.my ?? "").join("");
     const time = ((m = 0, b = m / 1000, a = v => String(Math.floor(v)).padStart(2, '0')) => `${a(b / 60)}:${a(b % 60)}`)(a.cues[0].time);
@@ -665,35 +665,41 @@ export function KeyboardAvoidingView(props){
 }
 
 export function useTalkQuery({api, slug, id, policyName }) {
-    const Widget = globalThis.Widgets[slug]
-    const [service, querySlug]=(()=>{
-        if(slug=="youtube")
-            return [TalkApi, slug]
+    const navigate = useNavigate()
+    try{
+        const Widget = globalThis.Widgets[slug]
+        const [service, querySlug]=(()=>{
+            if(slug=="youtube")
+                return [TalkApi, slug]
 
-        return [api=="Qili"||!!Widget ? Qili : TalkApi, !!Widget ? "Widget" : slug]
-    })();
-    
-    const { data: remote = {}, ...status } = service.useTalkQuery({slug:querySlug, id });
-    const local = useSelector(state => state.talks[id||remote?.id]);
-    const policy = useSelector(state => selectPolicy({state, policyName, id}));
+            return [api=="Qili"||!!Widget ? Qili : TalkApi, !!Widget ? "Widget" : slug]
+        })();
+        
+        const { data: remote = {}, ...status } = service.useTalkQuery({slug:querySlug, id });
+        const local = useSelector(state => state.talks[id||remote?.id]);
+        const policy = useSelector(state => selectPolicy({state, policyName, id}));
 
-    const talk = React.useMemo(() => {
-        const video = local?.localVideo || remote?.video;
-        return {
-            miniPlayer: isOnlyAudio(video),
-            ...remote,
-            ...(({ id, description, slug, title, thumb, ...data }) => data)(Widget?.defaultProps||{}),
-            ...local,
-            video,
-            hasLocal:!!local,
-            hasRemote:!!remote?.id,
-        }
-    }, [remote, local]);
+        const talk = React.useMemo(() => {
+            const video = local?.localVideo || remote?.video;
+            return {
+                miniPlayer: isOnlyAudio(video),
+                ...remote,
+                ...(({ id, description, slug, title, thumb, ...data }) => data)(Widget?.defaultProps||{}),
+                ...local,
+                video,
+                hasLocal:!!local,
+                hasRemote:!!remote?.id,
+            }
+        }, [remote, local]);
 
-    const { general, shadowing, dictating, retelling, ...data } = talk;
-    return { data, policy, 
-        challenging: talk[policyName]?.challenging, 
-        parentControled: talk[policyName]?.parentControled, 
-        ...status
-    };
+        const { general, shadowing, dictating, retelling, ...data } = talk;
+        return { data, policy, 
+            challenging: talk[policyName]?.challenging, 
+            parentControled: talk[policyName]?.parentControled, 
+            ...status
+        };
+    }catch(e){
+        FlyMessage.error(e.message)
+        navigate("/home",{replace:true})
+    }
 }

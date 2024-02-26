@@ -14,7 +14,7 @@ import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffPretty } from '../experiment/diff';
 import { Delay } from "../components/delay"
-import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound, useSound} from '../components';
+import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound} from '../components';
 
 export const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
@@ -51,7 +51,6 @@ export default function Player({
     const nextRound=React.useRef()
 
     const challenges=useSelector(state=>state.talks[id]?.[policyName]?.challenges)
-    console.log(`challenges[0]: ${challenges?.[0]?.text}`)
 
     const autoHideActions=React.useRef()
     const autoHideProgress=React.useRef()
@@ -65,7 +64,7 @@ export default function Player({
         setAutoHide(Date.now())
     }
 
-    const [transcript, setTranscript]=React.useState(_transcript)
+    const [transcript, setTranscript]=React.useState([])
     
     /**
      * why not in Talk?
@@ -114,7 +113,7 @@ export default function Player({
             }
         }
         return []
-    },[id, policy.chunk, /*policy.fullscreen,*/ challenging, challenges, transcript])
+    },[id, policy.chunk, challenging, challenges, transcript])
 
     const stopOnMediaStatus=React.useRef(false)
     const setMediaStatusAsync=React.useCallback(async (status, callback)=>{

@@ -14,7 +14,7 @@ const l10n=globalThis.l10n
 /**
  * what is widget media?
  * what is widget talk?
- * {id, slug:widgetName, title, description, tag, languages:{mine:{transcript}}}
+ * {id, slug:widgetName, title, description, tag, transcript}
  */
 export default ({horizontal=true,...props})=>{
     const color=React.useContext(ColorScheme)
@@ -22,7 +22,6 @@ export default ({horizontal=true,...props})=>{
     const imageStyle={height:180}
     const durationStyle={bottom:40,top:undefined}
     const titleStyle={height:40}
-    const { width, height }=useWindowDimensions()
     const widgets=React.useMemo(()=>Object.values(Widgets).filter(a=>!!a.defaultProps?.thumb))
     return (
         <View {...props} style={{marginTop:20}}>

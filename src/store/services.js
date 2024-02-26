@@ -1,12 +1,9 @@
 import { Qili as QiliApi } from "react-native-use-qili/store";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { XMLParser } from 'fast-xml-parser';
-import * as FileSystem from "expo-file-system";
 import cheerio from "cheerio";
-import ytdl from "react-native-ytdl";
-import { YoutubeTranscript } from "../experiment/youtube-transcript";
-import mpegKit from "../experiment/mpeg"
-import FlyMessage from "react-native-use-qili/components/FlyMessage"
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
+const l10n=globalThis.l10n
 
 const TedHeader={
 	"User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 11_6_8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36",
@@ -32,13 +29,25 @@ async function fetchTedTalk({slug},api){
 		},
 		body:JSON.stringify({
 			query: `query {
-			translation(
+			lang: translation(
 				videoId: "${slug}"
 				language: "${lang}"
 			) {
 				paragraphs {
 					cues {
 						text
+						time
+					}
+				}
+			}
+
+			mylang: translation(
+				videoId: "${slug}"
+				language: "${mylang}"
+			) {
+				paragraphs {
+					cues {
+						translated: text
 						time
 					}
 				}
@@ -53,106 +62,54 @@ async function fetchTedTalk({slug},api){
 	})
 	const {data}=await res.json()
 		
-	const {translation, video: { playerData, description },}=data
-	const {id, resources, title, thumb, languages, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
+	const {lang: transcript, mylang:translation, video: { playerData, description },}=data
+	const {id, resources, title, thumb, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
 	const talk={
-		id, slug, title, thumb, languages, duration,description,speaker,source:"ted",tags:tag.split(","),
+		id, slug, title, thumb, duration,description,speaker,source:"ted",tags:tag.split(","),
 		video: resources.hls.stream,
+		transcript:transcript?.paragraphs || translation?.paragraphs
 	}
-	
-	talk.languages=talk.languages.reduce((langs,a)=>(langs[a.languageCode]=a,langs),{})
-	
-	if(!translation)
-		return talk
 
-	const {paragraphs}=translation
-	talk.languages.mine={transcript:paragraphs}
-	
-	console.assert(resources.hls.metadata)
-	const resHlsMeta=await fetch(resources.hls.metadata)
-	const hlsMeta=await resHlsMeta.json()
-	const offset=hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
-	const target=hlsMeta.subtitles.find(a=>a.code.toLowerCase()==mylang)
-	
-	const nextCue=((vtt,last=0)=>()=>{
-		if(!vtt)
-			return
-		const i0=vtt.indexOf("\n\n",last)
-		if(i0==-1)//The last may not have data
-			return 
-		const i=vtt.indexOf("\n",i0+2)
-		try{
-			return vtt.substring(i+1, vtt.indexOf("\n", i+1))
-		}finally{
-			last=i+1
-		}
-	})(target && await (await fetch(target.webvtt)).text());
+	if(transcript && translation){
+		let lastCue=null
+		transcript.paragraphs.forEach((p,i)=>{
+			p.cues.forEach((cue,j)=>{
+				cue.time+=offset
+				cue.end=talk.duration*1000+offset
+				if(lastCue){
+					lastCue.end=cue.time-200
+				}
+				cue.translated=translation.paragraphs[i]?.cues[j]?.translated
+				lastCue=cue
+			})
+		})
+	}
 
-	(lastCue=>paragraphs.forEach(p=>p.cues.forEach(cue=>{
-		cue.time+=offset
-		cue.end=talk.duration*1000+offset
-		if(lastCue){
-			lastCue.end=cue.time-200
-		}
-		cue.my=nextCue()
-		lastCue=cue
-	})))();
+	if(!talk.transcript){
+		FlyMessage.show("There's no transcript.")
+	}
 	return talk
 }
 
-async function fetchYoutubeTalk({id}, api){
-	const {my:{lang, mylang}}=api.getState()
-
-	FlyMessage.show("Getting video information...")
-	const info = await ytdl.getInfo(`https://www.youtube.com/watch?v=${id}`);
-	const format = (formats => {
-		return ytdl.chooseFormat(formats, {
-			filter: a => a.hasAudio && a.container == "mp4",
-			quality: "lowestvideo",
-		});
-	})(info.formats);
-
-	const { title, keywords: tags, lengthSeconds, thumbnails: [{ url: thumb }], author: { name: author }, } = info.videoDetails;
-
-	const talk = {
-		id, slug: `youtube`, title, thumb, 
-		video: format.url,
-		duration: parseInt(lengthSeconds) * 1000,
-	};
-
-	api.dispatch({ type: "talk/set", talk });
-
-	api.dispatch({type:"my/queue", task: Object.assign(()=>{
-		const file = talk.localVideo = `${FileSystem.documentDirectory}${id}/video.mp4`;
-		return mpegKit.generateAudio({ source: format.url, target: file })
-			.then(() => {
-				api.dispatch({type:"talk/set",talk:{id, localVideo:file}})
-				FlyMessage.show(`Downloaded audio`)
-			})
-			.catch(e => {
-				FlyMessage.error(`download video error, cancel it!`)
-				api.dispatch({ type: "talk/clear", id });
-			});
-	},{message:`youtube video`})})
-
-	try{
-		FlyMessage.show(`Download youtube video transcript...`)
-		const transcripts = await YoutubeTranscript.fetchTranscript(id, { lang });
-		if (transcripts) {
-			transcripts.forEach(cue => {
-				cue.time = cue.offset;
-				delete cue.offset;
-				cue.end = cue.time + cue.duration;
-				delete cue.duration;
-			});
-		}
-		talk.languages = { mine: { transcript: [{ cues: transcripts }] } };
-		api.dispatch({ type: "talk/set", talk });
-	}catch(e){
-		FlyMessage.error(`Download transcript error. You can delete it, or keep it. `)
-	}
-
-	return talk
+async function filterOutNoLang(talks, lang="en"){
+	if(lang.startsWith("en"))
+		return talks
+	
+	const res=await fetch("https://www.ted.com/graphql",{
+		method:"POST",
+		headers:{
+			'Content-Type': 'application/json',
+			'Accept': 'application/json',
+		},
+		body:JSON.stringify({
+			query: `query {
+				${talks.map((a,i)=>`_${i}:translation(videoId:"${a.slug}", language:"${lang}"){id}`).join("\n")}
+			}`,
+		}),
+	})
+	const {data}=await res.json()
+	const exists=Object.values(data)
+	return talks.filter((a,i)=>!!exists[i])
 }
 
 export const Ted = Object.assign(createApi({
@@ -166,9 +123,7 @@ export const Ted = Object.assign(createApi({
 				}
 
 				const talk = await (async () => {
-					if (slug == "youtube") {
-						return await fetchYoutubeTalk({id},api)
-					} else if (globalThis.Widgets[slug]) {
+					if (globalThis.Widgets[slug]) {
 						if (id && !state.talks[id]) {
 							const { talk } = await Qili.fetch({
 								id: "talk",
@@ -189,7 +144,6 @@ export const Ted = Object.assign(createApi({
 		}),
 		talks: builder.query({
 			queryFn: async ({ q, page }, api) => {
-				const { lang } = api.getState().my;
 				let minutes = 0;
 				q = q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2) => (minutes = parseInt($2), "")).trim();
 
@@ -214,7 +168,7 @@ export const Ted = Object.assign(createApi({
 					};
 				}).toArray();
 				const pages = parseInt($("#browse-results>.results__pagination .pagination__item").last().text()) || 1;
-				return { data: { talks, page, pages } };
+				return { data: { talks: await filterOutNoLang(talks, api.getState().my?.lang), page, pages } };
 			},
 		}),
 
@@ -234,7 +188,7 @@ export const Ted = Object.assign(createApi({
 						desc: $el.find('.search__result__description').text(),
 					};
 				}).toArray();
-				return { data: talks };
+				return { data: talks};
 			}
 		}),
 		speakerTalks: builder.query({
@@ -252,7 +206,7 @@ export const Ted = Object.assign(createApi({
 						duration: (([m, s]) => parseInt(m) * 60 + parseInt(s))($el.find('.thumb__duration').text().split(":"))
 					};
 				}).toArray();
-				return { data: { talks } };
+				return { data: { talks:await filterOutNoLang(talks, api.getState().my?.lang) } };
 			}
 		}),
 		today: builder.query({
@@ -277,7 +231,8 @@ export const Ted = Object.assign(createApi({
 				const talks = rss?.channel.item.map(({ title, talkId: id, duration, thumbnail, link }) => {
 					return { id, title, duration: toSec(duration), thumb: thumbnail.url, slug: slug(link) };
 				}).filter(a => !!a.duration);
-				return { data: { talks } };
+
+				return { data: { talks:  await filterOutNoLang(talks, api.getState().my?.lang)} };
 			},
 		}),
 		widgetTalks: builder.query({

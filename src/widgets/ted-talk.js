@@ -18,7 +18,7 @@ const l10n=globalThis.l10n
 
 export default class TedTalk extends React.Component{
     static Actions({talk, policyName, dispatch, navigate, slug=talk.slug, favorited=talk.favorited}){
-        const hasTranscript = !!talk.languages?.mine?.transcript;
+        const hasTranscript = !!talk.transcript;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
             <PolicyChoice label={true} labelFade={true} value={policyName}
@@ -63,17 +63,22 @@ export default class TedTalk extends React.Component{
                 shouldPlay={autoplay}
                 useNativeControls={false}
                 style={{ flex: 1 }} />,
-            transcript: talk.languages?.mine?.transcript,
+            transcript:talk.transcript
         }
     }
 
-    static Video=React.forwardRef(({policy, whitespacing, ...props},ref)=>{
-        return <ExpoVideo 
-            shouldCorrectPitch={true}
-            pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
-            progressUpdateIntervalMillis={100}
-            {...props} 
-            ref={ref}/>
+    static Video=React.forwardRef(({policy, whitespacing, onPlaybackStatusUpdate, ...props},ref)=>{
+        return (
+            <TedTalk {...{onPlaybackStatusUpdate, policy, whitespacing}} >
+                <ExpoVideo 
+                    shouldCorrectPitch={true}
+                    pitchCorrectionQuality={Audio.PitchCorrectionQuality.High}
+                    progressUpdateIntervalMillis={100}
+                    onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                    {...props} 
+                    ref={ref}/>
+            </TedTalk>
+        )
     })
 
     static async onFavorite({id, talk, state, dispatch}){
@@ -112,5 +117,10 @@ export default class TedTalk extends React.Component{
         dispatch({type:"talk/set", talk:{id, localVideo:file, video:url}})
 
         FlyMessage.show(`Cloned to server`)
+    }
+
+    render(){
+        const {children}=this.props
+        return children
     }
 }

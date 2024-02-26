@@ -1,11 +1,11 @@
 import * as FileSystem from "expo-file-system";
 import { produce } from "immer";
 import { isAdmin } from "react-native-use-qili/store";
+import FlyMessage from "react-native-use-qili/components/FlyMessage";
 
 import { diffScore } from "../../experiment/diff";
 import Policy from "../policy";
 import { selectPlansByDay } from "./plan"
-import { Qili } from "../services"
 const l10n=globalThis.l10n
 
 function checkAction(action, keys) {
@@ -51,6 +51,15 @@ function clearPolicyHistory({ talk, policy: policyName }) {
  */
 export default function talks(talks = {}, action) {
 	switch (action.type) {
+		// case "persist/REHYDRATE":{
+		// 	Object.values(action.payload.talks).forEach(talk=>{
+		// 		if(talk.languages){
+		// 			talk.transcript=talk.languages.mine?.transcript
+		// 			delete talk.languages
+		// 		}
+		// 	})
+		// 	return action.payload.talks
+		// }
 		case "lang/PERSIST":
 			return talks;
 		case "lang/REHYDRATE":
@@ -382,7 +391,7 @@ export const listeners=[
 				const unwrap = (({ general, shadowing, retelling, dictating, challenging, ...talk }) => talk)(talk);
 				(globalThis.Widgets[talk.slug] || globalThis.TedTalk).onFavorite?.({ id, talk: { ...unwrap, _id: id }, state, dispatch });
 			} catch (e) {
-				dispatch({ type: "message/error", message: e.message });
+				FlyMessage(e.message);
 			}
 		}
 	},
@@ -398,20 +407,20 @@ export const listeners=[
 				if (!lastTalkPolicy.challenging && !talkPolicy.challenging) { //pass all at first run
 					//@Todo: play
 					globalThis.sounds.celebrate()
-					api.dispatch({ type: "message/info", message: l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]});
+					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with only 1 go`]);
 					api.dispatch({type:'today/plan/check', id, policy, complete:true})
 				} else if (!lastTalkPolicy.challenging && talkPolicy.challenging) { //start
-					api.dispatch({ type: "message/info", message: l10n[`${talkPolicy.challenges.length} left`]});
+					FlyMessage.show(l10n[`${talkPolicy.challenges.length} left`]);
 				} else if (lastTalkPolicy.challenging && !talkPolicy.challenging) { //complete
 					//@Todo: play
 					globalThis.sounds.celebrate()
-					api.dispatch({ type: "message/info", message: l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]});
+					FlyMessage.show(l10n[`Congratulations! All ${talk.data.length} passed with ${lastTalkPolicy.challenging} tries!`]);
 					api.dispatch({type:'today/plan/check', id, policy, complete:true})
 
 				} else { //in progress
 					const passed=lastTalkPolicy.challenges.length - talkPolicy.challenges.length
 					if(passed){
-						api.dispatch({ type: "message/info", message: l10n[`${passed} more passed`]});
+						FlyMessage.show(l10n[`${passed} more passed`]);
 					}
 					api.dispatch({type:'today/plan/check', id, policy})
 				}

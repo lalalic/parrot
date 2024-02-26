@@ -16,7 +16,10 @@ const l10n=globalThis.l10n
 
 export default function Parrot(){
     return (
-        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, serializableCheckIgnoreActions:["my/queue"]}}>
+        <App {...{reducers, listeners, middlewares, colorScheme:"dark", tutorials, 
+                serializableCheckIgnoreActions:["my/queue"],
+                blacklist:["queue"],
+            }}>
             <Login.Required iconSource={require("../assets/icon.png")}>
                 <MotherLang>
                     <Router/>

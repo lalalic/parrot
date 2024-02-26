@@ -32,7 +32,7 @@ export default function Policy(){
                 policy={{...policy.general, ...policy[target]}} 
                 policyName={target}
                 autoHide={false}
-                transcript={talk?.languages?.mine?.transcript}
+                transcript={talk.transcript}
                 onPolicyChange={({name, desc, ...policy})=>dispatch({type:"policy",target, payload:policy})}
                 getRecordChunkUri={()=>`${FileSystem.documentDirectory}example/${target}/audios/example.wav`}
                 /> 

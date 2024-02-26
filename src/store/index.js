@@ -10,13 +10,11 @@ import Policy from "./policy"
 import history from "./reducers/history"
 import plan from "./reducers/plan"
 import talks, {listeners as TalksListeners} from "./reducers/talks"
-import message from "./reducers/message"
-
 
 const l10n=globalThis.l10n
 
 export const reducers={
-	talks, plan, history, message,
+	talks, plan, history,
 	[Ted.reducerPath](state, action){
 		switch(action.type){
 			case "lang/PERSIST":
@@ -88,20 +86,25 @@ export const reducers={
 				return {...state, tts:{...state.tts, ...action.payload}}
 			case "my/api":
 				return {...state, api:(Services.current=action.api)}
+		}
+		return myReducer(state,action)
+	},
+	queue(state=[],action){
+		switch(action.type){
 			case "my/queue":
-				return produce(my, $my=>{
-					const queue=$my.queue||($my.queue=[])
+				return produce(state, $queue=>{
 					if(action.task){
-						queue.push(action.task)
+						$queue.push(Object.assign(action.task,{toJSON(){return action.task.name||'fx'}}))
 					}else if(action.done){
-						const i=queue.indexOf(action.done)
+						const i=$queue.indexOf(action.done)
 						if(i!=-1){
-							queue.splice(i,1)
+							$queue.splice(i,1)
 						}
 					}
 				})
+			default:
+				return state
 		}
-		return myReducer(state,action)
 	}	
 }
 
