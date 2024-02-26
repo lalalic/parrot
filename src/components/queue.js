@@ -4,10 +4,15 @@ import { useSelector, useDispatch } from "react-redux"
 
 export default function Queue({style}){
     const dispatch=useDispatch()
-    const [task, amount]=useSelector(({my:{queue}})=>[queue?.[0], queue?.length||0])
+    const [task, amount]=useSelector(({queue=[]})=>[queue[0], queue.length])
+    const [message, setMessage]=React.useState("")
     React.useEffect(()=>{
         if(typeof(task)=="function"){
-            task().finally(()=>dispatch({type:"my/queue", done:task}))
+            Promise.resolve(task(message=>setMessage(message)))
+                .finally(()=>{
+                    dispatch({type:"my/queue", done:task})
+                    setMessage(amount)
+                })
         }
     },[task])
 
@@ -16,7 +21,7 @@ export default function Queue({style}){
 
     return (
         <View style={style}>
-            <FluidLoadingBar message={amount>1 ? amount-1 : 0}/>
+            <FluidLoadingBar message={message}/>
         </View>
     )
 }
@@ -43,7 +48,7 @@ function FluidLoadingBar({ message, duration = 2000, containerStyle,  loadingBar
   
     return (
       <View style={[{
-          height: 10,
+          height: 20,
           width: '100%',
           backgroundColor: '#E0E0E0', // Background color of the loading bar container
           borderRadius: 5,
@@ -67,8 +72,8 @@ function FluidLoadingBar({ message, duration = 2000, containerStyle,  loadingBar
               loadingBarStyle
           ]}
         >
-            {message && <Text style={{textAlign:"center"}}>{message}</Text>}
         </Animated.View>
+        {!!message && <Text style={{color:"black",position:"absolute", bottom:2, left:30}}>{message}</Text>}
       </View>
     );
   }
