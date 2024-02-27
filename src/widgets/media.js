@@ -12,8 +12,9 @@ import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import TagManagement from './management/TagManagement';
 import { prompt } from 'react-native-use-qili/components/Prompt';
 import ClearAction from '../components/ClearAction';
+import Base from "./base"
 
-class Media extends React.Component {
+class Media extends Base {
     /**
      * protocol: supported actions
      */
@@ -112,8 +113,6 @@ class Media extends React.Component {
         exludePolicy:['dictating', 'retelling'],
     }
 
-    static contextType=ReactReduxContext
-
     constructor() {
         super(...arguments)
         this.progress = new Animated.Value(0);
@@ -133,7 +132,7 @@ class Media extends React.Component {
         return this.constructor.defaultProps.cueHasDuration
     }
 
-    reset(){
+    reset(particular){
         const {rate=1, volume=1}=this.props
         this.progressing?.stop()
         this.status = {
@@ -153,6 +152,7 @@ class Media extends React.Component {
         
         this.progress.current = 0
         this.progress.last = 0
+        this.onPlaybackStatusUpdate(particular)
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -177,9 +177,11 @@ class Media extends React.Component {
     }
 
     componentDidMount() {
-        const { positionMillis = 0, shouldPlay } = this.props;
+        const { positionMillis = 0, shouldPlay, chunks } = this.props;
         this.progress.addListener(({ value }) => {
-            this.onPositionMillis(Math.floor(value))
+            if(this.isSettingStatus!==true){
+                this.onPositionMillis(Math.floor(value))
+            }
         })
 
         this.setStatusAsync({ shouldPlay, positionMillis });
@@ -222,7 +224,6 @@ class Media extends React.Component {
                         isInteraction:false,
                     })
                     this.progressing.start(({finished})=>{
-                        //this.setState({isPlaying:false})
                         if(!finished)
                             return
                         this.status.didJustFinish=true
@@ -232,11 +233,9 @@ class Media extends React.Component {
                         this.progress.current = 0
                         this.progress.last = 0
                     })
-                    //this.setState({isPlaying:true})
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 } else {
                     this.progressing?.stop()
-                    //this.setState({isPlaying:false})
                     this.status.shouldPlay = false
                     shouldTriggerUpdate && this.onPlaybackStatusUpdate()
                 }
@@ -247,17 +246,15 @@ class Media extends React.Component {
     setStatusAsync() {
         return new Promise((resolve) =>{
             try{
+                this.isSettingStatus=true
                 this.setStatusSync(...arguments)
             }catch(e){
                 console.error(e)
             }finally{
+                this.isSettingStatus=false
                 resolve(this.status)
             }
         })
-    }
-
-    title(){
-        return this.props.title
     }
 
     render() {
@@ -273,25 +270,28 @@ class Media extends React.Component {
 }
 
 /**
- * create a list of transcripts, and render state.i cue
+ * create a list of transcripts, and render props.i cue
  */
 export class ListMedia extends Media{
     static cueEqualData(cue, data){
         return !!["text","word","translated","ask"].find(k=>cue.text==data[k])
     }
 
-    get cues(){
-        return this.props.chunks||[]
-    }
-
-    reset(){
-        super.reset()
-        this.state.i=-1
-        this.setState({i:-1})
-    }
-
     measureTime(a){
         return a.duration || 5*this.props.progressUpdateIntervalMillis
+    }
+
+    createChunks(){
+        try{
+            const chunks=super.createChunks()
+            this.status.isLoaded=true
+            const delta=3*this.props.progressUpdateIntervalMillis
+            this.status.durationMillis=chunks[chunks.length-1].end+delta
+
+            return chunks
+        }finally{
+            this.onPlaybackStatusUpdate()
+        }
     }
 
     /**
@@ -302,9 +302,6 @@ export class ListMedia extends Media{
     }
 
     doCreateTranscript(){
-        if(this.props.challenging){
-            return 
-        }
         const cues=this.createTranscript(...arguments)
         if(cues && cues.length>0){
             const delta=3*this.props.progressUpdateIntervalMillis
@@ -315,33 +312,16 @@ export class ListMedia extends Media{
                     a.end=a.time+this.measureTime(a)
                 })
             }
-            this.status.durationMillis=cues[cues.length-1].end+delta
         }
-        this.status.isLoaded=true
-        this.onPlaybackStatusUpdate({
-            transcript:[{cues}]
-        })
-    }
-
-    onPositionMillis(positionMillis){
-        const i =this.i(...arguments)
-        if(this.state.i!=i){
-            this.setState({i})
-        }
-        super.onPositionMillis(...arguments)
-    }
-
-    componentDidMount(){
-        this.doCreateTranscript()
-        super.componentDidMount(...arguments)
+        return cues
     }
 
     setStatusSync({positionMillis}){
         if(typeof(positionMillis)==`undefined`){
             return super.setStatusSync(...arguments)
         }
-        const i=this.i(positionMillis)
-        positionMillis = i!=-1 ? this.cues[i]?.time : positionMillis
+        const i=this.getIndexByPosition(positionMillis)
+        positionMillis = i!=-1 ? this.chunks[i]?.time : positionMillis
         return super.setStatusSync({...arguments[0],positionMillis})
     }
 
@@ -351,37 +331,34 @@ export class ListMedia extends Media{
      * @param {*} positionMillis 
      * @returns 
      */
-    i(positionMillis){
-        return this.cues.findLastIndex(a=>positionMillis>=a.time)
+    getIndexByPosition(positionMillis){
+        return this.chunks.findLastIndex(a=>positionMillis>=a.time)
     }
 
     doRenderAt(){
-        const {i=-1, }=this.state
-        if(i==-1)
-            return
-        const cue=this.cues[Math.floor(i)]
-        if(!cue)
-            return 
+        const chunk=this.chunks[this.props.i]
+        if(!chunk)
+            return null
 
-
-        return this.renderAt(cue)
+        return this.renderAt(chunk)
     }
 
     speak(props){
         if(!this.status.shouldPlay)
             return null
 
+        const {i}=this.props
         if(!this.cueHasDuration){
-            const cue=this.cues[this.state.i]
+            const chunk=this.chunks[i]
             props={
                 ...props,
                 onStart:()=>{
-                    console.info("start speak "+this.state.i)
+                    console.info("start speak "+i)
                     this.setStatusSync({shouldPlay:false},false)
                 },
                 onEnd:(duration)=>{
-                    console.info("end speak "+this.state.i)
-                    cue.duration=duration
+                    console.info("end speak "+i)
+                    chunk.duration=duration
                     this.setStatusSync({shouldPlay:true},false)
                 }
             }
@@ -389,9 +366,9 @@ export class ListMedia extends Media{
 
         if(props.text.audio){
             const {audio}=props.text
-            return <PlaySound key={this.state.i} {...{...props, audio, text:undefined}}/>
+            return <PlaySound key={i} {...{...props, audio, text:undefined}}/>
         }
-        return <Speak key={this.state.i} rate={this.status.rate} {...props}/>
+        return <Speak key={i} rate={this.status.rate} {...props}/>
     }
 
     renderAt(cue){

@@ -158,8 +158,7 @@ export default class VocabularyBook extends TaggedListMedia{
         const {usage:current=0}=this.state
         if(current!=next){
             this.setState({usage:next},()=>{
-                this.reset()
-                this.doCreateTranscript()
+                this.reset({needCreateChunks:Date.now()})
             })
         }
         return super.shouldComponentUpdate(...arguments)
