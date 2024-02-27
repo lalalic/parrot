@@ -1,30 +1,32 @@
-import React, {PureComponent} from 'react';
-import {View, Text, ActivityIndicator, Pressable, FlatList} from "react-native"
+import React from 'react';
+import {View} from "react-native"
 import {shallowEqual, useSelector} from "react-redux"
 import { Audio } from 'expo-av'
 import { produce } from "immer"
-import Slider from '@react-native-community/slider'
-import * as FileSystem from "expo-file-system"
 import * as Sharing from "expo-sharing"
 import * as ImagePicker from "expo-image-picker"
 import { useKeepAwake} from "expo-keep-awake"
 
 
 import PressableIconA from "react-native-use-qili/components/PressableIcon";
-import { ColorScheme } from 'react-native-use-qili/components/default-style';
-import { diffPretty } from '../experiment/diff';
-import { Delay } from "../components/delay"
-import { SliderIcon, PlayButton, AutoHide, Recognizer, ControlIcons, PlaySound} from '../components';
+import { SliderIcon, AutoHide, Recognizer, ControlIcons} from '..';
+import { ProgressBar } from './ProgressBar';
+import { NavBar } from './NavBar';
+import { Subtitle } from './Subtitle';
+import { PersistentHistory } from './PersistentHistory';
 
 export const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
 
-const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
+export const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
 /**
  * 2 models: with or without transcript
  * cue: {text(audio, caption, subtitles), test=text(recognze, diff), time, end}
 @TODO: 
 1. why is it constantly rerendered although status is not changed 
+
+challenging
+
  */
 export default function Player({
     debug=true,
@@ -325,7 +327,7 @@ export default function Player({
         if(state!=nextState && !shallowEqual(state,nextState)){
             dispatch({type:"media/status/changed", state:nextState})
         }
-    },[policy,chunks, challenges, challenging])
+    },[policy,chunks, /*challenges, challenging*/])
     
     const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
 
@@ -354,7 +356,7 @@ export default function Player({
                 style:{flex:1, minHeight:150},
                 positionMillis: useSelector(state=>state.talks[id]?.[policyName]?.history??0),
                 
-                policy, whitespacing: status.whitespacing, chunks
+                policy, whitespacing: status.whitespacing, chunks, challenging,
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
@@ -480,204 +482,3 @@ export default function Player({
     )
 }
 
-class PersistentHistory extends PureComponent{
-    componentWillUnmount(){
-        const {onQuit, positionMillis}=this.props
-        onQuit?.({time:positionMillis})
-    }
-
-    render(){
-        return null
-    }
-}
-
-
-export function ProgressBar({value:initValue=0, duration=0,style, onValueChange, onProgress,onSlidingComplete,onSlidingStart, ...props}){
-    const [value, setValue]=React.useState(initValue)
-    React.useEffect(()=>{
-        onProgress.current=setValue
-    },[])
-    return (
-        <View style={[{flex:1,flexDirection:"row"},style]} {...props}>
-            <View style={{justifyContent:"center",width:50}}>
-                <TimeText style={{textAlign:"right",}} time={value}/>
-            </View>
-            <View style={{justifyContent:"center",flexGrow:1}}>
-                <Slider {...{style:{flexGrow:1},thumbTintColor:"transparent",onValueChange,onSlidingComplete,onSlidingStart,value, maximumValue:duration}}/>
-            </View>
-            <View style={{justifyContent:"center",width:50,}}>
-                <TimeText style={{}} time={(duration-value)}/>
-            </View>
-        </View>
-    )
-}
-
-const TimeText=({time,...props})=>{
-    const text=((m=0,b=m/1000,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`)(time);
-    const [m,s]=text.split(":")
-    const textStyle={width:20}
-    return (
-        <Text {...props}>
-            <Text style={textStyle}>{m}</Text><Text>:</Text>
-            <Text style={textStyle}>{s}</Text>
-        </Text>
-    )
-}
-
-export function NavBar({dispatch,status={},controls={},isChallenged, navable,style, size=24,...props}){
-    const color=React.useContext(ColorScheme)
-    const containerStyle={width:"100%",flexDirection:"row",alignItems:"center",alignSelf:"center",justifyContent: "space-around", margin:"auto"}
-    return (
-        <View style={[containerStyle,style]} {...props}>
-            {status.isLoaded && (<>
-            <PressableIcon size={size} testID="slow"
-                disabled={!navable||controls.slow==false}
-                name={controls.slow==false ? "" : (status.whitespacing ? "replay-5":"subdirectory-arrow-left")} 
-                onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}Slow`})}/>
-            <PressableIcon size={size} testID="prev"
-                disabled={!navable||controls.prev==false}
-                name={controls.prev==false ? "" : (status.whitespacing ? "replay" : "keyboard-arrow-left")} 
-                onPress={e=>dispatch({type:`nav/${status.whitespacing ? "replay" : "prev"}`})}/>
-
-            <PlayButton size={size}  testID="play"
-                whitespacing={status.whitespace} 
-                disabled={status.whitespacing || controls.play===false}
-                color={status.whitespacing ? color.warn : "white"}
-                name={status.whitespacing ? "fiber-manual-record" : (status.isPlaying ? "pause" : "play-arrow")} 
-                onPress={e=>dispatch({type:"nav/play"})}/>
-            
-            <PressableIcon size={size} testID="next"
-                disabled={!navable||controls.next==false}
-                name={controls.next==false ? "" : "keyboard-arrow-right"}
-                onPress={e=>dispatch({type:"nav/next"})}/>
-            
-            <PressableIcon size={size} testID="check"
-                disabled={!navable||controls.select==false}
-                name={controls.select==false ? "" : (isChallenged ? "alarm-on" : "alarm-add")}
-                onPress={e=>dispatch({type:"nav/challenge"})} 
-                color={isChallenged ? "yellow" : undefined}/>
-            </>)}
-            {!status?.isLoaded && <ActivityIndicator  size="large"/>}
-        </View>
-    )
-}
-
-export function Subtitle({delay, id, item, policyName, style, ...props}){
-    const {diffs}=useSelector(state=>{
-        return state.talks[id]?.[policyName]?.records?.[`${item?.time}-${item?.end}`]
-    })||{}
-    return (
-        <Text {...props} style={style}>
-            {item && <Recognizer.Text key={item.text} id={item.text}>{diffPretty(diffs)}</Recognizer.Text>}
-            {"\n"}
-            <Delay seconds={delay}>
-                {item?.text||""}{"\n"}
-            </Delay>
-        </Text>
-    )
-}
-
-export function Subtitles({style,policy, itemHeight:height=80,  ...props}){
-    const {status, i=status.i, chunks, setShowSubtitle}=React.useContext(Context)
-    const shouldCaption=policy=="shadowing"
-    const subtitleRef=React.useRef()
-    React.useEffect(()=>{
-        if(chunks && subtitleRef.current){
-            if(i>=0 && i<chunks.length-1){
-                subtitleRef.current.scrollToIndex({index:i, viewPosition:0.5})
-            }
-        }
-    },[i])
-
-    React.useEffect(()=>{
-        setShowSubtitle(false)
-        return ()=>setShowSubtitle(true)
-    },[])
-
-    return (
-        <View {...props} style={[{padding:4},style]}>
-            <FlatList data={chunks} 
-                ref={subtitleRef}
-                estimatedItemSize={height}
-                getItemLayout={(data, index)=>({length:height, offset: index*height, index})}
-                keyExtractor={({text,test},i)=>`${text}-${test}-${i}`}
-                renderItem={({ index, item })=><SubtitleItem {...{ style:{height}, shouldCaption, index, item,}}/>}
-                />
-        </View>
-    )
-}
-
-function SubtitleItem({shouldCaption:$shouldCaption, index, item, style}) {
-    const {id, dispatch, status, current=status.i, getRecordChunkUri, policyName,controls}=React.useContext(Context)
-    const color=React.useContext(ColorScheme)
-    const {recognized, diffs, score}=useSelector(state=>{
-        return state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`]
-    })||{}
-    const isChallenged= useSelector(state=>{
-        const exist=state.talks[id]?.[policyName]?.challenges?.find(a=>a.time==item.time)
-        return exist && !exist.pass
-    })
-    const audio=getRecordChunkUri?.(item)
-
-    const [playing, setPlaying] = React.useState(false);
-    const [audioExists, setAudioExists]=React.useState(false)
-    React.useEffect(()=>{
-        if(audio && recognized){
-            (async()=>{
-                const info=await FileSystem.getInfoAsync(audio)
-                if(info.exists){
-                    setAudioExists(true)
-                }
-            })();
-        }
-    },[recognized, audio])
-    const textProps={
-        style:{ flexGrow: 1, paddingLeft: 10, },
-        adjustsFontSizeToFit:true,
-        numberOfLines:2,
-    }
-
-    const [shouldCaption, setShouldCaption]=React.useState($shouldCaption)
-
-    return (
-        <View style={{ backgroundColor: index == current ? color.inactive : undefined, 
-                flexDirection:"row", borderColor: "gray", borderTopWidth: 1, paddingBottom: 5, paddingTop: 5 , ...style}}>
-            <View style={{width:22, justifyContent:"space-between", alignItems:"center"}}>
-                <Text style={{ textAlign: "center", fontSize:10 }}>{index + 1}</Text>
-                {controls.select!=false && <PressableIcon size={20} color={color.text} 
-                    onPress={e=>dispatch({type:"nav/challenge",i:index})}
-                    name={isChallenged ? "alarm-on" : "radio-button-unchecked"}/>}
-                <Text style={{textAlign: "center",fontSize:10}}>{score||""}</Text>
-            </View>
-            <View style={{flex:1, flexGrow:1 }}>
-                <Pressable style={{flex:1}}
-                    onPressOut={e=>!$shouldCaption && setShouldCaption(false)}
-                    onLongPress={e=>!$shouldCaption && setShouldCaption(true)}
-                    onPress={e => dispatch({ type: "media/time", time:item.time , shouldPlay:true})}>
-                    <Text {...textProps}>{shouldCaption ? item.text : ""}</Text>
-                </Pressable>
-                <Pressable style={{ flex:1, justifyContent:"flex-end", }}
-                    onPress={e => {
-                        if(!audioExists)
-                            return 
-                        dispatch({type:"nav/pause", callback:()=>{
-                            debugger
-                            setPlaying(true)
-                        }})
-                    }}>
-                    <Recognizer.Text 
-                        key={recognized}
-                        id={item.text} 
-                        {...textProps} 
-                        style={{
-                            ...textProps.style, 
-                            color: playing ? color.primary : color.text
-                        }}
-                        children={diffPretty(diffs)}
-                        />
-                    {!!playing && !!audio && <PlaySound audio={audio} onEnd={e=>setPlaying(false)} />}
-                </Pressable>
-            </View>
-        </View>
-    )
-}
