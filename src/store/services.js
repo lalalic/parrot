@@ -71,7 +71,13 @@ async function fetchTedTalk({slug},api){
 	}
 
 	if(talk.data){
-		let lastCue=null, offset=100
+		let lastCue=null
+		const offset=await (async()=>{
+			console.assert(resources.hls.metadata)
+			const resHlsMeta=await fetch(resources.hls.metadata)
+			const hlsMeta=await resHlsMeta.json()
+			return hlsMeta.domains.filter(a=>!a.primaryDomain).reduce((sum,a)=>sum+a.duration*1000,0)
+		})();
 		talk.data.forEach((p,i)=>{
 			p.cues.forEach((cue,j)=>{
 				cue.time+=offset
