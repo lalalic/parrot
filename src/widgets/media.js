@@ -434,7 +434,7 @@ function ParentControl({talk, policyName}){
         }),[])
     return (
         <>
-            <PressableIcon name="supervisor-account"
+            <PressableIcon name={controled ? "lock" : "lock-open"}
                 color={controled ? "yellow" : undefined}
                 onLongPress={e=>{
                     dispatch({type:"talk/parentControl/remove", talk:{id:talk.id}, policyName})

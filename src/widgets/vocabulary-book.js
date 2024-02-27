@@ -31,6 +31,7 @@ export default class VocabularyBook extends TaggedListMedia{
         description:"Remember Every Word",
         thumb:require("../../assets/widget-vocabulary-book.png"),
         usage:0,
+        shuffle:true,
     }
 
     static ExtendActions({talk, policyName}){
@@ -114,19 +115,19 @@ export default class VocabularyBook extends TaggedListMedia{
         }
     ]
 
-    static getDerivedStateFromProps({policy:{usage=0}={}}){
-        return {usage}
+    static getDerivedStateFromProps({policy:{usage=0, shuffle}={}}){
+        return {usage, shuffle}
     }
 
     /**
      * A:B
      * lang:mylang
      */
-    createTranscript({shuffle}={}){
-        const {state:{usage}, props:{data=[]}}=this
+    createTranscript({shuffle:a1}={}){
+        const {state:{usage, shuffle}, props:{data=[]}}=this
         
-        return (shuffle ? this.shuffleArray([...data]) : data)
-            .map(({word, text=word, translated},i, all)=>{
+        const list=shuffle||a1 ? this.shuffleArray([...data]) : data
+        const cues=list.map(({word, text=word, translated},i, all)=>{
                 const fulltext=getItemText(all[i], true, "\n\n")
                 switch(usage){
                     case 0://lang -> mylang
@@ -137,6 +138,21 @@ export default class VocabularyBook extends TaggedListMedia{
                         return {text,fulltext}
                 }
             })
+        return cues
+    }
+
+    doCreateTranscript(){
+        const {props:{id, policyName}}=this
+        const chunks=super.doCreateTranscript(...arguments)
+        if(this.state.shuffle){
+            this.context.store.dispatch({
+                type:"talk/challenge/shuffle", 
+                talk:{id}, 
+                policyName,
+                challenges: chunks
+            })
+        }
+        return chunks
     }
 
     renderAt(cue){
@@ -320,15 +336,25 @@ const Sentense=({talk, id=talk?.id})=>{
 
 function Shuffle({talk, id=talk?.id, policyName}){
     const dispatch=useDispatch()
-    const {media: book, firePlayerEvent}=React.useContext(PlayerContext)
-    const {challenging}=useSelector(state=>state.talks[id]?.[policyName]||{})
-    if(challenging)
-        return null
+    const {media:book, firePlayerEvent}=React.useContext(PlayerContext)
+    const {challenges, challenging, shuffle}=useSelector(state=>state.talks[id][policyName]||{})
     return <PressableIcon name="shuffle" 
+        color={shuffle ? "yellow" : undefined}
+        onLongPress={e=>{
+            dispatch({type:"talk/policy", talk:{id}, target:policyName, payload:{shuffle:!shuffle}})
+        }}
         onPress={e=>{
-            const challenges=book.current.createChunks({shuffle:true, update:false})
-            dispatch({type:"talk/challenge/shuffle", talk:{id}, policyName, challenges})
-            firePlayerEvent("nav/reset")
+            if(!challenging){
+                book.current.createChunks({shuffle:true, update:false})
+            }else{
+                dispatch({
+                    type:"talk/challenge/shuffle", 
+                    talk:{id}, 
+                    policyName,
+                    challenges: book.current.shuffleArray([...challenges])
+                })
+                firePlayerEvent("nav/reset")
+            }
         }}/>
 }
 
