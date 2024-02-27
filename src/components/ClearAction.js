@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-native";
-import { Context as PlayerContext } from "./player";
+import PlayerContext  from "./player/Context";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 
 export default function ClearAction({ talk, policyName }) {

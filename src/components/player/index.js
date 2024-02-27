@@ -8,24 +8,22 @@ import * as ImagePicker from "expo-image-picker"
 import { useKeepAwake} from "expo-keep-awake"
 
 
-import PressableIconA from "react-native-use-qili/components/PressableIcon";
 import { SliderIcon, AutoHide, Recognizer, ControlIcons} from '..';
 import { ProgressBar } from './ProgressBar';
 import { NavBar } from './NavBar';
 import { Subtitle } from './Subtitle';
 import { PersistentHistory } from './PersistentHistory';
+import useCheckChallenged from './useCheckChallenged';
+import PressableIcon from './GrayPressableIcon';
+import Context from './Context';
 
-export const Context=React.createContext({})
 const asyncCall=fn=>setTimeout(fn, 0)
 
-export const PressableIcon=({color="gray",...props})=><PressableIconA {...props} color={color}/>
 /**
  * 2 models: with or without transcript
  * cue: {text(audio, caption, subtitles), test=text(recognze, diff), time, end}
 @TODO: 
 1. why is it constantly rerendered although status is not changed 
-
-challenging
 
  */
 export default function Player({
@@ -116,6 +114,7 @@ export default function Player({
         }
         return []
     },[id, policy.chunk, challenging, challenges, transcript])
+
 
     const stopOnMediaStatus=React.useRef(false)
     const setMediaStatusAsync=React.useCallback(async (status, callback)=>{
@@ -254,6 +253,8 @@ export default function Player({
         }
         return nextState
     },{isLoaded:false, i:-1, durationMillis:0});
+
+    const currentChunk=chunks[status.i]
     /**
      * state reducer use chunks, so make a shallow dispatch with chunks injected to action
      */
@@ -327,10 +328,8 @@ export default function Player({
         if(state!=nextState && !shallowEqual(state,nextState)){
             dispatch({type:"media/status/changed", state:nextState})
         }
-    },[policy,chunks, /*challenges, challenging*/])
+    },[policy,chunks, dispatch])
     
-    const isChallenged=React.useMemo(()=>!!challenges?.find(a=>a.time==chunks[status.i]?.time),[chunks[status.i],challenges])
-
     const onRecord=React.useCallback(record=>{
         const {i, chunk=chunks[i]}=status
         const isLastChunk = i>=chunks.length-1
@@ -356,7 +355,7 @@ export default function Player({
                 style:{flex:1, minHeight:150},
                 positionMillis: useSelector(state=>state.talks[id]?.[policyName]?.history??0),
                 
-                policy, whitespacing: status.whitespacing, chunks, challenging,
+                policy, policyName, whitespacing: status.whitespacing, chunks, challenging,
             })}
             <View pointerEvents='box-none'
                 style={[{position:"absolute",width:"100%",height:"100%",backgroundColor:false!=policy.visible?"transparent":"black"},layoverStyle]}>
@@ -364,82 +363,28 @@ export default function Player({
                 <View style={{flex:1, flexDirection:"column", justifyContent:"center"}}>
                     <NavBar {...{
                         testID: "navBar",
-                        controls,isChallenged,
+                        controls,
+                        id, policyName, chunk:currentChunk,//isChallenged
                         dispatch,status,
                         navable:chunks?.length>=2,
                         size:32, style:navStyle }}/>
                 </View>
                 }
                 
-                <AutoHide hide={autoHideActions} testID="controlBar" style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
-                    {false!=controls.record && <PressableIcon style={{marginRight:10}} testID="record"
-                        name={`${ControlIcons.record}${!policy.record?"-off":""}`} 
-                        onPress={e=>changePolicy("record",!policy.record)}
-                        />}
-
-                    {false!=controls.video && <PressableIcon style={{marginRight:10}} testID="video"
-                        name={`${ControlIcons.visible}${!policy.visible?"-off":""}`} 
-                        onPress={e=>changePolicy("visible",!policy.visible)}/>}
-
-                    {false!=controls.caption && <SliderIcon style={{marginRight:10}} testID="caption"
-                        icon={`${ControlIcons.caption}${!policy.caption ? "-disabled":""}`}
-                        onToggle={()=>changePolicy("caption",!policy.caption)}
-                        onSlideFinish={delay=>changePolicy("captionDelay",delay)}
-                        slider={{minimumValue:0,maximumValue:3,step:1,value:policy.captionDelay,text:t=>`${-t}s`}}/>}
-                    
-                    {false!=controls.autoChallenge && <SliderIcon style={{marginRight:10}} testID="autoChallenge"
-                        icon={policy.autoChallenge>0 ? ControlIcons.autoChallenge : "alarm-off"}
-                        onToggle={e=>changePolicy("autoChallenge",policy.autoChallenge ? 0 : 80)}
-                        onSlideFinish={value=>changePolicy("autoChallenge",value)}
-                        slider={{minimumValue:0,maximumValue:100,step:5,value:policy.autoChallenge??0}}/>}
-
-                    {false!=controls.speed && <SliderIcon style={{marginRight:10}} testID="speed"
-                        icon={ControlIcons.speed} 
-                        onToggle={()=>dispatch({type:"speed/toggle"})}
-                        onSlideFinish={rate=>dispatch({type:"speed/tune",rate})}
-                        slider={{minimumValue:0.5,maximumValue:1.5,step:0.25,value:policy.speed,text:t=>`${t}x`}}/>}
-
-                    {false!=controls.whitespace && <SliderIcon style={{marginRight:10}} testID="whitespace"
-                        icon={policy.whitespace>0 ? ControlIcons.whitespace : "notifications-off"}
-                        onToggle={()=>changePolicy("whitespace",policy.whitespace>0 ? 0 : 1)}
-                        onSlideFinish={value=>changePolicy("whitespace",value)}
-                        slider={{minimumValue:0.5,maximumValue:4,step:0.5,value:policy.whitespace,text:t=>`${t}x`}}/>}
-
-                    {false!=controls.chunk && <SliderIcon style={{marginRight:10}} testID="chunk"
-                        icon={policy.chunk>0 ? ControlIcons.chunk : "flash-off"}
-                        onToggle={()=>changePolicy("chunk",policy.chunk>0 ? 0 : 1)}
-                        onSlideFinish={value=>changePolicy("chunk",value)}
-                        slider={{minimumValue:0,maximumValue:10,step:1,value:policy.chunk,text:t=>({'9':"paragraph","10":"whole"})[t+'']||`${t} chunks`}}/>}
-
-                    {false!=controls.fullscreen && <PressableIcon style={{marginRight:10}} testID="fullscreen"
-                        name={!policy.fullscreen ? ControlIcons.fullscreen : "fullscreen-exit"}
-                        onLongPress={e=>{
-                            (async()=>{
-                                let result = await ImagePicker.launchImageLibraryAsync({
-                                    mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-                                    allowsEditing: true,
-                                  });
-                                if(!result.cancelled){
-                                    if(available){
-                                        await Sharing.shareAsync(result.assets[0].uri)
-                                    }
-                                }
-                            })();
-                        }}
-                        onPress={e=>{
-                            changePolicy("fullscreen", !policy.fullscreen)
-                        }}/>}
+                <AutoHide hide={autoHideActions} testID="controlBar" 
+                    style={{height:40,flexDirection:"row",padding:4,justifyContent:"flex-end",position:"absolute",top:0,width:"100%"}}>
+                    {ControlBar(controls, policy, changePolicy, dispatch)}
                 </AutoHide>
                 
                 <View style={{position:"absolute",bottom:0, width:"100%"}}>
                     {status.whitespacing && 
                         <Recognizer 
-                            key={chunks[status.i].text} 
-                            id={chunks[status.i].text} 
-                            locale={chunks[status.i]?.recogMyLocale}
+                            key={currentChunk.text} 
+                            id={currentChunk.text} 
+                            locale={currentChunk?.recogMyLocale}
                             onRecord={onRecord}  
                             style={{width:"100%",textAlign:"center",fontSize:16}}
-                            uri={chunks[status.i] && getRecordChunkUri?.(chunks[status.i])} 
+                            uri={currentChunk && getRecordChunkUri?.(currentChunk)} 
                             />
                     }
 
@@ -447,10 +392,10 @@ export default function Player({
                     <Subtitle 
                         testID="subtitle"
                         style={{width:"100%",textAlign:"center",fontSize:16, ...subtitleStyle}}
-                        id={id} item={chunks[status.i]} policyName={policyName}
+                        id={id} item={currentChunk} policyName={policyName}
                         numberOfLines={4}
                         adjustsFontSizeToFit={true}
-                        delay={chunks[status.i]?.test ? 0 : policy.captionDelay/*delay for test*/}
+                        delay={currentChunk?.test ? 0 : policy.captionDelay/*delay for test*/}
                         />
                     }
 
@@ -477,7 +422,70 @@ export default function Player({
             {children}
         </Context.Provider>
         }
-        <PersistentHistory onQuit={onQuit} positionMillis={chunks[status.i]?.time}/>
+        <PersistentHistory onQuit={onQuit} positionMillis={currentChunk?.time}/>
+        </>
+    )
+}
+
+function ControlBar(controls, policy, changePolicy, dispatch) {
+    return (
+        <>
+            {false != controls.record && <PressableIcon style={{ marginRight: 10 }} testID="record"
+                name={`${ControlIcons.record}${!policy.record ? "-off" : ""}`}
+                onPress={e => changePolicy("record", !policy.record)} />}
+
+            {false != controls.video && <PressableIcon style={{ marginRight: 10 }} testID="video"
+                name={`${ControlIcons.visible}${!policy.visible ? "-off" : ""}`}
+                onPress={e => changePolicy("visible", !policy.visible)} />}
+
+            {false != controls.caption && <SliderIcon style={{ marginRight: 10 }} testID="caption"
+                icon={`${ControlIcons.caption}${!policy.caption ? "-disabled" : ""}`}
+                onToggle={() => changePolicy("caption", !policy.caption)}
+                onSlideFinish={delay => changePolicy("captionDelay", delay)}
+                slider={{ minimumValue: 0, maximumValue: 3, step: 1, value: policy.captionDelay, text: t => `${-t}s` }} />}
+
+            {false != controls.autoChallenge && <SliderIcon style={{ marginRight: 10 }} testID="autoChallenge"
+                icon={policy.autoChallenge > 0 ? ControlIcons.autoChallenge : "alarm-off"}
+                onToggle={e => changePolicy("autoChallenge", policy.autoChallenge ? 0 : 80)}
+                onSlideFinish={value => changePolicy("autoChallenge", value)}
+                slider={{ minimumValue: 0, maximumValue: 100, step: 5, value: policy.autoChallenge ?? 0 }} />}
+
+            {false != controls.speed && <SliderIcon style={{ marginRight: 10 }} testID="speed"
+                icon={ControlIcons.speed}
+                onToggle={() => dispatch({ type: "speed/toggle" })}
+                onSlideFinish={rate => dispatch({ type: "speed/tune", rate })}
+                slider={{ minimumValue: 0.5, maximumValue: 1.5, step: 0.25, value: policy.speed, text: t => `${t}x` }} />}
+
+            {false != controls.whitespace && <SliderIcon style={{ marginRight: 10 }} testID="whitespace"
+                icon={policy.whitespace > 0 ? ControlIcons.whitespace : "notifications-off"}
+                onToggle={() => changePolicy("whitespace", policy.whitespace > 0 ? 0 : 1)}
+                onSlideFinish={value => changePolicy("whitespace", value)}
+                slider={{ minimumValue: 0.5, maximumValue: 4, step: 0.5, value: policy.whitespace, text: t => `${t}x` }} />}
+
+            {false != controls.chunk && <SliderIcon style={{ marginRight: 10 }} testID="chunk"
+                icon={policy.chunk > 0 ? ControlIcons.chunk : "flash-off"}
+                onToggle={() => changePolicy("chunk", policy.chunk > 0 ? 0 : 1)}
+                onSlideFinish={value => changePolicy("chunk", value)}
+                slider={{ minimumValue: 0, maximumValue: 10, step: 1, value: policy.chunk, text: t => ({ '9': "paragraph", "10": "whole" })[t + ''] || `${t} chunks` }} />}
+
+            {false != controls.fullscreen && <PressableIcon style={{ marginRight: 10 }} testID="fullscreen"
+                name={!policy.fullscreen ? ControlIcons.fullscreen : "fullscreen-exit"}
+                onLongPress={e => {
+                    (async () => {
+                        let result = await ImagePicker.launchImageLibraryAsync({
+                            mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+                            allowsEditing: true,
+                        });
+                        if (!result.cancelled) {
+                            if (available) {
+                                await Sharing.shareAsync(result.assets[0].uri);
+                            }
+                        }
+                    })();
+                } }
+                onPress={e => {
+                    changePolicy("fullscreen", !policy.fullscreen);
+                } } />}
         </>
     )
 }

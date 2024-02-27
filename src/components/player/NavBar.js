@@ -2,12 +2,12 @@ import React from 'react';
 import { View, ActivityIndicator } from "react-native";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { PlayButton } from '..';
-import { PressableIcon } from './index';
+import PressableIcon from "./GrayPressableIcon";
+import useCheckChallenged from './useCheckChallenged';
 
-
-
-export function NavBar({ dispatch, status = {}, controls = {}, isChallenged, navable, style, size = 24, ...props }) {
+export function NavBar({ dispatch, status = {}, controls = {}, id, chunk, policyName, navable, style, size = 24, ...props }) {
     const color = React.useContext(ColorScheme);
+    const isChallenged=useCheckChallenged({id, chunk, policyName})
     const containerStyle = { width: "100%", flexDirection: "row", alignItems: "center", alignSelf: "center", justifyContent: "space-around", margin: "auto" };
     return (
         <View style={[containerStyle, style]} {...props}>

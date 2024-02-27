@@ -9,7 +9,7 @@ import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged
 import * as Clipboard from "expo-clipboard"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import { useNavigate, useParams } from "react-router-native"
-import { Context as PlayerContext} from "../components/player"
+import PlayerContext from "../components/player/Context"
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import { prompt } from "react-native-use-qili/components/Prompt"
 const l10n=globalThis.l10n

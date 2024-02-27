@@ -3,7 +3,7 @@ import { View, Animated, Easing, Text , ImageBackground} from "react-native";
 import { useDispatch, ReactReduxContext, useSelector } from "react-redux";
 import { Qili } from "../store"
 
-import { Context as PlayerContext } from "../components/player"
+import PlayerContext from "../components/player/Context"
 import { Subtitles } from "../components/player/Subtitles";
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";

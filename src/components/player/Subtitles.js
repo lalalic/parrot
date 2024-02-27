@@ -5,11 +5,12 @@ import * as FileSystem from "expo-file-system";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
 import { diffPretty } from '../../experiment/diff';
 import { Recognizer, PlaySound } from '..';
-import { Context, PressableIcon } from './index';
-
+import PlayerContext from "./Context";
+import PressableIcon from "./GrayPressableIcon";
+import useCheckChallenged from './useCheckChallenged';
 
 export function Subtitles({ style, policy, itemHeight: height = 80, ...props }) {
-    const { status, i = status.i, chunks, setShowSubtitle } = React.useContext(Context);
+    const { status, i = status.i, chunks, setShowSubtitle } = React.useContext(PlayerContext);
     const shouldCaption = policy == "shadowing";
     const subtitleRef = React.useRef();
     React.useEffect(() => {
@@ -32,21 +33,20 @@ export function Subtitles({ style, policy, itemHeight: height = 80, ...props }) 
                 estimatedItemSize={height}
                 getItemLayout={(data, index) => ({ length: height, offset: index * height, index })}
                 keyExtractor={({ text, test }, i) => `${text}-${test}-${i}`}
-                renderItem={({ index, item }) => <SubtitleItem {...{ style: { height }, shouldCaption, index, item, }} />} />
+                renderItem={({ index, item }) => <SubtitleItem {...{ style: { height }, shouldCaption, index, chunk:item, }} />} />
         </View>
     );
 }
-function SubtitleItem({ shouldCaption: $shouldCaption, index, item, style }) {
-    const { id, dispatch, status, current = status.i, getRecordChunkUri, policyName, controls } = React.useContext(Context);
+function SubtitleItem({ shouldCaption: $shouldCaption, index, chunk, style }) {
+    const { id, dispatch, status, current = status.i, getRecordChunkUri, policyName, controls } = React.useContext(PlayerContext);
     const color = React.useContext(ColorScheme);
     const { recognized, diffs, score } = useSelector(state => {
-        return state.talks[id]?.[policyName]?.records?.[`${item.time}-${item.end}`];
+        return state.talks[id]?.[policyName]?.records?.[`${chunk.time}-${chunk.end}`];
     }) || {};
-    const isChallenged = useSelector(state => {
-        const exist = state.talks[id]?.[policyName]?.challenges?.find(a => a.time == item.time);
-        return exist && !exist.pass;
-    });
-    const audio = getRecordChunkUri?.(item);
+
+    const isChallenged = useCheckChallenged({id,chunk,policyName})
+    
+    const audio = getRecordChunkUri?.(chunk);
 
     const [playing, setPlaying] = React.useState(false);
     const [audioExists, setAudioExists] = React.useState(false);
@@ -84,8 +84,8 @@ function SubtitleItem({ shouldCaption: $shouldCaption, index, item, style }) {
                 <Pressable style={{ flex: 1 }}
                     onPressOut={e => !$shouldCaption && setShouldCaption(false)}
                     onLongPress={e => !$shouldCaption && setShouldCaption(true)}
-                    onPress={e => dispatch({ type: "media/time", time: item.time, shouldPlay: true })}>
-                    <Text {...textProps}>{shouldCaption ? item.text : ""}</Text>
+                    onPress={e => dispatch({ type: "media/time", time: chunk.time, shouldPlay: true })}>
+                    <Text {...textProps}>{shouldCaption ? chunk.text : ""}</Text>
                 </Pressable>
                 <Pressable style={{ flex: 1, justifyContent: "flex-end", }}
                     onPress={e => {
@@ -100,7 +100,7 @@ function SubtitleItem({ shouldCaption: $shouldCaption, index, item, style }) {
                     }}>
                     <Recognizer.Text
                         key={recognized}
-                        id={item.text}
+                        id={chunk.text}
                         {...textProps}
                         style={{
                             ...textProps.style,
@@ -113,3 +113,4 @@ function SubtitleItem({ shouldCaption: $shouldCaption, index, item, style }) {
         </View>
     );
 }
+
