@@ -139,19 +139,25 @@ export default class TedTalk extends Base{
     }
 
     render(){
-        const { posterSource,source,shouldPlay,
+        const { posterSource,source,shouldPlay, positionMillis,rate,
                 useNativeControls=false,
                 shouldCorrectPitch=true,
                 pitchCorrectionQuality=Audio.PitchCorrectionQuality.High,
-                progressUpdateIntervalMillis=100}=this.props
+                progressUpdateIntervalMillis=100,
+            }=this.props
         return (
             <ExpoVideo 
                 {...{onPlaybackStatusUpdate:this.onPlaybackStatusUpdate, 
                     useNativeControls,shouldCorrectPitch,pitchCorrectionQuality,
-                    posterSource,source,shouldPlay,progressUpdateIntervalMillis
+                    posterSource,source,shouldPlay,progressUpdateIntervalMillis,
+                    positionMillis,rate,
                 }} 
                 ref={this.video}/>
         )
+    }
+
+    reset(){
+        this.setStatusAsync({positionMillis:0, shouldPlay:false})
     }
 
     doCreateTranscript(){

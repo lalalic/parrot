@@ -48,4 +48,14 @@ export default class Base extends React.Component {
     setStatusAsync(){
         throw new Error("setStatusAsync must be implemented")
     }
+
+    reset(){
+        throw new Error("reset must be implemented")
+    }
+
+    componentDidMount() {
+        const { positionMillis = 0, shouldPlay } = this.props
+        this.createChunks()
+        this.setStatusAsync({ shouldPlay, positionMillis })
+    }
 }

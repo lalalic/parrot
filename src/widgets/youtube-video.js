@@ -11,7 +11,7 @@ export default class YouTubeVideo extends Video{
     }
 
     static mediaProps({autoplay, talk, dispatch, policyName, id=talk.id}){
-        const Video=this.Video
+        const Video=this
         const media=(()=>{
             if(!talk.localVideo){
                 return  (
@@ -23,6 +23,7 @@ export default class YouTubeVideo extends Video{
                 )
             }
             return <Video
+                {...talk}
                 posterSource={{ uri: talk.thumb }}
                 source={{ uri: talk.localVideo }}
                 shouldPlay={autoplay}
@@ -32,7 +33,6 @@ export default class YouTubeVideo extends Video{
         
         return {
             media,
-            transcript: talk.data,
         }
     }
 

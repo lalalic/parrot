@@ -184,14 +184,10 @@ class Media extends Base {
     }
 
     componentDidMount() {
-        const { positionMillis = 0, shouldPlay } = this.props;
         this.progress.addListener(({ value }) => {
             this.onPositionMillis(Math.floor(value))
         })
-
-        this.createChunks()
-
-        this.setStatusAsync({ shouldPlay, positionMillis });
+        super.componentDidMount()
     }
 
     componentWillUnmount() {
@@ -288,7 +284,6 @@ export class ListMedia extends Media{
 
     createChunks(){
         try{
-            this.reset()
             const chunks=super.createChunks(...arguments)
             this.status.isLoaded=true
             const delta=3*this.props.progressUpdateIntervalMillis
