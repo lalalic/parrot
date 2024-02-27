@@ -122,7 +122,6 @@ class Media extends Base {
         super(...arguments)
         this.progress = new Animated.Value(0);
         this.state = {}
-        this.reset()
     }
 
     get slug(){
@@ -137,7 +136,7 @@ class Media extends Base {
         return this.constructor.defaultProps.cueHasDuration
     }
 
-    reset(particular){
+    reset(){
         const {rate=1, volume=1}=this.props
         this.progressing?.stop()
         this.status = {
@@ -157,7 +156,6 @@ class Media extends Base {
         
         this.progress.current = 0
         this.progress.last = 0
-        this.onPlaybackStatusUpdate(particular)
     }
 
     shouldComponentUpdate(nextProps, state) {
@@ -290,6 +288,7 @@ export class ListMedia extends Media{
 
     createChunks(){
         try{
+            this.reset()
             const chunks=super.createChunks(...arguments)
             this.status.isLoaded=true
             const delta=3*this.props.progressUpdateIntervalMillis

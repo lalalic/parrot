@@ -159,7 +159,6 @@ export default class VocabularyBook extends TaggedListMedia{
         if(current!=next){
             this.setState({usage:next},()=>{
                 this.createChunks()
-                this.reset()
             })
         }
         return super.shouldComponentUpdate(...arguments)

@@ -183,6 +183,7 @@ function useChunks({media, id, policy, policyName, challenging}) {
     React.useEffect(() => {
         if(media.current && $chunks.current!=InitChunks){
             media.current.createChunks()
+
         }
     }, [id, policy.chunk, challenging])
     return [chunks, setChunks]
@@ -233,12 +234,13 @@ function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusA
         }
 
         if(mediaStatus.chunks){
-            setChunks(chunks=mediaStatus.chunks)
+            setChunks(mediaStatus.chunks)
+            return 
         }
 
         const { i: currentIndex, whitespacing } = state;
         const nextState = (() => {
-            if (//stopOnMediaStatus.current ||// setting status async
+            if (
                 mediaStatus.shouldPlay != mediaStatus.isPlaying ||// player is ajusting play status 
                 mediaStatus.positionMillis <= state.minPositionMillis ||//player offset ajustment
                 whitespacing //
