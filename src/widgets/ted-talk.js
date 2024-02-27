@@ -12,7 +12,7 @@ import {isAdmin} from "react-native-use-qili/store";
 
 import { PolicyChoice, html } from '../components';
 import ClearAction from '../components/ClearAction';
-import { Subtitles } from "../components/player"
+import { Subtitles } from "../components/player/Subtitles";
 import mpegKit from "../experiment/mpeg"
 import { Qili, Ted, } from "../store";
 const l10n=globalThis.l10n
@@ -125,6 +125,21 @@ export default class TedTalk extends React.Component{
     render(){
         const {children}=this.props
         return children
+    }
+
+    createTranscript(){
+        
+    }
+
+    doCreateTranscript(){
+        const {challenging, onPlaybackStatusUpdate}=this.props
+        if(challenging){
+            return 
+        }
+        const cues=this.createTranscript(...arguments)
+        onPlaybackStatusUpdate({
+            transcript:[{cues}]
+        })
     }
 }
 

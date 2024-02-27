@@ -3,7 +3,8 @@ import { View, Animated, Easing, Text , ImageBackground} from "react-native";
 import { useDispatch, ReactReduxContext, useSelector } from "react-redux";
 import { Qili } from "../store"
 
-import { Subtitles, Context as PlayerContext } from "../components/player"
+import { Context as PlayerContext } from "../components/player"
+import { Subtitles } from "../components/player/Subtitles";
 import { PolicyChoice, html, Speak, PlaySound } from '../components';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
@@ -301,6 +302,9 @@ export class ListMedia extends Media{
     }
 
     doCreateTranscript(){
+        if(this.props.challenging){
+            return 
+        }
         const cues=this.createTranscript(...arguments)
         if(cues && cues.length>0){
             const delta=3*this.props.progressUpdateIntervalMillis
