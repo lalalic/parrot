@@ -54,16 +54,16 @@ export default function Player({
     const [showSubtitle, setShowSubtitle]=React.useState(true)
 
     //1. media create chunks according to policy
-    const {chunks, triggerCreateChunks}=useChunks({media, id, policy, policyName, challenging})
+    const [chunks, setChunks]=useChunks({media, id, policy, policyName, challenging})
 
     const { autoHideActions, autoHideProgress, setAutoHide } = useAutoHide(policy);
     const changePolicy=React.useCallback((key,value)=>{
         onPolicyChange?.({[key]:value})
         setAutoHide(Date.now())
     },[onPolicyChange, setAutoHide])
-    const [stopOnMediaStatus, setMediaStatusAsync] = useMediaStatusControl(debug, media);
+    const [setMediaStatusAsync] = useMediaStatusControl({debug, media});
     const [status, dispatch] = useLocalState({setMediaStatusAsync, onProgress, toggleChallengeChunk, changePolicy,  chunks, challenging, debug});
-    const onPlaybackStatusUpdate=usePlaybackStatusUpdate({triggerCreateChunks, onProgress, stopOnMediaStatus, chunks, setMediaStatusAsync, policy, dispatch, status, debug})
+    const onPlaybackStatusUpdate=usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusAsync, policy, dispatch, status, debug})
     
     const onRecord=React.useCallback(record=>{
         const {i, chunk=chunks[i]}=status
@@ -170,16 +170,22 @@ const Styles=StyleSheet.create({
     recognizer: {width:"100%",textAlign:"center",fontSize:16},
 })
 
-
+/**
+ * To create chunk
+ * @param {*} param0 
+ * @returns 
+ */
 function useChunks({media, id, policy, policyName, challenging}) {
+    const InitChunks=React.useMemo(()=>[],[])
+    const [chunks, setChunks]= React.useState(InitChunks)
+    const $chunks=useRefLatest(chunks)
     //a trigger for media to recreate chunks
-    const [chunksTrigger, triggerCreateChunks]=React.useState(null)
-    const challenges=useSelector(state=>state.talks[id][policyName]?.challenges)
-    const chunks=React.useMemo(() => {
-        return media.current?.createChunks() || []
-    }, [id, policy.chunk, challenging, media.current, chunksTrigger, challenges]);
-
-    return {chunks, triggerCreateChunks}
+    React.useEffect(() => {
+        if(media.current && $chunks.current!=InitChunks){
+            media.current.createChunks()
+        }
+    }, [id, policy.chunk, challenging])
+    return [chunks, setChunks]
 }
 
 function renderCounter() {
@@ -197,38 +203,53 @@ function useAutoHide(policy) {
     return { setAutoHide, autoHideActions, autoHideProgress };
 }
 
-function useMediaStatusControl(debug, video) {
+function useMediaStatusControl({media, debug}) {
     const stopOnMediaStatus = React.useRef(false);
     
     const setMediaStatusAsync = React.useCallback(async (status, callback) => {
         debug && console.debug({ setMediaStatusAsync: true, ...status });
-        const done = await video.current?.setStatusAsync(status);
+        const done = await media.current?.setStatusAsync(status);
         callback?.();
         return done;
-    }, [video]);
+    }, [media]);
 
-    return [stopOnMediaStatus, setMediaStatusAsync];
+    return [setMediaStatusAsync, stopOnMediaStatus];
 }
 
-function usePlaybackStatusUpdate({triggerCreateChunks, onProgress, stopOnMediaStatus, chunks, setMediaStatusAsync, policy, dispatch, status, debug}) {
-    const onMediaStatus= React.useCallback((state, action) => {
-        asyncCall(() => onProgress.current?.(action.status.positionMillis));
-        if(action.status.needCreateChunks){
-            triggerCreateChunks(action.status.needCreateChunks)
+function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusAsync, policy, dispatch, status, debug}) {
+    const $chunks = useRefLatest(chunks)
+    const $status=useRefLatest(status)
+    const $policy=useRefLatest(policy)
+    return React.useCallback(mediaStatus => {
+        debug && console.debug(`media status: ${JSON.stringify(mediaStatus)}`);
+
+        let chunks=$chunks.current
+        const state=$status.current
+        const policy=$policy.current
+
+
+        if(mediaStatus.positionMillis){
+            asyncCall(() => onProgress.current?.(mediaStatus.positionMillis));
         }
-        const { i, whitespacing } = state;
+
+        if(mediaStatus.chunks){
+            setChunks(chunks=mediaStatus.chunks)
+        }
+
+        const { i: currentIndex, whitespacing } = state;
         const nextState = (() => {
             if (//stopOnMediaStatus.current ||// setting status async
-                action.status.shouldPlay != action.status.isPlaying ||// player is ajusting play status 
-                action.status.positionMillis <= state.minPositionMillis ||//player offset ajustment
+                mediaStatus.shouldPlay != mediaStatus.isPlaying ||// player is ajusting play status 
+                mediaStatus.positionMillis <= state.minPositionMillis ||//player offset ajustment
                 whitespacing //
             ) {
                 return state;
             }
 
-            const { status: { isLoaded, positionMillis, isPlaying, rate, durationMillis = 0, didJustFinish, i: _i = positionMillis < chunks[0]?.time ? -1 : chunks.findIndex(a => a.end >= positionMillis) } } = action;
+            const {isLoaded, positionMillis, isPlaying, rate, durationMillis = 0,} = mediaStatus;
+            const nextIndex = positionMillis < chunks[0]?.time ? -1 : chunks.findIndex(a => a.end >= positionMillis) 
 
-            const current = { isLoaded, isPlaying, rate, durationMillis, i: _i };
+            const current = { isLoaded, isPlaying, rate, durationMillis, i: nextIndex };
 
             if (!isLoaded) { //init video pitch, props can't work
                 setMediaStatusAsync({ shouldCorrectPitch: true, pitchCorrectionQuality: Audio.PitchCorrectionQuality.High });
@@ -238,15 +259,15 @@ function usePlaybackStatusUpdate({triggerCreateChunks, onProgress, stopOnMediaSt
             //copy temp keys from state
             ;["lastRate"].forEach(k => k in state && (current[k] = state[k]));
 
-            const isLast = chunks.length > 0 && _i == -1 && i == chunks.length - 1;
+            const isLast = chunks.length > 0 && nextIndex == -1 && currentIndex == chunks.length - 1;
 
-            if (positionMillis >= chunks[i]?.end && //current poisiton must be later than last's end
-                (i + 1 == _i //normally next
+            if (positionMillis >= chunks[currentIndex]?.end && //current poisiton must be later than last's end
+                (currentIndex + 1 == nextIndex //normally next
                     || isLast) //last 
             ) { //current is over
                 if (policy.whitespace) {
                     console.info('whitespace/start');
-                    const whitespace = policy.whitespace * (chunks[i].duration || (chunks[i].end - chunks[i].time));
+                    const whitespace = policy.whitespace * (chunks[currentIndex].duration || (chunks[currentIndex].end - chunks[currentIndex].time));
                     setMediaStatusAsync({ shouldPlay: false }, globalThis.sounds.ding);
                     const whitespacing = setTimeout(() => dispatch({ type: "whitespace/end", isLast }), whitespace + 2000);
                     return { ...state, whitespace, whitespacing };
@@ -259,14 +280,13 @@ function usePlaybackStatusUpdate({triggerCreateChunks, onProgress, stopOnMediaSt
         if (state != nextState && !shallowEqual(state, nextState)) {
             dispatch({ type: "media/status/changed", state: nextState });
         }
-    }, [policy, chunks, dispatch, triggerCreateChunks]);
+    }, [dispatch, setChunks])
+}
 
-    const onPlaybackStatusUpdate=React.useCallback(mediaStatus => {
-        debug && console.debug(`media status: ${JSON.stringify(mediaStatus)}`);
-        onMediaStatus(status, { type: "media/status", status: mediaStatus });
-    },[onMediaStatus,debug])
-
-    return onPlaybackStatusUpdate
+function useRefLatest(value) {
+    const ref = React.useRef();
+    ref.current = value
+    return ref
 }
 
 function useControls(_controls, chunks=[], challenging, policy) {
@@ -281,16 +301,13 @@ function useControls(_controls, chunks=[], challenging, policy) {
 }
 
 function useLocalState({setMediaStatusAsync, onProgress, toggleChallengeChunk, changePolicy, debug, chunks, challenging}) {
-    const nextRound = React.useRef();
-    const $chunks=React.useRef()
-    $chunks.current=chunks
-
-    nextRound.current = React.useCallback(shouldPlay => {
+    const $chunks=useRefLatest(chunks)
+    const nextRound = useRefLatest(React.useCallback(shouldPlay => {
         setMediaStatusAsync({
             shouldPlay: shouldPlay == undefined ? !!challenging : shouldPlay,
-            positionMillis: chunks[0]?.time
+            positionMillis: $chunks.current[0]?.time
         });
-    }, [chunks?.[0]?.time, !!challenging]);
+    }, [!!challenging]))
 
     return React.useReducer((state, action) => {
         const { isPlaying, i, whitespacing, rate: currentRate, lastRate } = state;
@@ -404,8 +421,8 @@ function useLocalState({setMediaStatusAsync, onProgress, toggleChallengeChunk, c
 
             return state;
         })();
-        if (!shallowEqual(nextState, state) && debug) {
-            debug && console.debug(`status: ${action.type}: next[${chunks[nextState.i]?.time || ""}-${chunks[nextState.i]?.end || ""}]\n${JSON.stringify(nextState)}`);
+        if (debug && !shallowEqual(nextState, state)) {
+            console.debug(`status: ${action.type}: next[${chunks[nextState.i]?.time || ""}-${chunks[nextState.i]?.end || ""}]\n${JSON.stringify(nextState)}`);
         }
         return nextState;
     }, { isLoaded: false, i: -1, durationMillis: 0 })

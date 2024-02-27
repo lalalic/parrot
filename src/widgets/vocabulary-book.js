@@ -122,7 +122,7 @@ export default class VocabularyBook extends TaggedListMedia{
      * A:B
      * lang:mylang
      */
-    createTranscript(shuffle){
+    createTranscript({shuffle}={}){
         const {state:{usage}, props:{data=[]}}=this
         
         return (shuffle ? this.shuffleArray([...data]) : data)
@@ -158,7 +158,8 @@ export default class VocabularyBook extends TaggedListMedia{
         const {usage:current=0}=this.state
         if(current!=next){
             this.setState({usage:next},()=>{
-                this.reset({needCreateChunks:Date.now()})
+                this.createChunks()
+                this.reset()
             })
         }
         return super.shouldComponentUpdate(...arguments)
@@ -326,8 +327,8 @@ function Shuffle({talk, id=talk?.id, policyName}){
         return null
     return <PressableIcon name="shuffle" 
         onPress={e=>{
-            book.current.doCreateTranscript(true)
-            dispatch({type:"talk/challenge/shuffle", talk:{id}, policyName, challenges:book.current.cues})
+            const challenges=book.current.createChunks({shuffle:true, update:false})
+            dispatch({type:"talk/challenge/shuffle", talk:{id}, policyName, challenges})
             firePlayerEvent("nav/reset")
         }}/>
 }

@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Animated, Easing, Text , ImageBackground} from "react-native";
-import { useDispatch, ReactReduxContext, useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Qili } from "../store"
 
 import PlayerContext from "../components/player/Context"
@@ -14,6 +14,11 @@ import { prompt } from 'react-native-use-qili/components/Prompt';
 import ClearAction from '../components/ClearAction';
 import Base from "./base"
 
+/**
+ *  1. to provide timeline
+ *  2. to implement setStatusAsync({})
+ *  3. this.status manage media state
+ */
 class Media extends Base {
     /**
      * protocol: supported actions
@@ -160,6 +165,10 @@ class Media extends Base {
     }
 
     onPlaybackStatusUpdate(particular) {
+        if(this.isSettingStatus){
+            console.log("skip onPlaybackStatusUpdate since isSettingStatus=true")
+            return 
+        }
         const status={
             ...this.status,
             ...particular,
@@ -177,12 +186,12 @@ class Media extends Base {
     }
 
     componentDidMount() {
-        const { positionMillis = 0, shouldPlay, chunks } = this.props;
+        const { positionMillis = 0, shouldPlay } = this.props;
         this.progress.addListener(({ value }) => {
-            if(this.isSettingStatus!==true){
-                this.onPositionMillis(Math.floor(value))
-            }
+            this.onPositionMillis(Math.floor(value))
         })
+
+        this.createChunks()
 
         this.setStatusAsync({ shouldPlay, positionMillis });
     }
@@ -248,8 +257,6 @@ class Media extends Base {
             try{
                 this.isSettingStatus=true
                 this.setStatusSync(...arguments)
-            }catch(e){
-                console.error(e)
             }finally{
                 this.isSettingStatus=false
                 resolve(this.status)
@@ -283,11 +290,10 @@ export class ListMedia extends Media{
 
     createChunks(){
         try{
-            const chunks=super.createChunks()
+            const chunks=super.createChunks(...arguments)
             this.status.isLoaded=true
             const delta=3*this.props.progressUpdateIntervalMillis
             this.status.durationMillis=chunks[chunks.length-1].end+delta
-
             return chunks
         }finally{
             this.onPlaybackStatusUpdate()
@@ -358,7 +364,7 @@ export class ListMedia extends Media{
                 },
                 onEnd:(duration)=>{
                     console.info("end speak "+i)
-                    chunk.duration=duration
+                    //chunk.duration=duration
                     this.setStatusSync({shouldPlay:true},false)
                 }
             }
