@@ -172,7 +172,7 @@ export function useTalksQuery(search){
                         return talks
                     }),[])
                 },
-                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries
+                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries && a.talks!=b.talks
             )
 
             dispatch({type:"history", search})
