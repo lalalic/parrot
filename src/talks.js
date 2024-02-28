@@ -3,7 +3,6 @@ import { FlatList, View, TextInput, Switch} from 'react-native';
 import { ColorScheme, TitleStyle } from "react-native-use-qili/components/default-style";
 import { TalkThumb } from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import Loading from "react-native-use-qili/components/Loading";
 import { TalkApi, getTalkApiState } from "./store"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
@@ -14,13 +13,14 @@ import SwitchTed from "./components/SwitchTed"
 export default function Talks(props){
     const {state: history}=useLocation()
     const color=React.useContext(ColorScheme)
+    const isAdmin=useSelector(state=>state.my.isAdmin)
 
     const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
     
     const [search, setSearch]=React.useReducer(defaultMemoize(
         (last, next)=>({...last, ...next}),
         shallowEqual,
-    ),{ q:"",people:false, peopleName:"",local:false, ...useSelector(state=>state.history.search), page:1})
+    ),{ q:"",people:false, peopleName:"",local:true, ...useSelector(state=>state.history.search), page:1})
     
     const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
 
@@ -46,8 +46,8 @@ export default function Talks(props){
                     onPress={e=>setSearch({ people: !search.people,q:""})}
                     />
             </View>
-            {isLoading ? <Loading/> : <FlatList
-                data={talks}
+            <FlatList
+                data={!isLoading && talks}
                 extraData={`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`}
                 renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
                 keyExtractor={(item,i)=>`${item.slug}-${i}`}
@@ -60,7 +60,7 @@ export default function Talks(props){
                         setSearch({ page:(search.page??1)+1})
                     }
                 }}
-                />}
+                />
                 {!search.people && (
                     <>
                         <TextInput 
@@ -83,9 +83,9 @@ export default function Talks(props){
                         value={search.q}
                         name={search.peopleName}
                         onValueChange={(q, peopleName)=>setSearch({ q,peopleName, page:1})}/>}
-                <SwitchTed 
+                {isAdmin && <SwitchTed 
                     style={{position:"absolute", right:35, top:10, transform:[{scale:0.3}]}}
-                    />
+                    />}
         </View>
     )
 }

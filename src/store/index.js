@@ -39,7 +39,8 @@ export const reducers={
 		lang:"en", 
 		mylang: l10n.getLanguage(), 
 		tts:{},
-		api: Services.current
+		api: Services.current,
+		isAdmin:false
 	}, action) {
 		switch (action.type) {
 			case "lang/PERSIST":
@@ -73,6 +74,7 @@ export const reducers={
 				if(my.api){
 					Services.current=my.api
 				}
+				delete my.isAdmin
 
 				my.i++
 				return state

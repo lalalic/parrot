@@ -1,5 +1,5 @@
 import React from "react"
-import { FlatList, TextInput, View} from "react-native"
+import { Text, TextInput, View} from "react-native"
 import { useSelector } from "react-redux"
 import { useNavigate, useParams } from "react-router-native"
 import * as Clipboard from 'expo-clipboard';
@@ -7,6 +7,7 @@ import * as Clipboard from 'expo-clipboard';
 import { KeyboardAvoidingView } from "../../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
+import FlatList from "react-native-use-qili/components/FlatList"
 export * from "../../components/delay"
 
 const l10n=globalThis.l10n
@@ -44,7 +45,10 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
                     keyExtractor={(a,i)=>`${a.uri}-${a.text}${i==active ? '-active':''}`}
                     {...listProps}
                     renderItem={props=><WidgetItem {...{...props,id, slug, isActive:active==props.index, setActive:$setActive}}/>}
-                    />}
+                    >
+                        <Text style={{color:"gray"}}>{l10n("Empty %1",l10n[slug])}</Text>
+                    </FlatList>
+                }
             </View>
             {editor && React.cloneElement(
                 React.isValidElement(editor) ? editor : <Editor {...{style:inputStyle, ...editor}}/>, 

@@ -6,6 +6,7 @@ import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import Login from "react-native-use-qili/components/Login"
 import { Prompt } from "react-native-use-qili/components/Prompt"
 import App from "react-native-use-qili/App"
+import { isAdmin } from "react-native-use-qili/store";
 
 import Router from "./router"
 import Permissions from "./permissions"
@@ -34,6 +35,7 @@ export default function Parrot(){
             <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
             <FlyMessage/>
             <Prompt/>
+            <CheckAdmin/>
         </App>
     )
 }
@@ -67,6 +69,16 @@ const tutorials=[
         image:require("../assets/widget-picture-book.png")
     }
 ]
+
+function CheckAdmin(){
+    React.useEffect(()=>{
+        isAdmin().then(
+            be=>dipatch({type:"my", playload:{isAdmin:be}}),
+            e=>dipatch({type:"my", playload:{isAdmin:false}})
+        )
+    },[])
+    return null
+}
  
 
 

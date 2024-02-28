@@ -1,15 +1,14 @@
 import React from 'react';
-import { View, Text, TextInput, FlatList, Pressable } from "react-native";
+import { View, Text, TextInput, Pressable } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from 'react-router-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { selectWidgetTalks, TalkApi, Qili as QiliApi } from "../../store";
-import { isAdmin } from "react-native-use-qili/store"
 import PromptAction from './PromptAction';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import ChangableText from "react-native-use-qili/components/ChangableText";
-import Loading from "react-native-use-qili/components/Loading";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
+import FlatList from "react-native-use-qili/components/FlatList"
 const l10n=globalThis.l10n
 
 function create({slug, id=`${slug}${Date.now()}`, ...talk}, dispatch){
@@ -22,11 +21,8 @@ export default function TagManagement({ talk, placeholder, onCreate, slug = talk
     const talks = useSelector(state => selectWidgetTalks(state, slug));
     const [searchParams, setSearchParams]=useSearchParams()
     const [isManageRemote, setManageRemote ]=React.useState(false)
-    const [bAdmin, setIsAdmin ]=React.useState(false)
-    React.useEffect(()=>{
-        isAdmin().then(b=>setIsAdmin(b),()=>setIsAdmin(false))
-    },[])
-
+    const bAdmin=useSelector(state=>state.my.isAdmin)
+    
     React.useEffect(()=>{
         setManageRemote(bAdmin && searchParams.get('remote')==="true")
     },[searchParams, bAdmin])
@@ -155,10 +151,11 @@ function TagList({ data, isManageRemote,manageAction, slug, onEndEditing, style,
             <TextInput onEndEditing={onEndEditing} placeholder={placeholder}
                 style={[{ height: 50, backgroundColor: color.text, color: color.backgroundColor, paddingLeft: 10, fontSize: 16, borderRadius: 5 }, inputStyle]}
                 {...inputProps} />
-            <FlatList data={all} style={{ flex: 1, flexGrow: 1 }}
+            <FlatList data={!isLoading && all} style={{ flex: 1, flexGrow: 1 }}
                 keyExtractor={({ id, isLocal }) => `${id}-${isLocal}`}
-                renderItem={renderItem} />
-            {isLoading && <Loading style={{ backgroundColor: "transparent" }} />}
+                renderItem={renderItem}>
+                <Text style={{color:"gray"}}>{l10n("No %1 yet!",l10n[slug])}</Text>
+            </FlatList>
             
             <View style={{ height: 50, flexDirection: "row", alignItems: "center", justifyContent: "space-around" }}>
                 {actions}

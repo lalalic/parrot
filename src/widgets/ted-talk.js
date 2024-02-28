@@ -4,11 +4,11 @@ import { Text, ScrollView } from "react-native";
 import * as Print from "expo-print";
 import * as FileSystem from 'expo-file-system';
 import { useNavigate} from "react-router-native"
-import { useDispatch} from "react-redux"
+import { useDispatch, useSelector} from "react-redux"
+
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import prepareFolder from "react-native-use-qili/components/prepareFolder";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
-import {isAdmin} from "react-native-use-qili/store";
 
 import { PolicyChoice, html } from '../components';
 import ClearAction from '../components/ClearAction';
@@ -201,16 +201,12 @@ export default class TedTalk extends Base{
 function RemoveRemote({talk}){
     const navigate=useNavigate()
     const dispatch=useDispatch()
-    const [bAdmin, setAdmin]=React.useState(false)
+    const bAdmin=useSelector(state=>state.my.isAdmin)
     const [isRemote, setRemote]=React.useState()
 
     React.useEffect(()=>{
         setRemote(talk.video?.indexOf("qili.com")!=-1)
     },[talk.video])
-
-    React.useEffect(()=>{
-        isAdmin().then(be=>setAdmin(be))
-    },[])
 
     if(!isRemote || !bAdmin)
         return null
