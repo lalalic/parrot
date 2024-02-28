@@ -28,14 +28,16 @@ class Media extends Base {
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         const Widget = globalThis.Widgets[slug]
         return (
-            <PolicyChoice label={false} labelFade={true} value={policyName} 
+            <PolicyChoice labelFade={true} value={policyName} 
                 excludes={talk?.exludePolicy || ["dictating","retelling"]} 
                 deselectable={false}
                 onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
                     
-                {talk.hasLocal && <PressableIcon name="read-more" onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
+                {talk.hasLocal && <PressableIcon name="read-more" label={l10n["List"]} labelFade={true}
+                    onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
                 
-                <PressableIcon name={talk.favorited ? "favorite" : "favorite-outline"}
+                <PressableIcon 
+                    name={talk.favorited ? "favorite" : "favorite-outline"}
                     onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}
                     onLongPress={()=> dispatch({type:"talk/remote/favorited", talk})}
                     />
@@ -432,6 +434,7 @@ function ParentControl({talk, policyName}){
         <>
             <PressableIcon name={controled ? "lock" : "lock-open"}
                 color={controled ? "yellow" : undefined}
+                label={l10n["Parent control"]} labelFade={true}
                 onLongPress={e=>{
                     dispatch({type:"talk/parentControl/remove", talk:{id:talk.id}, policyName})
                 }}
@@ -467,6 +470,7 @@ function LongMemory({talk, policyName}){
     
     return (
         <PressableIcon name="library-add" 
+                label={l10n["Later"]} labelFade={true}
                 onPress={e => {
                     dispatch({ type: "talk/chanllenge/longmemory", talk, policyName })
                     firePlayerEvent("nav/reset")

@@ -56,6 +56,7 @@ export function TaggedTranscript({slug, id, actions, listProps={}, renderItem, c
             {!!id && <View style={{height:50, flexDirection:"row", justifyContent:"space-around"}}>
                 {actions}
                 {data.length>0 && <PressableIcon name="read-more"
+                    label={l10n["Shadow"]} labelFade={true}
                     onPress={e=>navigate(`/talk/${slug}/shadowing/${id}`)}/>}
             </View>}
         </KeyboardAvoidingView>

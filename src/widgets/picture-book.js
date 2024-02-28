@@ -103,6 +103,7 @@ export default class PictureBook extends TaggedListMedia {
             <TaggedTranscript {...props} id={id}
                 actions={[
                     hasData && <PressableIcon name="apps" key="visible"
+                        label={l10n["List"]} labelFade={true}
                         color={visible ? "yellow" : "gray"} 
                         onPress={e=>setVisible(!visible)}/>,
                     

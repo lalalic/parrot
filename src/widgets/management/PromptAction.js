@@ -19,6 +19,7 @@ export default function PromptAction({ prompt }) {
             <PressableIcon
                 name={prompt.name}
                 color="blue"
+                label={l10n[prompt.label]} labelFade={true}
                 onPress={async (e) => {
                     if (prompt.params) {
                         setShowDialog(true);

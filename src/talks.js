@@ -38,7 +38,9 @@ export default function Talks(props){
             <View style={[{flexDirection:"row",height:32,paddingLeft:10, 
                 backgroundColor:color.inactive, borderRadius:5,borderWidth:1,height:50,
                 marginLeft:4,marginRight:2},TitleStyle]}>
-                <PressableIcon name={search.people ? "person-search" : "search"} 
+                <PressableIcon 
+                    name={search.people ? "person-search" : "search"} 
+                    label={l10n[search.people ? "People" : "Talk"]} labelFade={true}
                     size={28} style={{marginTop:2}}
                     color={search.people ? color.primary : color.text} 
                     onPress={e=>setSearch({ people: !search.people,q:""})}

@@ -259,16 +259,20 @@ export default class VocabularyBook extends TaggedListMedia{
  */
 const Paste=({id})=>{
     const dispatch=useDispatch()
-    return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
-        const words=VocabularyBook.parse(text)
-        dispatch({type:"talk/set",talk:{id, data:words}})
-    })}/>
+    return <PressableIcon 
+        name="content-paste" 
+        label={l10n["Paste"]} labelFade={true}
+        onPress={e=>Clipboard.getStringAsync().then(text=>{
+            const words=VocabularyBook.parse(text)
+            dispatch({type:"talk/set",talk:{id, data:words}})
+        })}/>
 }
 
 const Split=({id})=>{
     const dispatch=useDispatch()
     const navigate=useNavigate()
     return <PressableIcon name="clear-all" 
+        label={l10n["Split"]} labelFade={true}
         onPress={async e=>{
             const num=await prompt(l10n["How many do you want each contains?"])
             if(!num)
@@ -288,6 +292,7 @@ const Usage=({talk, id=talk?.id, policyName})=>{
     return <PressableIcon 
         name={UsageIcons[usage]} 
         color={UsageColors[usage]}
+        label={l10n[UsageLable[usage]]} labelFade={true}
         onPress={e=>{
             dispatch({type:"talk/clear/policy/history", talk:{id}, policy: policyName})
             dispatch({type:"talk/policy",talk:{id}, target:policyName, payload:{usage:(usage+1)%3}})
@@ -308,6 +313,7 @@ const Sentense=({talk, id=talk?.id})=>{
 
     return (
         <PressableIcon name="support" color="blue"
+            label={l10n["Make sentense"]} labelFade={true}
             onPress={e=>{
                 (async()=>{
                     try{
@@ -339,6 +345,7 @@ function Shuffle({talk, id=talk?.id, policyName}){
     const {media:book, firePlayerEvent}=React.useContext(PlayerContext)
     const {challenges, challenging, shuffle}=useSelector(state=>state.talks[id][policyName]||{})
     return <PressableIcon name="shuffle" 
+        label={l10n["Shuffle"]} labelFade={true}
         color={shuffle ? "yellow" : undefined}
         onLongPress={e=>{
             dispatch({type:"talk/policy", talk:{id}, target:policyName, payload:{shuffle:!shuffle}})
@@ -360,6 +367,7 @@ function Shuffle({talk, id=talk?.id, policyName}){
 
 const UsageIcons=["translate", "translate", "graphic-eq"]
 const UsageColors=[, "yellow", "white"]
+const UsageLable=["Translate", "De-Translate", "Shadow"]
 
 /**
 example:

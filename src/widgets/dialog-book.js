@@ -182,8 +182,10 @@ export default class DialogBook extends TaggedListMedia{
 
 const Paste=({id})=>{
     const dispatch=useDispatch()
-    return <PressableIcon name="content-paste" onPress={e=>Clipboard.getStringAsync().then(text=>{
-        const dialog=DialogBook.parse(text)
-        dispatch({type:"talk/set", talk:{id, data:dialog}})
-    })}/>
+    return <PressableIcon name="content-paste" 
+        label={l10n["Paste"]} labelFade={true}
+        onPress={e=>Clipboard.getStringAsync().then(text=>{
+            const dialog=DialogBook.parse(text)
+            dispatch({type:"talk/set", talk:{id, data:dialog}})
+        })}/>
 }
