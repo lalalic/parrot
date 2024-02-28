@@ -442,7 +442,7 @@ export const listeners=[
 	},
 	{
 		type:"today/plan/check",
-		async effect({id, policy, complete, togglePlaying, challenging}, api){
+		async effect({id, policy, complete, togglePlaying}, api){
 			const state=api.getState()
 			let {plan:{today:original}, talks}=state
 			const changed=produce(original||{}, today=>{

@@ -21,18 +21,17 @@ export default function PlanPlayer({style}){
     const dispatch=useDispatch()
     const navigate=useNavigate()
     const {pathname}=useLocation()
-    const hasTasks=useSelector(state=>selectPlansByDay(state, new Date())?.length)
-    const {tasks, playing}=useSelector(({plan:{today}})=>today)||{}
+    const $pathname=React.useRef(pathname)
+    const total=useSelector(state=>selectPlansByDay(state, new Date())?.length)
+    const {tasks=[], playing}=useSelector(({plan:{today}})=>today)||{}
     const [current, setCurrent]=React.useState(null)
     const [index, setIndex]=React.useState(-1)
 
     React.useEffect(()=>{
-        if(tasks && playing){
-            const i=tasks.findIndex(({complete})=>!complete)
-            setCurrent(tasks[i])
-            setIndex(i)
-        }
-    },[tasks, playing])
+        const i=tasks.findIndex(({complete})=>!complete)
+        setCurrent(tasks[i])
+        setIndex(i)
+    },[tasks])
 
     React.useEffect(()=>{
         if(current && playing){
@@ -42,24 +41,36 @@ export default function PlanPlayer({style}){
     },[current, playing])
 
     const numbers=React.useCallback((i)=>{
-        const total=hasTasks||tasks?.length
         return (
             <Text style={{color:"yellow"}}>
                 <Text style={{color:"white"}}>{l10n["today"]}:{total}</Text>
                 {i!=-1 && (<Text style={{color:"yellow"}}>.{i+1}</Text>)}
             </Text>
         )
-    },[hasTasks, tasks])
+    },[total])
+
+    const toggle=React.useCallback(()=>{
+        if(!fullComplete){
+            dispatch({type:"today/plan/check", togglePlaying:true})
+        }
+    },[fullComplete])
+
+    React.useEffect(()=>{
+        if(playing && $pathname.current?.startsWith('/talk/') && !pathname.startsWith("/talk/")){
+            toggle()
+        }
+        $pathname.current=pathname
+    },[playing, pathname])
 
     if(!pathname.startsWith("/talk/") && !pathname.startsWith("/home")){
         return null
     }
 
-    if(!hasTasks){
+    if(!total){
         return null
     }
 
-    const fullComplete=!tasks.find(a=>!a.complete)
+    const fullComplete=total==tasks.length && !tasks.find(a=>!a.complete)
     if(fullComplete && !pathname.startsWith("/home")){
         return null
     }
@@ -69,11 +80,8 @@ export default function PlanPlayer({style}){
             <PressableIcon 
                 color={fullComplete ? "green" : "yellow"} size={50}
                 name={fullComplete ? "fact-check" : (playing ? "pause-circle-filled" : "play-circle-filled")}
-                onPress={e=>{
-                    if(!fullComplete){
-                        dispatch({type:"today/plan/check", togglePlaying:true})
-                    }
-                }}
+                onPress={toggle}
+                onLongPress={e=> dispatch({type:"today/plan", today:undefined})}
                 />
             {numbers(index)}
         </View>

@@ -122,6 +122,7 @@ class Media extends Base {
         super(...arguments)
         this.progress = new Animated.Value(0);
         this.state = {}
+        this.reset()
     }
 
     get slug(){
