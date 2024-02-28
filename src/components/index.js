@@ -288,9 +288,9 @@ export const ControlIcons={
     captionDelay:"closed-caption",
     volume:"volume-up",
     speed:"speed", 
-    whitespace:"notifications", 
-    chunk:"flash-on", 
-    autoChallenge: "alarm",
+    whitespace:"mic-external-on", 
+    chunk:"group-work", 
+    autoChallenge: "filter-alt",
     fullscreen:"zoom-out-map",
     autoHide: "transit-enterexit"
 }
