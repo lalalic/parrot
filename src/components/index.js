@@ -446,30 +446,13 @@ export const PlaySound=Object.assign(({audio, children=null, onEnd, onStart, onE
 
 export function Recorder({style, 
     name=ControlIcons.record, size=40,color:_color, 
-    onRecordUri, onRecord, onText, onCancel, recording=false, 
+    onRecordUri, onRecord, onText=onRecord, onCancel, recording=false, 
     _initState={recording, active:"audio"},
     children=<PressableIcon size={size} name={name} color={_color}/>,
     ...props}){
     
     const [state, setState]=React.useState(_initState)
 	const {width, height}=useWindowDimensions()
-
-    const onRecognizedRef=React.useRef()
-    onRecognizedRef.current=React.useCallback(record=>{
-        if(record.recognized){
-            switch(state.active){
-                case "text":
-                    onText?.(record)
-                    break
-                case "audio":
-                    onRecord?.(record)
-                    break
-                default:
-                    onCancel?.(record)
-            }
-        }
-        setState(_initState)
-    },[state])
 
     return (
         <View style={[{alignItems:"center", justifyContent:"center", flexDirection:"column"},style]}
@@ -507,7 +490,26 @@ export function Recorder({style,
                         style={{height:100, backgroundColor:state.active=="audio" ? "lightgray" : "transparent"}}/>
                 </View>
             </Modal>
-            {state.recording && <Recognizer uri={onRecordUri?.()} {...props} style={{position:"absolute"}} onRecord={record=>onRecognizedRef.current?.(record)}/>}
+            {state.recording && <Recognizer 
+                uri={onRecordUri?.()} 
+                {...props} 
+                style={{position:"absolute"}} 
+                onRecord={record=>{
+                    if(record.recognized){
+                        switch(state.active){
+                            case "text":
+                                onText?.(record)
+                                break
+                            case "audio":
+                                onRecord?.(record)
+                                break
+                            default:
+                                onCancel?.(record)
+                        }
+                    }
+                    setState(_initState)
+                }}
+            />}
         </View> 
     )
 }

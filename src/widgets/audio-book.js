@@ -81,19 +81,23 @@ export default class AudioBook extends TaggedListMedia {
         return (
             <TaggedTranscript {...props} id={id}
                 renderItem={AudioItem}
-                actions={[
-                    <PressableIcon name="file-upload" key="file"
+                actions={
+                    <>
+                    <Recorder
+                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
+                        onRecord={({audio:uri, recognized:text, ...record})=>{
+                            if(text){
+                                dispatch({type:"talk/book/record",id, uri,text, ...record})
+                            }
+                        }}
+                        />
+                    <PressableIcon name="file-upload"
                         onPress={e=>DocumentPicker.getDocumentAsync({type:"audio/*",copyToCacheDirectory:false}).then(file=>{
                             if(file.type=="cancel")
                                 return
                             dispatch({type:"talk/book/record", id, uri:file.uri, text:file.name})
-                        })}/>,
-                    <Recorder key="recorder"
-                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
-                        onRecord={({audio:uri, recognized:text, ...record})=>text && dispatch({type:"talk/book/record",id, uri,text, ...record})}
-                        />,
-                    
-                ]}
+                        })}/>
+                    </>}
                 editor={{
                     onChange(text, i, {uri}){
                         const [item]=AudioBook.parse(text)
