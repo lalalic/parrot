@@ -12,7 +12,6 @@ import Select from "react-native-select-dropdown";
 import SwitchTed from "./components/SwitchTed"
 
 export default function Talks(props){
-    const {state: history}=useLocation()
     const color=React.useContext(ColorScheme)
     const isAdmin=useSelector(state=>state.my.isAdmin)
 
@@ -23,16 +22,7 @@ export default function Talks(props){
         shallowEqual,
     ),{ q:"",people:false, peopleName:"",local:false, ...useSelector(state=>state.history.search), page:1})
     
-    const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
-
-    const initialScrollIndex=React.useMemo(()=>{
-        if(!!history?.id && talks.length>2){
-            const i= talks.findIndex(a=>a.id==history.id)
-            if(i!=-1)
-                return i
-        }
-    },[talks, history?.id])
-
+    const pages=10
     const searchTextStyle={fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}
     return (
         <View {...props}>
@@ -49,12 +39,11 @@ export default function Talks(props){
             </View>
             <Search search={search}>
                 <FlatList
-                    extraData={`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`}
+                    extraData={`${search.q}-${search.page}`}
                     renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
                     keyExtractor={(item,i)=>`${item.slug}-${i}`}
                     horizontal={true}
                     onEndReachedThreshold={0.5}
-                    initialScrollIndex={initialScrollIndex}
                     getItemLayout={(data,index)=>({length:240, offset:240*index, index})}
                     onEndReached={e=>{
                         if(search.page<pages){
@@ -117,6 +106,18 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     )
 }
 
+function useInitialScrollIndex(talks) {
+    const { state: history } = useLocation();
+    const initialScrollIndex = React.useMemo(() => {
+        if (!!history?.id && talks.length > 2) {
+            const i = talks.findIndex(a => a.id == history.id);
+            if (i != -1)
+                return i;
+        }
+    }, [talks, history?.id]);
+    return initialScrollIndex;
+}
+
 function Search({search}){
     if(search.local)
         return <SearchLocal {...arguments[0]}/>
@@ -130,27 +131,40 @@ function Search({search}){
     return <SearchPages {...arguments[0]}/>
 }
 
-function SearchLocal({children}){
+function SearchLocal({search, children}){
     const talks=useSelector(state=>{
         const widgets=['vocabulary','picturebook','dialog','chat','audiobook']
 		return Object.values(state.talks).filter(talk=>{
 			return widgets.indexOf(talk.slug)==-1
 		})
     })
-    return React.cloneElement(children,{data:talks})
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
+    return React.cloneElement(children,{data:talks, initialScrollIndex, extraData})
 }
 
-function SearchToday({children}){
+function SearchToday({search, children}){
     const {data:{talks=[]}={}, isLoading}=TalkApi.useTodayQuery({day:new Date().asDateString()})
-    return React.cloneElement(children,{data: !isLoading && talks})
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
 }
 
 function SearchPeople({search, children}){
-    const {data:{talks}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search)
-    return React.cloneElement(children,{data: !isLoading && talks})
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search)
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
 }
 
 function SearchPages({search, children}){
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery({search})
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
+}
+
+function SearchPages1({search, children}){
     const [talks, setTalks]=React.useState([])
     const [loaded, setLoaded]=React.useState(0)
     
@@ -183,74 +197,6 @@ function Page({search, addTalks}){
         addTalks(!isLoading && talks)
     },[talks])
     return null
-}
-
-const VOID=state=>({})
-export function useTalksQuery(search){
-    const dispatch=useDispatch()
-    const select=React.useRef(VOID)
-    const api=useSelector(state=>state.my.api)
-    React.useEffect(()=>{
-        try{
-            if(search.local){
-                return 
-            }
-
-            if(!search.q){
-                const sub=dispatch(TalkApi.endpoints.today.initiate({day:new Date().asDateString()}))
-                return ()=>sub.unsubscribe()
-            }
-
-            if(search.people){
-                const sub=dispatch(TalkApi.endpoints.speakerTalks.initiate(search))
-                return ()=>sub.unsubscribe()
-            }
-
-            const subs=new Array(search.page).fill(0).map((a,i)=>dispatch(TalkApi.endpoints.talks.initiate({...search,page:i+1})))
-            return ()=>subs.forEach(a=>a.unsubscribe())
-        }finally{
-            select.current=defaultMemoize(
-                state=>{   
-                    if(search.local){
-                        const widgets=['vocabulary','picturebook','dialog','chat','audiobook']
-                        const videoTalks=Object.values(state.talks).filter(talk=>{
-                            return widgets.indexOf(talk.slug)==-1
-                        })
-                        return {data: {talks:videoTalks}, isLoading:false}
-                    } 
-
-                    if(!search.q){
-                        return TalkApi.endpoints.today.select({day:new Date().asDateString()})(state)
-                    }
-                
-                    if(search.people){
-                        return TalkApi.endpoints.speakerTalks.select(search)(state)
-                    }
-            
-                    const selects=new Array(search.page).fill(0).map((a,i)=>{
-                        return TalkApi.endpoints.talks.select({...search,page:i+1})(state)
-                    })
-                    const unfinished=selects.find(a=>a.status!=="fulfilled")
-                    if(unfinished)
-                        return {}
-                    
-                    return selects.reduce(((talks,a,i,arr)=>{
-                        talks.push(a.data.talks)
-                        if(i==arr.length-1){
-                            return {...a, data:{...a.data, talks:talks.flat()}}
-                        }
-                        return talks
-                    }),[])
-                },
-                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries && a.talks==b.talks
-            )
-
-            dispatch({type:"history", search})
-        }
-    },[search, api])
-
-    const selector=React.useCallback(select.current,[search, select.current])
-    return useSelector(selector)
 }
 
 const imageStyle={height:180}

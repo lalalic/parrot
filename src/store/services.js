@@ -150,32 +150,43 @@ export const Ted = Object.assign(createApi({
 			},
 		}),
 		talks: builder.query({
-			queryFn1: async ({ q, page }, api) => {
+			queryFn: async ({ q, page }, api) => {
 				let minutes = 0;
-				q = q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2) => (minutes = parseInt($2), "")).trim();
+				return {data:{talks:[], page:1, pages:1}}
+				// q = q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2) => (minutes = parseInt($2), "")).trim();
 
-				const query = [
-					minutes > 0 && `duration=${(Math.ceil(minutes / 6) - 1) * 6}-${Math.ceil(minutes / 6) * 6}`,
-					!!q ? "sort=relevance" : "sort=newest",
-					!!q && `q=${encodeURI(q)}`,
-					page > 1 && `page=${page}`
-				].filter(a => !!a).join("&");
+				// const query = [
+				// 	minutes > 0 && `duration=${(Math.ceil(minutes / 6) - 1) * 6}-${Math.ceil(minutes / 6) * 6}`,
+				// 	!!q ? "sort=relevance" : "sort=newest",
+				// 	!!q && `q=${encodeURI(q)}`,
+				// 	page > 1 && `page=${page}`
+				// ].filter(a => !!a).join("&");
 
-				const res = await fetch(`https://www.ted.com/talks${!!query ? `?${query}` : ""}`, TedHeader);
-				const data = await res.text();
-				const $ = cheerio.load(data);
-				const talks = $('[data-testid="TalkGrid Talk Item"]').map((i, el) => {
-					const $el = $(el);
-					const [duration, title]=Array.from(el.querySelectorAll('span.font-bold')).map(a=>a.textContent)
-					return {
-						title,
-						slug: $el.attr("href").split("/").pop(),
-						thumb: $el.find('img').attr('src'),
-						duration: (([m, s]) => parseInt(m) * 60 + parseInt(s))(duration.split(":"))
-					};
-				 }).toArray();
-				const pages = parseInt($("#browse-results>.results__pagination .pagination__item").last().text()) || 1;
-				return { data: { talks: await filterOutNoLang(talks, api.getState().my?.lang), page, pages } };
+				const res = await fetch(`https://zenith-prod-alt.ted.com/api/search`, {
+					method:"post",
+					headers:{
+						"content-type":"application/json",
+						...TedHeader,
+					},
+					body:JSON.stringify({
+						"indexName":"relevance",
+						"params":{
+							"page":0,
+							"query":q,
+							"tagFilters":"",
+							"attributeForDistinct":"objectID",
+							"distinct":1,
+							"facets":["subtitle_languages","tags"],
+							"highlightPostTag":"__/ais-highlight__","highlightPreTag":"__ais-highlight__",
+							"hitsPerPage":20,"maxValuesPerFacet":500,
+						}
+					})
+				})
+				const {results:[{hits, nbPages:pages}]} = await res.json();
+				const talks=hits.map(({title, slug, duration, objectID:id, photos:[{photo_sizes:[{url}]}]})=>{
+					return {id, slug, title, duration: parseInt(duration),thumb:url}
+				})
+				return { data: { talks, page, pages } };
 			},
 		}),
 
