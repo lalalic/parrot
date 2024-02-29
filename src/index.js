@@ -1,6 +1,6 @@
 import "./l10n"
 import React from "react"
-import { useSelector } from "react-redux"
+import { useSelector, useDispatch } from "react-redux"
 
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import Login from "react-native-use-qili/components/Login"
@@ -22,6 +22,7 @@ export default function Parrot(){
                 blacklist:["queue"],
             }}>
             <Login.Required iconSource={require("../assets/icon.png")}>
+                <CheckAdmin/>
                 <MotherLang>
                     <Router/>
                 </MotherLang>
@@ -35,7 +36,6 @@ export default function Parrot(){
             <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
             <FlyMessage/>
             <Prompt/>
-            <CheckAdmin/>
         </App>
     )
 }
@@ -71,14 +71,12 @@ const tutorials=[
 ]
 
 function CheckAdmin(){
+    const dispatch=useDispatch()
     React.useEffect(()=>{
         isAdmin().then(
-            be=>dipatch({type:"my", playload:{isAdmin:be}}),
-            e=>dipatch({type:"my", playload:{isAdmin:false}})
+            be=>dispatch({type:"my", payload:{isAdmin:be}}),
+            e=>dispatch({type:"my", payload:{isAdmin:false}})
         )
     },[])
     return null
 }
- 
-
-

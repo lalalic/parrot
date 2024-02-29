@@ -150,7 +150,7 @@ export const Ted = Object.assign(createApi({
 			},
 		}),
 		talks: builder.query({
-			queryFn: async ({ q, page }, api) => {
+			queryFn1: async ({ q, page }, api) => {
 				let minutes = 0;
 				q = q.replace(/((\d+)\s*minutes)/ig, (full, $1, $2) => (minutes = parseInt($2), "")).trim();
 
@@ -164,16 +164,16 @@ export const Ted = Object.assign(createApi({
 				const res = await fetch(`https://www.ted.com/talks${!!query ? `?${query}` : ""}`, TedHeader);
 				const data = await res.text();
 				const $ = cheerio.load(data);
-				const talks = $("#browse-results .media").map((i, el) => {
+				const talks = $('[data-testid="TalkGrid Talk Item"]').map((i, el) => {
 					const $el = $(el);
-					const link = $el.find("a.ga-link").last();
+					const [duration, title]=Array.from(el.querySelectorAll('span.font-bold')).map(a=>a.textContent)
 					return {
-						title: link.text(),
-						slug: link.attr("href").split("/").pop(),
+						title,
+						slug: $el.attr("href").split("/").pop(),
 						thumb: $el.find('img').attr('src'),
-						duration: (([m, s]) => parseInt(m) * 60 + parseInt(s))($el.find('.thumb__duration').text().split(":"))
+						duration: (([m, s]) => parseInt(m) * 60 + parseInt(s))(duration.split(":"))
 					};
-				}).toArray();
+				 }).toArray();
 				const pages = parseInt($("#browse-results>.results__pagination .pagination__item").last().text()) || 1;
 				return { data: { talks: await filterOutNoLang(talks, api.getState().my?.lang), page, pages } };
 			},
@@ -248,7 +248,7 @@ export const Ted = Object.assign(createApi({
 				debugger;
 				return queryArgs;
 			}
-		})
+		}),
 	})
 }), {
 	testNetwork(state) {
@@ -364,7 +364,7 @@ export const Qili = Object.assign(createApi({
 			invalidatesTags(result,_,{id}){
 				return [{type:'Talk', id }]
 			}
-		})
+		}),
 	})
 }), {
 	...QiliApi,

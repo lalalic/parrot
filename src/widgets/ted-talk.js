@@ -126,16 +126,18 @@ export default class TedTalk extends Base{
         super(...arguments)
         this.video=React.createRef()
         this.onPlaybackStatusUpdate=status=>{
-            if(!this.isSettingStatus){
-                this.props.onPlaybackStatusUpdate(status)
+            if(!this.shouldTriggerUpdate){
+                console.log("skip onPlaybackStatusUpdate since shouldTriggerUpdate=false")
+                return 
             }
+            this.props.onPlaybackStatusUpdate?.(status)
         }
     }
 
-    async setStatusAsync(){
-        this.isSettingStatus=true
-        this.video.current?.setStatusAsync(...arguments)
-            .finally(()=>this.isSettingStatus=false)
+    async setStatusAsync(status, shouldTriggerUpdate=false){
+        this.shouldTriggerUpdate=shouldTriggerUpdate
+        this.video.current?.setStatusAsync(status)
+            .finally(()=>this.shouldTriggerUpdate=true)
     }
 
     render(){

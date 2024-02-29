@@ -11,8 +11,8 @@ export default function ClearAction({ talk, policyName }) {
     return (
         <PressableIcon name="delete-sweep"
             onLongPress={e => {
-                dispatch({ type: `talk/clear`, id:talk.id });
                 navigate('/home')
+                dispatch({ type: `talk/clear`, id:talk.id });
             }}
             onPress={e => {
                 dispatch({ type: "talk/clear/policy/history", talk, policy: policyName });

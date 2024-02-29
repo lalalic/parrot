@@ -19,7 +19,7 @@ export default class Base extends React.Component {
     
     constructor(){
         super(...arguments)
-        this.isSettingStatus=false
+        this.shouldTriggerUpdate=true
     }
 
     get talk() {
@@ -53,9 +53,13 @@ export default class Base extends React.Component {
         throw new Error("reset must be implemented")
     }
 
+    onPlaybackStatusUpdate(){
+        throw new Error("onPlaybackStatusUpdate must be implemented")
+    }
+
     componentDidMount() {
-        const { positionMillis = 0, shouldPlay } = this.props
         this.createChunks()
-        this.setStatusAsync({ shouldPlay, positionMillis })
+        const { positionMillis = 0, shouldPlay } = this.props
+        this.setStatusAsync({ shouldPlay, positionMillis },true)
     }
 }

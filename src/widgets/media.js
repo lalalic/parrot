@@ -166,8 +166,8 @@ class Media extends Base {
     }
 
     onPlaybackStatusUpdate(particular) {
-        if(this.isSettingStatus){
-            console.log("skip onPlaybackStatusUpdate since isSettingStatus=true")
+        if(!this.shouldTriggerUpdate){
+            console.log("skip onPlaybackStatusUpdate since shouldTriggerUpdate=false")
             return 
         }
         const status={
@@ -190,7 +190,10 @@ class Media extends Base {
         this.progress.addListener(({ value }) => {
             this.onPositionMillis(Math.floor(value))
         })
+        const { positionMillis = 0 } = this.props
+        this.progress.current=positionMillis
         super.componentDidMount()
+        
     }
 
     componentWillUnmount() {
@@ -249,13 +252,13 @@ class Media extends Base {
         }
     }
 
-    setStatusAsync() {
+    setStatusAsync(status, shouldTriggerUpdate=false) {
         return new Promise((resolve) =>{
             try{
-                this.isSettingStatus=true
-                this.setStatusSync(...arguments)
+                this.shouldTriggerUpdate=shouldTriggerUpdate
+                this.setStatusSync(status)
             }finally{
-                this.isSettingStatus=false
+                this.shouldTriggerUpdate=true
                 resolve(this.status)
             }
         })
@@ -424,7 +427,7 @@ export class TaggedListMedia extends ListMedia{
 
 function ParentControl({talk, policyName}){
     const dispatch=useDispatch()
-    const controled=useSelector(state=>state.talks[talk.id][policyName]?.parentControled)
+    const controled=useSelector(state=>state.talks[talk.id]?.[policyName]?.parentControled)
     const promptProps=React.useMemo(()=>({
         secureTextEntry:true,
         textContentType:'password',

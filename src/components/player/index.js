@@ -175,7 +175,7 @@ const Styles=StyleSheet.create({
  * @param {*} param0 
  * @returns 
  */
-function useChunks({media, id, policy, policyName, challenging}) {
+function useChunks({media, id, policy, challenging}) {
     const InitChunks=React.useMemo(()=>[],[])
     const [chunks, setChunks]= React.useState(InitChunks)
     const $chunks=useRefLatest(chunks)
@@ -218,6 +218,7 @@ function useMediaStatusControl({media, debug}) {
 }
 
 function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusAsync, policy, dispatch, status, debug}) {
+    console.log(`usePlaybackStatusUpdate is called with ${chunks.length} chunks`)
     const $chunks = useRefLatest(chunks)
     const $status=useRefLatest(status)
     const $policy=useRefLatest(policy)
@@ -234,7 +235,7 @@ function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusA
         }
 
         if(mediaStatus.chunks){
-            setChunks(mediaStatus.chunks)
+            setChunks($chunks.current=mediaStatus.chunks)
             return 
         }
 

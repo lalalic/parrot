@@ -343,7 +343,7 @@ const Sentense=({talk, id=talk?.id})=>{
 function Shuffle({talk, id=talk?.id, policyName}){
     const dispatch=useDispatch()
     const {media:book, firePlayerEvent}=React.useContext(PlayerContext)
-    const {challenges, challenging, shuffle}=useSelector(state=>state.talks[id][policyName]||{})
+    const {shuffle}=useSelector(state=>state.talks[id]?.[policyName]||{})
     return <PressableIcon name="shuffle" 
         label={l10n["Shuffle"]} labelFade={true}
         color={shuffle ? "yellow" : undefined}
@@ -351,17 +351,13 @@ function Shuffle({talk, id=talk?.id, policyName}){
             dispatch({type:"talk/policy", talk:{id}, target:policyName, payload:{shuffle:!shuffle}})
         }}
         onPress={e=>{
-            if(!challenging){
-                book.current.createChunks({shuffle:true, update:false})
-            }else{
-                dispatch({
-                    type:"talk/challenge/shuffle", 
-                    talk:{id}, 
-                    policyName,
-                    challenges: book.current.shuffleArray([...challenges])
-                })
-                firePlayerEvent("nav/reset")
-            }
+            dispatch({
+                type:"talk/challenge/shuffle", 
+                talk:{id}, 
+                policyName,
+                challenges: book.current.createChunks({shuffle:true, update:false})
+            })
+            firePlayerEvent("nav/reset")
         }}/>
 }
 

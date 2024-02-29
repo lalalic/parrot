@@ -1,6 +1,7 @@
 import React from "react"
-import { FlatList, View, TextInput, Switch} from 'react-native';
+import { View, TextInput, Switch} from 'react-native';
 import { ColorScheme, TitleStyle } from "react-native-use-qili/components/default-style";
+import FlatList from "react-native-use-qili/components/FlatList";
 import { TalkThumb } from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { TalkApi, getTalkApiState } from "./store"
@@ -20,7 +21,7 @@ export default function Talks(props){
     const [search, setSearch]=React.useReducer(defaultMemoize(
         (last, next)=>({...last, ...next}),
         shallowEqual,
-    ),{ q:"",people:false, peopleName:"",local:true, ...useSelector(state=>state.history.search), page:1})
+    ),{ q:"",people:false, peopleName:"",local:false, ...useSelector(state=>state.history.search), page:1})
     
     const {data:{talks=[],pages=1}={}, isLoading}=useTalksQuery(search)
 
@@ -46,21 +47,22 @@ export default function Talks(props){
                     onPress={e=>setSearch({ people: !search.people,q:""})}
                     />
             </View>
-            <FlatList
-                data={!isLoading && talks}
-                extraData={`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`}
-                renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
-                keyExtractor={(item,i)=>`${item.slug}-${i}`}
-                horizontal={true}
-                onEndReachedThreshold={0.5}
-                initialScrollIndex={initialScrollIndex}
-                getItemLayout={(data,index)=>({length:240, offset:240*index, index})}
-                onEndReached={e=>{
-                    if(search.page<pages){
-                        setSearch({ page:(search.page??1)+1})
-                    }
-                }}
-                />
+            <Search search={search}>
+                <FlatList
+                    extraData={`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`}
+                    renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
+                    keyExtractor={(item,i)=>`${item.slug}-${i}`}
+                    horizontal={true}
+                    onEndReachedThreshold={0.5}
+                    initialScrollIndex={initialScrollIndex}
+                    getItemLayout={(data,index)=>({length:240, offset:240*index, index})}
+                    onEndReached={e=>{
+                        if(search.page<pages){
+                            setSearch({ page:(search.page??1)+1})
+                        }
+                    }}
+                    />
+            </Search>
                 {!search.people && (
                     <>
                         <TextInput 
@@ -73,10 +75,10 @@ export default function Talks(props){
                             }}
                             style={searchTextStyle}/>
                         
-                        <Switch value={!!search.local}
+                        {isAdmin && <Switch value={!!search.local}
                             style={{position:"absolute", right:5, top:10, transform:[{scale:0.5}]}}
                             onValueChange={e=>setSearch({local:!search.local})}
-                            />
+                            />}
                     </>
                 )}
                 {search.people && <PeopleSearch style={searchTextStyle}
@@ -113,6 +115,74 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
                 />
             </View>
     )
+}
+
+function Search({search}){
+    if(search.local)
+        return <SearchLocal {...arguments[0]}/>
+    
+    if(!search.q)
+        return <SearchToday {...arguments[0]}/>
+
+    if(search.people)
+        return <SearchPeople {...arguments[0]}/>
+
+    return <SearchPages {...arguments[0]}/>
+}
+
+function SearchLocal({children}){
+    const talks=useSelector(state=>{
+        const widgets=['vocabulary','picturebook','dialog','chat','audiobook']
+		return Object.values(state.talks).filter(talk=>{
+			return widgets.indexOf(talk.slug)==-1
+		})
+    })
+    return React.cloneElement(children,{data:talks})
+}
+
+function SearchToday({children}){
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useTodayQuery({day:new Date().asDateString()})
+    return React.cloneElement(children,{data: !isLoading && talks})
+}
+
+function SearchPeople({search, children}){
+    const {data:{talks}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search)
+    return React.cloneElement(children,{data: !isLoading && talks})
+}
+
+function SearchPages({search, children}){
+    const [talks, setTalks]=React.useState([])
+    const [loaded, setLoaded]=React.useState(0)
+    
+    React.useEffect(()=>{
+        setTalks([])
+        setLoaded(0)
+    },[search])
+
+    const addTalks=React.useCallback(data=>{
+        if(data){
+            setLoaded(loaded+1)
+            if(data.length>0){
+                setTalks([...talks, ...data])
+            }
+        }
+    },[talks, loaded])
+    const isLoading=!(talks.length>0 || loaded==search.page)
+    return (
+        <>
+            {new Array(search.page).fill(0).map((a,i)=>
+                <Page key={i} addTalks={addTalks} search={{...search, page:i+1}}/>)}
+            {React.cloneElement(children,{data: !isLoading && talks})}
+        </>
+    )
+}
+
+function Page({search, addTalks}){
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery(search)
+    React.useEffect(()=>{
+        addTalks(!isLoading && talks)
+    },[talks])
+    return null
 }
 
 const VOID=state=>({})
@@ -172,7 +242,7 @@ export function useTalksQuery(search){
                         return talks
                     }),[])
                 },
-                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries && a.talks!=b.talks
+                (a,b)=>getTalkApiState(a).queries==getTalkApiState(b).queries && a.talks==b.talks
             )
 
             dispatch({type:"history", search})

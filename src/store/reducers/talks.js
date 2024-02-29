@@ -178,16 +178,11 @@ export default function talks(talks = {}, action) {
 		case "talk/challenge/shuffle":
 			return produce(talks, $talks=>{
 				const { talk, policyName, challenges } = getTalk(action, $talks)
+				clearPolicyHistory({talk, policy:policyName})
 				const current=talk[policyName]||(talk[policyName]={})
 
-				if(current.challenging){//reorder challenges
-					current.challenges=challenges
-					current.challenging++
-				}else{
-					clearPolicyHistory({talk, policy:policyName})
-					current.challenges=challenges
-					current.challenging=1
-				}
+				current.challenges=challenges
+				current.challenging=1
 			})
 		case "talk/chanllenge/longmemory":
 			return produce(talks, $talks=>{
