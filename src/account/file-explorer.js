@@ -1,12 +1,12 @@
 import React from "react"
-import {FlatList, Pressable, Text, View} from "react-native"
+import {FlatList, Pressable, Text as TextA, View} from "react-native"
 import * as FileSystem from "expo-file-system"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import * as Sharing from "expo-sharing"
 
+const Text=props=><TextA ellipsizeMode="middle" numberOfLines={1} {...props}/>
 const Context=React.createContext({})
 export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSystem.cacheDirectory], title, ...props}){
-    console.info(dir)
     const [current, $setCurrent]=React.useState()
     const setCurrent=React.useCallback(a=>{
         $setCurrent(a)
@@ -19,11 +19,14 @@ export default function FileExplorer({dir=[FileSystem.documentDirectory, FileSys
     },[$setCurrent])
     return (
         <Context.Provider value={{current,setCurrent}}>
+            <View style={{flex:1, overflow:"hidden"}}>
             {title && <Text style={{fontSize:12, textAlign:"center",fontWeight:"bold",marginTop:20, marginBottom:20}}>{title}</Text>}
-            {dir.map(uri=>{
-                const name=uri.split("/").reverse().find(a=>!!a)
-                return <Folder key={uri} info={{isDirectory:true, uri, name}} open={true}  {...props}/>
-            })}
+            
+                {dir.map(uri=>{
+                    const name=uri.split("/").reverse().find(a=>!!a)
+                    return <Folder key={uri} info={{isDirectory:true, uri, name}} open={true}  {...props}/>
+                })}
+            </View>
         </Context.Provider>
     )
 }
@@ -41,7 +44,7 @@ const Folder=({info, style, onDelete, excludes=[], ...props})=>{
             setData(infos)
         })();
     },[])
-    const color=React.useContext(ColorScheme)
+    const color={active:"yellow", inactive:"white"}//React.useContext(ColorScheme)
 
     return (
         <View style={[{paddingLeft:10},style]}>
