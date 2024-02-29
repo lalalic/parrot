@@ -173,7 +173,12 @@ Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
 
 Cloud.addModule(require("react-native-use-qili/cloud/predict")({
     apiKey:"8a58f914-a76f-46fc-81b9-d6801eab5f95",
-    chatflowId:"f4193b69-6c88-4b64-8138-df5df742b3b4",
+    chatflows:{
+        chain:"f4193b69-6c88-4b64-8138-df5df742b3b4",
+        chat:"9ec60138-d046-446d-97ad-e1f05d2b4ec2",
+        agent:"b670cb88-fb5c-4ee8-be92-716604efd358",
+        assistant:"ecab031a-e542-46a0-993a-5011d5306060",
+    }
 }))
 
 // Cloud.addModule(require("react-native-use-qili/cloud/iap")({

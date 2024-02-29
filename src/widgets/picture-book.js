@@ -97,8 +97,6 @@ export default class PictureBook extends TaggedListMedia {
 
         const [visible, setVisible]=React.useState(true)
 
-        const ask=useAsk({id:"randomPicture", timeout:2*60*1000 })
-
         return (
             <TaggedTranscript {...props} id={id}
                 actions={[

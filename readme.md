@@ -50,3 +50,15 @@ deploy
 =====
 > build: eas build
 > submit: 
+
+AI
+==
+* chain
+    * vocabulary
+    * dialog
+    * image scenario
+    * article
+        * make article(chain)
+        * split to sentence(code)
+        * create audio for sentence(agent)
+* chat

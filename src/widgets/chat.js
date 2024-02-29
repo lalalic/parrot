@@ -1,15 +1,14 @@
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View , Text, TextInput, Pressable, ActivityIndicator} from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Speak, Recognizer, Recorder, PlaySound, KeyboardAvoidingView} from "../components"
+import { Speak, Recognizer, Recorder, KeyboardAvoidingView} from "../components"
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import useAsk from "react-native-use-qili/components/useAsk";
 import useStateAndLatest from "react-native-use-qili/components/useStateAndLatest";
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import { useNavigate } from 'react-router-native';
+import { useDispatch, useSelector } from 'react-redux';
 import * as FileSystem from "expo-file-system"
 import { useKeepAwake } from "expo-keep-awake"
 const l10n=globalThis.l10n
@@ -99,7 +98,7 @@ function isTextMessage(message){
  */
 const Chat = () => {
 	const dispatch = useDispatch()
-	const sendMessage = useAsk({id:"chat", timeout:10*60*1000})
+	const sendMessage = useAsk({chatflow:"chat"})
 	const talk=useSelector(state=>state.talks[defaultProps.id])
 	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput]=useStateAndLatest(false)
