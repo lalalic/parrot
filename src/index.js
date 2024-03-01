@@ -27,17 +27,17 @@ export default function Parrot(){
                 <MotherLang>
                     <Router/>
                 </MotherLang>
+                <AutoReloadUpdate/>
+                <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
+                <PreloadSound 
+                    ding={require("../assets/ding.mp3")} 
+                    celebrate={require("../assets/celebrate.mp3")}
+                    pop={require("../assets/pop.mp3")}/>
             </Login.Required>
             <Permissions/>
-            <PreloadSound 
-                ding={require("../assets/ding.mp3")} 
-                celebrate={require("../assets/celebrate.mp3")}
-                pop={require("../assets/pop.mp3")}/>
             <MotherLang/>
-            <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
             <FlyMessage/>
             <Prompt/>
-            <AutoReloadUpdate/>
         </App>
     )
 }

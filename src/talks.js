@@ -13,6 +13,7 @@ import SwitchTed from "./components/SwitchTed"
 
 export default function Talks(props){
     const color=React.useContext(ColorScheme)
+    const dispatch=useDispatch()
     const isAdmin=useSelector(state=>state.my.isAdmin)
     const searchTextStyle=React.useMemo(()=>({fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}),[])
     const thumbStyle=React.useMemo(()=>({backgroundColor:color.backgroundColor,borderColor:color.unactive}),[])
@@ -44,7 +45,8 @@ export default function Talks(props){
                         ...props,
                         style:thumbStyle,imageStyle,
                         durationStyle,titleStyle, 
-                        opacity: props.item.isLocal ? 1 : undefined
+                        opacity: props.item.isLocal ? 1 : undefined,
+                        onLongPress:e=>dispatch({type:"talk/clear", id:props.item.id}),
                     }}/>}
                     keyExtractor={(item,i)=>`${item.slug}-${i}`}
                     horizontal={true}
@@ -139,7 +141,32 @@ function Search({search}){
     return <SearchPages {...arguments[0]}/>
 }
 
-function useSelectFromResult(localMatch){
+function SearchToday({search, children}){
+    const {data:{talks=[]}={}, isLoading}=useQuery(()=>TalkApi.useTodayQuery({day:new Date().asDateString()}))
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
+}
+
+function SearchPeople({search, children}){
+    const reg=React.useMemo(()=>search.peopleName && new RegExp(search.peopleName,"i"),[search.peopleName])
+    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.author),[reg])
+    const {data:{talks=[]}={}, isLoading}=useQuery(()=>TalkApi.useSpeakerTalksQuery(search),localMatch)
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${trigger}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
+}
+
+function SearchPages({search, children}){
+    const reg=React.useMemo(()=>search.q && new RegExp(search.q,"i"),[search.q])
+    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.title),[reg])
+    const {data:{talks=[]}={}, isLoading}=useQuery(()=>TalkApi.useTalksQuery({search}),localMatch)
+    const initialScrollIndex = useInitialScrollIndex(talks);
+    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${trigger}`
+    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
+}
+
+function useQuery(query, localMatch){
     const localTalks=useSelector(state => {
         const widgets = ['vocabulary', 'picturebook', 'dialog', 'chat', 'audiobook'];
         return Object.values(state.talks).map(talk => {
@@ -150,50 +177,21 @@ function useSelectFromResult(localMatch){
         }).filter(a=>!!a)
     })
 
-    const $localTalks=React.useRef()
-    $localTalks.current=React.useMemo(()=>localMatch ? localTalks.filter(localMatch) : localTalks,[localMatch, localTalks])
+    const filteredLocalTalks=React.useMemo(()=>localMatch ? localTalks.filter(localMatch) : localTalks,[localMatch, localTalks])
 
     const merge=React.useCallback(defaultMemoize((localTalks, talks)=>{
         return [...localTalks, ...(talks||[]).filter(a=>!localTalks.find(b=>b.id==a.id))]
     }),[])
-    return React.useMemo(()=>({
-        selectFromResult(result){
-            const {data, isLoading}=result
 
-            return {
-                ...result, 
-                data:{
-                    talks:merge($localTalks.current, data?.talks)
-                }, 
-                isLoading: isLoading && $localTalks.current.length==0
-            }
-        }
-    }),[])
-}
-
-function SearchToday({search, children}){
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useTodayQuery({day:new Date().asDateString()}, useSelectFromResult())
-    const initialScrollIndex = useInitialScrollIndex(talks);
-    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
-    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
-}
-
-function SearchPeople({search, children}){
-    const reg=React.useMemo(()=>search.peopleName && new RegExp(search.peopleName,"i"),[search.peopleName])
-    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.author),[reg])
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search, useSelectFromResult(localMatch))
-    const initialScrollIndex = useInitialScrollIndex(talks);
-    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
-    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
-}
-
-function SearchPages({search, children}){
-    const reg=React.useMemo(()=>search.q && new RegExp(search.q,"i"),[search.q])
-    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.title),[reg])
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery({search},useSelectFromResult(localMatch))
-    const initialScrollIndex = useInitialScrollIndex(talks);
-    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
-    return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
+    const result = query()
+    const {data, isLoading}=result
+    return {
+        ...result, 
+        data:{
+            talks:merge(filteredLocalTalks, data?.talks)
+        }, 
+        isLoading: isLoading && filteredLocalTalks.length==0
+    }
 }
 
 const imageStyle={height:180}

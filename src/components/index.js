@@ -34,7 +34,7 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, act
     )
 }
 
-export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri, policy}){
+export function TalkThumb({item, children, style, imageStyle, durationStyle, onLongPress, titleStyle, text=true, opacity=0.6, getLinkUri, policy}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
     const {thumb,duration,title, slug}=item
     const navigate=useNavigate()
@@ -53,7 +53,7 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
         }
     }
     return (
-		<Pressable style={[TalkStyle.thumb, style]} onPress={onPress}>
+		<Pressable style={[TalkStyle.thumb, style]} onPress={onPress} onLongPress={onLongPress}>
             <View style={{flex:1, opacity}}>
                 <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={source}/>
                 
