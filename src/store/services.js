@@ -65,7 +65,9 @@ async function fetchTedTalk({slug},api){
 	const {lang: transcript, mylang:translation, video: { playerData, description },}=data
 	const {id, resources, title, thumb, duration, speaker, targeting:{tag=""}={}}=JSON.parse(playerData)
 	const talk={
-		id, slug, title, thumb, duration,description,speaker,source:"ted",tags:tag.split(","),
+		id, slug, title, thumb, duration,description,
+		author:speaker,
+		source:"ted",tags:tag.split(","),
 		video: resources.hls.stream,
 		data:transcript?.paragraphs || translation?.paragraphs
 	}
@@ -385,10 +387,11 @@ export const Qili = Object.assign(createApi({
 });
 
 
-export const Services = { Ted, Qili, current: 'Qili' };
+export const Services = { Ted, Qili};
 
 export const TalkApi = new Proxy(Services, {
 	get(target, key) {
-		return target[target.current][key];
+		const current=globalThis.store?.getState().my.api||"Qili"
+		return target[current][key];
 	}
 });

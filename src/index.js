@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from "react-redux"
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import Login from "react-native-use-qili/components/Login"
 import { Prompt } from "react-native-use-qili/components/Prompt"
+import AutoReloadUpdate from "react-native-use-qili/components/AutoReloadUpdate"
 import App from "react-native-use-qili/App"
 import { isAdmin } from "react-native-use-qili/store";
 
@@ -36,6 +37,7 @@ export default function Parrot(){
             <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
             <FlyMessage/>
             <Prompt/>
+            <AutoReloadUpdate/>
         </App>
     )
 }

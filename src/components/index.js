@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, FlatList , Image, Keyboard, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
+import { View, Text, Pressable, Image, KeyboardAvoidingView as RNKeyboardAvoidingView} from "react-native";
 import { useLocation, useNavigate} from "react-router-native"
 import { useSelector } from "react-redux"
 
@@ -8,6 +8,7 @@ import { selectPolicy, isOnlyAudio, Qili, TalkApi } from "../store"
 import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
+import FlatList from "react-native-use-qili/components/FlatList"
 import PolicyIcons from './PolicyIcons';
 const l10n=globalThis.l10n
 
@@ -66,18 +67,18 @@ export function TalkThumb({item, children, style, imageStyle, durationStyle, tit
 
 export function TalkSelector({thumbStyle={height:110,width:140}, durationStyle, titleStyle, imageStyle, selected, children, filter=a=>(a.favorited && a), emptyTitle="", style, ...props}){
     const talks=useSelector(({talks={}})=>{
+        
         return Object.keys(talks).map(id=>{
-            return filter(talks[id])
+            const talk=filter(talks[id])
+            if(talk){
+                const {id,title,slug,author,thumb,duration}=talk
+                return {
+                    id,title,slug,author,duration,isLocal:true,
+                    thumb:thumb || globalThis.Widgets[slug]?.defaultProps?.thumb,
+                }
+            }
         }).filter(a=>!!a)
     })
-
-    if(talks.length==0){
-        return (
-            <View style={[{flex:1,alignContent:"center", alignItems:"center", margin:50},style]}>
-                <Text style={{color:"gray"}}>{l10n[emptyTitle||"It's empty!"]}</Text>
-            </View>
-        )
-    }
 
     return (
         <FlatList 
@@ -92,30 +93,6 @@ export function TalkSelector({thumbStyle={height:110,width:140}, durationStyle, 
             />
     )
 }
-
-export const html = (talk, lineHeight, margins, needMy) => `
-    <html>
-        <style>
-            p{line-height:${lineHeight}%;margin:0;text-align:justify}
-            @page{
-                ${Object.keys(margins).map(k => `margin-${k}:${margins[k]}`).join(";")}
-            }
-        </style>
-        <body>
-            <h2>
-                <span>${talk.title}</span>
-                <span style="font-size:12pt;float:right;padding-right:10mm">${talk.speaker} ${new Date().asDateString()}</span>
-            </h2>
-            ${talk.transcript?.map(a => {
-    const content = a.cues.map(b => b.text).join("");
-    const my = needMy && a.cues.map(b => b.my ?? "").join("");
-    const time = ((m = 0, b = m / 1000, a = v => String(Math.floor(v)).padStart(2, '0')) => `${a(b / 60)}:${a(b % 60)}`)(a.cues[0].time);
-    return `<p><i>${time}</i> ${content}</p>${my ? `<p>${my}</p>` : ""}`;
-}).join("\n")}
-        </body>
-    </html>
-
-`;
 
 export function KeyboardAvoidingView(props){
     return <RNKeyboardAvoidingView {...props} keyboardVerticalOffset={60}/>

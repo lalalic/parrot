@@ -39,7 +39,7 @@ export const reducers={
 		lang:"en", 
 		mylang: l10n.getLanguage(), 
 		tts:{},
-		api: Services.current,
+		api: "Qili",
 		isAdmin:false
 	}, action) {
 		switch (action.type) {
@@ -70,10 +70,6 @@ export const reducers={
 				Object.keys(state.policy).forEach(k=>{
 					my.policy[k]={...state.policy[k],...my.policy[k]}
 				})
-
-				if(my.api){
-					Services.current=my.api
-				}
 				delete my.isAdmin
 
 				my.i++
@@ -87,7 +83,7 @@ export const reducers={
 			case "my/tts":
 				return {...state, tts:{...state.tts, ...action.payload}}
 			case "my/api":
-				return {...state, api:(Services.current=action.api)}
+				return {...state, api:action.api}
 		}
 		return myReducer(state,action)
 	},

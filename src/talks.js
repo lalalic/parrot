@@ -4,7 +4,7 @@ import { ColorScheme, TitleStyle } from "react-native-use-qili/components/defaul
 import FlatList from "react-native-use-qili/components/FlatList";
 import { TalkThumb } from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import { TalkApi, getTalkApiState } from "./store"
+import { TalkApi } from "./store"
 import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-native";
 import { defaultMemoize } from "reselect";
@@ -14,16 +14,16 @@ import SwitchTed from "./components/SwitchTed"
 export default function Talks(props){
     const color=React.useContext(ColorScheme)
     const isAdmin=useSelector(state=>state.my.isAdmin)
-
-    const thumbStyle={backgroundColor:color.backgroundColor,borderColor:color.unactive}
+    const searchTextStyle=React.useMemo(()=>({fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}),[])
+    const thumbStyle=React.useMemo(()=>({backgroundColor:color.backgroundColor,borderColor:color.unactive}),[])
     
     const [search, setSearch]=React.useReducer(defaultMemoize(
         (last, next)=>({...last, ...next}),
         shallowEqual,
-    ),{ q:"",people:false, peopleName:"",local:false, ...useSelector(state=>state.history.search), page:1})
-    
+    ),{ q:"",people:false, peopleName:"", ...useSelector(state=>state.history.search), page:1})
     const pages=10
-    const searchTextStyle={fontSize:20,height:50,color:color.text, paddingLeft:10, position:"absolute", width:"100%", marginLeft:45 ,paddingRight:45,}
+    
+    saveSearchWhenUnmount(search);
     return (
         <View {...props}>
             <View style={[{flexDirection:"row",height:32,paddingLeft:10, 
@@ -40,7 +40,12 @@ export default function Talks(props){
             <Search search={search}>
                 <FlatList
                     extraData={`${search.q}-${search.page}`}
-                    renderItem={props=><TalkThumb {...props} {...{style:thumbStyle,imageStyle,durationStyle,titleStyle}}/>}
+                    renderItem={props=><TalkThumb {...{
+                        ...props,
+                        style:thumbStyle,imageStyle,
+                        durationStyle,titleStyle, 
+                        opacity: props.item.isLocal ? 1 : undefined
+                    }}/>}
                     keyExtractor={(item,i)=>`${item.slug}-${i}`}
                     horizontal={true}
                     onEndReachedThreshold={0.5}
@@ -63,11 +68,6 @@ export default function Talks(props){
                                 setSearch({ q, page:1, peopleName:""})
                             }}
                             style={searchTextStyle}/>
-                        
-                        {isAdmin && <Switch value={!!search.local}
-                            style={{position:"absolute", right:5, top:10, transform:[{scale:0.5}]}}
-                            onValueChange={e=>setSearch({local:!search.local})}
-                            />}
                     </>
                 )}
                 {search.people && <PeopleSearch style={searchTextStyle}
@@ -75,7 +75,7 @@ export default function Talks(props){
                         name={search.peopleName}
                         onValueChange={(q, peopleName)=>setSearch({ q,peopleName, page:1})}/>}
                 {isAdmin && <SwitchTed 
-                    style={{position:"absolute", right:35, top:10, transform:[{scale:0.3}]}}
+                    style={{position:"absolute", right:5, top:10, transform:[{scale:0.5}]}}
                     />}
         </View>
     )
@@ -106,6 +106,15 @@ const PeopleSearch=({style, onValueChange, value, name, ...props})=>{
     )
 }
 
+function saveSearchWhenUnmount(search) {
+    const dispatch=useDispatch()
+    const $search = React.useRef();
+    $search.current = search;
+    React.useEffect(() => () => {
+        dispatch({ type: "history", search: $search.current });
+    }, []);
+}
+
 function useInitialScrollIndex(talks) {
     const { state: history } = useLocation();
     const initialScrollIndex = React.useMemo(() => {
@@ -119,8 +128,7 @@ function useInitialScrollIndex(talks) {
 }
 
 function Search({search}){
-    if(search.local)
-        return <SearchLocal {...arguments[0]}/>
+    useSelector(state=>state.my.api)//a trigger
     
     if(!search.q)
         return <SearchToday {...arguments[0]}/>
@@ -131,72 +139,61 @@ function Search({search}){
     return <SearchPages {...arguments[0]}/>
 }
 
-function SearchLocal({search, children}){
-    const talks=useSelector(state=>{
-        const widgets=['vocabulary','picturebook','dialog','chat','audiobook']
-		return Object.values(state.talks).filter(talk=>{
-			return widgets.indexOf(talk.slug)==-1
-		})
+function useSelectFromResult(localMatch){
+    const localTalks=useSelector(state => {
+        const widgets = ['vocabulary', 'picturebook', 'dialog', 'chat', 'audiobook'];
+        return Object.values(state.talks).map(talk => {
+            if(widgets.indexOf(talk.slug) == -1){
+                const {id,title,slug,author,thumb,duration}=talk
+                return {id,title,slug,author,thumb,duration,isLocal:true}
+            }
+        }).filter(a=>!!a)
     })
-    const initialScrollIndex = useInitialScrollIndex(talks);
-    const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
-    return React.cloneElement(children,{data:talks, initialScrollIndex, extraData})
+
+    const $localTalks=React.useRef()
+    $localTalks.current=React.useMemo(()=>localMatch ? localTalks.filter(localMatch) : localTalks,[localMatch, localTalks])
+
+    const merge=React.useCallback(defaultMemoize((localTalks, talks)=>{
+        return [...localTalks, ...(talks||[]).filter(a=>!localTalks.find(b=>b.id==a.id))]
+    }),[])
+    return React.useMemo(()=>({
+        selectFromResult(result){
+            const {data, isLoading}=result
+
+            return {
+                ...result, 
+                data:{
+                    talks:merge($localTalks.current, data?.talks)
+                }, 
+                isLoading: isLoading && $localTalks.current.length==0
+            }
+        }
+    }),[])
 }
 
 function SearchToday({search, children}){
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useTodayQuery({day:new Date().asDateString()})
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useTodayQuery({day:new Date().asDateString()}, useSelectFromResult())
     const initialScrollIndex = useInitialScrollIndex(talks);
     const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
     return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
 }
 
 function SearchPeople({search, children}){
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search)
+    const reg=React.useMemo(()=>search.peopleName && new RegExp(search.peopleName,"i"),[search.peopleName])
+    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.author),[reg])
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useSpeakerTalksQuery(search, useSelectFromResult(localMatch))
     const initialScrollIndex = useInitialScrollIndex(talks);
     const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
     return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
 }
 
 function SearchPages({search, children}){
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery({search})
+    const reg=React.useMemo(()=>search.q && new RegExp(search.q,"i"),[search.q])
+    const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.title),[reg])
+    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery({search},useSelectFromResult(localMatch))
     const initialScrollIndex = useInitialScrollIndex(talks);
     const extraData=`${search.q}-${search.page}-${initialScrollIndex}-${talks.length}`
     return React.cloneElement(children,{data: !isLoading && talks, initialScrollIndex,extraData})
-}
-
-function SearchPages1({search, children}){
-    const [talks, setTalks]=React.useState([])
-    const [loaded, setLoaded]=React.useState(0)
-    
-    React.useEffect(()=>{
-        setTalks([])
-        setLoaded(0)
-    },[search])
-
-    const addTalks=React.useCallback(data=>{
-        if(data){
-            setLoaded(loaded+1)
-            if(data.length>0){
-                setTalks([...talks, ...data])
-            }
-        }
-    },[talks, loaded])
-    const isLoading=!(talks.length>0 || loaded==search.page)
-    return (
-        <>
-            {new Array(search.page).fill(0).map((a,i)=>
-                <Page key={i} addTalks={addTalks} search={{...search, page:i+1}}/>)}
-            {React.cloneElement(children,{data: !isLoading && talks})}
-        </>
-    )
-}
-
-function Page({search, addTalks}){
-    const {data:{talks=[]}={}, isLoading}=TalkApi.useTalksQuery(search)
-    React.useEffect(()=>{
-        addTalks(!isLoading && talks)
-    },[talks])
-    return null
 }
 
 const imageStyle={height:180}

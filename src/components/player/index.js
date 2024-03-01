@@ -229,7 +229,6 @@ function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusA
         const state=$status.current
         const policy=$policy.current
 
-
         if(mediaStatus.positionMillis){
             asyncCall(() => onProgress.current?.(mediaStatus.positionMillis));
         }
@@ -242,6 +241,7 @@ function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusA
         const { i: currentIndex, whitespacing } = state;
         const nextState = (() => {
             if (
+                !mediaStatus.isLoaded ||
                 mediaStatus.shouldPlay != mediaStatus.isPlaying ||// player is ajusting play status 
                 mediaStatus.positionMillis <= state.minPositionMillis ||//player offset ajustment
                 whitespacing //
@@ -253,11 +253,6 @@ function usePlaybackStatusUpdate({setChunks, onProgress, chunks, setMediaStatusA
             const nextIndex = positionMillis < chunks[0]?.time ? -1 : chunks.findIndex(a => a.end >= positionMillis) 
 
             const current = { isLoaded, isPlaying, rate, durationMillis, i: nextIndex };
-
-            if (!isLoaded) { //init video pitch, props can't work
-                setMediaStatusAsync({ shouldCorrectPitch: true, pitchCorrectionQuality: Audio.PitchCorrectionQuality.High });
-                return current;
-            }
 
             //copy temp keys from state
             ;["lastRate"].forEach(k => k in state && (current[k] = state[k]));

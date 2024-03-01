@@ -28,8 +28,8 @@ export default class TedTalk extends Base{
                 onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
                 <RemoveRemote {...{talk, policyName}}/>
                 {hasTranscript && <PressableIcon name="print"
-                    onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
-                    onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
+                    onLongPress={async()=>await Print.printAsync({ html: TedTalk.print(talk, 130, margins, true), margins })}
+                    onPress={async (e) =>await Print.printAsync({ html: TedTalk.print(talk, 130, margins, false), margins })} 
                 />}
 
                 {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
@@ -83,6 +83,29 @@ export default class TedTalk extends Base{
             </TedTalk>
         )
     })
+
+    static print = (talk, lineHeight, margins, needTranslated) => `
+        <html>
+            <style>
+                p{line-height:${lineHeight}%;margin:0;text-align:justify}
+                @page{
+                    ${Object.keys(margins).map(k => `margin-${k}:${margins[k]}`).join(";")}
+                }
+            </style>
+            <body>
+                <h2>
+                    <span>${talk.title}</span>
+                    <span style="font-size:12pt;float:right;padding-right:10mm">${talk.author||""} ${new Date().asDateString()}</span>
+                </h2>
+                ${talk.data?.map(a => {
+        const content = a.cues.map(b => b.text).join("");
+        const translated = needTranslated && a.cues.map(b => b.translated ?? "").join("");
+        const time = ((m = 0, b = m / 1000, a = v => String(Math.floor(v)).padStart(2, '0')) => `${a(b / 60)}:${a(b % 60)}`)(a.cues[0].time);
+        return `<p><i>${time}</i> ${content}</p>${translated ? `<p>${translated}</p>` : ""}`;
+    }).join("\n")}
+            </body>
+        </html>
+    `;
 
     static async onFavorite({id, talk, state, dispatch}){
         if(!Ted.supportLocal(talk))

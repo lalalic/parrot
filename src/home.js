@@ -12,7 +12,12 @@ export default ()=>(
     <View style={{flex:1}}>
         <Talks style={{flex:1}}/>
         <View  style={{height:100}}>
-            <TalkSelector durationStyle={false} titleStyle={false} thumbStyle={{height:90, width:90}} >
+            <TalkSelector 
+                durationStyle={false} 
+                titleStyle={{fontSize:10}}
+                thumbStyle={{height:90, width:90, borderWidth:1, borderColor:"gray"}}
+                imageStyle={{transform:[{scale:0.5}]}}
+                >
                 <Toggle/>
             </TalkSelector>
         </View>
@@ -23,6 +28,6 @@ export default ()=>(
 function Toggle({talk}){
     const dispatch = useDispatch()
     return <PressableIcon name="star" color="yellow"
-        style={{position:"absolute",top:10,left:10, opacity:0.5}}
+        style={{position:"absolute",top:0,left:0, opacity:0.5}}
         onPress={({id})=>dispatch({type:"talk/toggle/favorited", talk})}/>
 }
