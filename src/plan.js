@@ -16,6 +16,9 @@ import PolicyIcons from "./components/PolicyIcons";
 
 const l10n=globalThis.l10n
 
+const thumbStyle={height:100,width:100, borderWidth:1, borderColor:"gray"}
+const imageStyle={transform:[{scale:0.5}]}
+
 export default function Scheduler() {
     const store=useStore()
     const color=React.useContext(ColorScheme)
@@ -98,25 +101,25 @@ export default function Scheduler() {
                 timelineLeftInset={72}
                 renderEvent={({plan,width})=>{
                     const talk=store.getState().talks[plan.id]
-                    const uri=`/talk/${talk.slug}${plan.policy ? `/${plan.policy}` : ""}`
                     return (
-                        <Pressable style={{width, flex:1, flexDirection:"row"}} 
-                            onPress={e=>dispatch({type:"plan/slot",time:plan.start})}
-                            onLongPress={e=>dispatch({type:"plan/remove",time:plan.start})}
-                            >
-                            <Pressable onPress={e=>navigate(uri)}>  
-                                <TalkThumb item={talk||{}} style={{width:90, height:90,margin:0}} 
-                                    text={false} getLinkUri={e=>uri}>
-                                    {plan.policy && 
-                                    <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
-                                        <MaterialIcons name={PolicyIcons[plan.policy]} color={PlanPolicyDots[plan.policy].color} size={24}/>
-                                    </View>}
-                                </TalkThumb>
-                            </Pressable>  
-                            <Text style={{paddingLeft:10,flex:1,flexGrow:1,color:"black"}}>
-                                {`${plan.policy?.toUpperCase()||" "}\n${talk?.title||""}`}
-                            </Text>
-                        </Pressable>
+                        <View style={{flex:1, flexDirection:"row", alignItems:"center"}}>
+                            <TalkThumb item={talk||{}} text={false}
+                                style={{width:24, height:24,margin:0, borderWidth:0}} 
+                                policy={plan.policy}
+                                >
+                                <View style={{position:"absolute",width:"100%", justifyContent:"center", alignItems:"center", padding:2}}>
+                                    <MaterialIcons name={PolicyIcons[plan.policy]} color={PlanPolicyDots[plan.policy].color} size={24}/>
+                                </View>
+                            </TalkThumb>
+                            <Pressable style={{flex:1}}  
+                                onPress={e=>dispatch({type:"plan/slot",time:plan.start})}> 
+                                <Text style={{paddingLeft:10,color:"black"}}>
+                                    {`${talk?.title||""}`}
+                                </Text>
+                            </Pressable>
+                            <PressableIcon name="remove-circle-outline" 
+                                onPress={e=>dispatch({type:"plan/remove",time:plan.start})}/>
+                        </View>
                     )
                 }}
                 />
@@ -177,14 +180,18 @@ const Copy=({cancel, mode, ...props})=>{
             }
             return value
         })
-        return Array.from(ids).filter(a=>!!a).map(id=>state.talks[id])
+        return Array.from(ids)
+            .filter(a=>!!a)
+            .map(id=>{
+                const {title, slug, thumb}=state.talks[id]
+                return {id, title, slug, thumb:globalThis.Widgets[slug]?.defaultProps?.thumb}
+            })
     })
     const rowStyle={overflow:"hidden",flexDirection:"row", alignItems:"center", height:70,borderBottomColor:"gray",borderWidth:1}
     
     const [replacements, replace]=React.useState({})
     const dispatch=useDispatch()
-    const thumbStyle={height:100,width:100}
-
+    
     const [datePickerVisible,showDatePicker]=React.useState(false)
     const LabelHeight=40
     return (
@@ -207,16 +214,23 @@ const Copy=({cancel, mode, ...props})=>{
                     <ScrollView style={{flex:1, flexGrow:1}}>
                         {talks.map(a=>{
                             return (
-                                <View key={a.id} style={{flexDirection:"row", width:"100%", height:100, marginBottom:10}}>
-                                    <TalkThumb item={a} text={false} style={thumbStyle}>
+                                <View key={a.id} style={{flexDirection:"row", width:"100%", height:110, marginBottom:10}}>
+                                    <TalkThumb item={a} text={true} duration={false}
+                                        imageStyle={imageStyle}
+                                        titleStyle={{fontSize:10}}
+                                        style={thumbStyle}>
                                         {!replacements[a.id] &&  (
                                             <TalkSelectedIndicator talk={a}
                                             selected={a.id} 
                                             activeColor={color.primary}/>
                                         )}
                                     </TalkThumb>
-                                    <TalkSelector filter={b=>b.favorited && a.id!=b.id && b} 
+                                    <TalkSelector 
+                                        filter={b=>b.favorited && a.id!=b.id && b} 
                                         thumbStyle={thumbStyle}
+                                        imageStyle={imageStyle}
+                                        durationStyle={false}
+                                        titleStyle={{fontSize:10}}
                                         style={{paddingLeft:5, flex:1, flexGrow:1}}>
                                         <TalkSelectedIndicator
                                             selected={replacements[a.id]} 
@@ -258,19 +272,23 @@ const Copy=({cancel, mode, ...props})=>{
 
 function SlotScheduler({dispatch, nextPlan, style,...props}){
     const color=React.useContext(ColorScheme)
-    const rowStyle={overflow:"hidden",flexDirection:"row", alignItems:"center", height:70,borderBottomColor:"gray",borderWidth:1}
+    const rowStyle={overflow:"hidden",flexDirection:"row", alignItems:"center", height:70,borderBottomColor:"gray",borderWidth:0}
     
+    const policys=React.useMemo(()=>Object.keys(PolicyIcons),[])
+
     const [plan, setPlan]=React.useState(props.plan)
     const i=plan.start?.getHalfHour()||0
     const store=useStore()
     const widgetPolicyExcludes=React.useMemo(()=>{
         if(!plan.id)
-            return []
+            return policys
         const talk=store.getState().talks[plan.id]
         const Widget=globalThis.Widgets[talk.slug]
-        if(!Widget)
-            return []
-        return Widget.defaultProps?.exludePolicy||[]
+        const excludes= ["general", ...Widget?.defaultProps?.exludePolicy]
+        if(policys.length-excludes.length==1){
+            setPlan({...plan, policy:policys.find(a=>excludes.indexOf(a)==-1)})
+        }
+        return excludes
     },[plan.id])
     return (
         <Modal  animationType="fade" transparent={true} {...props}>
@@ -289,7 +307,12 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
                             selectedValue={i+plan.coures} 
                             onValueChange={value=>setPlan({...plan, coures:value-i})}/>
                     </View>
-                    <TalkSelector style={[rowStyle, {height:130, topMargin:10, alignItems:undefined}]}>
+                    <TalkSelector 
+                        imageStyle={imageStyle}
+                        thumbStyle={thumbStyle}
+                        durationStyle={false}
+                        titleStyle={{fontSize:10}}
+                        style={[rowStyle, {height:130, topMargin:10, alignItems:undefined}]}>
                         <TalkSelectedIndicator 
                             selected={plan.id} 
                             activeColor={color.primary} 
@@ -300,13 +323,13 @@ function SlotScheduler({dispatch, nextPlan, style,...props}){
                     <PolicyChoice style={rowStyle} 
                         color="white"
                         value={plan.policy} 
-                        excludes={["general",...widgetPolicyExcludes]}
+                        excludes={widgetPolicyExcludes}
                         onValueChange={policy=>setPlan({...plan, policy})}
                         />
                         
                     <View style={[rowStyle, {flexDirection:"row", justifyContent:"space-around"}]}>
                         <PressableIcon name="add-task" size={32} color="white"
-                            onPress={e=>dispatch({type:"plan/save", plan})}/>
+                            onPress={e=>!!plan.policy && !!plan.id && dispatch({type:"plan/save", plan})}/>
                         <PressableIcon name="cancel" size={32} color="white"
                             onPress={e=>dispatch({type:"plan/cancel"})}/>
                     </View>

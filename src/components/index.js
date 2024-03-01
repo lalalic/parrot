@@ -34,34 +34,34 @@ export const PolicyChoice=({value:defaultValue, onValueChange, style, label, act
     )
 }
 
-export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri}){
+export function TalkThumb({item, children, style, imageStyle, durationStyle, titleStyle, text=true, opacity=0.6, getLinkUri, policy}){
     const asText=(b,a=v=>String(Math.floor(v)).padStart(2,'0'))=>`${a(b/60)}:${a(b%60)}`
     const {thumb,duration,title, slug}=item
     const navigate=useNavigate()
     const location=useLocation()
     const source=typeof(thumb)=="string" ? {uri:thumb} : thumb
+    const onPress=e=>{
+        if(getLinkUri){
+            navigate(getLinkUri(item))
+        }else{
+            if(globalThis.Widgets[slug]?.defaultProps.isWidget){
+                navigate(`/talk/${slug}/${policy||"shadowing"}/${item.id}`)
+            }else{
+                navigate(location.pathname,{replace:true, state:{id:item.id}})
+                navigate(`/talk/${slug}/${policy||"general"}/${item.id}`)
+            }
+        }
+    }
     return (
-		<View style={[TalkStyle.thumb, style]}>
+		<Pressable style={[TalkStyle.thumb, style]} onPress={onPress}>
             <View style={{flex:1, opacity}}>
-                <Pressable onPress={e=>{
-                    if(getLinkUri){
-                        navigate(getLinkUri(item))
-                    }else{
-                        if(globalThis.Widgets[slug]?.defaultProps.isWidget){
-                            navigate(`/talk/${slug}/shadowing/${item.id}`)
-                        }else{
-                            navigate(location.pathname,{replace:true, state:{id:item.id}})
-                            navigate(`/talk/${slug}/general/${item.id}`)
-                        }
-                    }
-                }}>
-                    <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={source}/>
-                </Pressable>
+                <Image resizeMode="cover" style={[TalkStyle.image,{height: text ? 90 : "100%"}, imageStyle]} source={source}/>
+                
                 {!!text && !!duration && durationStyle!==false && <Text  style={[TalkStyle.duration,{top:0},durationStyle]}>{asText(duration)}</Text>}
                 {!!text && !!title && (titleStyle!==false || !source) && <Text  style={[TalkStyle.title,{overflow:"hidden",height:20},titleStyle]}>{l10n[title]}</Text>}
             </View>
             {children && React.cloneElement(children,{talk:item})}
-		</View>
+		</Pressable>
 	)
 }
 

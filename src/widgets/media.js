@@ -10,6 +10,7 @@ import Speak from '../components/Speak';
 import PlaySound from '../components/PlaySound';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
+import * as Print from "expo-print";
 
 import TagManagement from './management/TagManagement'
 import { getItemText } from "./management/tagged-transcript"
@@ -27,7 +28,7 @@ class Media extends Base {
      * protocol: supported actions
      */
      static Actions({talk, policyName, dispatch, navigate, slug=talk.slug}){
-        const hasTranscript = !!talk.transcript;
+        const hasTranscript = talk.data?.length>0;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         const Widget = globalThis.Widgets[slug]
         return (
@@ -38,7 +39,7 @@ class Media extends Base {
                     
                 {talk.hasLocal && <PressableIcon name="read-more" label={l10n["List"]} labelFade={true}
                     onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
-                
+
                 <PressableIcon 
                     name={talk.favorited ? "favorite" : "favorite-outline"}
                     onPress={()=> dispatch({type:"talk/toggle/favorited", talk})}
@@ -48,9 +49,8 @@ class Media extends Base {
                 
                 {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
 
-                {hasTranscript && <PressableIcon name={hasTranscript ? "print" : ""}
-                    onLongPress={async()=>await Print.printAsync({ html: html(talk, 130, margins, true), margins })}
-                    onPress={async (e) =>await Print.printAsync({ html: html(talk, 130, margins, false), margins })} 
+                {hasTranscript && Widget.print && <PressableIcon name={hasTranscript ? "print" : ""}
+                    onPress={async (e) =>await Print.printAsync({ html: Widget.print({talk, margins}), margins })} 
                 />}
 
                 {this.ExtendActions?.(...arguments)}
@@ -285,6 +285,30 @@ class Media extends Base {
 export class ListMedia extends Media{
     static cueEqualData(cue, data){
         return !!["text","word","translated","ask"].find(k=>cue.text==data[k])
+    }
+
+    static print({talk, margins, lineHeight=130}){
+        return `
+            <html>
+                <style>
+                    li{line-height:${lineHeight}%;margin:0;text-align:justify}
+                    @page{
+                        ${Object.keys(margins).map(k => `margin-${k}:${margins[k]}`).join(";")}
+                    }
+                </style>
+                <body>
+                    <h2>
+                        <span>${talk.title}</span>
+                        <span style="font-size:12pt;float:right;padding-right:10mm">${talk.author||""} ${new Date().asDateString()}</span>
+                    </h2>
+                    <ol>
+            ${talk.data?.map((a,i) => {
+                return `<li>${getItemText(a,true)}</li>`
+            }).join("\n")}
+                    <ol>
+                </body>
+            </html>
+        `
     }
 
     measureTime(a){
