@@ -6,7 +6,8 @@ import * as FileSystem from "expo-file-system"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
 import { Qili } from "../store"
-import { ControlIcons,  KeyboardAvoidingView} from "../components"
+import { KeyboardAvoidingView} from "../components"
+import ControlIcons from "../components/ControlIcons"
 import Player from "../components/player"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 const l10n=globalThis.l10n

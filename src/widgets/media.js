@@ -5,7 +5,9 @@ import { Qili } from "../store"
 
 import PlayerContext from "../components/player/Context"
 import { Subtitles } from "../components/player/Subtitles";
-import { PolicyChoice, html, Speak, PlaySound } from '../components';
+import { PolicyChoice, html } from '../components';
+import Speak from '../components/Speak';
+import PlaySound from '../components/PlaySound';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 

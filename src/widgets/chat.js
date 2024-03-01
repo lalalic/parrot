@@ -3,7 +3,10 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View , Text, TextInput, Pressable, ActivityIndicator} from 'react-native';
 import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Speak, Recognizer, Recorder, KeyboardAvoidingView} from "../components"
+import { KeyboardAvoidingView} from "../components"
+import Recorder from '../components/Recorder';
+import Speak from '../components/Speak';
+import Recognizer from '../components/Recognizer';
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import useAsk from "react-native-use-qili/components/useAsk";

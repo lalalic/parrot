@@ -1,7 +1,7 @@
 import React from "react"
 import { NativeModules, Text , Image, View} from "react-native"
 import { useAssets} from "expo-asset"
-import {PlaySound} from "../components"
+import PlaySound from "../components/PlaySound"
 import processText from "./tts-preprocess"
 
 const TensorFlowLiteTTS = NativeModules.TensorFlowLiteTTSBridge;

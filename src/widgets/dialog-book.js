@@ -1,7 +1,7 @@
 import React from "react"
 import { View, Text, Pressable } from "react-native"
 import { TaggedListMedia } from "./media"
-import { Speak } from "../components"
+import Speak from "../components/Speak"
 import Delay from "../components/delay"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { ColorScheme } from "react-native-use-qili/components/default-style"

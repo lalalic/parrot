@@ -14,7 +14,7 @@ import { TaggedTranscript, clean, getItemText } from "./management/tagged-transc
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
-import { Speak } from "../components"
+import Speak from "../components/Speak"
 import Delay from "../components/delay"
 
 const l10n=global.l10n

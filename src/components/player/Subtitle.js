@@ -3,7 +3,7 @@ import { Text } from "react-native";
 import { useSelector } from "react-redux";
 import { diffPretty } from '../../experiment/diff';
 import Delay from "../delay";
-import { Recognizer } from '..';
+import Recognizer from "../Recognizer";
 
 
 

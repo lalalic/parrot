@@ -1,7 +1,7 @@
 import React from "react"
 import { Text, Pressable, View , Linking} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
-import { Speak,  } from "../components"
+import Speak from "../components/Speak"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import useAsk from "react-native-use-qili/components/useAsk"
 import { TaggedListMedia } from "./media"

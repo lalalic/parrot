@@ -5,7 +5,8 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import Select from "react-native-select-dropdown"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-import { PolicyChoice, TalkThumb, AutoHide, TalkSelector} from "./components";
+import { PolicyChoice, TalkThumb, TalkSelector} from "./components";
+import AutoHide from "./components/AutoHide";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from "react-native-use-qili/components/default-style";
 import { selectPlansByDay } from "./store/reducers/plan";
