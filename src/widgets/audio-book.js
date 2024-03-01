@@ -2,7 +2,8 @@ import React from "react"
 import * as FileSystem from "expo-file-system"
 import { View, Linking, Text, Pressable} from "react-native" 
 import { TaggedListMedia,  } from "./media"
-import { PlaySound, Recorder } from "../components"
+import { PlaySound, Recorder, Speak, } from "../components"
+import Delay from "../components/delay"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
@@ -23,10 +24,18 @@ export default class AudioBook extends TaggedListMedia {
         description: "A list of audios: manage audio book with tags and practise them",
     }
 
-    renderAt({text, uri}, ){ 
+    renderAt(cue){ 
         const {rate, volume}=this.status
+        const {policy, whitespacing}=this.props
+        const {text, pronunciation="", uri,fulltext}=cue
+        
+        const title= policy.fullscreen ? fulltext : pronunciation
+
         return (
             <>
+                <Text style={{padding:10, color:"white", textAlign:"center", fontSize:20}}>
+                    {!!whitespacing && !!policy.caption && <Delay seconds={policy.captionDelay}>{title}</Delay>}
+                </Text>
                 {this.speak({rate,volume,text:uri ? {audio:uri} : text})}
             </>
         )
@@ -114,6 +123,23 @@ export default class AudioBook extends TaggedListMedia {
             />
         )
     }
+    static parse(input){
+        return input.split(/[\r\n]/g).filter(a=>!!a)
+            .map(a=>{
+                let pronunciation, translated;
+                a=a.replace(/\[(?<pronunciation>.*)\]/,(a,p1)=>{
+                    pronunciation=p1.trim()
+                    return ""
+                }).trim();
+                a=a.replace(/[\(（](?<translated>.*)[\)）]/,(a,p1)=>{
+                    translated=p1.trim()
+                    return ""
+                }).trim()
+                if(a){
+                    return clean({text:a, pronunciation, translated})
+                }
+            }).filter(a=>!!a)
+    }
 
     static prompts=[
         {label:"Article", name:"article",
@@ -123,31 +149,24 @@ export default class AudioBook extends TaggedListMedia {
                 sentences: "5",
             }, 
             prompt:(a,store)=>{
-                const {lang}=store.getState().my
-                return ` ${a.instruction}
+                const {lang, mylang}=store.getState().my
+                return `${a.instruction}
                     -----
                     Response should use ${lang} language.
                     Response should NOT have anything else. 
                     Response should have at least ${a.sentences} sentences.
-                    Each sentence should have pronunciation in [] following.
+                    Each sentence should have [pronunciation] at end, then (translation).
                     Pronunciation should use International Phonetic Alphabets. 
-                    Each sentence should be in a line alone. 
+                    Translation target language should be ${mylang}.
+                    Translation should NOT have prounciation.
+                    Each sentence should be in a line alone.  
                 `
             },
             async onSuccess({response, ask, store}){
                 const {instruction}=this.params
                 const {lang}=store.getState().my
                 const title=instruction
-                const data=response.split(/[\r\n]/g)
-                    .map(a=>a.trim())
-                    .filter(a=>!!a)
-                    .map((text,i)=>{
-                        const [sentence, pronunciation=""]=text.split("[")
-                        return {
-                            text:sentence, 
-                            pronunciation: pronunciation.replace(/\].*$/, ""),
-                        }
-                    })
+                const data=AudioBook.parse(response)
                 const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
                 await prepareFolder(`${FileSystem.documentDirectory}${id}/audio/1.wav`)
                 await Promise.all(

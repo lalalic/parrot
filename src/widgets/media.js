@@ -365,7 +365,10 @@ export class ListMedia extends Media{
                 },
                 onEnd:(duration)=>{
                     console.info("end speak "+i)
-                    //chunk.duration=duration
+                    if(!this.props.challenging){
+                        //@hack: to fix duration only for first time since chunks are not saved
+                        chunk.duration=duration
+                    }
                     this.setStatusSync({shouldPlay:true},false)
                 }
             }

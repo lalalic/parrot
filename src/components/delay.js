@@ -1,7 +1,7 @@
 import React from "react";
 
 
-export function Delay({ children, seconds }) {
+export default function Delay({ children, seconds }) {
     const [content, setContent] = React.useState(null);
 
     React.useEffect(() => {

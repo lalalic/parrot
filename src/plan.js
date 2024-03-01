@@ -5,12 +5,14 @@ import { useDispatch, useSelector, useStore } from "react-redux";
 import Select from "react-native-select-dropdown"
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 
-import { PolicyChoice, TalkThumb, PolicyIcons, AutoHide, TalkSelector} from "./components";
+import { PolicyChoice, TalkThumb, AutoHide, TalkSelector} from "./components";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import { ColorScheme } from "react-native-use-qili/components/default-style";
 import { selectPlansByDay } from "./store/reducers/plan";
 import { useNavigate, useLocation } from "react-router-native";
 import produce from "immer";
+import PolicyIcons from "./components/PolicyIcons";
+
 const l10n=globalThis.l10n
 
 export default function Scheduler() {

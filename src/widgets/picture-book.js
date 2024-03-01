@@ -10,11 +10,13 @@ import { ColorScheme } from "react-native-use-qili/components/default-style"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import Loading from "react-native-use-qili/components/Loading"
 import useAsk from "react-native-use-qili/components/useAsk"
-import { TaggedTranscript, clean, getItemText, Delay } from "./management/tagged-transcript"
+import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { useDispatch, useSelector } from "react-redux"
 import { useNavigate } from "react-router-native"
 import ImageCropper from "../components/image-cropper"
 import { Speak } from "../components"
+import Delay from "../components/delay"
+
 const l10n=global.l10n
 
 /**

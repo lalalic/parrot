@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ActivityIndicator } from "react-native";
 import { ColorScheme } from 'react-native-use-qili/components/default-style';
-import { PlayButton } from '..';
+import PlayButton from "./PlayButton";
 import PressableIcon from "./GrayPressableIcon";
 import useCheckChallenged from './useCheckChallenged';
 
