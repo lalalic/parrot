@@ -6,6 +6,7 @@ import { PlaySound, Recorder } from "../components"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
+import prepareFolder from "react-native-use-qili/components/prepareFolder";
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
@@ -59,19 +60,19 @@ export default class AudioBook extends TaggedListMedia {
         const AudioItem=React.useCallback(({item, text=item.text, uri=item.uri, id, index, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
-
+            
             return (
                 <View style={{ flexDirection: "row", height: 70, backgroundColor: isActive ? 'skyblue' : 'transparent', borderRadius:5, }}>
-                    <PressableIcon name={!!uri ? (playing ? "pause-circle-outline" : "play-circle-outline") : "radio-button-unchecked"} 
-                        onPress={e=>uri && setPlaying(!playing)}
-                        onLongPress={e=>dispatch({type:`talk/book/remove`, id, uri})}
+                    <PressableIcon color={!!uri ? "white" : undefined}
+                        name={playing ? "pause-circle-outline" : "play-circle-outline"} 
+                        onPress={e=>setPlaying(!playing)}
                         />
                     <Pressable 
                         onPress={e=>setActive(isActive ? -1 : index)}
                         onLongPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
-                        <Text style={textStyle}>{React.useMemo(()=>getItemText(item),[item])}</Text>
-                        {playing && <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/>}
+                        <Text style={textStyle}>{React.useMemo(()=>getItemText(item,true),[item])}</Text>
+                        {playing && (uri ? <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/> : <Speak text={text} onEnd={e=>setPlaying(false)}/>)}
                     </Pressable>
                     <PressableIcon name="remove-circle-outline" 
                         onPress={e=>dispatch({type:"talk/book/remove/index", index, id})}/>
@@ -84,7 +85,7 @@ export default class AudioBook extends TaggedListMedia {
                 actions={
                     <>
                     <Recorder
-                        onRecordUri={()=>`${FileSystem.documentDirectory}audiobook/${Date.now()}.wav`}
+                        onRecordUri={()=>`${FileSystem.documentDirectory}${id}/audio/${Date.now()}.wav`}
                         onRecord={({audio:uri, recognized:text, ...record})=>{
                             if(text){
                                 dispatch({type:"talk/book/record",id, uri,text, ...record})
@@ -118,23 +119,54 @@ export default class AudioBook extends TaggedListMedia {
         {label:"Article", name:"article",
             speakable:false,
             params:{
-                "Target":"a short self-introduction",
-                "Role":"a customer communication management software architect",
-                "Scene":"interview"
+                instruction:"a short self-introduction",
+                sentences: "5",
             }, 
             prompt:(a,store)=>{
                 const {lang}=store.getState().my
-                return ` Make ${a.Target} in ${lang} language for Ray,  as ${a.Role}, for scenario: ${a.Scene}.
-                ---
-                Response should NOT have anything else.
+                return ` ${a.instruction}
+                    -----
+                    Response should use ${lang} language.
+                    Response should NOT have anything else. 
+                    Response should have at least ${a.sentences} sentences.
+                    Each sentence should have pronunciation in [] following.
+                    Pronunciation should use International Phonetic Alphabets. 
+                    Each sentence should be in a line alone. 
                 `
             },
-            onSuccess({response, store}){
-                const {Role, Target}=this.params
+            async onSuccess({response, ask, store}){
+                const {instruction}=this.params
                 const {lang}=store.getState().my
-                const title=`${Target} for ${Role}`
-                const data=response.split(/[\r\n]/g).map(a=>a.trim()).filter(a=>!!a).map(text=>({text}))
+                const title=instruction
+                const data=response.split(/[\r\n]/g)
+                    .map(a=>a.trim())
+                    .filter(a=>!!a)
+                    .map((text,i)=>{
+                        const [sentence, pronunciation=""]=text.split("[")
+                        return {
+                            text:sentence, 
+                            pronunciation: pronunciation.replace(/\].*$/, ""),
+                        }
+                    })
                 const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
+                await prepareFolder(`${FileSystem.documentDirectory}${id}/audio/1.wav`)
+                await Promise.all(
+                    data.map(async (item, i)=>{
+                        try{
+                            const response=await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
+                            const url=response.split("#audio?url=")[1].replace(")","")
+                            if(url){
+                                const uri=`${FileSystem.documentDirectory}${id}/audio/${i}.mp3`
+                                await FileSystem.downloadAsync(url, uri)
+                                store.dispatch({type:"talk/book/replace", id, i, appending:[{...item,uri}]})
+                            }else{
+                                throw new Error(`response doesn't have audio url: ${response}`)
+                            }
+                        }catch(e){
+                            console.error(e.message)
+                        }
+                    })
+                )
                 return `save to @#${id}`
             }
         }

@@ -300,7 +300,7 @@ export default function talks(talks = {}, action) {
 					const talk = $talks[id];
 					talk.data.splice(i, 1, ...appending);
 				}
-			});
+			})
 		/////////
 		case "talk/clear/history":
 			return produce(talks, $talks => {

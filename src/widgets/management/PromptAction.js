@@ -12,7 +12,7 @@ export default function PromptAction({ prompt }) {
     const apply = React.useCallback(async (params) => {
         const message = prompt.prompt?.(params, store);
         const response = await ask(message); 
-        ({ ...prompt, params}).onSuccess({ response, store });
+        await ({ ...prompt, params}).onSuccess({ response, store, ask});
     }, [ask, store]);
     return (
         <>
@@ -41,7 +41,7 @@ export default function PromptAction({ prompt }) {
         </>
     );
 }
-function PromptParamDialog({ style, prompt: { params, label, initParams }, onApply, onCancel }) {
+function PromptParamDialog({ prompt: { params, label }, onApply, onCancel }) {
     const [values, setValues] = React.useState(params);
     const inputStyle = { margin: 5, paddingLeft: 5, flex: 1, borderWidth: 1, height: 30 };
     const paramsUI = React.useMemo(() => {
@@ -53,14 +53,14 @@ function PromptParamDialog({ style, prompt: { params, label, initParams }, onApp
                     <View style={{ flexDirection: "row", margin: 5, alignItems: 'center' }} key={key}>
                         <Text style={{ width: 100, color: "black", textAlign: "right" }}>{key.toUpperCase()}</Text>
                         {(() => {
-                            if (typeof (value) != "object") {
+                            if(React.isValidElement(value)){
+                                return React.cloneElement(value, { setValue: value => setValues({ ...values, [key]: value }) });
+                            }else{
                                 return <TextInput name={key}
                                     style={inputStyle}
                                     placeholder={key}
-                                    value={value}
+                                    {...(typeof (value) != "object" ? {value} : value||{})}
                                     onChangeText={text => setValues({ ...values, [key]: text })} />;
-                            } else {
-                                return React.cloneElement(value, { setValue: value => setValues({ ...values, [key]: value }) });
                             }
                         })()}
                     </View>
