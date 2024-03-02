@@ -27,7 +27,7 @@ export default ()=>(
 
 function Toggle({talk}){
     const dispatch = useDispatch()
-    return <PressableIcon name="star" color="yellow"
-        style={{position:"absolute",top:0,left:0, opacity:0.5}}
+    return <PressableIcon name="favorite" color="yellow"
+        style={{position:"absolute",top:2,left:2, opacity:0.5}}
         onPress={({id})=>dispatch({type:"talk/toggle/favorited", talk})}/>
 }

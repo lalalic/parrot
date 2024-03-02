@@ -9,8 +9,8 @@ import { useDispatch, useSelector} from "react-redux"
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import prepareFolder from "react-native-use-qili/components/prepareFolder";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
-
-import { PolicyChoice, html } from '../components';
+import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar"
+import { PolicyChoice } from '../components';
 import ClearAction from '../components/ClearAction';
 import { Subtitles } from "../components/player/Subtitles";
 import mpegKit from "../experiment/mpeg"
@@ -23,22 +23,25 @@ export default class TedTalk extends Base{
         const hasTranscript = !!talk.data;
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         return (
-            <PolicyChoice label={true} labelFade={true} value={policyName}
-                excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
-                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
-                <RemoveRemote {...{talk, policyName}}/>
-                {hasTranscript && <PressableIcon name="print"
-                    onLongPress={async()=>await Print.printAsync({ html: TedTalk.print({talk, margins, needTranslated:true}), margins })}
-                    onPress={async (e) =>await Print.printAsync({ html: TedTalk.print({talk, margins}), margins })} 
-                />}
-
-                {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
-
+            <AutoShrinkNavBar>
+                <PolicyChoice label={true} labelFade={true} value={policyName}
+                    excludes={!hasTranscript ? ["shadowing","dictating","retelling"] : []}
+                    onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}
+                    />
                 {hasTranscript&&<PressableIcon name={favorited ? "favorite" : "favorite-outline"}
                     onPress={async (e) =>dispatch({type:"talk/toggle/favorited", talk})}
                     onLongPress={()=> dispatch({type:"talk/remote/favorited", talk})}
                     />}
-            </PolicyChoice>
+                    
+                {hasTranscript && <PressableIcon name="print"
+                    onLongPress={async()=>await Print.printAsync({ html: TedTalk.print({talk, margins, needTranslated:true}), margins })}
+                    onPress={async (e) =>await Print.printAsync({ html: TedTalk.print({talk, margins}), margins })} 
+                    />}
+                {talk.hasLocal && <ClearAction {...{talk, policyName}}/>}
+
+                
+                <RemoveRemote {...{talk, policyName}}/>
+            </AutoShrinkNavBar>
         )
     }
 

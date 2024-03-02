@@ -27,7 +27,6 @@ export default function Parrot(){
                 <MotherLang>
                     <Router/>
                 </MotherLang>
-                <AutoReloadUpdate/>
                 <Queue style={{position:"absolute", bottom:0, width:"100%",height:20}}/>
                 <PreloadSound 
                     ding={require("../assets/ding.mp3")} 

@@ -10,6 +10,8 @@ import Speak from '../components/Speak';
 import PlaySound from '../components/PlaySound';
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
+import AutoShrinkNavBar from "react-native-use-qili/components/AutoShrinkNavBar"
+
 import * as Print from "expo-print";
 
 import TagManagement from './management/TagManagement'
@@ -32,13 +34,16 @@ class Media extends Base {
         const margins = { right: 100, left: 20, top: 20, bottom: 20 };
         const Widget = globalThis.Widgets[slug]
         return (
-            <PolicyChoice labelFade={true} value={policyName} 
-                excludes={talk?.exludePolicy || ["dictating","retelling"]} 
-                deselectable={false}
-                onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}>
+            <AutoShrinkNavBar>
+                <PolicyChoice 
+                    labelFade={true} value={policyName} 
+                    excludes={talk?.exludePolicy || ["dictating","retelling"]} 
+                    deselectable={false}
+                    onValueChange={policyName => navigate(`/talk/${slug}/${policyName}/${talk.id}`, { replace: true })}
+                    />
                     
                 {talk.hasLocal && <PressableIcon name="read-more" label={l10n["List"]} labelFade={true}
-                    onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
+                        onPress={e=>navigate(`/widget/${slug}/${talk.id}`)}/>}
 
                 <PressableIcon 
                     name={talk.favorited ? "favorite" : "favorite-outline"}
@@ -56,7 +61,7 @@ class Media extends Base {
                 {this.ExtendActions?.(...arguments)}
                 <ParentControl {...{talk, policyName}}/>
                 <LongMemory {...{talk, policyName}}/>
-            </PolicyChoice>
+            </AutoShrinkNavBar>
         )
     }
     /**

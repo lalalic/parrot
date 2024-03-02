@@ -12,26 +12,21 @@ import FlatList from "react-native-use-qili/components/FlatList"
 import PolicyIcons from './PolicyIcons';
 const l10n=globalThis.l10n
 
-export const PolicyChoice=({value:defaultValue, onValueChange, style, label, activeColor, color, labelFade,children, excludes=[], deselectable=true, ...props})=>{
+export const PolicyChoice=({value:defaultValue, onValueChange, label, activeColor, color, labelFade, excludes=[], deselectable=true})=>{
     const Color=React.useContext(ColorScheme)
     const [value, setValue]=React.useState("shadowing")
     React.useEffect(()=>{
         setValue(defaultValue)
     },[defaultValue])
     const change=k=>(setValue(k),onValueChange?.(k));
-    return (
-        <AutoShrinkNavBar style={style} label={label && "  "} {...props}>
-            {"shadowing,dictating,retelling".split(",")
-                .filter(a=>excludes.indexOf(a)==-1).map(k=>(
-                <PressableIcon key={k} 
-                    color={value==k ? activeColor||Color.primary : color}
-                    name={PolicyIcons[k]} labelFade={labelFade}
-                    label={!!label && k.toUpperCase()}
-                    onPress={e=>change(value==k && deselectable ? "general" : k)}/>
-            ))}
-            {children}
-        </AutoShrinkNavBar>
-    )
+    const policys="shadowing,dictating,retelling".split(",").filter(a=>excludes.indexOf(a)==-1)
+    return  policys.map(k=>(
+            <PressableIcon key={k} 
+                color={value==k ? activeColor||Color.primary : color}
+                name={PolicyIcons[k]} labelFade={labelFade}
+                label={!!label && k.toUpperCase()}
+                onPress={e=>change(value==k && deselectable ? "general" : k)}/>
+        ))
 }
 
 export function TalkThumb({item, children, style, imageStyle, durationStyle, onLongPress, titleStyle, text=true, opacity=0.6, getLinkUri, policy}){
