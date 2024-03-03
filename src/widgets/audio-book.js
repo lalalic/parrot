@@ -67,7 +67,24 @@ export default class AudioBook extends TaggedListMedia {
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
-            
+        const ask=useAsk()
+        const onLongPress=React.useCallback(async ({item,index, id})=>{
+            switch(lang){
+                case "en":
+                    return Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(item.text)}/english?`)
+                default:{
+                    const response=await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
+                    const url=response.split("#audio?url=")[1].replace(")","")
+                    if(url){
+                        const uri=`${FileSystem.documentDirectory}${id}/audio/${index}.mp3`
+                        await prepareFolder(uri)
+                        await FileSystem.downloadAsync(url, uri)
+                        store.dispatch({type:"talk/book/replace", id, i:index, appending:[{...item,uri}]})
+                    }
+                }      
+            }
+        },[lang])
+
         const AudioItem=React.useCallback(({item, text=item.text, uri=item.uri, id, index, isActive, setActive})=>{
             const [playing, setPlaying] = React.useState(false)
             const textStyle={color: playing ? color.primary : color.text}
@@ -80,7 +97,7 @@ export default class AudioBook extends TaggedListMedia {
                         />
                     <Pressable 
                         onPress={e=>setActive(isActive ? -1 : index)}
-                        onLongPress={e=>lang=="en" && Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(text)}/english?`)}
+                        onLongPress={e=>onLongPress?.({item, index, id})}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                         <Text style={textStyle}>{React.useMemo(()=>getItemText(item,true),[item])}</Text>
                         {playing && (uri ? <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/> : <Speak text={text} onEnd={e=>setPlaying(false)}/>)}
@@ -170,24 +187,6 @@ export default class AudioBook extends TaggedListMedia {
                 const title=instruction
                 const data=AudioBook.parse(response)
                 const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
-                await prepareFolder(`${FileSystem.documentDirectory}${id}/audio/1.wav`)
-                await Promise.all(
-                    data.map(async (item, i)=>{
-                        try{
-                            const response=await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
-                            const url=response.split("#audio?url=")[1].replace(")","")
-                            if(url){
-                                const uri=`${FileSystem.documentDirectory}${id}/audio/${i}.mp3`
-                                await FileSystem.downloadAsync(url, uri)
-                                store.dispatch({type:"talk/book/replace", id, i, appending:[{...item,uri}]})
-                            }else{
-                                throw new Error(`response doesn't have audio url: ${response}`)
-                            }
-                        }catch(e){
-                            console.error(e.message)
-                        }
-                    })
-                )
                 return `save to @#${id}`
             }
         }

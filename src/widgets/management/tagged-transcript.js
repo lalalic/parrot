@@ -73,7 +73,7 @@ function Editor({onAdd, style, onChange, index, data, getItemText, editingStyle=
         if(index>-1 && data && getItemText){
             const text=getItemText(data)
             setValue(text)
-            Clipboard.setStringAsync(text)
+            Clipboard.setStringAsync(data.word||data.text)
         }
         if(index==-1){
             setValue("")
