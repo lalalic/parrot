@@ -9,7 +9,10 @@ import Delay from "../components/delay"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
-import prepareFolder from "react-native-use-qili/components/prepareFolder";
+import prepareFolder from "react-native-use-qili/components/prepareFolder"
+import useAsk from "react-native-use-qili/components/useAsk"
+import {alert} from "react-native-use-qili/components/Prompt"
+
 import { useDispatch, useSelector } from "react-redux"
 import * as DocumentPicker from 'expo-document-picker'
 
@@ -68,18 +71,13 @@ export default class AudioBook extends TaggedListMedia {
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
         const ask=useAsk()
-        const onLongPress=React.useCallback(async ({item,index, id})=>{
+        const onLongPress=React.useCallback(async ({item,index:i, id})=>{
             switch(lang){
                 case "en":
                     return Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(item.text)}/english?`)
                 default:{
-                    const response=await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
-                    const url=response.split("#audio?url=")[1].replace(")","")
-                    if(url){
-                        const uri=`${FileSystem.documentDirectory}${id}/audio/${index}.mp3`
-                        await prepareFolder(uri)
-                        await FileSystem.downloadAsync(url, uri)
-                        store.dispatch({type:"talk/book/replace", id, i:index, appending:[{...item,uri}]})
+                    if(await alert(l10n["Do you want to create audio for this item?"])){
+                        await createAudio({ask, item, id, i, dispatch})
                     }
                 }      
             }
@@ -94,10 +92,15 @@ export default class AudioBook extends TaggedListMedia {
                     <PressableIcon color={!!uri ? "white" : undefined}
                         name={playing ? "pause-circle-outline" : "play-circle-outline"} 
                         onPress={e=>setPlaying(!playing)}
+                        onLongPress={e=>onLongPress?.({item, index, id})}
+                        emphasizer={
+                            <View pointerEvent="none"  style={{position:"absolute", height:"100%",width:5, right:0,top:3,flexDirection:"column", justifyContent:"center"}}>
+                                <View style={{width:5,height:5,backgroundColor:"red", borderRadius:5}}/>
+                            </View>
+                        }
                         />
                     <Pressable 
                         onPress={e=>setActive(isActive ? -1 : index)}
-                        onLongPress={e=>onLongPress?.({item, index, id})}
                         style={{ justifyContent: "center", marginLeft: 10, flexGrow: 1, flex: 1 }}>
                         <Text style={textStyle}>{React.useMemo(()=>getItemText(item,true),[item])}</Text>
                         {playing && (uri ? <PlaySound audio={uri} onEnd={e=>setPlaying(false)}/> : <Speak text={text} onEnd={e=>setPlaying(false)}/>)}
@@ -166,6 +169,7 @@ export default class AudioBook extends TaggedListMedia {
             params:{
                 instruction:"a short self-introduction",
                 sentences: "5",
+                audio: false,
             }, 
             prompt:(a,store)=>{
                 const {lang, mylang}=store.getState().my
@@ -182,15 +186,43 @@ export default class AudioBook extends TaggedListMedia {
                 `
             },
             async onSuccess({response, ask, store}){
-                const {instruction}=this.params
+                const {instruction, audio}=this.params
                 const {lang}=store.getState().my
                 const title=instruction
                 const data=AudioBook.parse(response)
                 const id=AudioBook.create({title, data, generator:"Article",params:this.params,lang }, store.dispatch)
+                if(audio){
+                    const dispatch=store.dispatch
+                    await Promise.all(
+                        data.map(async (item, i)=>{
+                            try{
+                                await createAudio({ask, item, id, i, dispatch})
+                            }catch(e){
+                                console.error(e.message)
+                            }
+                        })
+                    )
+                }
                 return `save to @#${id}`
             }
         }
     ]
 
+    static makeAudio(text){
+        
+    }
+
     static onFavorite=null
 }
+
+async function createAudio({ask, item, id, i, dispatch}) {
+    const response = await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
+    const url = response.split("#audio?url=")[1].replace(")", "")
+    if (url) {
+        const uri = `${FileSystem.documentDirectory}${id}/audio/${i}.mp3`
+        await prepareFolder(uri)
+        await FileSystem.downloadAsync(url, uri)
+        dispatch({ type: "talk/book/replace", id, i, appending: [{ ...item, uri }] })
+    }
+}
+

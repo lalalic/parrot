@@ -3,6 +3,7 @@ import { TextInput, View, Text, Modal } from "react-native";
 import { useStore } from "react-redux";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
 import useAsk from "react-native-use-qili/components/useAsk";
+import Switch from "react-native-use-qili/components/Switch"
 
 
 export default function PromptAction({ prompt }) {
@@ -55,6 +56,9 @@ function PromptParamDialog({ prompt: { params, label }, onApply, onCancel }) {
                         {(() => {
                             if(React.isValidElement(value)){
                                 return React.cloneElement(value, { setValue: value => setValues({ ...values, [key]: value }) });
+                            }else if(typeof(value)=="boolean"){
+                                return <Switch value={value} 
+                                    onValueChange={e=>setValues({...values, [key]:!value})}/>
                             }else{
                                 return <TextInput name={key}
                                     style={inputStyle}
