@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Modal, useWindowDimensions } from "react-native";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import ControlIcons from './ControlIcons';
 import Recognizer from './Recognizer';
 
 
-export default function Recorder({ style, name = ControlIcons.record, size = 40, color: _color, onRecordUri, onRecord, onText = onRecord, onCancel, recording = false, _initState = { recording, active: "audio" }, children = <PressableIcon size={size} name={name} color={_color} />, ...props }) {
+export default function Recorder({ style, name = "mic", size = 40, color: _color, onRecordUri, onRecord, onText = onRecord, onCancel, recording = false, _initState = { recording, active: "audio" }, children = <PressableIcon size={size} name={name} color={_color} />, ...props }) {
 
     const [state, setState] = React.useState(_initState);
     const { width, height } = useWindowDimensions();

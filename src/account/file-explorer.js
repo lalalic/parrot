@@ -1,7 +1,6 @@
 import React from "react"
 import {FlatList, Pressable, Text as TextA, View} from "react-native"
 import * as FileSystem from "expo-file-system"
-import { ColorScheme } from "react-native-use-qili/components/default-style"
 import * as Sharing from "expo-sharing"
 
 const Text=props=><TextA ellipsizeMode="middle" numberOfLines={1} {...props}/>

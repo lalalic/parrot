@@ -4,4 +4,5 @@ module.exports={
     root:`${root}/www`,
     bucket:"qiliadmin",
     canRunInCore:true,
+    userApiKey:"ai"
 }

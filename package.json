@@ -62,7 +62,7 @@
     "react-native-logs": "^5.0.1",
     "react-native-select-dropdown": "^3.3.3",
     "react-native-tts": "^4.1.0",
-    "react-native-use-qili": "^1.1.11",
+    "react-native-use-qili": "^1.1.21",
     "react-native-uuid": "^2.0.1",
     "react-native-web": "~0.18.7",
     "react-native-webview": "11.23.0",
