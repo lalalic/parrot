@@ -80,7 +80,7 @@ dist/
 # @end expo-cli
 
 cloud/updates
-.env
+.env*
 backup/
 resources/
 log/
