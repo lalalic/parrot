@@ -546,6 +546,11 @@ eventemitter3@^3.1.0:
   version "3.1.2"
   resolved "https://registry.yarnpkg.com/eventemitter3/-/eventemitter3-3.1.2.tgz#2d3d48f9c346698fce83a85d7d664e98535df6e7"
 
+expect.js@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/expect.js/-/expect.js-0.3.1.tgz#b0a59a0d2eff5437544ebf0ceaa6015841d09b5b"
+  integrity sha512-okDF/FAPEul1ZFLae4hrgpIqAeapoo5TRdcg/lD0iN9S3GWrBFIJwNezGH1DMtIz+RxU4RrFmMq7WUUvDg3J6A==
+
 expo-av@~12.0.4:
   version "12.0.4"
   resolved "https://registry.yarnpkg.com/expo-av/-/expo-av-12.0.4.tgz#00cf2da76c0c718a1d316f188247dee85ce512c2"
@@ -1169,10 +1174,10 @@ react-native-snap-carousel@^3.9.1:
     prop-types "^15.6.1"
     react-addons-shallow-compare "15.6.2"
 
-react-native-use-qili@^1.1.21:
-  version "1.1.21"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.21.tgz#6057aacc9f36e2c9c8b1add7337649cbef1f1bf5"
-  integrity sha512-Fvqw8nEstfQUGfjQHk+8fN4bLSTTb6Ut33ViX9ucO+m6BovR3n5NNgZ+oknaA2iqHCiBYSGqTOlTZzpR043PNQ==
+react-native-use-qili@^1.1.26:
+  version "1.1.26"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.26.tgz#51c8912e597864732fc9d331d51583969a9c69ad"
+  integrity sha512-AIMhVimkW1gqXUYei1MOX4qWgLmzfINaKS4biS4fH2Uqan4F8sV9t3KdxXUhkGQhpoj58BOCxkoNPDCVaIrp3A==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"
@@ -1183,6 +1188,7 @@ react-native-use-qili@^1.1.21:
     "@react-native-voice/voice" "^3.2.4"
     "@reduxjs/toolkit" "^1.8.6"
     async-mutex "^0.5.0"
+    expect.js "^0.3.1"
     expo-av "~12.0.4"
     expo-document-picker "~10.3.0"
     expo-file-system "^15.2.2"

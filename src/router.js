@@ -7,6 +7,7 @@ import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
 import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
+import TestSuite from "react-native-use-qili/components/test-suite"
 
 import Home from "./home"
 import Scheduler from "./plan"
@@ -27,7 +28,7 @@ import PlanPlayer from "./components/PlanPlayer"
 export default function MyRouter(){
     const dispatch=useDispatch() 
     return (
-        <Router initialEntries={["/home"]}
+        <Router initialEntries={["/home", "/test/predict"]}
             navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
             >
             <Route path="talks" element={<Talks/>} />
@@ -95,6 +96,11 @@ export default function MyRouter(){
 
                 <Route path=":slug/:id" element={<TaggedTranscript/>}/>
             </Route>
+
+            <Route path="test">
+                <Route path="predict" element={<TestSuite fixture={React.lazy(()=>import("./tests/predict"))}/>}/>
+            </Route>
+
             <YoutubeShare/>
             <PlanPlayer style={{position:"absolute", top:350, right:10, zIndex:999}}/>
         </Router>

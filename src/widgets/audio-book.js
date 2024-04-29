@@ -216,7 +216,7 @@ export default class AudioBook extends TaggedListMedia {
 }
 
 async function createAudio({ask, item, id, i, dispatch}) {
-    const response = await ask(`use openaiTTS tool to create audio for:\n${item.text}`, "agent")
+    const response = await ask(`text to speech:\n${item.text}`, "agent")
     const url = response.split("#audio?url=")[1].replace(")", "")
     if (url) {
         const uri = `${FileSystem.documentDirectory}${id}/audio/${i}.mp3`

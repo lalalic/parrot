@@ -3807,6 +3807,11 @@ expand-brackets@^2.1.4:
     snapdragon "^0.8.1"
     to-regex "^3.0.1"
 
+expect.js@^0.3.1:
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/expect.js/-/expect.js-0.3.1.tgz#b0a59a0d2eff5437544ebf0ceaa6015841d09b5b"
+  integrity sha512-okDF/FAPEul1ZFLae4hrgpIqAeapoo5TRdcg/lD0iN9S3GWrBFIJwNezGH1DMtIz+RxU4RrFmMq7WUUvDg3J6A==
+
 expect@^26.6.2:
   version "26.6.2"
   resolved "https://registry.npmmirror.com/expect/-/expect-26.6.2.tgz#c6b996bf26bf3fe18b67b2d0f51fc981ba934417"
@@ -7224,10 +7229,10 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.1.21:
-  version "1.1.21"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.21.tgz#6057aacc9f36e2c9c8b1add7337649cbef1f1bf5"
-  integrity sha512-Fvqw8nEstfQUGfjQHk+8fN4bLSTTb6Ut33ViX9ucO+m6BovR3n5NNgZ+oknaA2iqHCiBYSGqTOlTZzpR043PNQ==
+react-native-use-qili@^1.1.26:
+  version "1.1.26"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.26.tgz#51c8912e597864732fc9d331d51583969a9c69ad"
+  integrity sha512-AIMhVimkW1gqXUYei1MOX4qWgLmzfINaKS4biS4fH2Uqan4F8sV9t3KdxXUhkGQhpoj58BOCxkoNPDCVaIrp3A==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"
@@ -7238,6 +7243,7 @@ react-native-use-qili@^1.1.21:
     "@react-native-voice/voice" "^3.2.4"
     "@reduxjs/toolkit" "^1.8.6"
     async-mutex "^0.5.0"
+    expect.js "^0.3.1"
     expo-av "~12.0.4"
     expo-document-picker "~10.3.0"
     expo-file-system "^15.2.2"
