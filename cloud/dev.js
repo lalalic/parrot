@@ -25,7 +25,7 @@ require(`${qili}/dev`)({
             graphiql:true,
             isDev:true,
             bucket:"/static",
-            watches: /^magic\/.*\.js$/
+            watches: /\.js$/
         }
     }
 })
