@@ -10,7 +10,7 @@ import PressableIcon from "react-native-use-qili/components/PressableIcon"
 import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import { ColorScheme } from "react-native-use-qili/components/default-style"
 import prepareFolder from "react-native-use-qili/components/prepareFolder"
-import useAsk from "react-native-use-qili/components/useAsk"
+import { ask } from "react-native-use-qili/components/predict"
 import {alert} from "react-native-use-qili/components/Prompt"
 
 import { useDispatch, useSelector } from "react-redux"
@@ -70,14 +70,13 @@ export default class AudioBook extends TaggedListMedia {
         const dispatch=useDispatch()
         const color=React.useContext(ColorScheme)
         const {lang="en"}=useSelector(state=>state.my)
-        const ask=useAsk()
         const onLongPress=React.useCallback(async ({item,index:i, id})=>{
             switch(lang){
                 case "en":
                     return Linking.openURL(`https://youglish.com/pronounce/${encodeURIComponent(item.text)}/english?`)
                 default:{
                     if(await alert(l10n["Do you want to create audio for this item?"])){
-                        await createAudio({ask, item, id, i, dispatch})
+                        await createAudio({item, id, i, dispatch})
                     }
                 }      
             }
@@ -215,8 +214,13 @@ export default class AudioBook extends TaggedListMedia {
     static onFavorite=null
 }
 
-async function createAudio({ask, item, id, i, dispatch}) {
-    const response = await ask(`text to speech:\n${item.text}`, "agent")
+async function createAudio({item, id, i, dispatch}) {
+    const response = await ask({
+        question:item.text,
+        overrideConfig:{
+            functionCall:"tts"
+        }
+    },"agent")
     const url = response.split("#audio?url=")[1].replace(")", "")
     if (url) {
         const uri = `${FileSystem.documentDirectory}${id}/audio/${i}.mp3`

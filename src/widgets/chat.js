@@ -9,7 +9,7 @@ import Speak from '../components/Speak';
 import Recognizer from '../components/Recognizer';
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import useAsk from "react-native-use-qili/components/useAsk";
+import {ask} from "react-native-use-qili/components/predict";
 import useStateAndLatest from "react-native-use-qili/components/useStateAndLatest";
 import { useDispatch, useSelector } from 'react-redux';
 import * as FileSystem from "expo-file-system"
@@ -101,7 +101,6 @@ function isTextMessage(message){
  */
 const Chat = () => {
 	const dispatch = useDispatch()
-	const sendMessage = useAsk({chatflow:"chat"})
 	const talk=useSelector(state=>state.talks[defaultProps.id])
 	const [messages=[], setMessages, $messages] = useStateAndLatest(()=>talk?.messages);
 	const [audioInput, setAudioInput]=useStateAndLatest(false)
@@ -146,37 +145,10 @@ const Chat = () => {
 		}else if (createBotMessage.is(lastMessage)) {//send chat message
 			if(createBotMessage.is(lastMessage,"...")){
 				const [,current, ...history]=messages
-				sendMessage({
-					message:current.text,
-					history: history.reverse().slice(1),
-					onAccumulatedResponse({message,isDone}){
-						// Attach to last message
-						setMessages((msgs) => {
-							const [placeholder, a,  ...prevs]=msgs
-							if(a!==current)
-								return msgs
-
-							if(isDone){
-								delete placeholder.pending
-							}
-							placeholder.text=message
-
-							if(placeholder.speak){
-								placeholder.text=React.cloneElement(placeholder.speak,{text:message, isDone})
-							}
-							
-							return [{...placeholder}, current, ...prevs]
-						});
-					},
-					onError(e){
-						setMessages(([placeholder, ...prevs]) => {
-							placeholder.text=l10n["Sorry, can't process your request right now"]
-							nextDialogMessage(placeholder)
-							return [placeholder, ...prevs]
-						})
-						FlyMessage.show(`${e.statusCode} ${e.message}`);
-					},
-				});
+				ask({
+					question:current.text,
+					history: history.reverse().slice(1).map(a=>({content:a.text, type: a.user.name=="bot" ? "apiMessage" : "userMessage"})),
+				},"chat");
 			}else if(audioInput==DIALOG && typeof(lastMessage.text)=="string"){//already got response, and in dialog mode
 				setMessages(prevs=>[
 					createDialogMessage({locale, setMessages}),

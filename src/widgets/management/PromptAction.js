@@ -2,19 +2,18 @@ import React from "react";
 import { TextInput, View, Text, Modal } from "react-native";
 import { useStore } from "react-redux";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
-import useAsk from "react-native-use-qili/components/useAsk";
+import { ask } from "react-native-use-qili/components/predict";
 import Switch from "react-native-use-qili/components/Switch"
 
 
 export default function PromptAction({ prompt }) {
-    const ask = useAsk();
     const store = useStore();
     const [showDialog, setShowDialog] = React.useState(false);
     const apply = React.useCallback(async (params) => {
         const message = prompt.prompt?.(params, store);
         const response = await ask(message); 
-        await ({ ...prompt, params}).onSuccess({ response, store, ask});
-    }, [ask, store]);
+        await ({ ...prompt, params}).onSuccess({ response, store});
+    }, [store]);
     return (
         <>
             <PressableIcon

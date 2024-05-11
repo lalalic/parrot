@@ -3,7 +3,7 @@ import { Text, Pressable, View , Linking} from "react-native"
 import { useDispatch, useSelector,  } from "react-redux"
 import Speak from "../components/Speak"
 import PressableIcon from "react-native-use-qili/components/PressableIcon"
-import useAsk from "react-native-use-qili/components/useAsk"
+import { ask } from "react-native-use-qili/components/predict"
 import { TaggedListMedia } from "./media"
 import { TaggedTranscript, clean, getItemText } from "./management/tagged-transcript"
 import Delay from "../components/delay"
@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router-native"
 import PlayerContext from "../components/player/Context"
 import FlyMessage from "react-native-use-qili/components/FlyMessage"
 import { prompt } from "react-native-use-qili/components/Prompt"
+
 const l10n=globalThis.l10n
 
 /**
@@ -305,7 +306,6 @@ const Usage=({talk, id=talk?.id, policyName})=>{
 const Sentense=({talk, id=talk?.id})=>{
     const dispatch=useDispatch()
     const {firePlayerEvent}=React.useContext(PlayerContext)
-    const ask=useAsk()
     const { policy: policyName } = useParams()
     const {challenges=[], challenging, usage, }=useSelector(state=>state.talks[id]?.[policyName]||{})
     const {lang}=useSelector(state=>state.my)
