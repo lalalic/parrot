@@ -8,9 +8,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "parrot",
-    "urlPrivacy":"https://parrot.qili2.com/privacy.html",
-    "urlAbout":"https://parrot.qili2.com/about.html",
-    "urlTerms":"https://parrot.qili2.com/terms.html",
     "description":"",
     "splash": {
       "image": "./assets/splash.png",
@@ -28,7 +25,7 @@
       "silentLaunch": true
     },
     "ios": {
-      "buildNumber":"4",
+      "buildNumber":"5",
       "supportsTablet": true,
       "bitcode": false,
       "bundleIdentifier": "com.lalalic.parrot",
@@ -70,12 +67,16 @@
           }
         }
       ],
-      "expo-config-plugin-ios-share-extension"
+      "expo-config-plugin-ios-share-extension",
+      "./plugins/patch"
     ],
     "extra": {
       "eas": {
         "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004"
-      }
+      },
+      "urlPrivacy": "https://parrot.qili2.com/privacy.html",
+      "urlTerms": "https://parrot.qili2.com/terms.html",
+      "urlAbout": "https://parrot.qili2.com/about.html"
     }
   }
 }

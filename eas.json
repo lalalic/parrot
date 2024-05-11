@@ -13,7 +13,7 @@
     },
     "production": {
       "ios":{
-        "image": "macos-monterey-12.6-xcode-14.2"
+        "image": "macos-ventura-13.6-xcode-15.1"
       }
     }
   },
