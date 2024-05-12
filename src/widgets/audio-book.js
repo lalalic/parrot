@@ -220,7 +220,7 @@ async function createAudio({item, id, i, dispatch}) {
         overrideConfig:{
             functionCall:"tts"
         }
-    },"agent")
+    })
     const url = response.split("#audio?url=")[1].replace(")", "")
     if (url) {
         const uri = `${FileSystem.documentDirectory}${id}/audio/${i}.mp3`

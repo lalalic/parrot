@@ -1,4 +1,5 @@
 import VocabularyBook from "../widgets/vocabulary-book"
+import {ask} from "react-native-use-qili/components/predict"
 
 export default describe("predict",()=>{
     it("VocabularyBook.Vocabulary",async ()=>{

@@ -148,7 +148,12 @@ const Chat = () => {
 				ask({
 					question:current.text,
 					history: history.reverse().slice(1).map(a=>({content:a.text, type: a.user.name=="bot" ? "apiMessage" : "userMessage"})),
-				},"chat");
+				}).then(answer=>{
+					setMessages(([last, ...prevs])=>[
+						{...last, text:answer},
+						...prevs,
+					])
+				})
 			}else if(audioInput==DIALOG && typeof(lastMessage.text)=="string"){//already got response, and in dialog mode
 				setMessages(prevs=>[
 					createDialogMessage({locale, setMessages}),

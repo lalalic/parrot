@@ -28,7 +28,7 @@ import PlanPlayer from "./components/PlanPlayer"
 export default function MyRouter(){
     const dispatch=useDispatch() 
     return (
-        <Router initialEntries={["/home", "/test/predict"]}
+        <Router initialEntries={["/home"]}
             navs={[["/home","home"],["/plan","date-range"],["/account","settings"] ]}
             >
             <Route path="talks" element={<Talks/>} />
