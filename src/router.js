@@ -7,6 +7,7 @@ import Account from "react-native-use-qili/components/Account"
 import Router from "react-native-use-qili/router"
 import { Reset } from "react-native-use-qili/store"
 import WithBackButton from "react-native-use-qili/components/WithBackButton"
+import Paywall from "react-native-use-qili/components/PaymentLink"
 import TestSuite from "react-native-use-qili/components/test-suite"
 
 import Home from "./home"
@@ -39,6 +40,7 @@ export default function MyRouter(){
                     settings={[
                         {name:"Policy", icon:"policy"},
                         {name:"Language", icon:"compass-calibration"}, 
+                        {name:"Topup", icon:"shopping-cart", href:"/account/paywall"},
                     ].filter(a=>!!a)}
                     information={[
                         ...(__DEV__ ? [
@@ -61,6 +63,7 @@ export default function MyRouter(){
                 <Route element={<WithBackButton/>}>
                     <Route path="policy" element={<Policy/>}/>
                     <Route path="language" element={<Lang/>}/>
+                    <Route path="paywall" element={<Paywall sku="topup1"/>}/>
                     
                     {__DEV__ &&(
                         <>

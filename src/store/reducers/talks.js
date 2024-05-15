@@ -43,6 +43,14 @@ function clearPolicyHistory({ talk, policy: policyName }) {
 	}
 }
 
+function shuffleArray(array) {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+	return array;
+}
+
 /**
  * talk/book : {id}, others {talk}
  * @param {*} talks 
@@ -350,7 +358,7 @@ export default function talks(talks = {}, action) {
 				if(len==1)
 					return
 				
-				const data=[...talk.data]
+				const data=shuffleArray([...talk.data])
 				new Array(len).fill(0).map((a,i)=>{
 					return data.splice(0,number)
 				}).forEach((a,i)=>{

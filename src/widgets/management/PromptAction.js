@@ -11,7 +11,12 @@ export default function PromptAction({ prompt }) {
     const [showDialog, setShowDialog] = React.useState(false);
     const apply = React.useCallback(async (params) => {
         const message = prompt.prompt?.(params, store);
-        const response = await ask(message); 
+        const response = await ask({
+            question: message,
+            overrideConfig:{
+                functionCall:"LLM"
+            }
+        }); 
         await ({ ...prompt, params}).onSuccess({ response, store});
     }, [store]);
     return (

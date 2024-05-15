@@ -20,15 +20,15 @@ const PlaySound = Object.assign(({ audio, children = null, onEnd, onStart, onErr
     }, [audio]);
     return children;
 }, {
-    Trigger({ name = "mic", audio }) {
+    Trigger({ name = "mic", audio, play=false, onEnd }) {
         const color = React.useContext(ColorScheme);
-        const [playing, setPlaying] = React.useState(false);
+        const [playing, setPlaying] = React.useState(play);
         return (
             <>
                 <PressableIcon name={name}
                     onPress={e => setPlaying(true)}
                     color={playing ? color.primary : undefined} />
-                {playing && <PlaySound audio={audio} onEnd={setPlaying} />}
+                {playing && <PlaySound audio={audio} onEnd={()=>{setPlaying(false); onEnd?.()}} />}
             </>
         );
     },

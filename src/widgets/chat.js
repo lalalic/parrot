@@ -5,7 +5,6 @@ import { GiftedChat, MessageText } from 'react-native-gifted-chat';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { KeyboardAvoidingView} from "../components"
 import Recorder from '../components/Recorder';
-import Speak from '../components/Speak';
 import Recognizer from '../components/Recognizer';
 import FlyMessage from "react-native-use-qili/components/FlyMessage";
 import PressableIcon from "react-native-use-qili/components/PressableIcon";
@@ -14,6 +13,8 @@ import useStateAndLatest from "react-native-use-qili/components/useStateAndLates
 import { useDispatch, useSelector } from 'react-redux';
 import * as FileSystem from "expo-file-system"
 import { useKeepAwake } from "expo-keep-awake"
+import chatAPI from '../components/chatAPI';
+import PlaySound from '../components/PlaySound';
 const l10n=globalThis.l10n
 
 const defaultProps={
@@ -26,7 +27,6 @@ const defaultProps={
 }
 export default Object.assign(props=>{
 	useKeepAwake()
-	React.useEffect(()=>()=>Speak.stop(),[])
 	return (<Chat/>)
 },{defaultProps})
 
@@ -108,9 +108,7 @@ const Chat = () => {
 	const {lang,mylang=lang, tts={}}=useSelector(state=>state.my)
 	const [locale, setLocale]=React.useState(false)
 	React.useEffect(()=>{
-		Speak.setDefaults({lang: locale ? mylang : lang})
 		createDialogMessage.changeLocale({locale, setMessages, message:messages[0]})
-		return ()=>Speak.setDefaults({lang})
 	},[locale])
 	const voice=tts[locale ? mylang : lang]
 	/*************end locale */
@@ -118,7 +116,6 @@ const Chat = () => {
 	/**It's ok to change in place since it's called only when quit and clear dialog*/
 	const trimMessages=React.useCallback(messages=>{
 		return messages.map(a=>{
-			delete a.speak
 			delete a.pending
 
 			if(createBotMessage.is(a,'...')){
@@ -147,12 +144,28 @@ const Chat = () => {
 				const [,current, ...history]=messages
 				ask({
 					question:current.text,
-					history: history.reverse().slice(1).map(a=>({content:a.text, type: a.user.name=="bot" ? "apiMessage" : "userMessage"})),
-				}).then(answer=>{
-					setMessages(([last, ...prevs])=>[
-						{...last, text:answer},
-						...prevs,
-					])
+					history: history.reverse().slice(1).map(a=>({message:a.text, type: a.user.name=="bot" ? "apiMessage" : "userMessage"})),
+					overrideConfig:{
+						switchAudio: audioInput ? {selectedOption: "OpenAITTS"} : ""
+					}
+				}).then(async answer=>{
+					const audio = audioInput && chatAPI.audio(answer)
+					const file=audio ? await audio?.file : null
+
+					setMessages(([last, ...prevs])=>{
+						const message={...last, text:answer}
+						delete message.pending
+
+						if(audio){
+							message.audio=file
+							message.text=audio.title
+							PlaySound.play(file)
+						}
+						return [
+							message,
+							...prevs,
+						]
+					})
 				})
 			}else if(audioInput==DIALOG && typeof(lastMessage.text)=="string"){//already got response, and in dialog mode
 				setMessages(prevs=>[
@@ -163,15 +176,6 @@ const Chat = () => {
 		}else {//user message
 			if(!createDialogMessage.is(lastMessage)){//user just commit message
 				const props={pending:true}
-				if(audioInput){
-					props.speak=<DialogSpeak 
-						//showText={audioInput!=DIALOG} 
-						onEnd={()=>setMessages(([a,...prevs])=>{
-							delete a.speak
-							return [{...a, text:a.text.props.text}, ...prevs]
-						})}/>
-					props.audio=locale
-				}
 				setMessages((prevMessages) => [ 
 					createBotMessage('...',props),
 					...prevMessages
@@ -236,9 +240,7 @@ const Chat = () => {
 					if(React.isValidElement(text)){
 						return text
 					}
-					if(audio && !createBotMessage.is(props.currentMessage, '...')){
-						return <MessageText currentMessage={{text:`🗣${text}`}}/>
-					}
+
 					return <MessageText {...props}/>
 				}}
 
@@ -254,43 +256,14 @@ const Chat = () => {
 					)
 				}}
 
-				renderMessageAudio={props=>null}
+				renderMessageAudio={props=>{
+					const {currentMessage:{audio}}=props
+					return <PlaySound.Trigger audio={audio} />
+					
+				}}
 			/>
 		</KeyboardAvoidingView>
 	);
-}
-
-function DialogSpeak({text, showText, isStream, isDone, onEnd}){
-	const [queue, setQueue]=React.useState([])
-	const [current, setCurrent]=React.useState(0)
-	React.useEffect(()=>{
-		if(isStream){//keep seperator
-			setQueue(Object.assign(text.split(/([\.\!\?\r\n\。\？\！\r\n])/),{text}))
-		}else if(text.trim()){
-			setQueue(Object.assign([text],{text}))
-		}
-	},[text, isStream])
-
-	React.useEffect(()=>{
-		if(queue.text==text && current>queue.length-1 && isDone){
-			onEnd?.()
-		}
-	},[isDone, current, queue, text])
-
-	const next=React.useCallback((i, queue)=>{//+2 to skip seperator
-		while(i<queue.length){
-			if(queue[i+=2]?.trim() || i>=queue.length){
-				setCurrent(i)
-			}
-		}
-	},[])
-
-	return (
-		<>
-			<MessageText currentMessage={{text:`🔊${text}`}}/>
-			{!!queue[current] && <Speak key={current} text={queue[current]} onEnd={e=>next(current, queue)}/>}
-		</>
-	)
 }
 
 function Avatar({user}){

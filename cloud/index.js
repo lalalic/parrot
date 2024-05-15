@@ -167,21 +167,29 @@ Cloud.addModule({
     }
 })
     
-Cloud.addModule(require("react-native-use-qili/cloud/events"))
+//Cloud.addModule(require("react-native-use-qili/cloud/events"))
 
 Cloud.addModule(require("react-native-use-qili/cloud/expo-updates")())
 
-Cloud.addModule(require("react-native-use-qili/cloud/predict")({
-    apiKey:process.env["ai.token"],
-    chatflows:{
-        chain:process.env["chatflow.chain"],
-        chat:process.env["chatflow.chat"],
-        agent:process.env["chatflow.agent"],
-        assistant:process.env["chatflow.assistant"],
-    }
+//apple pay
+Cloud.addModule(require("react-native-use-qili/cloud/payment-apple")({
+    path:"/verifyReceipt",
+    async onPurchase({purchase:{sku}, app,user}){
+        const VALUES=require("./product-tokens")
+        const paid=VALUES[sku]
+        const validPaid=0.7*paid*100000
+        await app.patchEntity("User", {_id:user._id}, {$inc:{balance:validPaid}})
+        app.emit('purchase.verified', validPaid)
+        return validPaid
+    },
+    password:process.env["apple.password"]
 }))
-
-// Cloud.addModule(require("react-native-use-qili/cloud/iap")({
-//     path:"/verifyReceipt",
-//     password:""
-// }))
+ 
+//stripe pay:wx.qili2.com/pay?
+const stripe=require("react-native-use-qili/cloud/payment-stripe")
+Cloud.addModule(stripe({
+    apiKey:process.env["stripe.apiKey"],
+    endpointSecret:process.env["stripe.endpointSecret"],
+    paymentLink:`https://buy.stripe.com/${process.env["stripe.paymentLinkID"]}`, 
+    prefill_email:process.env["stripe.prefill_email"],
+}))

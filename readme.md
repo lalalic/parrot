@@ -62,3 +62,8 @@ AI
         * split to sentence(code)
         * create audio for sentence(agent)
 * chat
+
+UI
+===
+* red dot: longPress
+* green

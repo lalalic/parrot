@@ -319,13 +319,18 @@ const Sentense=({talk, id=talk?.id})=>{
             onPress={e=>{
                 (async()=>{
                     try{
-                        const response=await ask(`
-                            use the following ${lang} language words to make one sentence or paragraph. 
-                            ---------word start------
-                            ${words}
-                            ---------word end------- 
-                            Response should NOT have anything else.
-                        `)
+                        const response=await ask({
+                            question: `
+                                use the following ${lang} language words to make one sentence or paragraph. 
+                                ---------word start------
+                                ${words}
+                                ---------word end------- 
+                                Response should NOT have anything else.
+                            `,
+                            overrideConfig:{
+                                functionCall:"LLM"
+                            }
+                        })
                         
                         dispatch({
                             type:"talk/chanllenge/longmemory/sentence", 
