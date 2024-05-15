@@ -1,5 +1,19 @@
-import makeLocalized from "react-native-use-qili/tools/make-localized"
+import makeLocalizedMobile from "react-native-use-qili/tools/make-localized"
+import { Platform } from 'react-native';
+
 const obMap=(keys,values)=>keys.reduce((ob,k,i)=>(ob[k]=values[i],ob),{})
+
+
+function makeLocalized(strings){
+    if(Platform.OS=="web"){
+        return new Proxy(strings,{
+            get(target, key){
+                return key
+            }
+        })
+    }
+    return makeLocalizedMobile(...arguments)
+}
 
 export default globalThis.l10n=makeLocalized({
     zh:{

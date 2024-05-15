@@ -143,7 +143,8 @@ export default class PictureBook extends TaggedListMedia {
     }
 
     static prompts=[{
-        label:"random picture", name:"auto-fix-high",
+        label:"random picture", 
+        name:"auto-fix-high",
         prompt(){
             return "response one or two words to describe a random scene with comma as seperator"
         },
