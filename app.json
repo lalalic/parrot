@@ -68,7 +68,11 @@
         }
       ],
       "expo-config-plugin-ios-share-extension",
-      "./plugins/patch"
+      ["./expo-plugins/pod-patches",
+        {
+          "patches": "expo-plugins/pod-patches"
+        }
+      ]
     ],
     "extra": {
       "eas": {

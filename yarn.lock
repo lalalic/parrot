@@ -10316,10 +10316,10 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.1.29:
-  version "1.1.29"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.29.tgz#d27da45adbbbc49824fc70b3645bea67a7761986"
-  integrity sha512-BhwB0zomodJnVjofSf5XYtPnUdFpMsPeQPeyi+LY+stvvYy2fGef19q3dsBn1//cOQ3TSIBgqPAhXBqabxj49w==
+react-native-use-qili@^1.1.31:
+  version "1.1.31"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.31.tgz#120b1fcd3217c8abeaea29de7091352cc6101a23"
+  integrity sha512-x3YdOv+KfoL6sk5yg7ecqW2ypauVru0sF7npu3xkgWXUmphx6P5ESJRW7YdmoJlIDGVvSutYAMZ4aosVbvfRbg==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"

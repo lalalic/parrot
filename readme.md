@@ -62,8 +62,10 @@ AI
         * split to sentence(code)
         * create audio for sentence(agent)
 * chat
+* format: word[pronounciation](translation)
 
 UI
 ===
 * red dot: longPress
 * green
+
