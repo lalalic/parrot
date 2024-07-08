@@ -130,8 +130,6 @@ function useInitialScrollIndex(talks) {
 }
 
 function Search({search}){
-    useSelector(state=>state.my.api)//a trigger
-    
     if(!search.q)
         return <SearchToday {...arguments[0]}/>
 
@@ -149,6 +147,7 @@ function SearchToday({search, children}){
 }
 
 function SearchPeople({search, children}){
+    const trigger=useSelector(state=>state.my.api)//a trigger
     const reg=React.useMemo(()=>search.peopleName && new RegExp(search.peopleName,"i"),[search.peopleName])
     const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.author),[reg])
     const {data:{talks=[]}={}, isLoading}=useQuery(()=>TalkApi.useSpeakerTalksQuery(search),localMatch)
@@ -158,6 +157,7 @@ function SearchPeople({search, children}){
 }
 
 function SearchPages({search, children}){
+    const trigger=useSelector(state=>state.my.api)//a trigger
     const reg=React.useMemo(()=>search.q && new RegExp(search.q,"i"),[search.q])
     const localMatch=React.useCallback(talk=>!!reg?.test?.(talk.title),[reg])
     const {data:{talks=[]}={}, isLoading}=useQuery(()=>TalkApi.useTalksQuery({search}),localMatch)

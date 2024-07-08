@@ -12,7 +12,9 @@
     "web": "NODE_OPTIONS=--openssl-legacy-provider expo start --web",
     "test": "yarn jest",
     "postinstall": "patch-package",
-    "export-updates": "qili-export-updates cloud/updates"
+    "export-updates": "qili-export-updates cloud/updates",
+    "build": "npx eas build -p ios",
+    "submit": "npx eas submit -p ios"
   },
   "jest": {
     "preset": "jest-expo",
@@ -63,7 +65,7 @@
     "react-native-logs": "^5.0.1",
     "react-native-select-dropdown": "^3.3.3",
     "react-native-tts": "^4.1.0",
-    "react-native-use-qili": "^1.1.31",
+    "react-native-use-qili": "^1.1.35",
     "react-native-uuid": "^2.0.1",
     "react-native-web": "~0.18.7",
     "react-native-webview": "11.23.0",

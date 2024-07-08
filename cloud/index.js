@@ -164,6 +164,18 @@ Cloud.addModule({
         Talk:[{speaker:1}, {title:1, lang:1, mylang:1}, {slug:1}, {lang:1}],
         Widget:[{title:1, slug:1, lang:1, mylang:1}, {lang:1}],
         WechatBotBarcode:[{shortID:1}]
+    },
+    static(service){
+        service
+            .on("/paymentLink", async(req, res)=>{
+            const res1=await fetch("https://ai.qili2.com/paymentLink?prefilled_email=parrot@qili2.com",{
+                headers:{
+                    ["x-session-token"]:await req.app.resolver.User.token(req.user,{expiresIn:"2m"},req)
+                }
+            })
+            const link=await res1.text()
+            res.reply(link)
+        })
     }
 })
     
@@ -183,13 +195,4 @@ Cloud.addModule(require("react-native-use-qili/cloud/payment-apple")({
         return validPaid
     },
     password:process.env["apple.password"]
-}))
- 
-//stripe pay:wx.qili2.com/pay?
-const stripe=require("react-native-use-qili/cloud/payment-stripe")
-Cloud.addModule(stripe({
-    apiKey:process.env["stripe.apiKey"],
-    endpointSecret:process.env["stripe.endpointSecret"],
-    paymentLink:`https://buy.stripe.com/${process.env["stripe.paymentLinkID"]}`, 
-    prefill_email:process.env["stripe.prefill_email"],
 }))
