@@ -5,6 +5,5 @@ module.exports={
     bucket:"qiliadmin",
     canRunInCore:true,
     userApiKey:"ai",
-    reviewer:"13901234567",
-    reviewerLoginCode:"1234",
+    watches: /\.(js|env\.cloud)$/,
 }

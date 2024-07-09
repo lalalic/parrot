@@ -4,9 +4,7 @@ require(`${qili}/dev`)({
         ...require("./qili.conf.js"),
         graphiql:true,
         isDev:true,
-        bucket:"/static",
-        reviewer:"13601230570",
-        reviewerLoginCode:"1234",
+        bucket:"/static"
     },
     apiKey:"parrot", 
     vhost:"qili2.com",
@@ -27,9 +25,6 @@ require(`${qili}/dev`)({
             graphiql:true,
             isDev:true,
             bucket:"/static",
-            watches: /\.js$/,
-            reviewer:"13601230570",
-            reviewerLoginCode:"1234",
         }
     }
 })
