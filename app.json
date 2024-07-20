@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "parrot",
-    "description":"",
+    "description": "",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -16,7 +16,7 @@
     },
     "updates": {
       "fallbackToCacheTimeout": 0,
-      "url":"https://parrot.qili2.com/updates/manifest"
+      "url": "https://parrot.qili2.com/updates/manifest"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -25,7 +25,7 @@
       "silentLaunch": true
     },
     "ios": {
-      "buildNumber":"5",
+      "buildNumber": "5",
       "supportsTablet": true,
       "bitcode": false,
       "bundleIdentifier": "com.lalalic.parrot",
@@ -39,7 +39,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.lalalic.parrot"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -64,12 +68,17 @@
         {
           "ios": {
             "useFrameworks": "static"
+          },
+          "android":{
+            "kotlinVersion":"1.6.20",
+            "minSdkVersion":24,
+            "compileSdkVersion":34
           }
         }
       ],
       "expo-config-plugin-ios-share-extension",
-      
-      ["./expo-plugins/pod-patches",
+      [
+        "./expo-plugins/pod-patches",
         {
           "patches": "expo-plugins/pod-patches"
         }
@@ -77,7 +86,24 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004"
+        "projectId": "e56a1031-7f18-407b-a53b-aeade32f3004",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ShareExtension",
+                  "bundleIdentifier": "com.lalalic.parrot.share-extension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.lalalic.parrot"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       },
       "urlPrivacy": "https://parrot.qili2.com/privacy.html",
       "urlTerms": "https://parrot.qili2.com/terms.html",

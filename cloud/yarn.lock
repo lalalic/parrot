@@ -577,10 +577,12 @@ expo-eas-client@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/expo-eas-client/-/expo-eas-client-0.3.0.tgz#21383fc95a52e71e13c7276456db20388fefcf95"
 
-expo-file-system@^15.2.2:
-  version "15.4.2"
-  resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-15.4.2.tgz#f18e9d84f06a50eb4084b4a34ca7ca9c5a42f92e"
+expo-file-system@~14.1.0:
+  version "14.1.0"
+  resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-14.1.0.tgz#4fa410873ef12ac8bec873593f7489f4305a14b8"
+  integrity sha512-lJcPGQ8yKXVknVkD5TmcJnR/TpQbEL0JP8hknLejfq3FIqPqI/LBFn31YiP37grxW8lITz1al8pq5T6CSUjAzQ==
   dependencies:
+    "@expo/config-plugins" "~5.0.0"
     uuid "^3.4.0"
 
 expo-json-utils@~0.3.0:
@@ -1174,10 +1176,10 @@ react-native-snap-carousel@^3.9.1:
     prop-types "^15.6.1"
     react-addons-shallow-compare "15.6.2"
 
-react-native-use-qili@^1.1.36:
-  version "1.1.36"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.36.tgz#c22d218a794ac671859d587d805f42d8e2a97796"
-  integrity sha512-hekPHMK1xZzeBiR47ivO8pNxj1AdY0tv3XgLCRBVvizGyQmpE84xykDnGyqIZ2oY/qRJZzrFk7Z/+ycgrFJ6Cw==
+react-native-use-qili@^1.1.38:
+  version "1.1.38"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.38.tgz#84746dc3d7dab1fae758bc03d57e641519aed738"
+  integrity sha512-JcourTipqWa6uQDB0ZD0Hvxkyzob9I3ammy0e+kZmkH6X4v6b9rOIfciVuzDz+MEhPmG67RnD9N7YP0rF2J9hQ==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"
@@ -1191,7 +1193,7 @@ react-native-use-qili@^1.1.36:
     expect.js "^0.3.1"
     expo-av "~12.0.4"
     expo-document-picker "~10.3.0"
-    expo-file-system "^15.2.2"
+    expo-file-system "~14.1.0"
     expo-splash-screen "~0.16.2"
     expo-status-bar "~1.4.0"
     expo-updates "~0.14.7"

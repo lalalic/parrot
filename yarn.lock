@@ -5342,12 +5342,6 @@ expo-file-system@^14.1.0, expo-file-system@~14.1.0:
     "@expo/config-plugins" "~5.0.0"
     uuid "^3.4.0"
 
-expo-file-system@^15.2.2:
-  version "15.4.2"
-  resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-15.4.2.tgz#f18e9d84f06a50eb4084b4a34ca7ca9c5a42f92e"
-  dependencies:
-    uuid "^3.4.0"
-
 expo-font@~10.2.1:
   version "10.2.1"
   resolved "https://registry.npmmirror.com/expo-font/-/expo-font-10.2.1.tgz#c13e65e864befaa4710504096b68635c6f7e48d8"
@@ -10316,10 +10310,10 @@ react-native-typing-animation@0.1.7:
   version "0.1.7"
   resolved "https://registry.yarnpkg.com/react-native-typing-animation/-/react-native-typing-animation-0.1.7.tgz#8f2cf08d9400ae543a110292eb7d71523dda5528"
 
-react-native-use-qili@^1.1.35:
-  version "1.1.35"
-  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.35.tgz#0edf8ab35fc4c507f54640a9af337cc2829ee1dc"
-  integrity sha512-Vv7bNlbax6Cl8Ei9gkwokBWoocw6ffqRbJXn3mqcN/HJkSKAIYoutUAbGVVtbzJlGBE3kJJZ70As6eSG6juJww==
+react-native-use-qili@^1.1.38:
+  version "1.1.38"
+  resolved "https://registry.yarnpkg.com/react-native-use-qili/-/react-native-use-qili-1.1.38.tgz#84746dc3d7dab1fae758bc03d57e641519aed738"
+  integrity sha512-JcourTipqWa6uQDB0ZD0Hvxkyzob9I3ammy0e+kZmkH6X4v6b9rOIfciVuzDz+MEhPmG67RnD9N7YP0rF2J9hQ==
   dependencies:
     deprecated-react-native-prop-types "^4.2.1"
     expo-constants "~13.2.4"
@@ -10333,7 +10327,7 @@ react-native-use-qili@^1.1.35:
     expect.js "^0.3.1"
     expo-av "~12.0.4"
     expo-document-picker "~10.3.0"
-    expo-file-system "^15.2.2"
+    expo-file-system "~14.1.0"
     expo-splash-screen "~0.16.2"
     expo-status-bar "~1.4.0"
     expo-updates "~0.14.7"
