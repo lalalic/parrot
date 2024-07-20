@@ -1,7 +1,5 @@
 import { registerRootComponent } from 'expo';
-import {NativeModules} from "react-native"
 import useQili from "react-native-use-qili"
-import "symbol-observable"
 useQili({
     apiKey:"parrot",
     bridge:{
@@ -11,8 +9,10 @@ useQili({
 })
 
 
-if (__DEV__){
-    NativeModules?.DevSettings?.setIsDebuggingRemotely(true)
-}
+// import "symbol-observable"
+// import {NativeModules} from "react-native"
+// if (__DEV__){
+//     NativeModules?.DevSettings?.setIsDebuggingRemotely(true)
+// }
 
 registerRootComponent(require("./src").default)

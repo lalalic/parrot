@@ -1,5 +1,6 @@
 import "./l10n"
 import React from "react"
+import {Text} from "react-native"
 import { useSelector, useDispatch } from "react-redux"
 
 import FlyMessage from "react-native-use-qili/components/FlyMessage"

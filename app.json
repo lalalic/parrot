@@ -82,7 +82,8 @@
         {
           "patches": "expo-plugins/pod-patches"
         }
-      ]
+      ],
+      "./expo-plugins"
     ],
     "extra": {
       "eas": {
