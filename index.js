@@ -9,7 +9,7 @@ useQili({
 })
 
 
-// import "symbol-observable"
+import "symbol-observable"
 // import {NativeModules} from "react-native"
 // if (__DEV__){
 //     NativeModules?.DevSettings?.setIsDebuggingRemotely(true)

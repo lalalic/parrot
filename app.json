@@ -25,7 +25,7 @@
       "silentLaunch": true
     },
     "ios": {
-      "buildNumber": "5",
+      "buildNumber": "6",
       "supportsTablet": true,
       "bitcode": false,
       "bundleIdentifier": "com.lalalic.parrot",
